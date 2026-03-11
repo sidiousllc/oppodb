@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, type Candidate, initCandidates } from "@/data/candidates";
+import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, initCandidates } from "@/data/candidates";
 import { loadCandidateData } from "@/data/candidateContent";
-import { magaFiles, searchMagaFiles, type MagaFile } from "@/data/magaFiles";
-import { localImpactReports, searchLocalImpact, getLocalImpactBySlug, type LocalImpactReport } from "@/data/localImpact";
-import { narrativeReports, searchNarrativeReports, type NarrativeReport } from "@/data/narrativeReports";
-import { fetchCandidatesFromDB, getLastSyncTime } from "@/data/githubSync";
+import { magaFiles, searchMagaFiles } from "@/data/magaFiles";
+import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/data/localImpact";
+import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
+import { fetchCandidatesFromDB } from "@/data/githubSync";
 import { SearchBar } from "@/components/SearchBar";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
@@ -13,15 +13,15 @@ import { GenericDetail } from "@/components/GenericDetail";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
-import { BookOpen, AlertTriangle, Globe, FileText, User, RefreshCw } from "lucide-react";
+import { BookOpen, AlertTriangle, Globe, FileText } from "lucide-react";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
+  const [dataVersion, setDataVersion] = useState(0);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterCategory>("all");
   const [section, setSection] = useState<Section>("candidates");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
-  const [lastSync, setLastSync] = useState<string | null>(null);
 
   useEffect(() => {
     // Load static fallback data first
@@ -32,11 +32,9 @@ export default function Index() {
     fetchCandidatesFromDB().then((dbCandidates) => {
       if (dbCandidates.length > 0) {
         initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
-        setLoaded(prev => !prev); // trigger re-render
+        setDataVersion((v) => v + 1);
       }
     });
-
-    getLastSyncTime().then(setLastSync);
   }, []);
 
   // Clear selection when section changes
@@ -51,7 +49,7 @@ export default function Index() {
       results = results.filter(c => c.category === filter);
     }
     return results;
-  }, [search, filter, loaded]);
+  }, [search, filter, dataVersion]);
 
   const filteredMaga = useMemo(() => searchMagaFiles(search), [search]);
   const filteredLocal = useMemo(() => searchLocalImpact(search), [search]);
@@ -63,14 +61,14 @@ export default function Index() {
     senate: getCandidatesByCategory("senate").length,
     governor: getCandidatesByCategory("governor").length,
     state: getCandidatesByCategory("state").length,
-  }), [loaded]);
+  }), [dataVersion]);
 
   const sectionCounts = useMemo(() => ({
     candidates: candidates.length,
     "maga-files": magaFiles.length,
     "local-impact": localImpactReports.length,
     narratives: narrativeReports.length,
-  }), [loaded]);
+  }), [dataVersion]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
