@@ -1,4 +1,4 @@
-import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw } from "lucide-react";
+import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getLastSyncTime } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
