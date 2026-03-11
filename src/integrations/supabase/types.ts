@@ -53,6 +53,51 @@ export type Database = {
         }
         Relationships: []
       }
+      district_profiles: {
+        Row: {
+          created_at: string
+          district_id: string
+          education_bachelor_pct: number | null
+          id: string
+          median_age: number | null
+          median_income: number | null
+          population: number | null
+          raw_data: Json | null
+          state: string
+          top_issues: string[]
+          updated_at: string
+          voting_patterns: Json | null
+        }
+        Insert: {
+          created_at?: string
+          district_id: string
+          education_bachelor_pct?: number | null
+          id?: string
+          median_age?: number | null
+          median_income?: number | null
+          population?: number | null
+          raw_data?: Json | null
+          state?: string
+          top_issues?: string[]
+          updated_at?: string
+          voting_patterns?: Json | null
+        }
+        Update: {
+          created_at?: string
+          district_id?: string
+          education_bachelor_pct?: number | null
+          id?: string
+          median_age?: number | null
+          median_income?: number | null
+          population?: number | null
+          raw_data?: Json | null
+          state?: string
+          top_issues?: string[]
+          updated_at?: string
+          voting_patterns?: Json | null
+        }
+        Relationships: []
+      }
       sync_metadata: {
         Row: {
           id: number

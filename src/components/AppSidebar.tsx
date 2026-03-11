@@ -1,10 +1,10 @@
-import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw } from "lucide-react";
+import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getLastSyncTime } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
-export type Section = "candidates" | "maga-files" | "local-impact" | "narratives";
+export type Section = "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel";
 
 interface AppSidebarProps {
   activeFilter: FilterCategory;
@@ -29,6 +29,7 @@ const sections: Array<{id: Section; label: string; icon: React.ElementType}> = [
   { id: "maga-files", label: "MAGA Files", icon: AlertTriangle },
   { id: "local-impact", label: "Local Impact", icon: Globe },
   { id: "narratives", label: "Narrative Reports", icon: FileText },
+  { id: "district-intel", label: "District Intel", icon: Compass },
 ];
 
 export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection, onSectionChange, sectionCounts, onSyncComplete }: AppSidebarProps) {
