@@ -37,7 +37,7 @@ export function AppSidebar({ activeFilter, onFilterChange, counts }: AppSidebarP
         <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
           Categories
         </p>
-        {filters.map(f => (
+        {filters.map((f) => (
           <button
             key={f.id}
             onClick={() => onFilterChange(f.id)}
@@ -52,7 +52,7 @@ export function AppSidebar({ activeFilter, onFilterChange, counts }: AppSidebarP
 
       <div className="p-4 border-t border-sidebar-border">
         <p className="text-xs text-sidebar-foreground/40 leading-relaxed">
-          // FOR INTERNAL USE ONLY / FOR CLIENT USE ONLY //
+          <center>// FOR INTERNAL USE ONLY / FOR CLIENT USE ONLY //</center>
         </p>
       </div>
     </aside>
