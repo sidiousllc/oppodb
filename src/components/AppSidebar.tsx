@@ -29,6 +29,7 @@ const sections: Array<{id: Section; label: string; icon: React.ElementType}> = [
   { id: "maga-files", label: "MAGA Files", icon: AlertTriangle },
   { id: "local-impact", label: "Local Impact", icon: Globe },
   { id: "narratives", label: "Narrative Reports", icon: FileText },
+  { id: "district-intel", label: "District Intel", icon: Compass },
 ];
 
 export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection, onSectionChange, sectionCounts, onSyncComplete }: AppSidebarProps) {
