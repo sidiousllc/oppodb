@@ -26,9 +26,9 @@ export function AppSidebar({ activeFilter, onFilterChange, counts }: AppSidebarP
           </div>
           <div>
             <h1 className="font-display text-base font-semibold text-sidebar-foreground">
-              Research Books
+              Opposition Research Database
             </h1>
-            <p className="text-xs text-sidebar-foreground/60">Opposition Research</p>
+            <p className="text-xs text-sidebar-foreground/60">Sidio.us Group</p>
           </div>
         </div>
       </div>
