@@ -275,6 +275,126 @@ He swore to put his stocks in a blind trust then violated the STOCK Act. He was 
   { name: "Zach Nunn", slug: "zach-nunn", content: `Nunn isn't working for IA-03. He backed taking health care from thousands of Iowans, defended Trump tariffs that hit Iowa pocketbooks and farms.
 
 He voted for devastating Medicaid cuts after claiming he was "fully committed" to protecting Medicaid. He spent $12,000 of taxpayer money on slick ads promoting the bill. He chose Big Pharma over cheaper prescription drugs for Iowa seniors. He was the deciding vote to protect Trump's tariffs.` },
+
+  { name: "Abe Hamadeh", slug: "abe-hamadeh", content: `Abe Hamadeh voted for the One Big Beautiful Bill Act, which CBO estimated would cut $911 billion from Medicaid and leave 10.9 million more Americans uninsured — including more than 300,000 Arizonans — then falsely claimed the bill included "no cuts to Medicaid," a claim PolitiFact rated as false.
+
+He voted against extending ACA premium subsidies as Arizona marketplace premiums surged 29–35%. He defended tariffs that economists call a $2,600-per-year hidden tax on Arizona families. The bill he voted for cut $187 billion from SNAP — the largest cut to food assistance in history.
+
+Before Congress, Hamadeh was a serial election denier who filed four lawsuits to overturn his 280-vote loss and was sanctioned by the Arizona Supreme Court for misrepresenting facts.` },
+
+  { name: "Addison McDowell", slug: "addison-mcdowell", content: `Addison McDowell was a Blue Cross Blue Shield lobbyist until the day he launched his congressional campaign — then voted for $1 trillion in Medicaid cuts threatening coverage for more than 670,000 North Carolinians.
+
+He slashed $187 billion from SNAP, the largest cut to food assistance in history, while representing one of the most food-insecure metro areas in the country. He told ABC News to "trust the president" on tariffs that are now costing the average household $1,300 a year.
+
+He has never held a single in-person town hall to face the constituents dealing with these consequences.` },
+
+  { name: "Andy Harris", slug: "andy-harris", content: `Andy Harris is a physician who demanded his own taxpayer-funded health insurance start immediately — then spent 15 years voting to repeal the ACA that cut the uninsured rate in his district by 54%.
+
+As Freedom Caucus chair, he pushed to accelerate Medicaid changes that could strip coverage from 24,000 people in his own district. He voted for the One Big Beautiful Bill's $186 billion SNAP cut — the largest in history — threatening 33,613 households in his district.
+
+He voted to overturn the 2020 election even after the Capitol was stormed, then tried to bring a concealed gun onto the House floor two weeks later. He accepted over $1.3 million from health sector PACs including a donation from Purdue Pharma during the opioid crisis.` },
+
+  { name: "Brad Knott", slug: "brad-knott", content: `Brad Knott voted for the One Big Beautiful Bill — cutting $1 trillion from Medicaid, nearly $200 billion from SNAP, and repealing clean energy tax credits used by 89,000 North Carolina households.
+
+He voted against extending ACA subsidies and refused to comment, driving a 28.6% average premium spike for nearly one million North Carolinians. He voted to protect Trump's tariffs while Johnston County farmers described existential anxiety.
+
+Before Congress, Knott voted in five elections from the wrong address — a potential Class I felony — and his campaign was launched with over $700,000 from his brother's single-candidate super PAC.` },
+
+  { name: "Dan Meuser", slug: "dan-meuser", content: `Dan Meuser voted against the Inflation Reduction Act that capped insulin at $35/month and let Medicare negotiate drug prices. After ACA subsidies expired, 85,000 Pennsylvanians lost coverage, with rural counties hit hardest.
+
+He voted for the One Big Beautiful Bill, which will strip Medicaid from nearly 18,000 people and SNAP benefits from 8,185 people in his own district — and called those numbers "complete, utter nonsense."
+
+He praised Trump's tariffs as a "golden era in manufacturing" while the U.S. lost over 40,000 manufacturing jobs. He was caught violating the STOCK Act twice — hiding up to $600,000 in COVID-era stock trades and a $750K-to-$1.5M NVIDIA sale.` },
+
+  { name: "Daniel Webster", slug: "daniel-webster", content: `Daniel Webster has held elected office continuously for 46 years yet is ranked as one of the least effective members of Congress — 58 bills sponsored, zero signed into law. He promised not to "pull the rug" on health care, then switched his vote to pass the AHCA.
+
+He voted for the One Big Beautiful Bill that cut $3.8 billion from Florida's health care system. A Central Florida father with diabetes saw his premium jump from $28 to $733/month after subsidies he voted to let expire.
+
+He has not held a single in-person town hall since 2011 and has a decades-long affiliation with a ministry whose founder resigned over sexual harassment allegations.` },
+
+  { name: "Darrell Issa", slug: "darrell-issa", content: `The third-wealthiest member of Congress ($283 million net worth), Darrell Issa secured $815,000 in earmarks to widen roads next to his own commercial properties and violated the STOCK Act by disclosing up to $175 million in Treasury bond sales approximately 500 days late.
+
+He voted 17 times to repeal the ACA, told a constituent whose son has diabetes to "hopefully" not get a condition, and voted for the One Big Beautiful Bill's $186 billion SNAP cut while delivering an average $66,000 tax cut to the richest 1%.
+
+He was indicted for grand theft auto before entering politics, suspected of arson after increasing factory fire insurance by 462%, and convicted of carrying a concealed weapon. He refused to hold a town hall for eight years.` },
+
+  { name: "French Hill", slug: "french-hill", content: `French Hill is a millionaire former banker who chairs the committee regulating the banking industry. He voted for up to $1 trillion in Medicaid cuts, then told constituents he had "never voted to end Medicare or Medicaid."
+
+He told a reporter he opposes tariffs the day after voting to keep Trump's Canada tariffs — tariffs that could close 1 in 3 Arkansas farms. He voted for $186 billion in SNAP cuts in the state ranked dead last for food insecurity.
+
+With $20.4 million net worth and only 0.73% of donations from small donors, his defining vulnerability is the gap between what he says and what he does.` },
+
+  { name: "Glenn Grothman", slug: "glenn-grothman", content: `Glenn Grothman represents the district with more manufacturing jobs than almost any other — but consistently works against workers and farmers. He endorsed Trump's tariffs projected to cost Wisconsin dairy farmers $1-2 billion.
+
+He voted for a bill that would strip coverage from 276,175 Wisconsinites and personally introduced an amendment to kick young adults off their parents' insurance. He voted against the $35 insulin cap and called expanded health coverage a "nightmare."
+
+He proposed eliminating the mandatory day off for Wisconsin workers and has a decades-long record of inflammatory statements including calling Kwanzaa a fraud and saying "money is more important for men."` },
+
+  { name: "Jay Obernolte", slug: "jay-obernolte", content: `Jay Obernolte voted for the largest Medicaid cut in the program's 60-year history — $911 billion — in a district where 48% of residents depend on Medi-Cal. He claimed "no one is being forced off Medicaid" despite CBO projecting 7.5 million will lose coverage.
+
+He initially voted against blocking tariff oversight, then flipped under pressure from GOP leadership and refused to explain why — while the Inland Empire lost 26,000 logistics jobs.
+
+He objected to the 2020 election results hours after the January 6 attack, and when 200 constituents booed him off stage at a town hall, he cancelled future in-person events.` },
+
+  { name: "Lauren Boebert", slug: "lauren-boebert", content: `Lauren Boebert promised "I will never vote for legislation that will leave Coloradans without health care coverage" — then voted for the largest Medicaid cuts in American history, threatening 230,000 Coloradans including nearly 45,000 children in her district.
+
+She called the Inflation Reduction Act "a complete scam" even as it funded an $200 million expansion creating 850 jobs in Pueblo. She voted against every major jobs bill, then shamelessly claimed credit for the funding they delivered.
+
+She was escorted out of a theater for groping her date and vaping, and used campaign donor money for personal rent.` },
+
+  { name: "Neal Dunn", slug: "neal-dunn", content: `Neal Dunn markets himself as a doctor who understands health care, but accepted over $273,000 from health industry donors then voted against the $35 insulin cap and Medicare drug price negotiation — in a district where uninsured rates top 40%.
+
+He voted for the One Big Beautiful Bill that slashed $300 billion from SNAP and $700 billion from Medicaid. He violated the STOCK Act and has announced his retirement while rumored to resign early.
+
+He voted to keep Trump's tariffs on Canada that economists called a "Category 5 economic hurricane" for Florida.` },
+
+  { name: "Richard Hudson", slug: "richard-hudson", content: `Richard Hudson was the top pharmaceutical PAC recipient in Congress ($240,600), voted against the $35 insulin cap and drug price negotiation, and personally inserted a provision to block Medicaid expansion in North Carolina.
+
+Expansion eventually covered 600,000+ people — no thanks to Hudson. He voted against the CHIPS Act that funded a $5 billion Wolfspeed plant creating 1,800 jobs in his own district, then called the One Big Beautiful Bill "the most pro-worker, pro-family legislation in decades."
+
+When constituents tried to confront him, he told fellow Republicans to stop holding in-person town halls entirely.` },
+
+  { name: "Stephanie Bice", slug: "stephanie-bice", content: `Stephanie Bice campaigned on lowering prescription drug costs — then voted against every bill that did, including the $35 insulin cap. She voted for the One Big Beautiful Bill that could strip Medicaid from 174,000 Oklahomans.
+
+She dismissed critics as "fear-mongering" while the bill delivers over $50,000/year in tax cuts to the top 1%. She voted against the infrastructure law that sent $6.4 billion to Oklahoma — after earmarking $20 million in the same bill.
+
+She votes with her party 97% of the time and voted to overturn the 2020 election.` },
+
+  { name: "Tim Moore", slug: "tim-moore", content: `Tim Moore blocked Medicaid expansion for a decade as NC House Speaker, costing $20 billion in federal funding while 12 rural hospitals closed — then took credit when expansion passed.
+
+In Congress, he voted for the One Big Beautiful Bill whose cuts could trigger NC's automatic expansion termination, threatening 680,000 enrollees. He told constituents to "pay a little more" for tariffed goods as NC lost 7,200 manufacturing jobs.
+
+He privately invested up to $245,000 betting against the economy he publicly champions, while failing to disclose hundreds of thousands in stock trades around Trump's tariff announcement.` },
+
+  { name: "Tom McClintock", slug: "tom-mcclintock", content: `Tom McClintock voted for a bill putting 56% of adult Medi-Cal enrollees in his district at risk — then told them only people who "refuse to get up off the couch" would lose coverage. He admitted tariffs are "bad public policy" then voted to keep them in place.
+
+He voted against the infrastructure law that funded $45 million in highway projects and $100 million in broadband in his own district. He cheered when the Trump administration killed a $1.2 billion hydrogen project that would have created 220,000 jobs.
+
+When hundreds of constituents packed a town hall to beg him not to repeal the ACA, he voted for it anyway.` },
+
+  { name: "Tony Wied", slug: "tony-wied", content: `Tony Wied pledged he would "never do anything to pull" the ACA, then voted for a bill that would strip health insurance from 270,000 Wisconsinites. He enthusiastically backed tariffs costing Wisconsin dairy farmers $1-2 billion.
+
+He filed 11 stock transactions worth up to $6.5 million in a single month while voting on policies that move markets. He ducked in-person town halls and left Medicaid advocates waiting outside his locked office.
+
+Green Bay's mayor called the bill Wied voted for one that "literally makes the poor poorer, and the rich richer."` },
+
+  { name: "Victoria Spartz", slug: "victoria-spartz", content: `Victoria Spartz declared herself a "hard no" on the budget bill, then flipped after Trump screamed at her and called her "a fake Republican." She voted for a law projected to strip Medicaid from nearly 12 million people.
+
+She criticized Biden's 9-18% lumber tariffs, then voted to protect Trump's far larger 25% tariffs on Canada — triggering 900 layoffs at Stellantis plants in Kokomo, in her own district.
+
+The House Ethics Committee investigated her for staff abuse including throwing furniture at aides. She was charged with bringing a gun through airport security and called President Zelensky a "moron."` },
+
+  { name: "Virginia Foxx", slug: "virginia-foxx", content: `Virginia Foxx called the ACA "more dangerous than terrorism" and has spent two decades voting against every effort to make health care accessible — from children's insurance to $35 insulin to Medicaid itself.
+
+As Rules Committee chairwoman, she used her gavel to shield Trump's tariffs from congressional repeal while NC lost 7,200 manufacturing jobs. She collected over $665,000 from the for-profit education industry while chairing the committee that oversees them.
+
+She told students she has "very little tolerance" for their debt despite paying $87.50 a semester for her own UNC degree.` },
+
+  { name: "Aaron Bean", slug: "aaron-bean", content: `Aaron Bean voted to kick more than 55,000 Floridians off health coverage and passed the biggest cuts to SNAP in history, ignoring that 46,000+ households in his district relied on the program.
+
+He launched the Congressional DOGE Caucus and said he was "thrilled" and "proud" to work with the agency — even as DOGE eliminated constituents' jobs and hamstrung Social Security.
+
+He called to "dismantle" the ACA even though 4.7 million Floridians rely on it. He landed himself in ethics crises twice as a Florida state senator — once securing $1 million for a friend's business, and again involving his brother-in-law's committee position.` },
 ];
 
 export function loadCandidateData() {
