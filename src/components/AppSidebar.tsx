@@ -52,7 +52,7 @@ export function AppSidebar({ activeFilter, onFilterChange, counts }: AppSidebarP
 
       <div className="p-4 border-t border-sidebar-border">
         <p className="text-xs text-sidebar-foreground/40 leading-relaxed">
-          Data sourced from Research Books MCP. Profiles cover Republican candidates in competitive 2026 races.
+          // FOR INTERNAL USE ONLY / FOR CLIENT USE ONLY //
         </p>
       </div>
     </aside>
