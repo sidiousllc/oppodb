@@ -41,6 +41,7 @@ export default function Index() {
   if (!loaded) return null;
 
   return (
+    <>
     <div className="flex h-screen overflow-hidden">
       <AppSidebar activeFilter={filter} onFilterChange={setFilter} counts={counts} />
 
