@@ -49,7 +49,7 @@ export default function Index() {
       results = results.filter(c => c.category === filter);
     }
     return results;
-  }, [search, filter, loaded]);
+  }, [search, filter, dataVersion]);
 
   const filteredMaga = useMemo(() => searchMagaFiles(search), [search]);
   const filteredLocal = useMemo(() => searchLocalImpact(search), [search]);
@@ -61,14 +61,14 @@ export default function Index() {
     senate: getCandidatesByCategory("senate").length,
     governor: getCandidatesByCategory("governor").length,
     state: getCandidatesByCategory("state").length,
-  }), [loaded]);
+  }), [dataVersion]);
 
   const sectionCounts = useMemo(() => ({
     candidates: candidates.length,
     "maga-files": magaFiles.length,
     "local-impact": localImpactReports.length,
     narratives: narrativeReports.length,
-  }), [loaded]);
+  }), [dataVersion]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
