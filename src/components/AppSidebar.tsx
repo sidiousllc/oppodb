@@ -13,6 +13,7 @@ interface AppSidebarProps {
   activeSection: Section;
   onSectionChange: (section: Section) => void;
   sectionCounts: Record<Section, number>;
+  onSyncComplete?: () => void;
 }
 
 const filters: Array<{id: FilterCategory; label: string; icon: React.ElementType}> = [
