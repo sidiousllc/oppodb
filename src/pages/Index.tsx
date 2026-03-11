@@ -21,10 +21,22 @@ export default function Index() {
   const [filter, setFilter] = useState<FilterCategory>("all");
   const [section, setSection] = useState<Section>("candidates");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const [lastSync, setLastSync] = useState<string | null>(null);
 
   useEffect(() => {
+    // Load static fallback data first
     loadCandidateData();
     setLoaded(true);
+
+    // Then try to load from database (GitHub-synced data)
+    fetchCandidatesFromDB().then((dbCandidates) => {
+      if (dbCandidates.length > 0) {
+        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+        setLoaded(prev => !prev); // trigger re-render
+      }
+    });
+
+    getLastSyncTime().then(setLastSync);
   }, []);
 
   // Clear selection when section changes
