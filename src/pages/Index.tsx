@@ -5,11 +5,14 @@ import { magaFiles, searchMagaFiles } from "@/data/magaFiles";
 import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/data/localImpact";
 import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
+import { fetchAllDistricts, searchDistricts, type DistrictProfile } from "@/data/districtIntel";
 import { SearchBar } from "@/components/SearchBar";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
 import { GenericCard } from "@/components/GenericCard";
 import { GenericDetail } from "@/components/GenericDetail";
+import { DistrictCard } from "@/components/DistrictCard";
+import { DistrictDetail } from "@/components/DistrictDetail";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -22,22 +25,22 @@ export default function Index() {
   const [filter, setFilter] = useState<FilterCategory>("all");
   const [section, setSection] = useState<Section>("candidates");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const [districts, setDistricts] = useState<DistrictProfile[]>([]);
 
   useEffect(() => {
-    // Load static fallback data first
     loadCandidateData();
     setLoaded(true);
 
-    // Then try to load from database (GitHub-synced data)
     fetchCandidatesFromDB().then((dbCandidates) => {
       if (dbCandidates.length > 0) {
         initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
         setDataVersion((v) => v + 1);
       }
     });
+
+    fetchAllDistricts().then(setDistricts);
   }, []);
 
-  // Clear selection when section changes
   useEffect(() => {
     setSelectedSlug(null);
     setSearch("");
@@ -54,6 +57,7 @@ export default function Index() {
   const filteredMaga = useMemo(() => searchMagaFiles(search), [search]);
   const filteredLocal = useMemo(() => searchLocalImpact(search), [search]);
   const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search]);
+  const filteredDistricts = useMemo(() => searchDistricts(districts, search), [search, districts]);
 
   const counts = useMemo(() => ({
     all: candidates.length,
@@ -68,12 +72,14 @@ export default function Index() {
     "maga-files": magaFiles.length,
     "local-impact": localImpactReports.length,
     narratives: narrativeReports.length,
-  }), [dataVersion]);
+    "district-intel": districts.length,
+  }), [dataVersion, districts]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
   const selectedLocal = selectedSlug ? getLocalImpactBySlug(selectedSlug) : null;
   const selectedNarrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
+  const selectedDistrict = selectedSlug ? districts.find(d => d.district_id === selectedSlug) : null;
 
   if (!loaded) return null;
 
@@ -117,6 +123,9 @@ export default function Index() {
           backLabel="Back to Narrative Reports"
         />
       );
+    }
+    if (section === "district-intel" && selectedDistrict) {
+      return <DistrictDetail district={selectedDistrict} onBack={() => setSelectedSlug(null)} />;
     }
     return null;
   }
@@ -223,6 +232,26 @@ export default function Index() {
         </>
       );
     }
+
+    if (section === "district-intel") {
+      return (
+        <>
+          <div className="mt-4 mb-2">
+            <p className="text-sm text-muted-foreground">{filteredDistricts.length} district profiles</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {filteredDistricts.map(d => (
+              <DistrictCard key={d.district_id} district={d} onClick={setSelectedSlug} />
+            ))}
+          </div>
+          {filteredDistricts.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">No districts match your search.</p>
+            </div>
+          )}
+        </>
+      );
+    }
   }
 
   const detail = renderDetail();
@@ -231,6 +260,7 @@ export default function Index() {
     "maga-files": "MAGA Files",
     "local-impact": "Local Impact by State",
     narratives: "Narrative Reports",
+    "district-intel": "District Intelligence",
   };
 
   return (
