@@ -1,4 +1,7 @@
-import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle } from "lucide-react";
+import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getLastSyncTime } from "@/data/githubSync";
+import { supabase } from "@/integrations/supabase/client";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
 export type Section = "candidates" | "maga-files" | "local-impact" | "narratives";
