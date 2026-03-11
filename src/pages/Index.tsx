@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, type Candidate } from "@/data/candidates";
+import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, type Candidate, initCandidates } from "@/data/candidates";
 import { loadCandidateData } from "@/data/candidateContent";
 import { magaFiles, searchMagaFiles, type MagaFile } from "@/data/magaFiles";
 import { localImpactReports, searchLocalImpact, getLocalImpactBySlug, type LocalImpactReport } from "@/data/localImpact";
 import { narrativeReports, searchNarrativeReports, type NarrativeReport } from "@/data/narrativeReports";
+import { fetchCandidatesFromDB, getLastSyncTime } from "@/data/githubSync";
 import { SearchBar } from "@/components/SearchBar";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
@@ -12,7 +13,7 @@ import { GenericDetail } from "@/components/GenericDetail";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
-import { BookOpen, AlertTriangle, Globe, FileText, User } from "lucide-react";
+import { BookOpen, AlertTriangle, Globe, FileText, User, RefreshCw } from "lucide-react";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
