@@ -1,18 +1,24 @@
 import { useState, useMemo, useEffect } from "react";
 import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, type Candidate } from "@/data/candidates";
 import { loadCandidateData } from "@/data/candidateContent";
+import { magaFiles, searchMagaFiles, type MagaFile } from "@/data/magaFiles";
+import { localImpactReports, searchLocalImpact, getLocalImpactBySlug, type LocalImpactReport } from "@/data/localImpact";
+import { narrativeReports, searchNarrativeReports, type NarrativeReport } from "@/data/narrativeReports";
 import { SearchBar } from "@/components/SearchBar";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
-import { AppSidebar, type FilterCategory } from "@/components/AppSidebar";
+import { GenericCard } from "@/components/GenericCard";
+import { GenericDetail } from "@/components/GenericDetail";
+import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
-import { BookOpen } from "lucide-react";
+import { BookOpen, AlertTriangle, Globe, FileText, User } from "lucide-react";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterCategory>("all");
+  const [section, setSection] = useState<Section>("candidates");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,13 +26,23 @@ export default function Index() {
     setLoaded(true);
   }, []);
 
-  const filtered = useMemo(() => {
+  // Clear selection when section changes
+  useEffect(() => {
+    setSelectedSlug(null);
+    setSearch("");
+  }, [section]);
+
+  const filteredCandidates = useMemo(() => {
     let results = search ? searchCandidates(search) : candidates;
     if (filter !== "all") {
       results = results.filter(c => c.category === filter);
     }
     return results;
   }, [search, filter, loaded]);
+
+  const filteredMaga = useMemo(() => searchMagaFiles(search), [search]);
+  const filteredLocal = useMemo(() => searchLocalImpact(search), [search]);
+  const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search]);
 
   const counts = useMemo(() => ({
     all: candidates.length,
@@ -36,65 +52,227 @@ export default function Index() {
     state: getCandidatesByCategory("state").length,
   }), [loaded]);
 
+  const sectionCounts = useMemo(() => ({
+    candidates: candidates.length,
+    "maga-files": magaFiles.length,
+    "local-impact": localImpactReports.length,
+    narratives: narrativeReports.length,
+  }), [loaded]);
+
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
+  const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
+  const selectedLocal = selectedSlug ? getLocalImpactBySlug(selectedSlug) : null;
+  const selectedNarrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
 
   if (!loaded) return null;
 
+  function renderDetail() {
+    if (section === "candidates" && selectedCandidate) {
+      return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} />;
+    }
+    if (section === "maga-files" && selectedMaga) {
+      return (
+        <GenericDetail
+          icon={<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-destructive/10"><AlertTriangle className="h-7 w-7 text-destructive" /></div>}
+          title={selectedMaga.name}
+          tag={{ label: "MAGA File", className: "bg-destructive/10 text-destructive" }}
+          content={selectedMaga.content}
+          onBack={() => setSelectedSlug(null)}
+          backLabel="Back to MAGA Files"
+        />
+      );
+    }
+    if (section === "local-impact" && selectedLocal) {
+      return (
+        <GenericDetail
+          icon={<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent/10"><Globe className="h-7 w-7 text-accent" /></div>}
+          title={selectedLocal.state}
+          subtitle={selectedLocal.summary}
+          tag={{ label: "Local Impact", className: "bg-accent/10 text-accent" }}
+          content={selectedLocal.content}
+          onBack={() => setSelectedSlug(null)}
+          backLabel="Back to Local Impact"
+        />
+      );
+    }
+    if (section === "narratives" && selectedNarrative) {
+      return (
+        <GenericDetail
+          icon={<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10"><FileText className="h-7 w-7 text-primary" /></div>}
+          title={selectedNarrative.name}
+          tag={{ label: "Narrative Report", className: "tag-senate" }}
+          content={selectedNarrative.content}
+          onBack={() => setSelectedSlug(null)}
+          backLabel="Back to Narrative Reports"
+        />
+      );
+    }
+    return null;
+  }
+
+  function renderList() {
+    if (section === "candidates") {
+      return (
+        <>
+          <div className="mt-4 mb-2 flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {filteredCandidates.length} {filteredCandidates.length === 1 ? "profile" : "profiles"}
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {filteredCandidates.map(c => (
+              <CandidateCard key={c.slug} candidate={c} onClick={setSelectedSlug} />
+            ))}
+          </div>
+          {filteredCandidates.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">No candidates match your search.</p>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    if (section === "maga-files") {
+      return (
+        <>
+          <div className="mt-4 mb-2">
+            <p className="text-sm text-muted-foreground">{filteredMaga.length} appointee files</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {filteredMaga.map(m => (
+              <GenericCard
+                key={m.slug}
+                icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10"><AlertTriangle className="h-5 w-5 text-destructive" /></div>}
+                title={m.name}
+                tag={{ label: "MAGA File", className: "bg-destructive/10 text-destructive" }}
+                preview={m.content.split("\n").find(l => l.trim().length > 20)?.trim().slice(0, 140) || ""}
+                onClick={() => setSelectedSlug(m.slug)}
+              />
+            ))}
+          </div>
+          {filteredMaga.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">No MAGA files match your search.</p>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    if (section === "local-impact") {
+      return (
+        <>
+          <div className="mt-4 mb-2">
+            <p className="text-sm text-muted-foreground">{filteredLocal.length} state reports</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {filteredLocal.map(r => (
+              <GenericCard
+                key={r.slug}
+                icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10"><Globe className="h-5 w-5 text-accent" /></div>}
+                title={r.state}
+                preview={r.summary}
+                onClick={() => setSelectedSlug(r.slug)}
+              />
+            ))}
+          </div>
+          {filteredLocal.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">No state reports match your search.</p>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    if (section === "narratives") {
+      return (
+        <>
+          <div className="mt-4 mb-2">
+            <p className="text-sm text-muted-foreground">{filteredNarratives.length} narrative reports</p>
+          </div>
+          <div className="grid gap-3">
+            {filteredNarratives.map(n => (
+              <GenericCard
+                key={n.slug}
+                icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10"><FileText className="h-5 w-5 text-primary" /></div>}
+                title={n.name}
+                tag={{ label: "Narrative", className: "tag-senate" }}
+                preview={n.content.split("\n").find(l => l.trim().length > 20)?.trim().slice(0, 160) || ""}
+                onClick={() => setSelectedSlug(n.slug)}
+              />
+            ))}
+          </div>
+          {filteredNarratives.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">No narrative reports match your search.</p>
+            </div>
+          )}
+        </>
+      );
+    }
+  }
+
+  const detail = renderDetail();
+  const sectionLabels: Record<Section, string> = {
+    candidates: "Candidate Profiles",
+    "maga-files": "MAGA Files",
+    "local-impact": "Local Impact by State",
+    narratives: "Narrative Reports",
+  };
+
   return (
     <>
-    <div className="flex h-screen overflow-hidden">
-      <AppSidebar activeFilter={filter} onFilterChange={setFilter} counts={counts} />
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar
+          activeFilter={filter}
+          onFilterChange={setFilter}
+          counts={counts}
+          activeSection={section}
+          onSectionChange={setSection}
+          sectionCounts={sectionCounts}
+        />
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
-          {/* Mobile header */}
-          <div className="lg:hidden flex items-center gap-2.5 mb-5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <BookOpen className="h-4 w-4 text-primary-foreground" />
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+            {/* Mobile header */}
+            <div className="lg:hidden flex items-center gap-2.5 mb-5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <BookOpen className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <h1 className="font-display text-lg font-semibold">Opposition Research Database</h1>
             </div>
-            <h1 className="font-display text-lg font-semibold">Research Books</h1>
-          </div>
 
-          {selectedCandidate ? (
-            <CandidateDetail
-              candidate={selectedCandidate}
-              onBack={() => setSelectedSlug(null)}
-            />
-          ) : (
-            <>
-              <div className="mb-5">
-                <SearchBar value={search} onChange={setSearch} />
-              </div>
-
-              <MobileNav activeFilter={filter} onFilterChange={setFilter} counts={counts} />
-
-              <div className="mt-4 mb-2 flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {filtered.length} {filtered.length === 1 ? "profile" : "profiles"}
-                </p>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                {filtered.map(c => (
-                  <CandidateCard
-                    key={c.slug}
-                    candidate={c}
-                    onClick={setSelectedSlug}
-                  />
-                ))}
-              </div>
-
-              {filtered.length === 0 && (
-                <div className="text-center py-16">
-                  <p className="text-muted-foreground">No candidates match your search.</p>
+            {detail ? (
+              detail
+            ) : (
+              <>
+                <div className="mb-1">
+                  <h2 className="font-display text-xl font-bold text-foreground mb-3 hidden lg:block">
+                    {sectionLabels[section]}
+                  </h2>
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </main>
-    </div>
-    <ChatPanel />
+
+                <div className="mb-4">
+                  <SearchBar value={search} onChange={setSearch} />
+                </div>
+
+                <MobileNav
+                  activeFilter={filter}
+                  onFilterChange={setFilter}
+                  counts={counts}
+                  activeSection={section}
+                  onSectionChange={setSection}
+                />
+
+                {renderList()}
+              </>
+            )}
+          </div>
+        </main>
+      </div>
+      <ChatPanel />
     </>
   );
 }

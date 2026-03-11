@@ -23,6 +23,13 @@ export const localImpactReports: LocalImpactReport[] = [
 **Energy:** Air-conditioner replacement program frozen over federal funding uncertainty.
 **Veterans:** Staff fired from VA and other agencies, including a disabled Phoenix-area veteran at DHS and a Marine Corps veteran helping other veterans avoid foreclosure.` },
 
+  { state: "Arkansas", slug: "arkansas", summary: "150,000 families lost USDA food program; $54M EV charger funding frozen; 4 SSA offices closed; affordable housing cuts", content: `**Agriculture:** Trump Administration cancelled USDA program that provided produce from local farmers to over 150,000 Arkansas families. Tariffs had potential to put Arkansas farmers out of business — 1 in 3 farms at risk.
+**Energy:** The Trump administration froze $54 million in funding for electric-vehicle chargers in Arkansas.
+**Social Security:** The Trump administration closed four Social Security Administration offices in Arkansas.
+**Veterans:** Staff fired at the Central Arkansas Veterans Healthcare System and the Veterans Health Care System of the Ozarks.
+**Housing:** Trump Administration cut funding for an Arkansas organization that helps unhoused people get out of poverty, losing 40% of its budget from HUD.
+**Health Care:** 30 of Arkansas's 47 rural hospitals are at risk of closing. Medicaid work requirements already stripped 18,000 Arkansans of coverage.` },
+
   { state: "California", slug: "california", summary: "USDA cancelled programs serving 500+ local farmers; 60 Dept of Education employees fired; Weather/Forest Service cuts amid deadly fire season", content: `**Agriculture:** USDA cancelled program that allowed California food banks to purchase produce from over 500 local farmers; 330 truckloads of food suspended.
 **Education:** ~60 employees fired at Dept of Education's Office for Civil Rights in San Francisco; $148 million in teacher training grants terminated.
 **Public Safety:** Weather Service and Forest Service employees fired despite deadly 2024 wildfire season.
@@ -33,6 +40,17 @@ export const localImpactReports: LocalImpactReport[] = [
 **Environment:** $570 million in federal funding for health and climate projects withheld even after federal courts ordered its release.
 **Veterans:** Two Colorado veterans fired from VA, including one helping homeless veterans get housing.
 **Housing:** Budget cuts in OBBB forced Colorado to cut $105 million from Prop 123 affordable housing program.` },
+
+  { state: "Connecticut", slug: "connecticut", summary: "$10M in food funding cut; $6M+ frozen for farmers; FAA worker fired; food banks forced to cut hours", content: `**Agriculture:** Trump administration cut $10 million in funding for Connecticut food banks and schools to buy produce from local farmers. Froze over $6 million in funding for small businesses and farmers. Bridgeport food bank forced to cut employee hours.
+**Agriculture:** Trump administration froze disaster-relief funds for farmers affected by 2023-2024 natural disasters.
+**Transportation:** FAA workers fired in Connecticut, including one air traffic controller.
+**Economy:** Federal employee layoffs impacting state services across Connecticut.
+**Health Care:** Community health center funding disrupted by federal freezes.` },
+
+  { state: "Delaware", slug: "delaware", summary: "$900K fair housing grant cancelled; 19 truckloads of food ($1.1M) lost; dozens of federal employees fired; 3 DHS offices closed", content: `**Housing:** Trump administration cancelled $900,000 grant to Delaware nonprofit that protects against housing discrimination.
+**Agriculture:** Trump administration's termination of USDA program cost the Food Bank of Delaware 19 truckloads of food worth more than $1 million.
+**Economy:** Dozens of federal employees fired and three DHS offices closed in Delaware.
+**Education:** Federal funding cuts threatened Delaware's education programs and services.` },
 
   { state: "Florida", slug: "florida", summary: "Food banks and schools losing partnerships with local farmers; 90% cut to health insurance enrollment program; hurricane hunters fired", content: `**Agriculture:** Funding cut for schools, food banks, and their partnerships with local farmers across Florida.
 **Education:** Nearly half of Dept of Education laid off, threatening funding for low-income districts and special needs children.
@@ -49,20 +67,90 @@ export const localImpactReports: LocalImpactReport[] = [
 **Social Security:** Five SSA offices closed in Georgia.
 **Veterans:** VA employees and veterans fired across the state.` },
 
+  { state: "Hawaii", slug: "hawaii", summary: "$46M in climate-friendly farm funding cut; economy heading into recession; tsunami warning scientist fired; Maui wildfire recovery frozen", content: `**Agriculture:** Trump administration cut $46 million for climate-friendly agricultural initiatives in Hawaii. Canceled two federal programs that helped feed schoolchildren in a state already struggling with food insecurity.
+**Economy:** Trump administration's cuts sending Hawaii into recession according to University of Hawaii researchers. State losing millions in food grants; Interior Department firings hit researchers protecting farm land.
+**Education:** Almost half of Department of Education laid off, threatening school districts where federal government provides about 11% of public school funding.
+**Public Safety:** Fired a scientist at the Weather Service's Tsunami Warning Center. Froze funding for program employing 131 people in wildfire cleanup and recovery from 2023 Maui wildfires.` },
+
+  { state: "Idaho", slug: "idaho", summary: "USDA employees fired hurting farmers; Forest Service firings threatening wildfire prevention; dozens of park employees laid off; veterans fired", content: `**Agriculture:** Employees fired at USDA's Natural Resources Conservation Service in Idaho, leaving farmers without critical research and support for increasing crop yields, mitigating fire risk, and improving water and soil quality.
+**Economy:** Employees fired responsible for facilitating lumber sales, ensuring ESA compliance, and giving tours at the Minidoka National Historic Site (WWII Japanese-American incarceration camp).
+**Public Safety:** Dozens of National Park employees fired in Idaho. Campsites and trails can't be maintained and may close. Many fired employees were certified in firefighting or helped with evacuations during 2024 Idaho wildfires.
+**Veterans:** VA employees and veterans fired across Idaho, including a combat-disabled veteran.` },
+
+  { state: "Illinois", slug: "illinois", summary: "HUD cuts threaten affordable housing; $220K farmer grant frozen; 40+ Chicago Dept of Ed employees fired; CDC/WHO withdrawal impacts", content: `**Housing:** Trump administration cut funding for programs to fight housing discrimination and fired HUD employees investigating fair housing claims.
+**Agriculture:** Cut funding for schools, food banks and local farmers across Illinois. One family farm that lost its chicken flock to bird flu had its $220,000 grant frozen.
+**Economy:** Froze funding for small businesses; USAID-funded University of Illinois program forced to lay off 30 employees; $2 billion in federal aid frozen.
+**Education:** Over 40 employees fired at Chicago Department of Education office, many working on federal student aid.
+**Public Health:** Illinois Dept of Public Health Director warned WHO withdrawal would harm state public health. Scientists fired working on food quality, crop blights, and clean air/water.
+**Veterans:** VA employees and veterans fired across Illinois. Chicago-area VA program helping veterans access healthcare and housing shut down.` },
+
+  { state: "Indiana", slug: "indiana", summary: "$26M frozen for farmers; scientist monitoring tobacco risks fired; NOAA cuts threaten severe weather warnings; fair housing nonprofit cut", content: `**Agriculture:** Trump administration froze $26 million in funding for Indiana farmers. Cut funding for schools, food banks and local farmers from Fort Wayne to Evansville. DeMotte farmer lost 20% of income from USDA program termination.
+**Housing:** Cut funding to Indianapolis nonprofit that helped prevent discriminatory housing practices. 80% of FHCCI's $1 million annual budget came from federal dollars.
+**Environment:** Fired National Park employees and slashed funding for conservation and forestry programs.
+**Public Health:** Laid off Indianapolis scientist who monitored risk of tobacco products for adults and children.
+**Public Safety:** NOAA staff cuts could make it harder to warn residents about severe weather according to Indiana Emergency Management.
+**Health Care:** Nearly 1.8 million Hoosiers covered by Medicaid or CHIP at risk, with 12 hospital closures threatened.` },
+
   { state: "Iowa", slug: "iowa", summary: "250,000 meals/year at risk from food bank funding cuts; 5 VA employees fired; farmers facing uncertainty as growing season begins", content: `**Agriculture:** 250,000+ meals per year at risk from food bank funding cuts; Cedar Rapids farmer said it's "the worst timing" as crops already planted; Tipton farmer called cuts "asinine, unnecessary, mean-spirited."
 **Veterans:** Five employees fired at Central Iowa VA System.
 **Housing:** Government shutdown delayed HUD communications, threatening $8 million in homelessness program funding.
 **Economy:** Farm economy rattled by tariffs devastating Iowa's dairy and soybean industries.` },
+
+  { state: "Kansas", slug: "kansas", summary: "Farmer's $600K rural energy contract frozen; 40 employees fired at Haskell Indian Nations University; Housing First programs threatened", content: `**Agriculture:** Trump administration cancelled and froze funding for agriculture projects, including one farmer's contract for $600,000 for rural energy development. Programs encouraging local food banks to buy produce in-state were cut.
+**Education:** 40 employees fired at the Haskell Indian Nations University.
+**Veterans:** VA medical facility in Topeka faced layoffs.
+**Housing:** Trump's executive order ending Housing First programs threatened to increase homelessness in Kansas, where 2,600+ people experience homelessness.
+**Economy:** Dismantling USAID hurt Kansas businesses and farms. Kansas Democrat said cuts are "hurting our economy, national security and hardworking Kansans."` },
+
+  { state: "Kentucky", slug: "kentucky", summary: "150,000 households losing heating/cooling aid; bourbon pulled from Canadian shelves; Daniel Boone Forest employees fired; LIHEAP staff terminated", content: `**Agriculture:** Trump administration froze funding for Kentucky farmers, leaving them with unsustainable debt.
+**Economy:** Several Canadian provinces pulled Kentucky bourbon off shelves in response to Trump's tariffs.
+**Environment:** Fired employees testing for "forever chemicals" in Kentucky and dozens more at Daniel Boone National Forest, including those responsible for wildfire suppression.
+**Housing:** HUD cuts could slow construction of homes for 2022 flood victims in eastern Kentucky.
+**Energy:** All LIHEAP staff terminated, putting program helping 150,000 Kentucky households pay heating/cooling bills in jeopardy.
+**Health Care:** Coal country health care at severe risk from Medicaid cuts.` },
+
+  { state: "Louisiana", slug: "louisiana", summary: "$22M frozen for LSU crop research; Calcasieu schools lost local produce funding; flood insurance threatened by shutdown", content: `**Agriculture:** Trump administration froze $22 million in USAID funding for LSU's research to make crops more available to those at risk of hunger. Calcasieu Parish Schools lost funding to buy produce from local farmers. Louisiana farmers reported losing millions.
+**Disaster Relief:** Trump's government shutdown threatened to temporarily suspend flood insurance for 458,000 Louisiana home and business owners.
+**Energy:** Trump administration froze funding for Louisiana energy programs.
+**Economy:** Federal worker layoffs across Louisiana impacting state services.` },
 
   { state: "Maine", slug: "maine", summary: "USDA grants paused to University of Maine; $45,000 blocked from reaching a farmer; 6 Portsmouth Naval Shipyard employees fired", content: `**Agriculture:** $45,000 check blocked from reaching a West Gardiner farmer who already installed a solar array; USDA grants paused to University of Maine worth ~$30 million.
 **Defense:** Six employees fired at Portsmouth Naval Shipyard on the Maine-New Hampshire border.
 **Veterans:** Employees including veterans fired from VA in Maine.
 **Food:** South Portland food bank warned of "significantly higher" costs after USDA program cuts.` },
 
+  { state: "Maryland", slug: "maryland", summary: "800+ federal employees fired; $280M predicted state loss; 15% cut at federal water quality lab; Assateague Beach left without lifeguards", content: `**Economy:** Trump administration fired at least 800 federal employees in Maryland, where up to 29,000 jobs were at risk. State predicted cuts could mean a loss of $280 million.
+**Education:** Terminated a program at the University of Maryland that helped principals from poor schools improve performance.
+**Environment:** Fired 15% of employees at a federal lab working on water quality and oyster harvesting.
+**Agriculture:** Woodsboro farmer called bipartisan farm-to-school program a "win-win" before Trump ended it.
+**Public Safety:** Assateague Island National Seashore left without lifeguards due to federal cuts. Mayor called it "playing with fire."` },
+
+  { state: "Massachusetts", slug: "massachusetts", summary: "$12M school produce program cut serving 90 districts/58 farmers; all Boston Dept of Ed workers fired; water science center gutted", content: `**Agriculture:** Trump administration cut $12 million program helping 90 Massachusetts school districts buy produce from 58 local farmers.
+**Economy:** Tariffs on Canada increased energy and homebuilding costs in Massachusetts.
+**Education:** All employees at U.S. Department of Education's regional office in Boston were fired.
+**Environment:** Largest USGS New England Water Science Center office said it would be "almost impossible" to continue its mission after layoffs.
+**Housing:** Massachusetts Fair Housing Center forced to stop taking new clients after "devastating" funding cuts — lost over half its budget.
+**Veterans:** VA staff fired including veterans; appointments cancelled.` },
+
   { state: "Michigan", slug: "michigan", summary: "Food banks losing local farmer partnerships; only Bureau of Indian Affairs office closed; 15% cut at NOAA's Ann Arbor office", content: `**Agriculture:** Funding cut for food banks and their partnerships with local farmers from Grand Rapids to Marquette.
 **Economy:** Michigan's only Bureau of Indian Affairs office closed, affecting 12 federally recognized tribes.
 **Public Safety:** NOAA's Ann Arbor office cut by 15%; $30 million blocked for state police and environmental agencies, including $27 million in disaster preparedness grants.
 **Veterans:** VA employees fired; Detroit VA union leader said surgeries delayed and wait lists skyrocketing; physical rehab appointments cancelled.` },
+
+  { state: "Minnesota", slug: "minnesota", summary: "$425K fair housing grant cancelled; cereal disease lab scientists fired; food banks cut across Twin Cities to Duluth; Air Force veteran laid off from SBA", content: `**Agriculture:** Funding cut for schools, food banks and local farmers from Twin Cities to Duluth to Luverne County. At least 3 employees fired from Cereal Disease Lab in St. Paul doing "irreplaceable" work preventing crop failures.
+**Housing:** Trump administration cut $425,000 grant funding legal help for people facing housing discrimination or sexual harassment from landlords.
+**Veterans:** VA employees and veterans laid off across Minnesota. Air Force veteran who became deputy director of SBA in Minnesota was suddenly laid off.
+**Economy:** Federal employee layoffs impacting state services across Minnesota.` },
+
+  { state: "Mississippi", slug: "mississippi", summary: "$6M farmer-to-food-bank program terminated; food bank shelves empty; 3 SSA offices closed; cotton farmers hurt by tariffs", content: `**Agriculture:** Trump administration terminated $6 million program to help Mississippi food banks purchase produce from local farmers. Mississippi Food Network CEO showed empty shelves. Mississippi ranks dead last for food insecurity — over 600,000 people go hungry.
+**Social Security:** Three Social Security Administration offices closed in Mississippi.
+**Agriculture:** Trump's tariffs harmed cotton farmers by increasing machinery and fertilizer costs.
+**Economy:** Federal spending cuts impacting organizations statewide.` },
+
+  { state: "Missouri", slug: "missouri", summary: "$2.2M Springfield food bank funding cut; 1,000 IRS layoffs in Kansas City; $6M teacher training grant ended; soybean research shut down", content: `**Agriculture:** Cut $2.2 million in funding for Springfield food bank to buy from local farmers. Kansas City area farmers lost big profits. University of Missouri soybean research project shut down.
+**Economy:** Planned layoff of roughly 1,000 IRS employees in Kansas City, risking regional downturn.
+**Education:** Cut $6 million grant for St. Louis teacher training program serving 60-80 substitute teachers.
+**Agriculture:** Staffing cuts undermined flood-prone area farmer assistance programs.` },
 
   { state: "Montana", slug: "montana", summary: "$425,000 fair housing grant terminated; $200,000 food bank grant cancelled; archaeologist fired during cancer treatment", content: `**Housing:** $425,000 grant terminated for nonprofit helping tenants resolve housing discrimination.
 **Agriculture:** $200,000 grant cancelled to food bank that purchased produce from local farmers.
@@ -71,11 +159,33 @@ export const localImpactReports: LocalImpactReport[] = [
 **Public Safety:** National parks employees fired who were critical to preventing wildfires.
 **Veterans:** Employees fired from Montana VA system.` },
 
+  { state: "Nebraska", slug: "nebraska", summary: "196 school districts lost local produce program; affordable housing projects at risk; emergency management disrupted; veterans homes threatened", content: `**Agriculture:** Trump administration cut program helping 196 Nebraska school districts purchase local produce for school lunch. Fired researchers at Meat Animal Research Center.
+**Housing:** Federal funding freeze put affordable housing construction projects at risk. Kearney nonprofit providing housing for people in crisis asked if it should pause projects.
+**Education:** Almost half of Education Department fired, leaving Nebraska schools worried about reimbursement timing.
+**Public Safety:** Funding freeze disrupted Nebraska Emergency Management Agency and Nebraska Crime Commission.
+**Veterans:** Funding freeze threatened veterans homes that rely on federal funding.` },
+
+  { state: "Nevada", slug: "nevada", summary: "$156M solar/affordable housing funding frozen; $6M food program cancelled; national park scientists fired; 20 VA employees fired", content: `**Housing:** Trump administration froze $156 million for community solar projects and affordable housing in Nevada, affecting 20,000+ low-income households and 1,000 jobs.
+**Agriculture:** Cancelled $6 million program for Nevada food banks and schools to buy from local farmers. Food Bank of Northern Nevada forced to cut million pounds of fresh food distribution.
+**Environment:** Fired national parks employees and scientists ensuring Southern Nevada has safe drinking water.
+**Veterans:** Fired around 20 VA employees in Nevada, including those who sterilized operating rooms.
+**Education:** Federal education cuts threatening Nevada school districts.` },
+
+  { state: "New Hampshire", slug: "new-hampshire", summary: "$1M food bank funding cut; Portsmouth Naval Shipyard workers 'terrorized'; nearly 100 IRS employees fired; veteran fired from IRS", content: `**Agriculture:** Trump administration cut $1 million in funding for New Hampshire food bank to buy produce from local farmers.
+**Defense:** Workers at Portsmouth Naval Shipyard "terrorized" by firing threats. Six employees fired at the shipyard.
+**Economy:** Nearly 100 IRS employees fired in New Hampshire.
+**Veterans:** A New Hampshire veteran working for the IRS was fired.` },
+
   { state: "New Jersey", slug: "new-jersey", summary: "$26M in local food funding cut; 17,000 workers laid off by end of February; 15 FAA employees fired", content: `**Agriculture:** $26 million cut that allowed school districts and food banks to buy from 46 local producers.
 **Economy:** Nearly 17,000 workers laid off by end of February vs. 1,000 at same point in 2024.
 **Education:** Staff fired at Dept of Education's OCR, leading to "a dramatic drop" in discrimination investigations.
 **Health Care:** 1.8 million NJ residents on Medicaid threatened by budget resolution cuts.
 **Public Safety:** NOAA employees fired, threatening hurricane preparedness; 15 FAA employees fired in NJ.` },
+
+  { state: "New Mexico", slug: "new-mexico", summary: "$2.8M food bank funding cut; 35 USDA employees fired; 210+ federal employees laid off; quarter of SIPI staff fired; USDA offices closed", content: `**Agriculture:** Cut $2.8 million for New Mexico food banks and schools to buy from local farmers. Froze $26.8 million in grants for farmers and tribes improving soil and water conservation. Fired 35 USDA employees. Closed USDA and Farm Service Agency offices in Clovis, Roswell, Gallup, and Raton.
+**Education:** Fired roughly a quarter of staff at Southwestern Indian Polytechnic Institute.
+**Environment:** Fired biologist responsible for protecting animal life after oil spills.
+**Economy:** At least 210 New Mexico federal employees fired in mass layoffs.` },
 
   { state: "New York", slug: "new-york", summary: "$51M in local food funding cut; only one HUD manager left in NYC field office for Section 8; 3 SSA offices closed", content: `**Agriculture:** $51 million cut for school districts and food banks to buy from local farmers; 15 truckloads cancelled for Central NY food bank.
 **Economy:** Federal worker providing rural loans and grants fired, putting grants at risk.
@@ -92,6 +202,33 @@ export const localImpactReports: LocalImpactReport[] = [
 **Social Security:** Four SSA offices closed.
 **Veterans:** VA hospital employees fired.` },
 
+  { state: "North Dakota", slug: "north-dakota", summary: "Fargo food bank lost $1M funding round; crop prices driven down by tariffs; disaster relief delayed by shutdown; veterans homes funding threatened", content: `**Agriculture:** Fargo food bank told third $1 million funding round would not come. Trump's tariffs drove down crop prices, leaving farmers in danger of operating at a loss — average farm borrowing 12-20x more than in the 1980s.
+**Disaster Relief:** Government shutdown delayed disaster aid for communities damaged by June 2025 storms including tornadoes, hail, and heavy wind.
+**Economy:** Federal worker layoffs impacting state services.
+**Veterans:** Veterans homes and services threatened by funding cuts.` },
+
+  { state: "Ohio", slug: "ohio", summary: "Cincinnati fair housing funding cut; IRS employees fired; 'forever chemicals' engineers laid off; HHS employee helping mothers with PPD fired", content: `**Agriculture:** Cut funding for food banks and school districts to buy from local farmers.
+**Economy:** At least 20 IRS employees fired in Ohio; refund checks may be delayed.
+**Education:** Almost half of Department of Education laid off; Ohio Teachers Union warns agency can't fulfill duties.
+**Environment:** Laid off two Cincinnati engineers treating "forever chemicals" in Ohio and Kentucky waters.
+**Health Care:** Fired HHS employee helping mothers with post-partum depression.
+**Housing:** Cut funding to Cincinnati nonprofit preventing housing discrimination. Columbus forced to consider new tax for homeless services after federal threats.
+**Public Safety:** Cut retention bonuses for federal prison guards, exacerbating staffing shortages.
+**Veterans:** Fired VA employees who helped provide food and mental health services to veterans.` },
+
+  { state: "Oklahoma", slug: "oklahoma", summary: "$24M school/food bank funding cancelled; Tinker Air Force Base in 'havoc'; 40 Bureau of Indian Education workers fired; Weather Service cuts", content: `**Agriculture:** Cancelled $24 million in funding for Oklahoma schools and food banks to buy from local farmers. Regional Food Bank already seeing supply at half of previous year.
+**Defense:** Cuts caused "havoc" at Tinker Air Force Base due to uncertainty about civilian layoffs.
+**Education:** 40 Bureau of Indian Education workers fired in Oklahoma.
+**Environment:** Fired employees at National Weather Service office in Oklahoma.
+**Public Safety:** Laid off employees at FAA training facility in Oklahoma.` },
+
+  { state: "Oregon", slug: "oregon", summary: "Hundreds of Forest Service workers fired; $76M park tourism threatened; 6 Eugene IRS agents reviewing millionaires fired; health center laid off 11%", content: `**Economy:** Hundreds of National Forest Service workers fired threatening $76 million national park tourism industry. Six Eugene-area IRS agents reviewing multi-millionaires laid off.
+**Environment:** 25 employees fired at Ochoco National Forest, hurting firefighting and timber sales.
+**Health Care:** Funding freeze forced Oregon health center to lay off 11% of staff.
+**Agriculture:** Josephine County food bank facing 20% reduction in food supplies from USDA cuts.
+**Public Safety:** Cut retention bonuses for federal prison guards, exacerbating staffing shortages.
+**Veterans:** VA staff fired, threatening access to critical veteran services.` },
+
   { state: "Pennsylvania", slug: "pennsylvania", summary: "$35M+ in food program funding eliminated; $150M solar program frozen; Dept of Ed civil rights office closing", content: `**Agriculture:** $35 million+ eliminated for schools and food banks to buy from local farmers, impacting Central PA, Greater Pittsburgh, Erie, and Bucks County.
 **Economy:** Harrisburg USDA office closed; 45+ contracts cancelled with local businesses; hundreds of IRS employees and 60+ federal employees in Pittsburgh fired.
 **Education:** $343 million+ in annual federal education funds at risk; Dept of Ed's OCR in Philadelphia closing.
@@ -99,6 +236,29 @@ export const localImpactReports: LocalImpactReport[] = [
 **Social Security:** Funding terminated for research helping disabled individuals navigate benefits.
 **Transportation:** $40 million Riverside Drive revitalization in Allentown stalled.
 **Veterans:** Workers fired at Pittsburgh and Erie VA centers.` },
+
+  { state: "Rhode Island", slug: "rhode-island", summary: "$3M USDA program cut; Providence farm nonprofit laid off 8 employees; defense funding disrupted; energy cost reduction funds frozen", content: `**Agriculture:** Cut $3 million USDA program helping Rhode Island farmers sell fresh produce. Providence agricultural nonprofit forced to lay off 8 of 48 employees, affecting 90 farms and fishing businesses.
+**Defense:** Funding freeze interrupted defense and manufacturing industries.
+**Energy:** Froze funds for program to reduce energy costs for Rhode Island residents.
+**Health Care:** Froze funds that provided maternity medical devices to needy mothers.` },
+
+  { state: "South Carolina", slug: "south-carolina", summary: "$14.5M school/food bank funding cut; farmer reimbursements frozen; 20 Hurricane Hunters fired; 16 VA employees fired in Charleston", content: `**Agriculture:** Cut $14.5 million for South Carolina schools and food banks to buy from local farmers, affecting 213,000+ schoolchildren. Froze farmer reimbursements that were already counting on the funds.
+**Education:** Ended $5 million grant to train and hire local teachers.
+**Public Safety:** Fired 20 Hurricane Hunters in South Carolina, threatening hurricane data collection.
+**Veterans:** Fired 16 employees at VA clinic in Charleston.
+**Agriculture:** Trump's tariffs lowered soybean prices, threatening farm profits.` },
+
+  { state: "South Dakota", slug: "south-dakota", summary: "65+ USDA employees fired; soybean prices down $250M statewide; Badlands park ranger/EMT laid off; farmer equipment grants frozen", content: `**Agriculture:** Fired at least 65 USDA employees in South Dakota. Froze funding that helped farmers upgrade equipment. Tariff wars decreased soybean prices — $1 drop equates to $250 million lost income for SD farmers.
+**Economy:** Cut food bank/school funding and closed multiple government offices in the state.
+**Environment:** Laid off park ranger at Badlands National Park — one of three EMTs at the park.
+**Agriculture:** Farmers hoped administration would unfreeze grants for soil quality improvement programs.` },
+
+  { state: "Tennessee", slug: "tennessee", summary: "$20M school/food bank program terminated; mine reforestation suspended; Nashville SSA office closed; rural housing grant threatened", content: `**Agriculture:** Terminated $20 million program for Tennessee schools and food banks to buy from local farmers. Suspended soil conservation teaching program for farmers. Ended programs purchasing trees from local farmers.
+**Economy:** Closed IRS office threatening tax assistance meetings.
+**Environment:** Suspended Tennessee mine reforestation program.
+**Social Security:** Closed Social Security Administration office in Nashville.
+**Housing:** Trump threatened to cancel HOME Investment Partnerships Program that rural Tennesseans rely on for affordable housing.
+**Veterans:** Fired VA employees in Tennessee Valley.` },
 
   { state: "Texas", slug: "texas", summary: "$9.2M cut from North Texas Food Bank; 650+ caregivers laid off at border facilities; 3 SSA offices closed", content: `**Agriculture:** $9.2 million cut from North Texas Food Bank for purchasing from local farmers; cattle ranchers and farmers hurt by tariffs; farmer education program cut in Panhandle.
 **Economy:** San Antonio company forced to lay off 650+ caregivers at border facilities.
@@ -108,6 +268,16 @@ export const localImpactReports: LocalImpactReport[] = [
 **Social Security:** Three SSA offices closed in Texas.
 **Veterans:** VA employees laid off across Texas; disabled veteran fired from IRS.` },
 
+  { state: "Utah", slug: "utah", summary: "Alfalfa pest control scientist fired; Hill Air Force Base childcare at risk; disabled veteran fired from VA; IRS forced to rehire laid-off workers", content: `**Agriculture:** Laid off federal scientist in Logan responsible for protecting alfalfa farmers from pests while protecting pollinating bees.
+**Education:** Cut funding for program improving post-graduation outcomes for students with disabilities. Utah Humanities said cuts would "decimate" services to public.
+**Military:** Layoffs put service members' childcare at risk at Hill Air Force Base.
+**Veterans:** Fired a disabled veteran who worked for VA in Utah.
+**Economy:** IRS in Ogden forced to rehire employees who took deferred resignation, causing "morale breaker" for remaining staff.` },
+
+  { state: "Vermont", slug: "vermont", summary: "12 truckloads of food cancelled; $1.7M school/food bank funding terminated; fair housing project lost 80% of budget; farmer grants interrupted", content: `**Agriculture:** 12 truckloads of food cancelled for Vermont food banks — 15-20% of federal food supply. Terminated $1.7 million for schools and food banks to buy from local farmers. Interrupted grants and loans for rural municipalities.
+**Housing:** Vermont Fair Housing Project lost about 80% of its budget from federal cuts, instantly affecting anti-discrimination services.
+**Economy:** Federal worker layoffs impacting community services.` },
+
   { state: "Virginia", slug: "virginia", summary: "Highest federal employee concentration hit hard; 50% of community health centers cut off; 630,000 Medicaid recipients at risk", content: `**Agriculture:** Funding cut for food banks and local farmers from Madison County to Danville.
 **Economy:** Virginia has one of the highest federal employee populations; experts predict 10% federal worker cut would trigger state-wide recession.
 **Education:** Multiple Richmond programs lost funding; further cuts threaten at-risk kids.
@@ -115,45 +285,29 @@ export const localImpactReports: LocalImpactReport[] = [
 **Medicare/Medicaid:** Virginia's Medicaid expansion trigger law means 630,000 recipients could lose coverage if federal funding decreases.
 **Veterans:** Virginia has third highest veteran population; VA centers in Richmond, Fredericksburg, and Salem face staffing shortages.` },
 
+  { state: "Washington", slug: "washington", summary: "Seattle HUD office targeted for closure; hops scientists fired; Hanford nuclear cleanup workers laid off; $1.7B Bridger-Teton tourism threatened", content: `**Housing:** Trump administration fired HUD employees at Seattle office, with plans to close it entirely and lay off all 100+ workers. Froze emergency food and shelter program funding for 18,000 people in Columbia Basin.
+**Agriculture:** Fired multiple Washington-based scientists studying hops, warning their layoffs will hurt farmers and breweries.
+**Energy:** Froze funding to help farmers and small businesses reduce energy bills. Laid off employees responsible for state electricity.
+**Environment:** Fired at least a dozen employees cleaning up "the most contaminated site in the Western Hemisphere." Fired employees protecting Olympic National Park from invasive species.
+**Health Care:** NIH funding cuts threatened cancer research and 12,000 jobs that NIH funding supports in Washington.
+**Veterans:** Fired multiple veterans and VA employees in Washington state.` },
+
+  { state: "West Virginia", slug: "west-virginia", summary: "Farmer: 'They're trying to bankrupt me'; $10K in charity savings burned through; 80 federal employees fired in Parkersburg; 10 VA employees fired", content: `**Agriculture:** West Virginia farmer lost USDA contract and told his father: "They're trying to bankrupt me." Farmers lost over $2 million in funding that helped schools purchase local food.
+**Economy:** 80 federal employees in Parkersburg fired; mayor warned cuts would hurt already depressed local economy.
+**Food:** WV charity forced to burn through $10,000 in savings — a third of reserves — to keep feeding 600 meals/week after federal food aid cuts.
+**Veterans:** 10 employees fired at Louis A. Johnson VA Medical Center in Clarksburg.
+**Health Care:** Rural health care at severe risk from Medicaid and federal funding cuts.` },
+
   { state: "Wisconsin", slug: "wisconsin", summary: "$17M in food bank funding cancelled; Apostle Islands layoffs threaten $44M tourism economy; 90% cut to health insurance enrollment", content: `**Agriculture:** $17 million cancelled for food banks and schools to buy from local farmers; 5 truckloads worth $615,000 cancelled from Milwaukee food bank.
 **Economy:** Apostle Islands National Lakeshore layoffs threaten 600+ jobs relying on $44 million tourism.
 **Education:** Funding threatened for Wisconsin libraries and museums.
 **Health Care:** 90% cut to program helping Wisconsinites register for health insurance; addiction treatment center may never open.
 **Veterans:** Several veterans working for the federal government fired.` },
 
-  // Remaining states with summary data
-  { state: "Arkansas", slug: "arkansas", summary: "30 of 47 rural hospitals at risk of closing; tariffs threatening to close 1 in 3 farms; food insecurity ranked dead last nationally", content: `Arkansas faces severe impacts from Republican policies. The state ranks dead last nationally for food insecurity according to the USDA. 30 of Arkansas's 47 rural hospitals are at risk of closing. Tariffs could close 1 in 3 Arkansas farms. Medicaid work requirements already stripped 18,000 Arkansans of coverage.` },
-  { state: "Connecticut", slug: "connecticut", summary: "Federal employee layoffs impacting state services; community health center funding disrupted", content: `Federal employee layoffs and funding freezes have impacted Connecticut's community health centers and social services.` },
-  { state: "Delaware", slug: "delaware", summary: "Federal funding cuts affecting small state services; USDA programs cancelled", content: `Delaware faces impacts from cancelled USDA programs and federal funding freezes affecting state services.` },
-  { state: "Hawaii", slug: "hawaii", summary: "Federal worker layoffs; NOAA cuts threatening weather forecasting for island state", content: `Hawaii faces impacts from NOAA cuts that threaten weather forecasting critical for the island state, along with federal worker layoffs.` },
-  { state: "Idaho", slug: "idaho", summary: "Forest Service and BLM layoffs; agricultural funding cuts", content: `Idaho faces impacts from Forest Service and Bureau of Land Management layoffs, along with agricultural funding cuts.` },
-  { state: "Illinois", slug: "illinois", summary: "Federal employee layoffs in Chicago area; food bank funding cuts; ICE operations escalated", content: `Illinois faces impacts from federal employee layoffs in the Chicago area, food bank funding cuts, and escalated ICE deportation operations.` },
-  { state: "Indiana", slug: "indiana", summary: "Stellantis plant layoffs from tariffs; 1.8M Hoosiers on Medicaid/CHIP at risk; 12 hospitals threatened with closure", content: `Indiana faces 900 layoffs at Stellantis plants in Kokomo from tariffs. Nearly 1.8 million Hoosiers covered by Medicaid or CHIP are at risk, with 12 hospital closures threatened.` },
-  { state: "Kansas", slug: "kansas", summary: "Agricultural funding cuts; federal worker layoffs", content: `Kansas faces impacts from agricultural funding cuts and federal worker layoffs affecting state services.` },
-  { state: "Kentucky", slug: "kentucky", summary: "Coal country health care at risk; USDA program cuts; federal employee layoffs", content: `Kentucky faces impacts from health care cuts in coal country, USDA program cancellations, and federal employee layoffs.` },
-  { state: "Louisiana", slug: "louisiana", summary: "Hurricane preparedness threatened; food bank funding cuts; federal employee layoffs", content: `Louisiana faces impacts from threats to hurricane preparedness, food bank funding cuts, and federal employee layoffs.` },
-  { state: "Maryland", slug: "maryland", summary: "Major federal workforce state facing mass layoffs; NIH funding threatened", content: `Maryland faces major impacts as one of the highest federal employee states. NIH funding and research threatened by cuts and freezes.` },
-  { state: "Massachusetts", slug: "massachusetts", summary: "Hospital chain bankruptcy from private equity; research funding frozen", content: `Massachusetts faces impacts from hospital chain bankruptcy linked to private equity and frozen research funding.` },
-  { state: "Minnesota", slug: "minnesota", summary: "Federal employee layoffs; USDA program cuts; community health center disruptions", content: `Minnesota faces impacts from federal employee layoffs, USDA program cancellations, and disruptions to community health centers.` },
-  { state: "Mississippi", slug: "mississippi", summary: "Rural health care at extreme risk; SNAP cuts in one of poorest states; agricultural funding eliminated", content: `Mississippi faces severe impacts as one of the nation's poorest states, with rural health care at extreme risk and SNAP cuts threatening food security.` },
-  { state: "Missouri", slug: "missouri", summary: "Federal employee layoffs; agricultural funding cuts; VA service disruptions", content: `Missouri faces impacts from federal employee layoffs, agricultural funding cuts, and VA service disruptions.` },
-  { state: "Nebraska", slug: "nebraska", summary: "Agricultural tariff impacts; federal worker layoffs; rural health care threatened", content: `Nebraska faces impacts from agricultural tariffs, federal worker layoffs, and threats to rural health care access.` },
-  { state: "Nevada", slug: "nevada", summary: "Federal land management layoffs; tourism impacts; housing affordability crisis worsened", content: `Nevada faces impacts from federal land management layoffs, tourism impacts, and a worsened housing affordability crisis.` },
-  { state: "New Hampshire", slug: "new-hampshire", summary: "Portsmouth Naval Shipyard layoffs; community health center disruptions", content: `New Hampshire faces impacts from Portsmouth Naval Shipyard layoffs and disruptions to community health centers.` },
-  { state: "New Mexico", slug: "new-mexico", summary: "National lab and military base impacts; rural health care cuts; USDA program cancellations", content: `New Mexico faces impacts from national lab and military base disruptions, rural health care cuts, and USDA program cancellations.` },
-  { state: "North Dakota", slug: "north-dakota", summary: "Agricultural tariff impacts; federal worker layoffs; rural health care threatened", content: `North Dakota faces impacts from agricultural tariffs, federal worker layoffs, and threats to rural health care.` },
-  { state: "Ohio", slug: "ohio", summary: "Manufacturing job losses from tariffs; VA service disruptions; federal worker layoffs", content: `Ohio faces impacts from manufacturing job losses linked to tariffs, VA service disruptions, and federal worker layoffs.` },
-  { state: "Oklahoma", slug: "oklahoma", summary: "174,000 Oklahomans at risk of losing Medicaid; 131,000 at risk of losing SNAP; 9 rural hospitals already closed", content: `Oklahoma faces severe impacts with 174,000 at risk of losing Medicaid, 131,000 at risk of losing SNAP benefits, and 9 rural hospitals already closed since 2005.` },
-  { state: "Oregon", slug: "oregon", summary: "Forest Service layoffs; agricultural funding cuts; infrastructure investments threatened", content: `Oregon faces impacts from Forest Service layoffs, agricultural funding cuts, and threatened infrastructure investments.` },
-  { state: "Rhode Island", slug: "rhode-island", summary: "Federal employee layoffs; community health center funding disrupted", content: `Rhode Island faces impacts from federal employee layoffs and disruptions to community health center funding.` },
-  { state: "South Carolina", slug: "south-carolina", summary: "Military base impacts; rural health care cuts; agricultural funding eliminated", content: `South Carolina faces impacts from military base disruptions, rural health care cuts, and eliminated agricultural funding.` },
-  { state: "South Dakota", slug: "south-dakota", summary: "Agricultural tariff impacts; tribal services disrupted; rural health care threatened", content: `South Dakota faces impacts from agricultural tariffs, disrupted tribal services, and threats to rural health care.` },
-  { state: "Tennessee", slug: "tennessee", summary: "300,000+ Tennesseans denied Medicaid expansion; USDA program cuts; federal worker layoffs", content: `Tennessee faces impacts with 300,000+ Tennesseans denied Medicaid expansion, USDA program cancellations, and federal worker layoffs.` },
-  { state: "Utah", slug: "utah", summary: "Federal land management layoffs; BLM cuts; national park service impacts", content: `Utah faces impacts from federal land management layoffs, BLM cuts, and national park service impacts.` },
-  { state: "Vermont", slug: "vermont", summary: "Community health center disruptions; agricultural funding cuts; federal worker layoffs", content: `Vermont faces impacts from community health center disruptions, agricultural funding cuts, and federal worker layoffs.` },
-  { state: "Washington", slug: "washington", summary: "Federal worker layoffs in Seattle area; agricultural tariff impacts; Forest Service cuts", content: `Washington faces impacts from federal worker layoffs in the Seattle area, agricultural tariff impacts, and Forest Service cuts.` },
-  { state: "West Virginia", slug: "west-virginia", summary: "Rural health care at severe risk; coal country economic impacts; VA service disruptions", content: `West Virginia faces severe impacts with rural health care at extreme risk, coal country economic impacts, and VA service disruptions.` },
-  { state: "Wyoming", slug: "wyoming", summary: "Federal land management impacts; agricultural tariff effects; rural health care threatened", content: `Wyoming faces impacts from federal land management disruptions, agricultural tariff effects, and threats to rural health care.` },
+  { state: "Wyoming", slug: "wyoming", summary: "$500K food bank grant eliminated; fired USDA worker warned cuts hurt farmers; Bridger-Teton layoffs threaten $1.7B tourism; Casper urban forestry grant cancelled", content: `**Agriculture:** Cut $500,000 from Food Bank of Wyoming to purchase from local farmers. Fired USDA employees who supported farmers facing drought, hail, and high winds. Cuts delayed response to livestock diseases.
+**Economy:** Laid off employees at Bridger-Teton National Forest, threatening the $1.7 billion tourism industry.
+**Environment:** Cancelled grant that would have improved water and air quality, mitigated heat islands, and increased property values in Casper.
+**Veterans:** Fired a veteran who worked at a VA mental health center in Cheyenne.` },
 ];
 
 export function searchLocalImpact(query: string): LocalImpactReport[] {
