@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, type Candidate } from "@/data/candidates";
+import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, type Candidate, initCandidates } from "@/data/candidates";
 import { loadCandidateData } from "@/data/candidateContent";
 import { magaFiles, searchMagaFiles, type MagaFile } from "@/data/magaFiles";
 import { localImpactReports, searchLocalImpact, getLocalImpactBySlug, type LocalImpactReport } from "@/data/localImpact";
 import { narrativeReports, searchNarrativeReports, type NarrativeReport } from "@/data/narrativeReports";
+import { fetchCandidatesFromDB, getLastSyncTime } from "@/data/githubSync";
 import { SearchBar } from "@/components/SearchBar";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
@@ -12,7 +13,7 @@ import { GenericDetail } from "@/components/GenericDetail";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
-import { BookOpen, AlertTriangle, Globe, FileText, User } from "lucide-react";
+import { BookOpen, AlertTriangle, Globe, FileText, User, RefreshCw } from "lucide-react";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
@@ -20,10 +21,22 @@ export default function Index() {
   const [filter, setFilter] = useState<FilterCategory>("all");
   const [section, setSection] = useState<Section>("candidates");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const [lastSync, setLastSync] = useState<string | null>(null);
 
   useEffect(() => {
+    // Load static fallback data first
     loadCandidateData();
     setLoaded(true);
+
+    // Then try to load from database (GitHub-synced data)
+    fetchCandidatesFromDB().then((dbCandidates) => {
+      if (dbCandidates.length > 0) {
+        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+        setLoaded(prev => !prev); // trigger re-render
+      }
+    });
+
+    getLastSyncTime().then(setLastSync);
   }, []);
 
   // Clear selection when section changes

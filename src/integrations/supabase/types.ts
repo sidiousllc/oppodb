@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      candidate_profiles: {
+        Row: {
+          content: string
+          created_at: string
+          github_path: string
+          id: string
+          is_subpage: boolean
+          name: string
+          parent_slug: string | null
+          slug: string
+          subpage_title: string | null
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          github_path: string
+          id?: string
+          is_subpage?: boolean
+          name: string
+          parent_slug?: string | null
+          slug: string
+          subpage_title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          github_path?: string
+          id?: string
+          is_subpage?: boolean
+          name?: string
+          parent_slug?: string | null
+          slug?: string
+          subpage_title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sync_metadata: {
+        Row: {
+          id: number
+          last_commit_sha: string | null
+          last_synced_at: string | null
+        }
+        Insert: {
+          id?: number
+          last_commit_sha?: string | null
+          last_synced_at?: string | null
+        }
+        Update: {
+          id?: number
+          last_commit_sha?: string | null
+          last_synced_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
