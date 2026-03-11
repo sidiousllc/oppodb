@@ -1,4 +1,7 @@
-import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle } from "lucide-react";
+import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getLastSyncTime } from "@/data/githubSync";
+import { supabase } from "@/integrations/supabase/client";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
 export type Section = "candidates" | "maga-files" | "local-impact" | "narratives";
@@ -10,6 +13,7 @@ interface AppSidebarProps {
   activeSection: Section;
   onSectionChange: (section: Section) => void;
   sectionCounts: Record<Section, number>;
+  onSyncComplete?: () => void;
 }
 
 const filters: Array<{id: FilterCategory; label: string; icon: React.ElementType}> = [
@@ -27,7 +31,41 @@ const sections: Array<{id: Section; label: string; icon: React.ElementType}> = [
   { id: "narratives", label: "Narrative Reports", icon: FileText },
 ];
 
-export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection, onSectionChange, sectionCounts }: AppSidebarProps) {
+export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection, onSectionChange, sectionCounts, onSyncComplete }: AppSidebarProps) {
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    getLastSyncTime().then(setLastSync);
+  }, []);
+
+  function formatSyncTime(iso: string) {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return d.toLocaleDateString();
+  }
+
+  async function handleManualSync() {
+    setSyncing(true);
+    try {
+      const { error } = await supabase.functions.invoke("sync-github");
+      if (error) console.error("Sync error:", error);
+      const t = await getLastSyncTime();
+      setLastSync(t);
+      onSyncComplete?.();
+    } catch (e) {
+      console.error("Sync failed:", e);
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-sidebar border-r border-sidebar-border">
       <div className="p-5 border-b border-sidebar-border">
@@ -80,7 +118,24 @@ export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection
         )}
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-sidebar-border space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-sidebar-foreground/50">
+            {lastSync ? (
+              <>Synced {formatSyncTime(lastSync)}</>
+            ) : (
+              <>Not synced yet</>
+            )}
+          </div>
+          <button
+            onClick={handleManualSync}
+            disabled={syncing}
+            className="flex items-center gap-1 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors disabled:opacity-50"
+            title="Sync from GitHub"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+          </button>
+        </div>
         <p className="text-xs text-sidebar-foreground/40 leading-relaxed">
           <center>// FOR INTERNAL USE ONLY //
 // FOR CLIENT USE ONLY //</center>
