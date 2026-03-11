@@ -6,6 +6,7 @@ import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
 import { AppSidebar, type FilterCategory } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
+import { ChatPanel } from "@/components/ChatPanel";
 import { BookOpen } from "lucide-react";
 
 export default function Index() {
