@@ -42,6 +42,23 @@ export default function Index() {
     fetchAllDistricts().then(setDistricts);
   }, []);
 
+  const handleCensusSync = useCallback(async () => {
+    setCensusSyncing(true);
+    try {
+      const result = await syncCensusData();
+      if (result.success) {
+        const fresh = await fetchAllDistricts();
+        setDistricts(fresh);
+      } else {
+        console.error("Census sync failed:", result.error);
+      }
+    } catch (e) {
+      console.error("Census sync error:", e);
+    } finally {
+      setCensusSyncing(false);
+    }
+  }, []);
+
   useEffect(() => {
     setSelectedSlug(null);
     setSearch("");
