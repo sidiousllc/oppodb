@@ -160,7 +160,7 @@ export default function Index() {
 
   function renderDetail() {
     if (section === "candidates" && selectedCandidate) {
-      return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} />;
+      return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} onNavigateSlug={navigateBySlug} />;
     }
     if (section === "maga-files" && selectedMaga) {
       return (
