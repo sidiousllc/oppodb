@@ -61,6 +61,7 @@ async function streamChat({
 }
 
 export function ChatPanel() {
+  const { session } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
