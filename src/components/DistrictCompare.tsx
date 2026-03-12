@@ -1,16 +1,25 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { type DistrictProfile } from "@/data/districtIntel";
 import {
   ArrowLeft,
   Users,
   DollarSign,
-  GraduationCap,
-  Calendar,
-  TrendingDown,
   Home,
   Heart,
+  TrendingDown,
   ChevronDown,
+  Plus,
+  X,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 interface DistrictCompareProps {
   districts: DistrictProfile[];
@@ -19,22 +28,40 @@ interface DistrictCompareProps {
   onBack: () => void;
 }
 
+const COLORS = [
+  "hsl(215, 80%, 42%)",   // primary
+  "hsl(4, 80%, 52%)",     // accent
+  "hsl(160, 60%, 40%)",   // green
+  "hsl(45, 90%, 50%)",    // amber
+  "hsl(280, 60%, 50%)",   // purple
+  "hsl(190, 70%, 42%)",   // teal
+];
+
 function DistrictPicker({
   districts,
   selected,
   onSelect,
   label,
+  onRemove,
+  canRemove,
 }: {
   districts: DistrictProfile[];
   selected: string;
   onSelect: (id: string) => void;
   label: string;
+  onRemove?: () => void;
+  canRemove?: boolean;
 }) {
   return (
     <div>
-      <label className="text-xs font-medium text-muted-foreground mb-1 block">
-        {label}
-      </label>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-xs font-medium text-muted-foreground">{label}</label>
+        {canRemove && onRemove && (
+          <button onClick={onRemove} className="text-muted-foreground hover:text-destructive transition-colors">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
       <div className="relative">
         <select
           value={selected}
@@ -54,66 +81,117 @@ function DistrictPicker({
   );
 }
 
-type RowValue = number | null | undefined;
-
-function CompareRow({
-  label,
-  a,
-  b,
-  format = "number",
-}: {
+type MetricDef = {
+  key: keyof DistrictProfile;
   label: string;
-  a: RowValue;
-  b: RowValue;
-  format?: "number" | "percent" | "dollar";
-}) {
-  const fmt = (v: RowValue) => {
-    if (v == null) return "—";
-    if (format === "percent") return `${v}%`;
-    if (format === "dollar") return `$${v.toLocaleString()}`;
-    return v.toLocaleString();
-  };
+  format: "number" | "percent" | "dollar";
+};
 
-  const diff = a != null && b != null ? a - b : null;
-  const highlightA =
-    diff != null && diff !== 0
-      ? diff > 0
-        ? "text-emerald-600 dark:text-emerald-400"
-        : ""
-      : "";
-  const highlightB =
-    diff != null && diff !== 0
-      ? diff < 0
-        ? "text-emerald-600 dark:text-emerald-400"
-        : ""
-      : "";
+type SectionDef = {
+  title: string;
+  icon: React.ReactNode;
+  metrics: MetricDef[];
+};
 
-  return (
-    <div className="grid grid-cols-[1fr_1fr_1fr] items-center gap-2 py-2.5 border-b border-border/50 last:border-0">
-      <span className={`text-sm font-semibold tabular-nums text-right ${highlightA}`}>
-        {fmt(a)}
-      </span>
-      <span className="text-xs text-muted-foreground text-center">{label}</span>
-      <span className={`text-sm font-semibold tabular-nums ${highlightB}`}>
-        {fmt(b)}
-      </span>
-    </div>
-  );
+const SECTIONS: SectionDef[] = [
+  {
+    title: "Demographics",
+    icon: <Users className="h-4 w-4 text-primary" />,
+    metrics: [
+      { key: "population", label: "Population", format: "number" },
+      { key: "median_age", label: "Median Age", format: "number" },
+      { key: "education_bachelor_pct", label: "Bachelor's+", format: "percent" },
+    ],
+  },
+  {
+    title: "Economic",
+    icon: <DollarSign className="h-4 w-4 text-accent" />,
+    metrics: [
+      { key: "median_income", label: "Median Income", format: "dollar" },
+      { key: "poverty_rate", label: "Poverty Rate", format: "percent" },
+      { key: "unemployment_rate", label: "Unemployment", format: "percent" },
+    ],
+  },
+  {
+    title: "Race & Ethnicity",
+    icon: <Users className="h-4 w-4 text-primary" />,
+    metrics: [
+      { key: "white_pct", label: "White", format: "percent" },
+      { key: "black_pct", label: "Black", format: "percent" },
+      { key: "hispanic_pct", label: "Hispanic", format: "percent" },
+      { key: "asian_pct", label: "Asian", format: "percent" },
+      { key: "foreign_born_pct", label: "Foreign-Born", format: "percent" },
+    ],
+  },
+  {
+    title: "Housing",
+    icon: <Home className="h-4 w-4 text-muted-foreground" />,
+    metrics: [
+      { key: "owner_occupied_pct", label: "Owner-Occupied", format: "percent" },
+      { key: "median_home_value", label: "Median Home Value", format: "dollar" },
+      { key: "median_rent", label: "Median Rent", format: "dollar" },
+    ],
+  },
+  {
+    title: "Health & Veterans",
+    icon: <Heart className="h-4 w-4 text-destructive" />,
+    metrics: [
+      { key: "uninsured_pct", label: "Uninsured", format: "percent" },
+      { key: "veteran_pct", label: "Veterans", format: "percent" },
+    ],
+  },
+];
+
+function fmt(v: number | null | undefined, format: "number" | "percent" | "dollar") {
+  if (v == null) return "—";
+  if (format === "percent") return `${v}%`;
+  if (format === "dollar") return `$${v.toLocaleString()}`;
+  return v.toLocaleString();
 }
 
-function SectionDivider({
-  icon,
-  title,
+function CompareBarChart({
+  metric,
+  selected,
+  colorMap,
 }: {
-  icon: React.ReactNode;
-  title: string;
+  metric: MetricDef;
+  selected: DistrictProfile[];
+  colorMap: Map<string, string>;
 }) {
+  const data = selected.map((d) => ({
+    name: d.district_id,
+    value: (d[metric.key] as number) ?? 0,
+  }));
+
   return (
-    <div className="flex items-center gap-2 pt-4 pb-2">
-      {icon}
-      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-        {title}
-      </span>
+    <div className="h-28">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} layout="vertical" margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
+          <XAxis type="number" hide />
+          <YAxis
+            type="category"
+            dataKey="name"
+            width={60}
+            tick={{ fontSize: 11, fill: "hsl(220, 10%, 45%)" }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip
+            formatter={(value: number) => fmt(value, metric.format)}
+            contentStyle={{
+              background: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: "8px",
+              fontSize: "12px",
+            }}
+          />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={16}>
+            {data.map((entry) => (
+              <Cell key={entry.name} fill={colorMap.get(entry.name) || COLORS[0]} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -124,11 +202,33 @@ export function DistrictCompare({
   initialB,
   onBack,
 }: DistrictCompareProps) {
-  const [idA, setIdA] = useState(initialA ?? "");
-  const [idB, setIdB] = useState(initialB ?? "");
+  const [ids, setIds] = useState<string[]>([
+    initialA ?? "",
+    initialB ?? "",
+  ]);
 
-  const a = districts.find((d) => d.district_id === idA);
-  const b = districts.find((d) => d.district_id === idB);
+  const selected = useMemo(
+    () => ids.map((id) => districts.find((d) => d.district_id === id)).filter(Boolean) as DistrictProfile[],
+    [ids, districts]
+  );
+
+  const colorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    selected.forEach((d, i) => map.set(d.district_id, COLORS[i % COLORS.length]));
+    return map;
+  }, [selected]);
+
+  const updateId = (index: number, value: string) => {
+    setIds((prev) => prev.map((v, i) => (i === index ? value : v)));
+  };
+
+  const addSlot = () => {
+    if (ids.length < 6) setIds((prev) => [...prev, ""]);
+  };
+
+  const removeSlot = (index: number) => {
+    if (ids.length > 2) setIds((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <div className="animate-fade-in">
@@ -145,198 +245,123 @@ export function DistrictCompare({
       </h1>
 
       {/* Pickers */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <DistrictPicker
-          districts={districts}
-          selected={idA}
-          onSelect={setIdA}
-          label="District A"
-        />
-        <DistrictPicker
-          districts={districts}
-          selected={idB}
-          onSelect={setIdB}
-          label="District B"
-        />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+        {ids.map((id, i) => (
+          <DistrictPicker
+            key={i}
+            districts={districts}
+            selected={id}
+            onSelect={(v) => updateId(i, v)}
+            label={`District ${String.fromCharCode(65 + i)}`}
+            onRemove={() => removeSlot(i)}
+            canRemove={ids.length > 2}
+          />
+        ))}
       </div>
+      {ids.length < 6 && (
+        <button
+          onClick={addSlot}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors mb-6"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add District
+        </button>
+      )}
 
-      {a && b ? (
-        <div className="bg-card rounded-xl border border-border p-5">
-          {/* Header row */}
-          <div className="grid grid-cols-[1fr_1fr_1fr] items-center gap-2 pb-3 border-b border-border mb-1">
-            <h2 className="font-display text-base font-bold text-foreground text-right">
-              {a.district_id}
-            </h2>
-            <span className="text-xs text-muted-foreground text-center font-medium">
-              Metric
-            </span>
-            <h2 className="font-display text-base font-bold text-foreground">
-              {b.district_id}
-            </h2>
-          </div>
+      {selected.length >= 2 ? (
+        <div className="space-y-6">
+          {SECTIONS.map((section) => (
+            <div key={section.title} className="bg-card rounded-xl border border-border p-5">
+              <div className="flex items-center gap-2 mb-4">
+                {section.icon}
+                <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  {section.title}
+                </h2>
+              </div>
 
-          {/* Key Demographics */}
-          <SectionDivider
-            icon={<Users className="h-4 w-4 text-primary" />}
-            title="Demographics"
-          />
-          <CompareRow label="Population" a={a.population} b={b.population} />
-          <CompareRow label="Median Age" a={a.median_age} b={b.median_age} />
-          <CompareRow
-            label="Bachelor's Degree+"
-            a={a.education_bachelor_pct}
-            b={b.education_bachelor_pct}
-            format="percent"
-          />
+              {/* Table */}
+              <div className="overflow-x-auto mb-4">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left text-xs font-medium text-muted-foreground py-2 pr-4">Metric</th>
+                      {selected.map((d) => (
+                        <th key={d.district_id} className="text-right text-xs font-medium py-2 px-2" style={{ color: colorMap.get(d.district_id) }}>
+                          {d.district_id}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {section.metrics.map((m) => {
+                      const values = selected.map((d) => (d[m.key] as number) ?? null);
+                      const validValues = values.filter((v): v is number => v != null);
+                      const maxVal = validValues.length ? Math.max(...validValues) : null;
+                      return (
+                        <tr key={m.key} className="border-b border-border/50 last:border-0">
+                          <td className="text-xs text-muted-foreground py-2 pr-4">{m.label}</td>
+                          {selected.map((d, i) => {
+                            const val = values[i];
+                            const isMax = val != null && maxVal != null && val === maxVal && validValues.length > 1;
+                            return (
+                              <td
+                                key={d.district_id}
+                                className={`text-right font-semibold tabular-nums py-2 px-2 ${isMax ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}
+                              >
+                                {fmt(val, m.format)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-          {/* Economic */}
-          <SectionDivider
-            icon={<DollarSign className="h-4 w-4 text-accent" />}
-            title="Economic"
-          />
-          <CompareRow
-            label="Median Income"
-            a={a.median_income}
-            b={b.median_income}
-            format="dollar"
-          />
-          <CompareRow
-            label="Poverty Rate"
-            a={a.poverty_rate}
-            b={b.poverty_rate}
-            format="percent"
-          />
-          <CompareRow
-            label="Unemployment"
-            a={a.unemployment_rate}
-            b={b.unemployment_rate}
-            format="percent"
-          />
-          <CompareRow
-            label="Total Households"
-            a={a.total_households}
-            b={b.total_households}
-          />
-          <CompareRow
-            label="Avg Household Size"
-            a={a.avg_household_size}
-            b={b.avg_household_size}
-          />
-
-          {/* Racial & Ethnic */}
-          <SectionDivider
-            icon={<Users className="h-4 w-4 text-primary" />}
-            title="Race & Ethnicity"
-          />
-          <CompareRow label="White" a={a.white_pct} b={b.white_pct} format="percent" />
-          <CompareRow
-            label="Black"
-            a={a.black_pct}
-            b={b.black_pct}
-            format="percent"
-          />
-          <CompareRow
-            label="Hispanic"
-            a={a.hispanic_pct}
-            b={b.hispanic_pct}
-            format="percent"
-          />
-          <CompareRow label="Asian" a={a.asian_pct} b={b.asian_pct} format="percent" />
-          <CompareRow
-            label="Foreign-Born"
-            a={a.foreign_born_pct}
-            b={b.foreign_born_pct}
-            format="percent"
-          />
-
-          {/* Housing */}
-          <SectionDivider
-            icon={<Home className="h-4 w-4 text-[hsl(var(--tag-house))]" />}
-            title="Housing"
-          />
-          <CompareRow
-            label="Owner-Occupied"
-            a={a.owner_occupied_pct}
-            b={b.owner_occupied_pct}
-            format="percent"
-          />
-          <CompareRow
-            label="Median Home Value"
-            a={a.median_home_value}
-            b={b.median_home_value}
-            format="dollar"
-          />
-          <CompareRow
-            label="Median Rent"
-            a={a.median_rent}
-            b={b.median_rent}
-            format="dollar"
-          />
-
-          {/* Health & Veterans */}
-          <SectionDivider
-            icon={<Heart className="h-4 w-4 text-destructive" />}
-            title="Health & Veterans"
-          />
-          <CompareRow
-            label="Uninsured"
-            a={a.uninsured_pct}
-            b={b.uninsured_pct}
-            format="percent"
-          />
-          <CompareRow
-            label="Veterans"
-            a={a.veteran_pct}
-            b={b.veteran_pct}
-            format="percent"
-          />
+              {/* Bar Charts */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {section.metrics.map((m) => (
+                  <div key={m.key}>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">{m.label}</p>
+                    <CompareBarChart metric={m} selected={selected} colorMap={colorMap} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
 
           {/* Top Issues */}
-          <SectionDivider
-            icon={<TrendingDown className="h-4 w-4 text-accent" />}
-            title="Top Issues"
-          />
-          <div className="grid grid-cols-[1fr_1fr] gap-4 pt-2">
-            <div className="space-y-1.5">
-              {a.top_issues.length > 0
-                ? a.top_issues.map((issue, i) => (
-                    <div
-                      key={issue}
-                      className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5"
-                    >
-                      <span className="text-xs font-bold text-accent">
-                        {i + 1}.
-                      </span>
-                      <span className="text-xs text-foreground capitalize">
-                        {issue}
-                      </span>
-                    </div>
-                  ))
-                : <span className="text-xs text-muted-foreground">No issues listed</span>}
+          <div className="bg-card rounded-xl border border-border p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingDown className="h-4 w-4 text-accent" />
+              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Top Issues</h2>
             </div>
-            <div className="space-y-1.5">
-              {b.top_issues.length > 0
-                ? b.top_issues.map((issue, i) => (
-                    <div
-                      key={issue}
-                      className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5"
-                    >
-                      <span className="text-xs font-bold text-accent">
-                        {i + 1}.
-                      </span>
-                      <span className="text-xs text-foreground capitalize">
-                        {issue}
-                      </span>
-                    </div>
-                  ))
-                : <span className="text-xs text-muted-foreground">No issues listed</span>}
+            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(selected.length, 3)}, 1fr)` }}>
+              {selected.map((d) => (
+                <div key={d.district_id}>
+                  <p className="text-xs font-bold mb-2" style={{ color: colorMap.get(d.district_id) }}>
+                    {d.district_id}
+                  </p>
+                  <div className="space-y-1.5">
+                    {d.top_issues.length > 0
+                      ? d.top_issues.map((issue, i) => (
+                          <div key={issue} className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5">
+                            <span className="text-xs font-bold text-accent">{i + 1}.</span>
+                            <span className="text-xs text-foreground capitalize">{issue}</span>
+                          </div>
+                        ))
+                      : <span className="text-xs text-muted-foreground">No issues listed</span>}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       ) : (
         <div className="text-center py-16 bg-card rounded-xl border border-border">
           <p className="text-muted-foreground">
-            Select two districts above to compare their demographics side by side.
+            Select at least two districts above to compare their demographics.
           </p>
         </div>
       )}
