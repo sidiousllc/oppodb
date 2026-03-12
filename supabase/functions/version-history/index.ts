@@ -35,7 +35,7 @@ serve(async (req) => {
     const ghHeaders: Record<string, string> = {
       Accept: "application/vnd.github.v3+json",
       "User-Agent": "lovable-version-sync",
-      Authorization: `token ${githubToken}`,
+      Authorization: `Bearer ${githubToken}`,
     };
 
     // Parse request body for optional filters
