@@ -33,6 +33,19 @@ const sections: Array<{id: Section; label: string; icon: React.ElementType}> = [
   { id: "district-intel", label: "District Intel", icon: Compass },
 ];
 
+function SignOutButton() {
+  const { signOut } = useAuth();
+  return (
+    <button
+      onClick={signOut}
+      className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-1.5 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+    >
+      <LogOut className="h-3.5 w-3.5" />
+      Sign Out
+    </button>
+  );
+}
+
 export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection, onSectionChange, sectionCounts, onSyncComplete }: AppSidebarProps) {
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
