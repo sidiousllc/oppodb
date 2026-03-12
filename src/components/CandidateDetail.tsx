@@ -215,6 +215,7 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug }: Candidate
             content={candidate.content}
             subpages={subpages}
             onNavigateSubpage={setActiveSubpage}
+            onNavigateSlug={onNavigateSlug}
           />
         </div>
       </div>
