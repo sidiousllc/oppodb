@@ -223,6 +223,11 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug }: Candidate
         </div>
       ) : null}
 
+      {/* Version History */}
+      {githubPath && (
+        <VersionHistory githubPath={githubPath} currentContent={candidate.content} />
+      )}
+
       <div className="bg-card rounded-xl border border-border p-6">
         <div className="prose-research">
           <MarkdownContent
