@@ -11,6 +11,7 @@ interface CandidateDetailProps {
   candidate: Candidate;
   onBack: () => void;
   onNavigateSlug?: (slug: string) => boolean;
+  onEdit?: (slug: string) => void;
 }
 
 const categoryLabels: Record<string, string> = {
