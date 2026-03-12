@@ -1,4 +1,6 @@
 import { type DistrictProfile } from "@/data/districtIntel";
+import { getCandidatesForDistrict } from "@/data/candidateDistricts";
+import { getCandidateBySlug } from "@/data/candidates";
 import {
   ArrowLeft,
   MapPin,
@@ -7,11 +9,13 @@ import {
   GraduationCap,
   Calendar,
   AlertCircle,
+  UserCheck,
 } from "lucide-react";
 
 interface DistrictDetailProps {
   district: DistrictProfile;
   onBack: () => void;
+  onSelectCandidate?: (slug: string) => void;
 }
 
 function StatCard({
@@ -38,7 +42,12 @@ function StatCard({
   );
 }
 
-export function DistrictDetail({ district, onBack }: DistrictDetailProps) {
+export function DistrictDetail({ district, onBack, onSelectCandidate }: DistrictDetailProps) {
+  const candidateSlugs = getCandidatesForDistrict(district.district_id);
+  const linkedCandidates = candidateSlugs
+    .map((slug) => getCandidateBySlug(slug))
+    .filter(Boolean);
+
   return (
     <div className="animate-fade-in">
       <button
@@ -103,6 +112,46 @@ export function DistrictDetail({ district, onBack }: DistrictDetailProps) {
         )}
       </div>
 
+      {/* Linked Candidates */}
+      {linkedCandidates.length > 0 && (
+        <div className="bg-card rounded-xl border border-border p-6 mb-6">
+          <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <UserCheck className="h-5 w-5 text-primary" />
+            Tracked Representatives
+          </h2>
+          <div className="space-y-2">
+            {linkedCandidates.map((candidate) => {
+              if (!candidate) return null;
+              const categoryColors: Record<string, string> = {
+                house: "tag-house",
+                senate: "tag-senate",
+                governor: "tag-governor",
+                state: "tag-state",
+              };
+              return (
+                <button
+                  key={candidate.slug}
+                  onClick={() => onSelectCandidate?.(candidate.slug)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <UserCheck className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {candidate.name}
+                    </p>
+                  </div>
+                  <span className={`tag ${categoryColors[candidate.category] || ""}`}>
+                    {candidate.category}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Top Issues */}
       {district.top_issues.length > 0 && (
         <div className="bg-card rounded-xl border border-border p-6 mb-6">
@@ -134,9 +183,16 @@ export function DistrictDetail({ district, onBack }: DistrictDetailProps) {
           Data Sources
         </h2>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          District intelligence data is aggregated from U.S. Census demographics,
-          voting history, local legislation tracking, and public sentiment
-          analysis. Modeled after the{" "}
+          District demographics sourced from the{" "}
+          <a
+            href="https://www.census.gov/programs-surveys/acs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            U.S. Census ACS 5-Year Estimates
+          </a>
+          . Modeled after the{" "}
           <a
             href="https://github.com/tyler-pritchard/constituency-intel"
             target="_blank"
