@@ -32,6 +32,11 @@ export default function Index() {
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
   const [censusSyncing, setCensusSyncing] = useState(false);
   const [trackedOnly, setTrackedOnly] = useState(false);
+  const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
+  const [editData, setEditData] = useState<{
+    id: string; name: string; slug: string; content: string;
+    github_path: string; is_subpage: boolean; parent_slug: string | null; subpage_title: string | null;
+  } | undefined>(undefined);
 
   const trackedDistrictIds = useMemo(() => new Set(
     Object.values(candidateDistrictMap)
