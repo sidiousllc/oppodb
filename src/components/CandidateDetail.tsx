@@ -3,11 +3,12 @@ import { type Candidate } from "@/data/candidates";
 import { fetchSubpages, type GitHubCandidate } from "@/data/githubSync";
 import { ArrowLeft, User, FileText, ChevronRight, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-
+import { extractInternalSlug } from "@/lib/researchLinkResolver";
 
 interface CandidateDetailProps {
   candidate: Candidate;
   onBack: () => void;
+  onNavigateSlug?: (slug: string) => boolean;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -17,70 +18,60 @@ const categoryLabels: Record<string, string> = {
   state: "State",
 };
 
-/**
- * Resolves internal wiki-style links.
- * Patterns:
- *   /candidate-slug/subpage-slug
- *   /candidate-slug/subpage-slug/sub-sub
- *   /en/STATE/Candidate/slug
- * If the path matches a loaded subpage, navigate in-app. Otherwise link to GitHub.
- */
-function resolveHref(href: string | undefined): { isInternal: boolean; matchSlug?: string } {
-  if (!href) return { isInternal: false };
-  if (href.startsWith("http://") || href.startsWith("https://") || href.startsWith("#")) {
-    return { isInternal: false };
-  }
-
-  // Internal wiki path — extract the last segment as slug
-  const path = href.replace(/^\/en\//, "/").replace(/^\//, "");
-  const segments = path.split("/").filter(Boolean);
-  if (segments.length === 0) return { isInternal: false };
-
-  return { isInternal: true, matchSlug: segments[segments.length - 1] };
-}
-
 function MarkdownContent({
   content,
   subpages,
   onNavigateSubpage,
+  onNavigateSlug,
 }: {
   content: string;
   subpages: GitHubCandidate[];
   onNavigateSubpage: (sp: GitHubCandidate) => void;
+  onNavigateSlug?: (slug: string) => boolean;
 }) {
   const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>, matchSlug?: string) => {
-      e.preventDefault();
+    (e: React.MouseEvent<HTMLAnchorElement>, href: string | undefined, matchSlug: string | null) => {
       if (!matchSlug) return;
+      e.preventDefault();
+
       const match = subpages.find(
         (sp) =>
           sp.slug === matchSlug ||
           sp.slug.endsWith(matchSlug) ||
           sp.github_path.replace(".md", "").endsWith(matchSlug)
       );
+
       if (match) {
         onNavigateSubpage(match);
+        return;
+      }
+
+      const handled = onNavigateSlug?.(matchSlug) ?? false;
+      if (!handled && href && (href.startsWith("http://") || href.startsWith("https://"))) {
+        window.open(href, "_blank", "noopener,noreferrer");
       }
     },
-    [subpages, onNavigateSubpage]
+    [subpages, onNavigateSubpage, onNavigateSlug]
   );
 
   return (
     <ReactMarkdown
       components={{
         a: ({ href, children }) => {
-          const { isInternal, matchSlug } = resolveHref(href);
-          if (isInternal) {
+          const matchSlug = extractInternalSlug(href);
+
+          if (matchSlug) {
             return (
               <a
-                href="#"
-                onClick={(e) => handleClick(e, matchSlug)}
+                href={href ?? "#"}
+                onClick={(e) => handleClick(e, href, matchSlug)}
                 className="text-primary hover:underline cursor-pointer"
               >
                 {children}
               </a>
             );
           }
+
           return (
             <a href={href} target="_blank" rel="noopener noreferrer">
               {children}
@@ -94,7 +85,7 @@ function MarkdownContent({
   );
 }
 
-export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
+export function CandidateDetail({ candidate, onBack, onNavigateSlug }: CandidateDetailProps) {
   const [subpages, setSubpages] = useState<GitHubCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubpage, setActiveSubpage] = useState<GitHubCandidate | null>(null);
@@ -141,6 +132,7 @@ export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
               content={activeSubpage.content}
               subpages={subpages}
               onNavigateSubpage={setActiveSubpage}
+              onNavigateSlug={onNavigateSlug}
             />
           </div>
         </div>
@@ -223,6 +215,7 @@ export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
             content={candidate.content}
             subpages={subpages}
             onNavigateSubpage={setActiveSubpage}
+            onNavigateSlug={onNavigateSlug}
           />
         </div>
       </div>

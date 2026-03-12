@@ -1,5 +1,7 @@
+import { useCallback } from "react";
 import { ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { extractInternalSlug } from "@/lib/researchLinkResolver";
 
 interface GenericDetailProps {
   icon: React.ReactNode;
@@ -9,9 +11,31 @@ interface GenericDetailProps {
   content: string;
   onBack: () => void;
   backLabel?: string;
+  onNavigateSlug?: (slug: string) => boolean;
 }
 
-export function GenericDetail({ icon, title, subtitle, tag, content, onBack, backLabel = "Back" }: GenericDetailProps) {
+export function GenericDetail({
+  icon,
+  title,
+  subtitle,
+  tag,
+  content,
+  onBack,
+  backLabel = "Back",
+  onNavigateSlug,
+}: GenericDetailProps) {
+  const handleLinkClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, href: string | undefined, slug: string | null) => {
+      if (!slug) return;
+      e.preventDefault();
+      const handled = onNavigateSlug?.(slug) ?? false;
+      if (!handled && href && (href.startsWith("http://") || href.startsWith("https://"))) {
+        window.open(href, "_blank", "noopener,noreferrer");
+      }
+    },
+    [onNavigateSlug]
+  );
+
   return (
     <div className="animate-fade-in">
       <button
@@ -41,11 +65,27 @@ export function GenericDetail({ icon, title, subtitle, tag, content, onBack, bac
         <div className="prose-research">
           <ReactMarkdown
             components={{
-              a: ({ href, children }) => (
-                <a href={href} target="_blank" rel="noopener noreferrer">
-                  {children}
-                </a>
-              ),
+              a: ({ href, children }) => {
+                const slug = extractInternalSlug(href);
+
+                if (slug) {
+                  return (
+                    <a
+                      href={href ?? "#"}
+                      onClick={(e) => handleLinkClick(e, href, slug)}
+                      className="text-primary hover:underline cursor-pointer"
+                    >
+                      {children}
+                    </a>
+                  );
+                }
+
+                return (
+                  <a href={href} target="_blank" rel="noopener noreferrer">
+                    {children}
+                  </a>
+                );
+              },
             }}
           >
             {content}
