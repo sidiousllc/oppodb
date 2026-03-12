@@ -18,7 +18,9 @@ import { DistrictMap } from "@/components/DistrictMap";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
-import { BookOpen, AlertTriangle, Globe, FileText } from "lucide-react";
+import { CandidateEditor } from "@/components/CandidateEditor";
+import { supabase } from "@/integrations/supabase/client";
+import { BookOpen, AlertTriangle, Globe, FileText, Plus } from "lucide-react";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
