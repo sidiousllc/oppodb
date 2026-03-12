@@ -22,44 +22,56 @@ function MarkdownContent({
   content,
   subpages,
   onNavigateSubpage,
+  onNavigateSlug,
 }: {
   content: string;
   subpages: GitHubCandidate[];
   onNavigateSubpage: (sp: GitHubCandidate) => void;
+  onNavigateSlug?: (slug: string) => boolean;
 }) {
   const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>, matchSlug?: string) => {
-      e.preventDefault();
+    (e: React.MouseEvent<HTMLAnchorElement>, href: string | undefined, matchSlug: string | null) => {
       if (!matchSlug) return;
+      e.preventDefault();
+
       const match = subpages.find(
         (sp) =>
           sp.slug === matchSlug ||
           sp.slug.endsWith(matchSlug) ||
           sp.github_path.replace(".md", "").endsWith(matchSlug)
       );
+
       if (match) {
         onNavigateSubpage(match);
+        return;
+      }
+
+      const handled = onNavigateSlug?.(matchSlug) ?? false;
+      if (!handled && href && (href.startsWith("http://") || href.startsWith("https://"))) {
+        window.open(href, "_blank", "noopener,noreferrer");
       }
     },
-    [subpages, onNavigateSubpage]
+    [subpages, onNavigateSubpage, onNavigateSlug]
   );
 
   return (
     <ReactMarkdown
       components={{
         a: ({ href, children }) => {
-          const { isInternal, matchSlug } = resolveHref(href);
-          if (isInternal) {
+          const matchSlug = extractInternalSlug(href);
+
+          if (matchSlug) {
             return (
               <a
-                href="#"
-                onClick={(e) => handleClick(e, matchSlug)}
+                href={href ?? "#"}
+                onClick={(e) => handleClick(e, href, matchSlug)}
                 className="text-primary hover:underline cursor-pointer"
               >
                 {children}
               </a>
             );
           }
+
           return (
             <a href={href} target="_blank" rel="noopener noreferrer">
               {children}
