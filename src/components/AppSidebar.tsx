@@ -142,6 +142,7 @@ export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection
           <center>// FOR INTERNAL USE ONLY //
 // FOR CLIENT USE ONLY //</center>
         </p>
+        <SignOutButton />
       </div>
     </aside>
   );
