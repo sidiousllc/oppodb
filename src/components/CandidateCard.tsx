@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { type Candidate } from "@/data/candidates";
-import { User, ChevronRight } from "lucide-react";
+import { User, ChevronRight, MapPin } from "lucide-react";
+import { getDistrictForCandidate } from "@/data/candidateDistricts";
 
 interface CandidateCardProps {
   candidate: Candidate;
@@ -17,6 +18,7 @@ const categoryLabels: Record<string, string> = {
 export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
   ({ candidate, onClick }, ref) => {
     const firstLine = candidate.content.split("\n").find(l => l.trim().length > 20)?.trim().slice(0, 140) || "";
+    const districtId = getDistrictForCandidate(candidate.slug);
 
     return (
       <div ref={ref} className="candidate-card animate-fade-in" onClick={() => onClick(candidate.slug)}>
@@ -29,11 +31,17 @@ export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
               <h3 className="font-display text-base font-semibold text-foreground truncate">
                 {candidate.name}
               </h3>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className={`tag tag-${candidate.category}`}>
                   {categoryLabels[candidate.category]}
                 </span>
-                {candidate.state && (
+                {districtId && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--tag-governor)/0.1)] px-2 py-0.5 text-xs font-medium text-[hsl(var(--tag-governor))]">
+                    <MapPin className="h-3 w-3" />
+                    {districtId}
+                  </span>
+                )}
+                {!districtId && candidate.state && (
                   <span className="text-xs text-muted-foreground">{candidate.state}</span>
                 )}
               </div>
