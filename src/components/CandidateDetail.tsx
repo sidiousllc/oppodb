@@ -174,14 +174,6 @@ export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
               {candidate.state && (
                 <span className="text-sm text-muted-foreground">{candidate.state}</span>
               )}
-              <a
-                href={`https://github.com/${GITHUB_REPO}/tree/${GITHUB_BRANCH}/${candidate.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-primary hover:underline"
-              >
-                Source <ExternalLink className="h-3 w-3" />
-              </a>
             </div>
           </div>
         </div>
