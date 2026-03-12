@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Edit3 } from "lucide-react";
 import { type Candidate } from "@/data/candidates";
 import { fetchSubpages, type GitHubCandidate } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
