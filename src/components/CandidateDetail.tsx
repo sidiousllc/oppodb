@@ -89,7 +89,7 @@ function MarkdownContent({
   );
 }
 
-export function CandidateDetail({ candidate, onBack, onNavigateSlug }: CandidateDetailProps) {
+export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: CandidateDetailProps) {
   const [subpages, setSubpages] = useState<GitHubCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubpage, setActiveSubpage] = useState<GitHubCandidate | null>(null);
