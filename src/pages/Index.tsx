@@ -278,8 +278,21 @@ export default function Index() {
     if (section === "district-intel") {
       return (
         <>
-          <div className="mt-4 mb-2 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{filteredDistricts.length} district profiles</p>
+          <div className="mt-4 mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground">{filteredDistricts.length} district profiles</p>
+              <button
+                onClick={() => setTrackedOnly(v => !v)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  trackedOnly
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                <span className={`h-2 w-2 rounded-full ${trackedOnly ? "bg-primary-foreground" : "bg-muted-foreground/50"}`} />
+                Tracked candidates only
+              </button>
+            </div>
             <button
               onClick={handleCensusSync}
               disabled={censusSyncing}
