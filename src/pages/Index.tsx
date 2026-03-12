@@ -281,6 +281,20 @@ export default function Index() {
               )}
             </button>
           </div>
+
+          {/* Map visualization */}
+          {districts.length > 0 && (
+            <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
+              <h3 className="font-display text-sm font-semibold text-foreground mb-3">
+                District Map — Top Issues by State
+              </h3>
+              <DistrictMap
+                districts={districts}
+                onSelectDistrict={setSelectedSlug}
+              />
+            </div>
+          )}
+
           <div className="grid gap-3 sm:grid-cols-2">
             {filteredDistricts.map(d => (
               <DistrictCard key={d.district_id} district={d} onClick={setSelectedSlug} />
