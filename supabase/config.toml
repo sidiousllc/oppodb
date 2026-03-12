@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.sync-github]
 verify_jwt = false
+
+[functions.census-sync]
+verify_jwt = false
+
+[functions.district-intel]
+verify_jwt = false
