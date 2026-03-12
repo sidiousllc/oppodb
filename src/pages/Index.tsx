@@ -18,7 +18,9 @@ import { DistrictMap } from "@/components/DistrictMap";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
-import { BookOpen, AlertTriangle, Globe, FileText } from "lucide-react";
+import { CandidateEditor } from "@/components/CandidateEditor";
+import { supabase } from "@/integrations/supabase/client";
+import { BookOpen, AlertTriangle, Globe, FileText, Plus } from "lucide-react";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
@@ -30,6 +32,11 @@ export default function Index() {
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
   const [censusSyncing, setCensusSyncing] = useState(false);
   const [trackedOnly, setTrackedOnly] = useState(false);
+  const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
+  const [editData, setEditData] = useState<{
+    id: string; name: string; slug: string; content: string;
+    github_path: string; is_subpage: boolean; parent_slug: string | null; subpage_title: string | null;
+  } | undefined>(undefined);
 
   const trackedDistrictIds = useMemo(() => new Set(
     Object.values(candidateDistrictMap)
@@ -67,6 +74,45 @@ export default function Index() {
       setCensusSyncing(false);
     }
   }, []);
+
+  const refreshCandidates = useCallback(() => {
+    fetchCandidatesFromDB().then((dbCandidates) => {
+      if (dbCandidates.length > 0) {
+        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+        setDataVersion((v) => v + 1);
+      }
+    });
+  }, []);
+
+  const handleEditCandidate = useCallback(async (slug: string) => {
+    const { data } = await supabase
+      .from("candidate_profiles")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_subpage", false)
+      .single();
+
+    if (data) {
+      setEditData({
+        id: data.id,
+        name: data.name,
+        slug: data.slug,
+        content: data.content,
+        github_path: data.github_path,
+        is_subpage: data.is_subpage,
+        parent_slug: data.parent_slug,
+        subpage_title: data.subpage_title,
+      });
+      setEditorMode("edit");
+    }
+  }, []);
+
+  const handleEditorSaved = useCallback(() => {
+    setEditorMode(null);
+    setEditData(undefined);
+    setSelectedSlug(null);
+    refreshCandidates();
+  }, [refreshCandidates]);
 
   const handleSectionChange = useCallback((newSection: Section) => {
     setSection(newSection);
@@ -161,7 +207,7 @@ export default function Index() {
 
   function renderDetail() {
     if (section === "candidates" && selectedCandidate) {
-      return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} onNavigateSlug={navigateBySlug} />;
+      return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} onNavigateSlug={navigateBySlug} onEdit={handleEditCandidate} />;
     }
     if (section === "maga-files" && selectedMaga) {
       return (
@@ -222,10 +268,17 @@ export default function Index() {
     if (section === "candidates") {
       return (
         <>
-          <div className="mt-4 mb-2 flex items-center justify-between">
+           <div className="mt-4 mb-2 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               {filteredCandidates.length} {filteredCandidates.length === 1 ? "profile" : "profiles"}
             </p>
+            <button
+              onClick={() => { setEditorMode("create"); setEditData(undefined); }}
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Profile
+            </button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {filteredCandidates.map(c => (
@@ -422,7 +475,14 @@ export default function Index() {
               <h1 className="font-display text-lg font-semibold">Opposition Research Database</h1>
             </div>
 
-            {detail ? (
+            {editorMode ? (
+              <CandidateEditor
+                mode={editorMode}
+                initialData={editData}
+                onBack={() => { setEditorMode(null); setEditData(undefined); }}
+                onSaved={handleEditorSaved}
+              />
+            ) : detail ? (
               detail
             ) : (
               <>
