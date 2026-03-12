@@ -88,46 +88,88 @@ export type Database = {
       }
       district_profiles: {
         Row: {
+          asian_pct: number | null
+          avg_household_size: number | null
+          black_pct: number | null
           created_at: string
           district_id: string
           education_bachelor_pct: number | null
+          foreign_born_pct: number | null
+          hispanic_pct: number | null
           id: string
           median_age: number | null
+          median_home_value: number | null
           median_income: number | null
+          median_rent: number | null
+          owner_occupied_pct: number | null
           population: number | null
+          poverty_rate: number | null
           raw_data: Json | null
           state: string
           top_issues: string[]
+          total_households: number | null
+          unemployment_rate: number | null
+          uninsured_pct: number | null
           updated_at: string
+          veteran_pct: number | null
           voting_patterns: Json | null
+          white_pct: number | null
         }
         Insert: {
+          asian_pct?: number | null
+          avg_household_size?: number | null
+          black_pct?: number | null
           created_at?: string
           district_id: string
           education_bachelor_pct?: number | null
+          foreign_born_pct?: number | null
+          hispanic_pct?: number | null
           id?: string
           median_age?: number | null
+          median_home_value?: number | null
           median_income?: number | null
+          median_rent?: number | null
+          owner_occupied_pct?: number | null
           population?: number | null
+          poverty_rate?: number | null
           raw_data?: Json | null
           state?: string
           top_issues?: string[]
+          total_households?: number | null
+          unemployment_rate?: number | null
+          uninsured_pct?: number | null
           updated_at?: string
+          veteran_pct?: number | null
           voting_patterns?: Json | null
+          white_pct?: number | null
         }
         Update: {
+          asian_pct?: number | null
+          avg_household_size?: number | null
+          black_pct?: number | null
           created_at?: string
           district_id?: string
           education_bachelor_pct?: number | null
+          foreign_born_pct?: number | null
+          hispanic_pct?: number | null
           id?: string
           median_age?: number | null
+          median_home_value?: number | null
           median_income?: number | null
+          median_rent?: number | null
+          owner_occupied_pct?: number | null
           population?: number | null
+          poverty_rate?: number | null
           raw_data?: Json | null
           state?: string
           top_issues?: string[]
+          total_households?: number | null
+          unemployment_rate?: number | null
+          uninsured_pct?: number | null
           updated_at?: string
+          veteran_pct?: number | null
           voting_patterns?: Json | null
+          white_pct?: number | null
         }
         Relationships: []
       }

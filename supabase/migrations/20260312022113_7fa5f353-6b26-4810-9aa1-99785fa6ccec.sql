@@ -1,0 +1,15 @@
+ALTER TABLE public.district_profiles
+  ADD COLUMN IF NOT EXISTS poverty_rate numeric,
+  ADD COLUMN IF NOT EXISTS unemployment_rate numeric,
+  ADD COLUMN IF NOT EXISTS white_pct numeric,
+  ADD COLUMN IF NOT EXISTS black_pct numeric,
+  ADD COLUMN IF NOT EXISTS hispanic_pct numeric,
+  ADD COLUMN IF NOT EXISTS asian_pct numeric,
+  ADD COLUMN IF NOT EXISTS owner_occupied_pct numeric,
+  ADD COLUMN IF NOT EXISTS median_home_value integer,
+  ADD COLUMN IF NOT EXISTS median_rent integer,
+  ADD COLUMN IF NOT EXISTS veteran_pct numeric,
+  ADD COLUMN IF NOT EXISTS foreign_born_pct numeric,
+  ADD COLUMN IF NOT EXISTS uninsured_pct numeric,
+  ADD COLUMN IF NOT EXISTS total_households integer,
+  ADD COLUMN IF NOT EXISTS avg_household_size numeric;

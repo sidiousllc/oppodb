@@ -9,15 +9,54 @@ const corsHeaders = {
 // Census ACS 5-Year API (2022 data, latest available)
 const CENSUS_BASE = "https://api.census.gov/data/2022/acs/acs5";
 
-// Variables we need
+// Expanded variable set
 // B01003_001E = Total population
 // B19013_001E = Median household income
 // B01002_001E = Median age
 // B15003_022E = Bachelor's degree (count)
-// B15003_001E = Total education universe (for percentage calc)
-const CENSUS_VARS = "B01003_001E,B19013_001E,B01002_001E,B15003_022E,B15003_001E";
+// B15003_001E = Total education universe
+// B17001_002E = Population below poverty level
+// B17001_001E = Total poverty universe
+// B23025_005E = Unemployed
+// B23025_003E = In labor force (civilian)
+// B02001_002E = White alone
+// B02001_003E = Black alone
+// B02001_005E = Asian alone
+// B02001_001E = Total race universe
+// B03003_003E = Hispanic/Latino
+// B03003_001E = Total Hispanic universe
+// B25003_002E = Owner-occupied housing
+// B25003_001E = Total occupied housing
+// B25077_001E = Median home value
+// B25064_001E = Median gross rent
+// B21001_002E = Veteran population
+// B21001_001E = Total veteran universe (18+)
+// B05002_013E = Foreign-born population
+// B05002_001E = Total nativity universe
+// B27001_005E + more = Uninsured (simplified via B27010)
+// B27010_017E = Uninsured under 19
+// B27010_033E = Uninsured 19-34
+// B27010_050E = Uninsured 35-64
+// B27010_066E = Uninsured 65+
+// B27010_001E = Total health insurance universe
+// B11001_001E = Total households
+// B25010_001E = Average household size
 
-// Map of state FIPS codes to state abbreviations
+const CENSUS_VARS = [
+  "B01003_001E", "B19013_001E", "B01002_001E",
+  "B15003_022E", "B15003_001E",
+  "B17001_002E", "B17001_001E",
+  "B23025_005E", "B23025_003E",
+  "B02001_002E", "B02001_003E", "B02001_005E", "B02001_001E",
+  "B03003_003E", "B03003_001E",
+  "B25003_002E", "B25003_001E",
+  "B25077_001E", "B25064_001E",
+  "B21001_002E", "B21001_001E",
+  "B05002_013E", "B05002_001E",
+  "B27010_017E", "B27010_033E", "B27010_050E", "B27010_066E", "B27010_001E",
+  "B11001_001E", "B25010_001E",
+].join(",");
+
 const FIPS_TO_STATE: Record<string, string> = {
   "01": "Alabama", "02": "Alaska", "04": "Arizona", "05": "Arkansas",
   "06": "California", "08": "Colorado", "09": "Connecticut", "10": "Delaware",
@@ -50,76 +89,21 @@ const STATE_ABBREV: Record<string, string> = {
   "West Virginia": "WV", "Wisconsin": "WI", "Wyoming": "WY",
 };
 
-interface CensusDistrict {
-  district_id: string;
-  state: string;
-  population: number | null;
-  median_income: number | null;
-  median_age: number | null;
-  education_bachelor_pct: number | null;
-  raw_data: Record<string, unknown>;
+function safeInt(val: string): number | null {
+  const n = parseInt(val);
+  return isNaN(n) || n < 0 ? null : n;
 }
 
-async function fetchCensusData(stateFips?: string): Promise<CensusDistrict[]> {
-  // Fetch for congressional districts
-  // geo: congressional district, in state
-  const geoParam = stateFips
-    ? `&for=congressional%20district:*&in=state:${stateFips}`
-    : `&for=congressional%20district:*&in=state:*`;
+function safeFloat(val: string): number | null {
+  const n = parseFloat(val);
+  return isNaN(n) || n < 0 ? null : n;
+}
 
-  const url = `${CENSUS_BASE}?get=${CENSUS_VARS}${geoParam}`;
-  console.log("Fetching Census data:", url);
-
-  const response = await fetch(url);
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Census API error [${response.status}]: ${text}`);
-  }
-
-  const rawData: string[][] = await response.json();
-  // First row is headers
-  const headers = rawData[0];
-  const rows = rawData.slice(1);
-
-  const results: CensusDistrict[] = [];
-
-  for (const row of rows) {
-    const record: Record<string, string> = {};
-    headers.forEach((h, i) => {
-      record[h] = row[i];
-    });
-
-    const stFips = record["state"];
-    const cdNum = record["congressional district"];
-    const stateName = FIPS_TO_STATE[stFips];
-    if (!stateName) continue;
-
-    const stateAbbrev = STATE_ABBREV[stateName];
-    if (!stateAbbrev) continue;
-
-    // Format district_id as "ST-XX" (e.g., "WA-07")
-    const districtId = `${stateAbbrev}-${cdNum.padStart(2, "0")}`;
-
-    const population = parseInt(record["B01003_001E"]);
-    const medianIncome = parseInt(record["B19013_001E"]);
-    const medianAge = parseFloat(record["B01002_001E"]);
-    const bachelorCount = parseInt(record["B15003_022E"]);
-    const eduTotal = parseInt(record["B15003_001E"]);
-
-    const bachelorPct = eduTotal > 0 ? Math.round((bachelorCount / eduTotal) * 1000) / 10 : null;
-
-    results.push({
-      district_id: districtId,
-      state: stateName,
-      population: isNaN(population) || population < 0 ? null : population,
-      median_income: isNaN(medianIncome) || medianIncome < 0 ? null : medianIncome,
-      median_age: isNaN(medianAge) || medianAge < 0 ? null : medianAge,
-      education_bachelor_pct: bachelorPct,
-      raw_data: record,
-    });
-  }
-
-  return results;
+function safePct(numerator: string, denominator: string): number | null {
+  const num = parseInt(numerator);
+  const den = parseInt(denominator);
+  if (isNaN(num) || isNaN(den) || den <= 0) return null;
+  return Math.round((num / den) * 1000) / 10;
 }
 
 Deno.serve(async (req) => {
@@ -135,31 +119,84 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const stateFips = url.searchParams.get("state_fips") || undefined;
 
-    console.log("Starting Census data sync...");
-    const censusData = await fetchCensusData(stateFips);
-    console.log(`Fetched ${censusData.length} districts from Census API`);
+    const geoParam = stateFips
+      ? `&for=congressional%20district:*&in=state:${stateFips}`
+      : `&for=congressional%20district:*&in=state:*`;
+
+    const censusUrl = `${CENSUS_BASE}?get=${CENSUS_VARS}${geoParam}`;
+    console.log("Fetching Census data:", censusUrl);
+
+    const response = await fetch(censusUrl);
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Census API error [${response.status}]: ${text}`);
+    }
+
+    const rawData: string[][] = await response.json();
+    const headers = rawData[0];
+    const rows = rawData.slice(1);
+    console.log(`Fetched ${rows.length} districts from Census API`);
+
+    const records = [];
+
+    for (const row of rows) {
+      const r: Record<string, string> = {};
+      headers.forEach((h, i) => { r[h] = row[i]; });
+
+      const stFips = r["state"];
+      const cdNum = r["congressional district"];
+      const stateName = FIPS_TO_STATE[stFips];
+      if (!stateName) continue;
+      const stateAbbrev = STATE_ABBREV[stateName];
+      if (!stateAbbrev) continue;
+
+      const districtId = `${stateAbbrev}-${cdNum.padStart(2, "0")}`;
+
+      // Uninsured = sum of uninsured across age groups
+      const uninsuredTotal =
+        (safeInt(r["B27010_017E"]) ?? 0) +
+        (safeInt(r["B27010_033E"]) ?? 0) +
+        (safeInt(r["B27010_050E"]) ?? 0) +
+        (safeInt(r["B27010_066E"]) ?? 0);
+      const healthTotal = safeInt(r["B27010_001E"]);
+      const uninsuredPct = healthTotal && healthTotal > 0
+        ? Math.round((uninsuredTotal / healthTotal) * 1000) / 10
+        : null;
+
+      records.push({
+        district_id: districtId,
+        state: stateName,
+        population: safeInt(r["B01003_001E"]),
+        median_income: safeInt(r["B19013_001E"]),
+        median_age: safeFloat(r["B01002_001E"]),
+        education_bachelor_pct: safePct(r["B15003_022E"], r["B15003_001E"]),
+        poverty_rate: safePct(r["B17001_002E"], r["B17001_001E"]),
+        unemployment_rate: safePct(r["B23025_005E"], r["B23025_003E"]),
+        white_pct: safePct(r["B02001_002E"], r["B02001_001E"]),
+        black_pct: safePct(r["B02001_003E"], r["B02001_001E"]),
+        asian_pct: safePct(r["B02001_005E"], r["B02001_001E"]),
+        hispanic_pct: safePct(r["B03003_003E"], r["B03003_001E"]),
+        owner_occupied_pct: safePct(r["B25003_002E"], r["B25003_001E"]),
+        median_home_value: safeInt(r["B25077_001E"]),
+        median_rent: safeInt(r["B25064_001E"]),
+        veteran_pct: safePct(r["B21001_002E"], r["B21001_001E"]),
+        foreign_born_pct: safePct(r["B05002_013E"], r["B05002_001E"]),
+        uninsured_pct: uninsuredPct,
+        total_households: safeInt(r["B11001_001E"]),
+        avg_household_size: safeFloat(r["B25010_001E"]),
+        raw_data: r,
+        updated_at: new Date().toISOString(),
+      });
+    }
 
     let upserted = 0;
     let errors = 0;
 
-    // Batch upsert in chunks of 50
-    for (let i = 0; i < censusData.length; i += 50) {
-      const chunk = censusData.slice(i, i + 50);
+    for (let i = 0; i < records.length; i += 50) {
+      const chunk = records.slice(i, i + 50);
       const { error } = await supabase
         .from("district_profiles")
-        .upsert(
-          chunk.map((d) => ({
-            district_id: d.district_id,
-            state: d.state,
-            population: d.population,
-            median_income: d.median_income,
-            median_age: d.median_age,
-            education_bachelor_pct: d.education_bachelor_pct,
-            raw_data: d.raw_data,
-            updated_at: new Date().toISOString(),
-          })),
-          { onConflict: "district_id" }
-        );
+        .upsert(chunk, { onConflict: "district_id" });
 
       if (error) {
         console.error("Upsert error:", error);
@@ -172,13 +209,11 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        total_fetched: censusData.length,
+        total_fetched: records.length,
         upserted,
         errors,
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Census sync error:", error);
