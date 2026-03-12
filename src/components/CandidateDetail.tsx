@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { type Candidate } from "@/data/candidates";
 import { fetchSubpages, type GitHubCandidate } from "@/data/githubSync";
-import { ArrowLeft, ExternalLink, User, FileText, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowLeft, User, FileText, ChevronRight, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 
