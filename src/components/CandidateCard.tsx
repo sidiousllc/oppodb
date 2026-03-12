@@ -49,10 +49,6 @@ export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-3" />
         </div>
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-3" />
-        </div>
         {firstLine && (
           <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{firstLine}...</p>
         )}
