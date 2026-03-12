@@ -20,7 +20,8 @@ import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
 import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
-import { BookOpen, AlertTriangle, Globe, FileText, Plus } from "lucide-react";
+import { DistrictCompare } from "@/components/DistrictCompare";
+import { BookOpen, AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
@@ -32,6 +33,7 @@ export default function Index() {
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
   const [censusSyncing, setCensusSyncing] = useState(false);
   const [trackedOnly, setTrackedOnly] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
   const [editData, setEditData] = useState<{
     id: string; name: string; slug: string; content: string;
@@ -249,6 +251,14 @@ export default function Index() {
         />
       );
     }
+    if (section === "district-intel" && compareMode) {
+      return (
+        <DistrictCompare
+          districts={districts}
+          onBack={() => setCompareMode(false)}
+        />
+      );
+    }
     if (section === "district-intel" && selectedDistrict) {
       return (
         <DistrictDetail
@@ -392,20 +402,29 @@ export default function Index() {
                 Tracked candidates only
               </button>
             </div>
-            <button
-              onClick={handleCensusSync}
-              disabled={censusSyncing}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-            >
-              {censusSyncing ? (
-                <>
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                  Syncing Census Data…
-                </>
-              ) : (
-                "Refresh from Census API"
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCompareMode(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+              >
+                <GitCompareArrows className="h-3.5 w-3.5" />
+                Compare
+              </button>
+              <button
+                onClick={handleCensusSync}
+                disabled={censusSyncing}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {censusSyncing ? (
+                  <>
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                    Syncing Census Data…
+                  </>
+                ) : (
+                  "Refresh from Census API"
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Map visualization */}
