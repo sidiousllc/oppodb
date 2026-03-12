@@ -75,6 +75,45 @@ export default function Index() {
     }
   }, []);
 
+  const refreshCandidates = useCallback(() => {
+    fetchCandidatesFromDB().then((dbCandidates) => {
+      if (dbCandidates.length > 0) {
+        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+        setDataVersion((v) => v + 1);
+      }
+    });
+  }, []);
+
+  const handleEditCandidate = useCallback(async (slug: string) => {
+    const { data } = await supabase
+      .from("candidate_profiles")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_subpage", false)
+      .single();
+
+    if (data) {
+      setEditData({
+        id: data.id,
+        name: data.name,
+        slug: data.slug,
+        content: data.content,
+        github_path: data.github_path,
+        is_subpage: data.is_subpage,
+        parent_slug: data.parent_slug,
+        subpage_title: data.subpage_title,
+      });
+      setEditorMode("edit");
+    }
+  }, []);
+
+  const handleEditorSaved = useCallback(() => {
+    setEditorMode(null);
+    setEditData(undefined);
+    setSelectedSlug(null);
+    refreshCandidates();
+  }, [refreshCandidates]);
+
   const handleSectionChange = useCallback((newSection: Section) => {
     setSection(newSection);
     setSelectedSlug(null);
