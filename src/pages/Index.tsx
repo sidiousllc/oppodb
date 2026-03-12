@@ -251,6 +251,14 @@ export default function Index() {
         />
       );
     }
+    if (section === "district-intel" && compareMode) {
+      return (
+        <DistrictCompare
+          districts={districts}
+          onBack={() => setCompareMode(false)}
+        />
+      );
+    }
     if (section === "district-intel" && selectedDistrict) {
       return (
         <DistrictDetail
