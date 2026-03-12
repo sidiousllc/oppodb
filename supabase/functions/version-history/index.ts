@@ -90,6 +90,8 @@ serve(async (req) => {
           );
 
           if (!commitsRes.ok) {
+            const errBody = await commitsRes.text();
+            console.error(`Commits API error for ${filePath}: ${commitsRes.status} ${errBody}`);
             throw new Error(`Commits API ${commitsRes.status} for ${filePath}`);
           }
 
