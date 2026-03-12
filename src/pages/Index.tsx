@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, initCandidates } from "@/data/candidates";
 import { loadCandidateData } from "@/data/candidateContent";
 import { magaFiles, searchMagaFiles } from "@/data/magaFiles";
 import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/data/localImpact";
 import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
-import { fetchAllDistricts, searchDistricts, type DistrictProfile } from "@/data/districtIntel";
+import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
 import { SearchBar } from "@/components/SearchBar";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
@@ -26,6 +26,7 @@ export default function Index() {
   const [section, setSection] = useState<Section>("candidates");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
+  const [censusSyncing, setCensusSyncing] = useState(false);
 
   useEffect(() => {
     loadCandidateData();
@@ -39,6 +40,23 @@ export default function Index() {
     });
 
     fetchAllDistricts().then(setDistricts);
+  }, []);
+
+  const handleCensusSync = useCallback(async () => {
+    setCensusSyncing(true);
+    try {
+      const result = await syncCensusData();
+      if (result.success) {
+        const fresh = await fetchAllDistricts();
+        setDistricts(fresh);
+      } else {
+        console.error("Census sync failed:", result.error);
+      }
+    } catch (e) {
+      console.error("Census sync error:", e);
+    } finally {
+      setCensusSyncing(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -236,8 +254,22 @@ export default function Index() {
     if (section === "district-intel") {
       return (
         <>
-          <div className="mt-4 mb-2">
+          <div className="mt-4 mb-2 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{filteredDistricts.length} district profiles</p>
+            <button
+              onClick={handleCensusSync}
+              disabled={censusSyncing}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            >
+              {censusSyncing ? (
+                <>
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  Syncing Census Data…
+                </>
+              ) : (
+                "Refresh from Census API"
+              )}
+            </button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {filteredDistricts.map(d => (
