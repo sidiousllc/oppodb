@@ -47,7 +47,7 @@ function MarkdownContent({
       }
 
       const handled = onNavigateSlug?.(matchSlug) ?? false;
-      if (!handled && href && (href.startsWith("http://") || href.startsWith("https://"))) {
+      if (!handled && href && !isInternalHost(href) && (href.startsWith("http://") || href.startsWith("https://"))) {
         window.open(href, "_blank", "noopener,noreferrer");
       }
     },

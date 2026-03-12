@@ -29,7 +29,7 @@ export function GenericDetail({
       if (!slug) return;
       e.preventDefault();
       const handled = onNavigateSlug?.(slug) ?? false;
-      if (!handled && href && (href.startsWith("http://") || href.startsWith("https://"))) {
+      if (!handled && href && !isInternalHost(href) && (href.startsWith("http://") || href.startsWith("https://"))) {
         window.open(href, "_blank", "noopener,noreferrer");
       }
     },
