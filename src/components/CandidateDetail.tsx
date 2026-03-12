@@ -27,33 +27,18 @@ const categoryLabels: Record<string, string> = {
  *   /en/STATE/Candidate/slug
  * If the path matches a loaded subpage, navigate in-app. Otherwise link to GitHub.
  */
-function resolveHref(href: string | undefined): { resolved: string; isInternal: boolean; matchSlug?: string } {
-  if (!href) return { resolved: "#", isInternal: false };
-
-  // Already an absolute URL
-  if (href.startsWith("http://") || href.startsWith("https://")) {
-    return { resolved: href, isInternal: false };
+function resolveHref(href: string | undefined): { isInternal: boolean; matchSlug?: string } {
+  if (!href) return { isInternal: false };
+  if (href.startsWith("http://") || href.startsWith("https://") || href.startsWith("#")) {
+    return { isInternal: false };
   }
 
-  // Anchor-only link
-  if (href.startsWith("#")) {
-    return { resolved: href, isInternal: false };
-  }
-
-  // Internal wiki path — clean it up
-  let path = href.replace(/^\/en\//, "/").replace(/^\//, "");
-  // Remove any state-level prefix like "AZ-Gov/Andy-Biggs/"
+  // Internal wiki path — extract the last segment as slug
+  const path = href.replace(/^\/en\//, "/").replace(/^\//, "");
   const segments = path.split("/").filter(Boolean);
+  if (segments.length === 0) return { isInternal: false };
 
-  if (segments.length === 0) return { resolved: href, isInternal: false };
-
-  // The last segment is the most specific identifier (the subpage slug)
-  const lastSegment = segments[segments.length - 1];
-
-  // Build GitHub URL — try the full path as a .md file
-  const githubUrl = `https://github.com/${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${segments.join("/")}.md`;
-
-  return { resolved: githubUrl, isInternal: true, matchSlug: lastSegment };
+  return { isInternal: true, matchSlug: segments[segments.length - 1] };
 }
 
 function MarkdownContent({
@@ -67,8 +52,8 @@ function MarkdownContent({
 }) {
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>, matchSlug?: string) => {
+      e.preventDefault();
       if (!matchSlug) return;
-      // Try to find the subpage by slug match
       const match = subpages.find(
         (sp) =>
           sp.slug === matchSlug ||
@@ -76,10 +61,8 @@ function MarkdownContent({
           sp.github_path.replace(".md", "").endsWith(matchSlug)
       );
       if (match) {
-        e.preventDefault();
         onNavigateSubpage(match);
       }
-      // Otherwise let the GitHub link open normally
     },
     [subpages, onNavigateSubpage]
   );
@@ -88,13 +71,11 @@ function MarkdownContent({
     <ReactMarkdown
       components={{
         a: ({ href, children }) => {
-          const { resolved, isInternal, matchSlug } = resolveHref(href);
+          const { isInternal, matchSlug } = resolveHref(href);
           if (isInternal) {
             return (
               <a
-                href={resolved}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="#"
                 onClick={(e) => handleClick(e, matchSlug)}
                 className="text-primary hover:underline cursor-pointer"
               >
