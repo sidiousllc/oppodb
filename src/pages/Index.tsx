@@ -402,20 +402,29 @@ export default function Index() {
                 Tracked candidates only
               </button>
             </div>
-            <button
-              onClick={handleCensusSync}
-              disabled={censusSyncing}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-            >
-              {censusSyncing ? (
-                <>
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                  Syncing Census Data…
-                </>
-              ) : (
-                "Refresh from Census API"
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCompareMode(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+              >
+                <GitCompareArrows className="h-3.5 w-3.5" />
+                Compare
+              </button>
+              <button
+                onClick={handleCensusSync}
+                disabled={censusSyncing}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {censusSyncing ? (
+                  <>
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                    Syncing Census Data…
+                  </>
+                ) : (
+                  "Refresh from Census API"
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Map visualization */}
