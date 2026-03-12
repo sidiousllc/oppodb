@@ -69,8 +69,12 @@ export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection
   async function handleManualSync() {
     setSyncing(true);
     try {
-      const { error } = await supabase.functions.invoke("sync-github");
-      if (error) console.error("Sync error:", error);
+      const { data, error } = await supabase.functions.invoke("sync-github");
+      if (error) {
+        console.error("Sync error:", error);
+        return;
+      }
+      console.log("Sync result:", data);
       const t = await getLastSyncTime();
       setLastSync(t);
       onSyncComplete?.();
