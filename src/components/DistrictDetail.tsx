@@ -10,6 +10,13 @@ import {
   Calendar,
   AlertCircle,
   UserCheck,
+  Home,
+  Heart,
+  Globe2,
+  Shield,
+  TrendingDown,
+  Briefcase,
+  Building,
 } from "lucide-react";
 
 interface DistrictDetailProps {
@@ -42,11 +49,34 @@ function StatCard({
   );
 }
 
+function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+  return (
+    <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+      {icon}
+      {title}
+    </h2>
+  );
+}
+
+function DataRow({ label, value }: { label: string; value: string | null | undefined }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm font-semibold text-foreground">{value}</span>
+    </div>
+  );
+}
+
 export function DistrictDetail({ district, onBack, onSelectCandidate }: DistrictDetailProps) {
   const candidateSlugs = getCandidatesForDistrict(district.district_id);
   const linkedCandidates = candidateSlugs
     .map((slug) => getCandidateBySlug(slug))
     .filter(Boolean);
+
+  const fmt = (n: number | null | undefined) => n != null ? n.toLocaleString() : null;
+  const pct = (n: number | null | undefined) => n != null ? `${n}%` : null;
+  const dollar = (n: number | null | undefined) => n != null ? `$${n.toLocaleString()}` : null;
 
   return (
     <div className="animate-fade-in">
@@ -78,47 +108,108 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Key Stats Grid */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        {district.population && (
+        {district.population != null && (
           <StatCard
             icon={<Users className="h-5 w-5 text-muted-foreground" />}
             label="Population"
-            value={district.population.toLocaleString()}
+            value={fmt(district.population)!}
           />
         )}
-        {district.median_income && (
+        {district.median_income != null && (
           <StatCard
             icon={<DollarSign className="h-5 w-5 text-muted-foreground" />}
             label="Median Income"
-            value={`$${district.median_income.toLocaleString()}`}
+            value={dollar(district.median_income)!}
           />
         )}
-        {district.median_age && (
+        {district.median_age != null && (
           <StatCard
             icon={<Calendar className="h-5 w-5 text-muted-foreground" />}
             label="Median Age"
             value={String(district.median_age)}
           />
         )}
-        {district.education_bachelor_pct && (
+        {district.education_bachelor_pct != null && (
           <StatCard
-            icon={
-              <GraduationCap className="h-5 w-5 text-muted-foreground" />
-            }
+            icon={<GraduationCap className="h-5 w-5 text-muted-foreground" />}
             label="Bachelor's Degree+"
-            value={`${district.education_bachelor_pct}%`}
+            value={pct(district.education_bachelor_pct)!}
           />
         )}
       </div>
 
+      {/* Economic Indicators */}
+      {(district.poverty_rate != null || district.unemployment_rate != null || district.total_households != null) && (
+        <div className="bg-card rounded-xl border border-border p-6 mb-6">
+          <SectionHeader
+            icon={<TrendingDown className="h-5 w-5 text-accent" />}
+            title="Economic Indicators"
+          />
+          <div className="space-y-0">
+            <DataRow label="Poverty Rate" value={pct(district.poverty_rate)} />
+            <DataRow label="Unemployment Rate" value={pct(district.unemployment_rate)} />
+            <DataRow label="Total Households" value={fmt(district.total_households)} />
+            <DataRow label="Avg. Household Size" value={district.avg_household_size != null ? String(district.avg_household_size) : null} />
+          </div>
+        </div>
+      )}
+
+      {/* Racial & Ethnic Demographics */}
+      {(district.white_pct != null || district.black_pct != null || district.hispanic_pct != null || district.asian_pct != null) && (
+        <div className="bg-card rounded-xl border border-border p-6 mb-6">
+          <SectionHeader
+            icon={<Users className="h-5 w-5 text-primary" />}
+            title="Racial & Ethnic Demographics"
+          />
+          <div className="space-y-0">
+            <DataRow label="White" value={pct(district.white_pct)} />
+            <DataRow label="Black / African American" value={pct(district.black_pct)} />
+            <DataRow label="Hispanic / Latino" value={pct(district.hispanic_pct)} />
+            <DataRow label="Asian" value={pct(district.asian_pct)} />
+            <DataRow label="Foreign-Born" value={pct(district.foreign_born_pct)} />
+          </div>
+        </div>
+      )}
+
+      {/* Housing */}
+      {(district.owner_occupied_pct != null || district.median_home_value != null || district.median_rent != null) && (
+        <div className="bg-card rounded-xl border border-border p-6 mb-6">
+          <SectionHeader
+            icon={<Home className="h-5 w-5 text-[hsl(var(--tag-house))]" />}
+            title="Housing"
+          />
+          <div className="space-y-0">
+            <DataRow label="Owner-Occupied" value={pct(district.owner_occupied_pct)} />
+            <DataRow label="Renter-Occupied" value={district.owner_occupied_pct != null ? pct(Math.round((100 - district.owner_occupied_pct) * 10) / 10) : null} />
+            <DataRow label="Median Home Value" value={dollar(district.median_home_value)} />
+            <DataRow label="Median Gross Rent" value={dollar(district.median_rent)} />
+          </div>
+        </div>
+      )}
+
+      {/* Health & Veterans */}
+      {(district.uninsured_pct != null || district.veteran_pct != null) && (
+        <div className="bg-card rounded-xl border border-border p-6 mb-6">
+          <SectionHeader
+            icon={<Heart className="h-5 w-5 text-destructive" />}
+            title="Health & Veterans"
+          />
+          <div className="space-y-0">
+            <DataRow label="Uninsured" value={pct(district.uninsured_pct)} />
+            <DataRow label="Veterans (18+)" value={pct(district.veteran_pct)} />
+          </div>
+        </div>
+      )}
+
       {/* Linked Candidates */}
       {linkedCandidates.length > 0 && (
         <div className="bg-card rounded-xl border border-border p-6 mb-6">
-          <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-            <UserCheck className="h-5 w-5 text-primary" />
-            Tracked Representatives
-          </h2>
+          <SectionHeader
+            icon={<UserCheck className="h-5 w-5 text-primary" />}
+            title="Tracked Representatives"
+          />
           <div className="space-y-2">
             {linkedCandidates.map((candidate) => {
               if (!candidate) return null;
@@ -155,10 +246,10 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
       {/* Top Issues */}
       {district.top_issues.length > 0 && (
         <div className="bg-card rounded-xl border border-border p-6 mb-6">
-          <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-accent" />
-            Top Issues
-          </h2>
+          <SectionHeader
+            icon={<AlertCircle className="h-5 w-5 text-accent" />}
+            title="Top Issues"
+          />
           <div className="space-y-3">
             {district.top_issues.map((issue, i) => (
               <div
@@ -190,18 +281,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             rel="noopener noreferrer"
             className="text-primary underline underline-offset-2 hover:text-primary/80"
           >
-            U.S. Census ACS 5-Year Estimates
+            U.S. Census ACS 5-Year Estimates (2022)
           </a>
-          . Modeled after the{" "}
-          <a
-            href="https://github.com/tyler-pritchard/constituency-intel"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline underline-offset-2 hover:text-primary/80"
-          >
-            constituency-intel
-          </a>{" "}
-          framework.
+          . Includes population, income, education, poverty, employment, racial demographics, housing, health insurance, and veteran status data.
         </p>
       </div>
     </div>
