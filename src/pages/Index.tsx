@@ -20,7 +20,8 @@ import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
 import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
-import { BookOpen, AlertTriangle, Globe, FileText, Plus } from "lucide-react";
+import { DistrictCompare } from "@/components/DistrictCompare";
+import { BookOpen, AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
