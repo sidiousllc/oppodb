@@ -6,6 +6,7 @@ import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/d
 import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
 import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
+import { candidateDistrictMap } from "@/data/candidateDistricts";
 import { SearchBar } from "@/components/SearchBar";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
@@ -28,6 +29,13 @@ export default function Index() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
   const [censusSyncing, setCensusSyncing] = useState(false);
+  const [trackedOnly, setTrackedOnly] = useState(false);
+
+  const trackedDistrictIds = useMemo(() => new Set(
+    Object.values(candidateDistrictMap)
+      .map(v => v.district_id)
+      .filter((id): id is string => id !== null)
+  ), []);
 
   useEffect(() => {
     loadCandidateData();
@@ -76,7 +84,13 @@ export default function Index() {
   const filteredMaga = useMemo(() => searchMagaFiles(search), [search]);
   const filteredLocal = useMemo(() => searchLocalImpact(search), [search]);
   const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search]);
-  const filteredDistricts = useMemo(() => searchDistricts(districts, search), [search, districts]);
+  const filteredDistricts = useMemo(() => {
+    let results = searchDistricts(districts, search);
+    if (trackedOnly) {
+      results = results.filter(d => trackedDistrictIds.has(d.district_id));
+    }
+    return results;
+  }, [search, districts, trackedOnly, trackedDistrictIds]);
 
   const counts = useMemo(() => ({
     all: candidates.length,
@@ -264,8 +278,21 @@ export default function Index() {
     if (section === "district-intel") {
       return (
         <>
-          <div className="mt-4 mb-2 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{filteredDistricts.length} district profiles</p>
+          <div className="mt-4 mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground">{filteredDistricts.length} district profiles</p>
+              <button
+                onClick={() => setTrackedOnly(v => !v)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  trackedOnly
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                <span className={`h-2 w-2 rounded-full ${trackedOnly ? "bg-primary-foreground" : "bg-muted-foreground/50"}`} />
+                Tracked candidates only
+              </button>
+            </div>
             <button
               onClick={handleCensusSync}
               disabled={censusSyncing}
