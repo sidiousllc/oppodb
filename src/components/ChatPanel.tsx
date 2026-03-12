@@ -98,6 +98,7 @@ export function ChatPanel() {
         messages: [...messages, userMsg],
         onDelta: upsert,
         onDone: () => setLoading(false),
+        accessToken: session?.access_token ?? "",
       });
     } catch (e) {
       console.error(e);
