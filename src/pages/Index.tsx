@@ -400,7 +400,7 @@ export default function Index() {
           onFilterChange={setFilter}
           counts={counts}
           activeSection={section}
-          onSectionChange={setSection}
+          onSectionChange={handleSectionChange}
           sectionCounts={sectionCounts}
           onSyncComplete={() => {
             fetchCandidatesFromDB().then((dbCandidates) => {
