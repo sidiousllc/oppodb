@@ -178,11 +178,11 @@ export function VersionHistory({ githubPath, currentContent }: VersionHistoryPro
                           {diff && (
                             <span className="text-[10px]">
                               {diff.added > 0 && (
-                                <span className="text-green-500">+{diff.added}</span>
+                                <span className="text-accent">+{diff.added}</span>
                               )}
                               {diff.added > 0 && diff.removed > 0 && " "}
                               {diff.removed > 0 && (
-                                <span className="text-red-500">-{diff.removed}</span>
+                                <span className="text-destructive">-{diff.removed}</span>
                               )}
                             </span>
                           )}
