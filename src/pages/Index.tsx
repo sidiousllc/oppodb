@@ -68,10 +68,16 @@ export default function Index() {
     }
   }, []);
 
+  const prevSectionRef = useRef(section);
   useEffect(() => {
-    setSelectedSlug(null);
-    setSearch("");
-  }, [section]);
+    // Only clear selection when section changes via sidebar/nav, not programmatic navigation
+    if (prevSectionRef.current !== section) {
+      if (!selectedSlug) {
+        setSearch("");
+      }
+      prevSectionRef.current = section;
+    }
+  }, [section, selectedSlug]);
 
   const filteredCandidates = useMemo(() => {
     let results = search ? searchCandidates(search) : candidates;
