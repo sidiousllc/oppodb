@@ -22,23 +22,22 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const githubToken = Deno.env.get("GITHUB_TOKEN");
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    if (!githubToken) {
-      return new Response(
-        JSON.stringify({ error: "GITHUB_TOKEN not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const githubToken = Deno.env.get("GITHUB_TOKEN")?.trim();
 
     const ghHeaders: Record<string, string> = {
       Accept: "application/vnd.github.v3+json",
       "User-Agent": "lovable-version-sync",
-      Authorization: `Bearer ${githubToken}`,
     };
 
-    // Parse request body for optional filters
+    // Only use token if it looks like a valid GitHub token
+    if (githubToken && (githubToken.startsWith("ghp_") || githubToken.startsWith("github_pat_") || githubToken.startsWith("gho_"))) {
+      ghHeaders.Authorization = `Bearer ${githubToken}`;
+      console.log("Using authenticated GitHub requests");
+    } else {
+      console.log("Using unauthenticated GitHub requests (60 req/hr limit)");
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
     let targetPaths: string[] | null = null;
     try {
       const body = await req.json();
