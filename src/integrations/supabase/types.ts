@@ -53,6 +53,39 @@ export type Database = {
         }
         Relationships: []
       }
+      candidate_versions: {
+        Row: {
+          author: string
+          commit_date: string
+          commit_message: string
+          commit_sha: string
+          content: string
+          created_at: string
+          github_path: string
+          id: string
+        }
+        Insert: {
+          author?: string
+          commit_date: string
+          commit_message?: string
+          commit_sha: string
+          content?: string
+          created_at?: string
+          github_path: string
+          id?: string
+        }
+        Update: {
+          author?: string
+          commit_date?: string
+          commit_message?: string
+          commit_sha?: string
+          content?: string
+          created_at?: string
+          github_path?: string
+          id?: string
+        }
+        Relationships: []
+      }
       district_profiles: {
         Row: {
           created_at: string
