@@ -4,8 +4,6 @@ import { fetchSubpages, type GitHubCandidate } from "@/data/githubSync";
 import { ArrowLeft, ExternalLink, User, FileText, ChevronRight, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
-const GITHUB_REPO = "pdennis/research-books";
-const GITHUB_BRANCH = "main";
 
 interface CandidateDetailProps {
   candidate: Candidate;
