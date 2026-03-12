@@ -6,6 +6,7 @@ import { getDistrictForCandidate } from "@/data/candidateDistricts";
 interface CandidateCardProps {
   candidate: Candidate;
   onClick: (slug: string) => void;
+  onDistrictClick?: (districtId: string) => void;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -16,7 +17,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
-  ({ candidate, onClick }, ref) => {
+  ({ candidate, onClick, onDistrictClick }, ref) => {
     const firstLine = candidate.content.split("\n").find(l => l.trim().length > 20)?.trim().slice(0, 140) || "";
     const districtId = getDistrictForCandidate(candidate.slug);
 
@@ -36,10 +37,16 @@ export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
                   {categoryLabels[candidate.category]}
                 </span>
                 {districtId && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--tag-governor)/0.1)] px-2 py-0.5 text-xs font-medium text-[hsl(var(--tag-governor))]">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDistrictClick?.(districtId);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--tag-governor)/0.1)] px-2 py-0.5 text-xs font-medium text-[hsl(var(--tag-governor))] hover:bg-[hsl(var(--tag-governor)/0.2)] transition-colors"
+                  >
                     <MapPin className="h-3 w-3" />
                     {districtId}
-                  </span>
+                  </button>
                 )}
                 {!districtId && candidate.state && (
                   <span className="text-xs text-muted-foreground">{candidate.state}</span>

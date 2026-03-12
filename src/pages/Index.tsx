@@ -183,7 +183,7 @@ export default function Index() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {filteredCandidates.map(c => (
-              <CandidateCard key={c.slug} candidate={c} onClick={setSelectedSlug} />
+              <CandidateCard key={c.slug} candidate={c} onClick={setSelectedSlug} onDistrictClick={(districtId) => { setSection("district-intel"); setSelectedSlug(districtId); }} />
             ))}
           </div>
           {filteredCandidates.length === 0 && (
