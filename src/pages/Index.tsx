@@ -29,6 +29,13 @@ export default function Index() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
   const [censusSyncing, setCensusSyncing] = useState(false);
+  const [trackedOnly, setTrackedOnly] = useState(false);
+
+  const trackedDistrictIds = useMemo(() => new Set(
+    Object.values(candidateDistrictMap)
+      .map(v => v.district_id)
+      .filter((id): id is string => id !== null)
+  ), []);
 
   useEffect(() => {
     loadCandidateData();
