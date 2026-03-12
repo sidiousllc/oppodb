@@ -140,6 +140,9 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug }: Candidate
           </div>
         </div>
 
+        {/* Version History for subpage */}
+        <VersionHistory githubPath={activeSubpage.github_path} currentContent={activeSubpage.content} />
+
         <div className="bg-card rounded-xl border border-border p-6">
           <div className="prose-research">
             <MarkdownContent
