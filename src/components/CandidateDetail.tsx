@@ -91,12 +91,24 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug }: Candidate
   const [subpages, setSubpages] = useState<GitHubCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubpage, setActiveSubpage] = useState<GitHubCandidate | null>(null);
+  const [githubPath, setGithubPath] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
     setActiveSubpage(null);
-    fetchSubpages(candidate.slug).then((data) => {
-      setSubpages(data);
+    setGithubPath(null);
+
+    Promise.all([
+      fetchSubpages(candidate.slug),
+      supabase
+        .from("candidate_profiles")
+        .select("github_path")
+        .eq("slug", candidate.slug)
+        .eq("is_subpage", false)
+        .single(),
+    ]).then(([subData, { data: profile }]) => {
+      setSubpages(subData);
+      if (profile?.github_path) setGithubPath(profile.github_path);
       setLoading(false);
     });
   }, [candidate.slug]);
