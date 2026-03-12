@@ -36,7 +36,7 @@ serve(async (req) => {
       console.log("No GitHub token, using unauthenticated requests (60 req/hr limit)");
     }
 
-    // Parse request body for optional filters
+    const supabase = createClient(supabaseUrl, supabaseKey);
     let targetPaths: string[] | null = null;
     try {
       const body = await req.json();
