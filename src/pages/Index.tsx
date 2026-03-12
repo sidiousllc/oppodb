@@ -5,7 +5,7 @@ import { magaFiles, searchMagaFiles } from "@/data/magaFiles";
 import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/data/localImpact";
 import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
-import { fetchAllDistricts, searchDistricts, type DistrictProfile } from "@/data/districtIntel";
+import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
 import { SearchBar } from "@/components/SearchBar";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
