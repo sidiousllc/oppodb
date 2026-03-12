@@ -130,14 +130,6 @@ export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
               </h1>
               <div className="flex items-center gap-3 mt-2">
                 <span className="text-sm text-muted-foreground">{candidate.name}</span>
-                <a
-                  href={`https://github.com/${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${activeSubpage.github_path}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  View on GitHub <ExternalLink className="h-3 w-3" />
-                </a>
               </div>
             </div>
           </div>
