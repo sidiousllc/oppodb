@@ -143,7 +143,17 @@ export default function Index() {
       );
     }
     if (section === "district-intel" && selectedDistrict) {
-      return <DistrictDetail district={selectedDistrict} onBack={() => setSelectedSlug(null)} />;
+      return (
+        <DistrictDetail
+          district={selectedDistrict}
+          onBack={() => setSelectedSlug(null)}
+          onSelectCandidate={(slug) => {
+            setSection("candidates");
+            setSelectedSlug(slug);
+          }}
+        />
+      );
+    }
     }
     return null;
   }
