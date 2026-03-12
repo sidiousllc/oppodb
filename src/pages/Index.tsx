@@ -26,6 +26,7 @@ export default function Index() {
   const [section, setSection] = useState<Section>("candidates");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
+  const [censusSyncing, setCensusSyncing] = useState(false);
 
   useEffect(() => {
     loadCandidateData();
