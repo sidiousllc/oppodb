@@ -170,23 +170,34 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
       </button>
 
       <div className="bg-card rounded-xl border border-border p-6 mb-6">
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10">
-            <User className="h-7 w-7 text-primary" />
-          </div>
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">
-              {candidate.name}
-            </h1>
-            <div className="flex items-center gap-3 mt-2">
-              <span className={`tag tag-${candidate.category}`}>
-                {categoryLabels[candidate.category]}
-              </span>
-              {candidate.state && (
-                <span className="text-sm text-muted-foreground">{candidate.state}</span>
-              )}
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <User className="h-7 w-7 text-primary" />
+            </div>
+            <div>
+              <h1 className="font-display text-2xl font-bold text-foreground">
+                {candidate.name}
+              </h1>
+              <div className="flex items-center gap-3 mt-2">
+                <span className={`tag tag-${candidate.category}`}>
+                  {categoryLabels[candidate.category]}
+                </span>
+                {candidate.state && (
+                  <span className="text-sm text-muted-foreground">{candidate.state}</span>
+                )}
+              </div>
             </div>
           </div>
+          {onEdit && (
+            <button
+              onClick={() => onEdit(candidate.slug)}
+              className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+            >
+              <Edit3 className="h-3.5 w-3.5" />
+              Edit
+            </button>
+          )}
         </div>
       </div>
 
