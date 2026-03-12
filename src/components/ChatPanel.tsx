@@ -11,16 +11,18 @@ async function streamChat({
   messages,
   onDelta,
   onDone,
+  accessToken,
 }: {
   messages: Msg[];
   onDelta: (text: string) => void;
   onDone: () => void;
+  accessToken: string;
 }) {
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ messages }),
   });
