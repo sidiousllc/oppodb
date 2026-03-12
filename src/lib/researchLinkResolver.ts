@@ -1,4 +1,4 @@
-const INTERNAL_HOSTS = new Set(["research-books.com", "www.research-books.com"]);
+export const INTERNAL_HOSTS = new Set(["research-books.com", "www.research-books.com"]);
 const ABSOLUTE_URL_REGEX = /^[a-zA-Z][a-zA-Z\d+.-]*:/;
 
 function normalizeSlug(value: string): string {

@@ -3,7 +3,7 @@ import { type Candidate } from "@/data/candidates";
 import { fetchSubpages, type GitHubCandidate } from "@/data/githubSync";
 import { ArrowLeft, User, FileText, ChevronRight, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { extractInternalSlug } from "@/lib/researchLinkResolver";
+import { extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver";
 
 interface CandidateDetailProps {
   candidate: Candidate;

@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { extractInternalSlug } from "@/lib/researchLinkResolver";
+import { extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver";
 
 interface GenericDetailProps {
   icon: React.ReactNode;
