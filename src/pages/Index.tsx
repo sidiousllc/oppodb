@@ -475,7 +475,14 @@ export default function Index() {
               <h1 className="font-display text-lg font-semibold">Opposition Research Database</h1>
             </div>
 
-            {detail ? (
+            {editorMode ? (
+              <CandidateEditor
+                mode={editorMode}
+                initialData={editData}
+                onBack={() => { setEditorMode(null); setEditData(undefined); }}
+                onSaved={handleEditorSaved}
+              />
+            ) : detail ? (
               detail
             ) : (
               <>
