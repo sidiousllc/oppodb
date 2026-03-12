@@ -3,7 +3,7 @@ import { type Candidate } from "@/data/candidates";
 import { fetchSubpages, type GitHubCandidate } from "@/data/githubSync";
 import { ArrowLeft, User, FileText, ChevronRight, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { extractInternalSlug } from "@/lib/researchLinkResolver";
+import { extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver";
 
 interface CandidateDetailProps {
   candidate: Candidate;
@@ -47,7 +47,7 @@ function MarkdownContent({
       }
 
       const handled = onNavigateSlug?.(matchSlug) ?? false;
-      if (!handled && href && (href.startsWith("http://") || href.startsWith("https://"))) {
+      if (!handled && href && !isInternalHost(href) && (href.startsWith("http://") || href.startsWith("https://"))) {
         window.open(href, "_blank", "noopener,noreferrer");
       }
     },

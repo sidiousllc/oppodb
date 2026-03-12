@@ -1,6 +1,16 @@
 const INTERNAL_HOSTS = new Set(["research-books.com", "www.research-books.com"]);
 const ABSOLUTE_URL_REGEX = /^[a-zA-Z][a-zA-Z\d+.-]*:/;
 
+export function isInternalHost(href: string | undefined): boolean {
+  if (!href) return false;
+  try {
+    const url = new URL(href);
+    return INTERNAL_HOSTS.has(url.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 function normalizeSlug(value: string): string {
   return decodeURIComponent(value)
     .replace(/\.md$/i, "")
