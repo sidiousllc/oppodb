@@ -57,3 +57,12 @@ export function searchDistricts(
       d.top_issues.some((i) => i.toLowerCase().includes(q))
   );
 }
+
+export async function syncCensusData(): Promise<{ success: boolean; upserted?: number; error?: string }> {
+  const { data, error } = await supabase.functions.invoke("census-sync");
+  if (error) {
+    console.error("Census sync error:", error);
+    return { success: false, error: error.message };
+  }
+  return data as { success: boolean; upserted?: number; error?: string };
+}
