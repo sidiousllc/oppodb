@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Bot, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -10,16 +11,18 @@ async function streamChat({
   messages,
   onDelta,
   onDone,
+  accessToken,
 }: {
   messages: Msg[];
   onDelta: (text: string) => void;
   onDone: () => void;
+  accessToken: string;
 }) {
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ messages }),
   });
@@ -58,6 +61,7 @@ async function streamChat({
 }
 
 export function ChatPanel() {
+  const { session } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -94,6 +98,7 @@ export function ChatPanel() {
         messages: [...messages, userMsg],
         onDelta: upsert,
         onDone: () => setLoading(false),
+        accessToken: session?.access_token ?? "",
       });
     } catch (e) {
       console.error(e);
