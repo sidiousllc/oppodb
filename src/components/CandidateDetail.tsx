@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { type Candidate } from "@/data/candidates";
 import { fetchSubpages, type GitHubCandidate } from "@/data/githubSync";
 import { ArrowLeft, ExternalLink, User, FileText, ChevronRight, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+
+const GITHUB_REPO = "pdennis/research-books";
+const GITHUB_BRANCH = "main";
 
 interface CandidateDetailProps {
   candidate: Candidate;
@@ -15,6 +18,102 @@ const categoryLabels: Record<string, string> = {
   governor: "Governor",
   state: "State",
 };
+
+/**
+ * Resolves internal wiki-style links.
+ * Patterns:
+ *   /candidate-slug/subpage-slug
+ *   /candidate-slug/subpage-slug/sub-sub
+ *   /en/STATE/Candidate/slug
+ * If the path matches a loaded subpage, navigate in-app. Otherwise link to GitHub.
+ */
+function resolveHref(href: string | undefined): { resolved: string; isInternal: boolean; matchSlug?: string } {
+  if (!href) return { resolved: "#", isInternal: false };
+
+  // Already an absolute URL
+  if (href.startsWith("http://") || href.startsWith("https://")) {
+    return { resolved: href, isInternal: false };
+  }
+
+  // Anchor-only link
+  if (href.startsWith("#")) {
+    return { resolved: href, isInternal: false };
+  }
+
+  // Internal wiki path — clean it up
+  let path = href.replace(/^\/en\//, "/").replace(/^\//, "");
+  // Remove any state-level prefix like "AZ-Gov/Andy-Biggs/"
+  const segments = path.split("/").filter(Boolean);
+
+  if (segments.length === 0) return { resolved: href, isInternal: false };
+
+  // The last segment is the most specific identifier (the subpage slug)
+  const lastSegment = segments[segments.length - 1];
+
+  // Build GitHub URL — try the full path as a .md file
+  const githubUrl = `https://github.com/${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${segments.join("/")}.md`;
+
+  return { resolved: githubUrl, isInternal: true, matchSlug: lastSegment };
+}
+
+function MarkdownContent({
+  content,
+  subpages,
+  onNavigateSubpage,
+}: {
+  content: string;
+  subpages: GitHubCandidate[];
+  onNavigateSubpage: (sp: GitHubCandidate) => void;
+}) {
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, matchSlug?: string) => {
+      if (!matchSlug) return;
+      // Try to find the subpage by slug match
+      const match = subpages.find(
+        (sp) =>
+          sp.slug === matchSlug ||
+          sp.slug.endsWith(matchSlug) ||
+          sp.github_path.replace(".md", "").endsWith(matchSlug)
+      );
+      if (match) {
+        e.preventDefault();
+        onNavigateSubpage(match);
+      }
+      // Otherwise let the GitHub link open normally
+    },
+    [subpages, onNavigateSubpage]
+  );
+
+  return (
+    <ReactMarkdown
+      components={{
+        a: ({ href, children }) => {
+          const { resolved, isInternal, matchSlug } = resolveHref(href);
+          if (isInternal) {
+            return (
+              <a
+                href={resolved}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => handleClick(e, matchSlug)}
+                className="text-primary hover:underline cursor-pointer"
+              >
+                {children}
+              </a>
+            );
+          }
+          return (
+            <a href={resolved} target="_blank" rel="noopener noreferrer">
+              {children}
+            </a>
+          );
+        },
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
 
 export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
   const [subpages, setSubpages] = useState<GitHubCandidate[]>([]);
@@ -52,6 +151,14 @@ export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
               </h1>
               <div className="flex items-center gap-3 mt-2">
                 <span className="text-sm text-muted-foreground">{candidate.name}</span>
+                <a
+                  href={`https://github.com/${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${activeSubpage.github_path}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  View on GitHub <ExternalLink className="h-3 w-3" />
+                </a>
               </div>
             </div>
           </div>
@@ -59,17 +166,11 @@ export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
 
         <div className="bg-card rounded-xl border border-border p-6">
           <div className="prose-research">
-            <ReactMarkdown
-              components={{
-                a: ({ href, children }) => (
-                  <a href={href} target="_blank" rel="noopener noreferrer">
-                    {children}
-                  </a>
-                ),
-              }}
-            >
-              {activeSubpage.content}
-            </ReactMarkdown>
+            <MarkdownContent
+              content={activeSubpage.content}
+              subpages={subpages}
+              onNavigateSubpage={setActiveSubpage}
+            />
           </div>
         </div>
       </div>
@@ -103,7 +204,7 @@ export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
                 <span className="text-sm text-muted-foreground">{candidate.state}</span>
               )}
               <a
-                href={`https://research-books.com/en/${candidate.slug}`}
+                href={`https://github.com/${GITHUB_REPO}/tree/${GITHUB_BRANCH}/${candidate.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-xs text-primary hover:underline"
@@ -130,7 +231,6 @@ export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
           </h2>
           <div className="grid gap-1">
             {subpages.map((sp) => {
-              // Clean up the title - remove candidate name prefix if present
               const displayTitle = (sp.subpage_title || sp.name)
                 .replace(/^Rep\.\s+.*?:\s*/, "")
                 .replace(/^Sen\.\s+.*?:\s*/, "")
@@ -156,17 +256,11 @@ export function CandidateDetail({ candidate, onBack }: CandidateDetailProps) {
 
       <div className="bg-card rounded-xl border border-border p-6">
         <div className="prose-research">
-          <ReactMarkdown
-            components={{
-              a: ({ href, children }) => (
-                <a href={href} target="_blank" rel="noopener noreferrer">
-                  {children}
-                </a>
-              ),
-            }}
-          >
-            {candidate.content}
-          </ReactMarkdown>
+          <MarkdownContent
+            content={candidate.content}
+            subpages={subpages}
+            onNavigateSubpage={setActiveSubpage}
+          />
         </div>
       </div>
     </div>
