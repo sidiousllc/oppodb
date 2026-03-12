@@ -6,6 +6,7 @@ import { getDistrictForCandidate } from "@/data/candidateDistricts";
 interface CandidateCardProps {
   candidate: Candidate;
   onClick: (slug: string) => void;
+  onDistrictClick?: (districtId: string) => void;
 }
 
 const categoryLabels: Record<string, string> = {
