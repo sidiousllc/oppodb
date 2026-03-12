@@ -33,6 +33,7 @@ export default function Index() {
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
   const [censusSyncing, setCensusSyncing] = useState(false);
   const [trackedOnly, setTrackedOnly] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
   const [editData, setEditData] = useState<{
     id: string; name: string; slug: string; content: string;
