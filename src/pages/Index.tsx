@@ -114,6 +114,48 @@ export default function Index() {
   const selectedNarrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
   const selectedDistrict = selectedSlug ? districts.find(d => d.district_id === selectedSlug) : null;
 
+  const navigateBySlug = useCallback((rawSlug: string) => {
+    const slug = rawSlug.trim().toLowerCase();
+    if (!slug) return false;
+
+    const candidateMatch = getCandidateBySlug(slug);
+    if (candidateMatch) {
+      setSection("candidates");
+      setSelectedSlug(candidateMatch.slug);
+      return true;
+    }
+
+    const magaMatch = magaFiles.find(m => m.slug.toLowerCase() === slug);
+    if (magaMatch) {
+      setSection("maga-files");
+      setSelectedSlug(magaMatch.slug);
+      return true;
+    }
+
+    const localMatch = getLocalImpactBySlug(slug);
+    if (localMatch) {
+      setSection("local-impact");
+      setSelectedSlug(localMatch.slug);
+      return true;
+    }
+
+    const narrativeMatch = narrativeReports.find(n => n.slug.toLowerCase() === slug);
+    if (narrativeMatch) {
+      setSection("narratives");
+      setSelectedSlug(narrativeMatch.slug);
+      return true;
+    }
+
+    const districtMatch = districts.find(d => d.district_id.toLowerCase() === slug);
+    if (districtMatch) {
+      setSection("district-intel");
+      setSelectedSlug(districtMatch.district_id);
+      return true;
+    }
+
+    return false;
+  }, [districts]);
+
   if (!loaded) return null;
 
   function renderDetail() {
