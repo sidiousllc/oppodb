@@ -401,6 +401,14 @@ export default function Index() {
           activeSection={section}
           onSectionChange={setSection}
           sectionCounts={sectionCounts}
+          onSyncComplete={() => {
+            fetchCandidatesFromDB().then((dbCandidates) => {
+              if (dbCandidates.length > 0) {
+                initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+                setDataVersion((v) => v + 1);
+              }
+            });
+          }}
         />
 
         <main className="flex-1 overflow-y-auto">
