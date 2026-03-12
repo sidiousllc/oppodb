@@ -237,8 +237,22 @@ export default function Index() {
     if (section === "district-intel") {
       return (
         <>
-          <div className="mt-4 mb-2">
+          <div className="mt-4 mb-2 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{filteredDistricts.length} district profiles</p>
+            <button
+              onClick={handleCensusSync}
+              disabled={censusSyncing}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            >
+              {censusSyncing ? (
+                <>
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  Syncing Census Data…
+                </>
+              ) : (
+                "Refresh from Census API"
+              )}
+            </button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {filteredDistricts.map(d => (
