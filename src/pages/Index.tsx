@@ -84,7 +84,13 @@ export default function Index() {
   const filteredMaga = useMemo(() => searchMagaFiles(search), [search]);
   const filteredLocal = useMemo(() => searchLocalImpact(search), [search]);
   const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search]);
-  const filteredDistricts = useMemo(() => searchDistricts(districts, search), [search, districts]);
+  const filteredDistricts = useMemo(() => {
+    let results = searchDistricts(districts, search);
+    if (trackedOnly) {
+      results = results.filter(d => trackedDistrictIds.has(d.district_id));
+    }
+    return results;
+  }, [search, districts, trackedOnly, trackedDistrictIds]);
 
   const counts = useMemo(() => ({
     all: candidates.length,
