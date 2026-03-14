@@ -415,7 +415,7 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
         Approve vs disapprove on key issues (butterfly chart)
       </p>
       <div className="space-y-3">
-        {topics.map(([topic, topicPolls]) => {
+        {topics.map(([topic, topicPolls], idx) => {
           // Average across sources for the topic
           const avgApprove = topicPolls.reduce((s, p) => s + (p.approve_pct ?? p.favor_pct ?? 0), 0) / topicPolls.length;
           const avgDisapprove = topicPolls.reduce((s, p) => s + (p.disapprove_pct ?? p.oppose_pct ?? 0), 0) / topicPolls.length;
