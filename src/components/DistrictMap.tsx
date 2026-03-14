@@ -238,13 +238,54 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     const target = STATE_CENTERS[stateAbbr];
     if (!target) return;
 
-    // If already zoomed into this state, reset
-    if (zoomState.zoom > 1 && zoomState.center[0] === target.coords[0] && zoomState.center[1] === target.coords[1]) {
+    if (zoomState.zoom > 1 && zoomedStateAbbr === stateAbbr) {
       setZoomState({ center: [-96, 38], zoom: 1 });
+      setZoomedStateAbbr(null);
+      setSearchQuery("");
+      setHighlightedDistrict(null);
     } else {
       setZoomState({ center: target.coords, zoom: target.zoom });
+      setZoomedStateAbbr(stateAbbr);
+      setSearchQuery("");
+      setHighlightedDistrict(null);
     }
-  }, [zoomState]);
+  }, [zoomState, zoomedStateAbbr]);
+
+  // Districts in the zoomed state for the search overlay
+  const stateDistricts = useMemo(() => {
+    if (!zoomedStateAbbr || !geoData) return [];
+    const ids = new Set<string>();
+    geoData.features.forEach((f) => {
+      if (f.properties?.STATE_ABBR === zoomedStateAbbr) {
+        const did = toDistrictId(f.properties.STATE_ABBR, f.properties.CDFIPS);
+        if (did) ids.add(did);
+      }
+    });
+    return Array.from(ids).sort();
+  }, [zoomedStateAbbr, geoData]);
+
+  const filteredStateDistricts = useMemo(() => {
+    if (!searchQuery.trim()) return stateDistricts;
+    const q = searchQuery.toLowerCase();
+    return stateDistricts.filter((id) => {
+      const rating = getCookRating(id);
+      const pvi = getCurrentPVI(id);
+      const profile = districtLookup.get(id);
+      return (
+        id.toLowerCase().includes(q) ||
+        (rating && rating.toLowerCase().includes(q)) ||
+        (pvi !== null && formatPVI(pvi).toLowerCase().includes(q)) ||
+        (profile?.top_issues || []).some((i) => i.toLowerCase().includes(q))
+      );
+    });
+  }, [searchQuery, stateDistricts, districtLookup]);
+
+  const handleResetZoom = useCallback(() => {
+    setZoomState({ center: [-96, 38], zoom: 1 });
+    setZoomedStateAbbr(null);
+    setSearchQuery("");
+    setHighlightedDistrict(null);
+  }, []);
 
   const isZoomed = zoomState.zoom > 1;
 
