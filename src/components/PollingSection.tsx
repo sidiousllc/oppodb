@@ -101,6 +101,7 @@ function ApprovalBar({ approve, disapprove }: { approve: number | null; disappro
 // ─── Multi-Source Approval Trend Chart (SVG) ────────────────────────────────
 
 function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
   const [hoveredPoint, setHoveredPoint] = useState<{ source: string; date: string; value: number; x: number; y: number } | null>(null);
 
   const approvalBySource = useMemo(() => {
