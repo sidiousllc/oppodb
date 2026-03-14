@@ -95,14 +95,20 @@ interface StateIssueData {
   avgPVI: number | null;
 }
 
-const DistrictMapInner = ({ districts, onSelectDistrict }: DistrictMapProps) => {
+const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: DistrictMapProps) => {
   const [tooltip, setTooltip] = useState<StateIssueData | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  // Filter districts by PVI
+  const filteredDistricts = useMemo(() => {
+    if (pviFilter === "all") return districts;
+    return districts.filter((d) => matchesPVIFilter(d.district_id, pviFilter));
+  }, [districts, pviFilter]);
 
   // Group districts by state and find top issue per state
   const stateData = useMemo(() => {
     const byState: Record<string, DistrictProfile[]> = {};
-    districts.forEach((d) => {
+    filteredDistricts.forEach((d) => {
       const st = d.district_id.split("-")[0];
       if (!byState[st]) byState[st] = [];
       byState[st].push(d);
@@ -119,16 +125,27 @@ const DistrictMapInner = ({ districts, onSelectDistrict }: DistrictMapProps) => 
       const topIssue =
         Object.entries(issueCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
         "No data";
+
+      // Calculate average PVI for the state's filtered districts
+      const pviValues = dists.map((d) => getCurrentPVI(d.district_id)).filter((v): v is number => v !== null);
+      const avgPVI = pviValues.length > 0 ? Math.round(pviValues.reduce((a, b) => a + b, 0) / pviValues.length) : null;
+
+      // When PVI filter is active, color by PVI; otherwise by issue
+      const color = pviFilter !== "all" && avgPVI !== null
+        ? `hsl(${getPVIColor(avgPVI)})`
+        : getIssueColor(topIssue);
+
       result[state] = {
         state,
         topIssue,
-        color: getIssueColor(topIssue),
+        color,
         districtCount: dists.length,
         districts: dists,
+        avgPVI,
       };
     });
     return result;
-  }, [districts]);
+  }, [filteredDistricts, pviFilter]);
 
   // Unique issues for legend
   const legendIssues = useMemo(() => {
