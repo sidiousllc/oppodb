@@ -26,6 +26,7 @@ import { DistrictCompare } from "@/components/DistrictCompare";
 import { BookOpen, AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
+import { StateLegislativeSection } from "@/components/StateLegislativeSection";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
