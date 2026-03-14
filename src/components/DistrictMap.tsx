@@ -7,6 +7,7 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 import { type DistrictProfile } from "@/data/districtIntel";
+import { getCurrentPVI, formatPVI, getPVIColor } from "@/data/cookPVI";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
@@ -54,9 +55,35 @@ const STATE_CENTROIDS: Record<string, [number, number]> = {
   WI: [-89.8, 44.6], WY: [-107.6, 43.0], DC: [-77.0, 38.9],
 };
 
+export type PVIFilter = "all" | "strong-d" | "lean-d" | "swing" | "lean-r" | "strong-r";
+
+export const PVI_FILTER_OPTIONS: { id: PVIFilter; label: string; color: string }[] = [
+  { id: "all", label: "All", color: "" },
+  { id: "strong-d", label: "Strong D (D+8+)", color: "210 80% 45%" },
+  { id: "lean-d", label: "Lean D (D+1–7)", color: "210 50% 65%" },
+  { id: "swing", label: "Swing (±0)", color: "45 80% 50%" },
+  { id: "lean-r", label: "Lean R (R+1–7)", color: "0 50% 65%" },
+  { id: "strong-r", label: "Strong R (R+8+)", color: "0 80% 45%" },
+];
+
+function matchesPVIFilter(districtId: string, filter: PVIFilter): boolean {
+  if (filter === "all") return true;
+  const pvi = getCurrentPVI(districtId);
+  if (pvi === null) return false;
+  switch (filter) {
+    case "strong-d": return pvi <= -8;
+    case "lean-d": return pvi >= -7 && pvi <= -1;
+    case "swing": return pvi === 0;
+    case "lean-r": return pvi >= 1 && pvi <= 7;
+    case "strong-r": return pvi >= 8;
+    default: return true;
+  }
+}
+
 interface DistrictMapProps {
   districts: DistrictProfile[];
   onSelectDistrict: (districtId: string) => void;
+  pviFilter?: PVIFilter;
 }
 
 interface StateIssueData {
@@ -65,16 +92,23 @@ interface StateIssueData {
   color: string;
   districtCount: number;
   districts: DistrictProfile[];
+  avgPVI: number | null;
 }
 
-const DistrictMapInner = ({ districts, onSelectDistrict }: DistrictMapProps) => {
+const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: DistrictMapProps) => {
   const [tooltip, setTooltip] = useState<StateIssueData | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  // Filter districts by PVI
+  const filteredDistricts = useMemo(() => {
+    if (pviFilter === "all") return districts;
+    return districts.filter((d) => matchesPVIFilter(d.district_id, pviFilter));
+  }, [districts, pviFilter]);
 
   // Group districts by state and find top issue per state
   const stateData = useMemo(() => {
     const byState: Record<string, DistrictProfile[]> = {};
-    districts.forEach((d) => {
+    filteredDistricts.forEach((d) => {
       const st = d.district_id.split("-")[0];
       if (!byState[st]) byState[st] = [];
       byState[st].push(d);
@@ -91,16 +125,27 @@ const DistrictMapInner = ({ districts, onSelectDistrict }: DistrictMapProps) => 
       const topIssue =
         Object.entries(issueCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
         "No data";
+
+      // Calculate average PVI for the state's filtered districts
+      const pviValues = dists.map((d) => getCurrentPVI(d.district_id)).filter((v): v is number => v !== null);
+      const avgPVI = pviValues.length > 0 ? Math.round(pviValues.reduce((a, b) => a + b, 0) / pviValues.length) : null;
+
+      // When PVI filter is active, color by PVI; otherwise by issue
+      const color = pviFilter !== "all" && avgPVI !== null
+        ? `hsl(${getPVIColor(avgPVI)})`
+        : getIssueColor(topIssue);
+
       result[state] = {
         state,
         topIssue,
-        color: getIssueColor(topIssue),
+        color,
         districtCount: dists.length,
         districts: dists,
+        avgPVI,
       };
     });
     return result;
-  }, [districts]);
+  }, [filteredDistricts, pviFilter]);
 
   // Unique issues for legend
   const legendIssues = useMemo(() => {
@@ -212,6 +257,17 @@ const DistrictMapInner = ({ districts, onSelectDistrict }: DistrictMapProps) => 
               {tooltip.topIssue}
             </span>
           </div>
+          {tooltip.avgPVI !== null && (
+            <div className="mt-1 flex items-center gap-1.5">
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: `hsl(${getPVIColor(tooltip.avgPVI)})` }}
+              />
+              <span className="text-xs font-medium text-foreground">
+                PVI: {formatPVI(tooltip.avgPVI)}
+              </span>
+            </div>
+          )}
         </div>
       )}
 

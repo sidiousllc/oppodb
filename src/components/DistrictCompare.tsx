@@ -12,8 +12,10 @@ import {
   X,
   Download,
   FileText,
+  Vote,
 } from "lucide-react";
 import { getCookRating, getCookRatingColor, getCookRatingBg, getCookRatingText, type CookRating, COOK_RATING_ORDER, COOK_RATING_COLORS } from "@/data/cookRatings";
+import { getCurrentPVI, getPVIHistory, formatPVI, getPVIColor, PVI_CYCLES } from "@/data/cookPVI";
 import { exportCSV, exportPDF } from "@/lib/districtExport";
 import {
   BarChart,
@@ -343,6 +345,93 @@ export function DistrictCompare({
                 );
               })}
             </div>
+          </div>
+
+          {/* Cook PVI Side-by-Side */}
+          <div className="bg-card rounded-xl border border-border p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Vote className="h-4 w-4 text-primary" />
+              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Cook Partisan Voting Index (PVI)
+              </h2>
+            </div>
+
+            {/* Current PVI badges */}
+            <div className="grid gap-4 mb-5" style={{ gridTemplateColumns: `repeat(${Math.min(selected.length, 6)}, 1fr)` }}>
+              {selected.map((d) => {
+                const pvi = getCurrentPVI(d.district_id);
+                return (
+                  <div key={d.district_id} className="text-center">
+                    <p className="text-xs font-bold mb-2" style={{ color: colorMap.get(d.district_id) }}>
+                      {d.district_id}
+                    </p>
+                    {pvi !== null ? (
+                      <span
+                        className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-bold border"
+                        style={{
+                          backgroundColor: `hsl(${getPVIColor(pvi)} / 0.12)`,
+                          color: `hsl(${getPVIColor(pvi)})`,
+                          borderColor: `hsl(${getPVIColor(pvi)} / 0.3)`,
+                        }}
+                      >
+                        {formatPVI(pvi)}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No PVI data</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* PVI History Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left text-xs font-medium text-muted-foreground py-2 pr-4">Cycle</th>
+                    {selected.map((d) => (
+                      <th key={d.district_id} className="text-right text-xs font-medium py-2 px-2" style={{ color: colorMap.get(d.district_id) }}>
+                        {d.district_id}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {PVI_CYCLES.map((cycle) => (
+                    <tr key={cycle} className="border-b border-border/50 last:border-0">
+                      <td className="text-xs text-muted-foreground py-2 pr-4 font-medium">{cycle}</td>
+                      {selected.map((d) => {
+                        const history = getPVIHistory(d.district_id);
+                        const entry = history?.find((h) => h.cycle === cycle);
+                        if (!entry) return <td key={d.district_id} className="text-right text-xs text-muted-foreground py-2 px-2">—</td>;
+                        const color = getPVIColor(entry.score);
+                        return (
+                          <td key={d.district_id} className="text-right py-2 px-2">
+                            <span
+                              className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
+                              style={{
+                                backgroundColor: `hsl(${color} / 0.1)`,
+                                color: `hsl(${color})`,
+                              }}
+                            >
+                              {formatPVI(entry.score)}
+                            </span>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-3">
+              PVI measures how a district votes relative to the national average. Source:{" "}
+              <a href="https://www.cookpolitical.com/cook-pvi" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">
+                Cook Political Report
+              </a>
+            </p>
           </div>
 
           {SECTIONS.map((section) => (

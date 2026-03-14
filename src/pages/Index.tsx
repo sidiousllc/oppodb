@@ -15,7 +15,7 @@ import { GenericCard } from "@/components/GenericCard";
 import { GenericDetail } from "@/components/GenericDetail";
 import { DistrictCard } from "@/components/DistrictCard";
 import { DistrictDetail } from "@/components/DistrictDetail";
-import { DistrictMap } from "@/components/DistrictMap";
+import { DistrictMap, type PVIFilter, PVI_FILTER_OPTIONS } from "@/components/DistrictMap";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -38,6 +38,7 @@ export default function Index() {
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
+  const [pviFilter, setPviFilter] = useState<PVIFilter>("all");
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
   const [editData, setEditData] = useState<{
     id: string; name: string; slug: string; content: string;
@@ -471,15 +472,42 @@ export default function Index() {
             })}
           </div>
 
+          {/* PVI Filter */}
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider self-center mr-1">PVI:</span>
+            {PVI_FILTER_OPTIONS.map((opt) => {
+              const isActive = pviFilter === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setPviFilter(isActive && opt.id !== "all" ? "all" : opt.id)}
+                  className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide border transition-all"
+                  style={opt.color ? {
+                    backgroundColor: isActive ? `hsl(${opt.color})` : `hsl(${opt.color} / 0.08)`,
+                    color: isActive ? "white" : `hsl(${opt.color})`,
+                    borderColor: isActive ? `hsl(${opt.color})` : `hsl(${opt.color} / 0.25)`,
+                  } : {
+                    backgroundColor: isActive ? "hsl(var(--foreground))" : "hsl(var(--muted))",
+                    color: isActive ? "hsl(var(--background))" : "hsl(var(--muted-foreground))",
+                    borderColor: isActive ? "hsl(var(--foreground))" : "hsl(var(--border))",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Map visualization */}
           {districts.length > 0 && (
             <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
               <h3 className="font-display text-sm font-semibold text-foreground mb-3">
-                District Map — Top Issues by State
+                District Map — {pviFilter !== "all" ? "Filtered by PVI" : "Top Issues by State"}
               </h3>
               <DistrictMap
                 districts={districts}
                 onSelectDistrict={setSelectedSlug}
+                pviFilter={pviFilter}
               />
             </div>
           )}
