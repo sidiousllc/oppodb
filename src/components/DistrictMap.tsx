@@ -29,6 +29,7 @@ const CD_GEO_URL =
     outSR: "4326",
     returnGeometry: "true",
     resultRecordCount: "500",
+    maxAllowableOffset: "0.03",
   }).toString();
 
 // ─── Types & Exports ────────────────────────────────────────────────────────
