@@ -54,6 +54,7 @@ function categorize(name: string, slug: string): { category: Candidate["category
     "neal-dunn": "FL", "richard-hudson": "NC", "stephanie-bice": "OK",
     "tim-moore": "NC", "tom-mcclintock": "CA", "tony-wied": "WI",
     "victoria-spartz": "IN", "virginia-foxx": "NC",
+    "brian-fitzpatrick": "PA",
   };
   
   return { category: "house", state: houseStates[lslug] || "" };
