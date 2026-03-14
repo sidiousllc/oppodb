@@ -39,9 +39,3 @@ export async function deleteUser(userId: string) {
   if (error) throw error;
   return data;
 }
-  const { data, error } = await supabase.functions.invoke("admin-users", {
-    body: { action: "delete_user", user_id: userId },
-  });
-  if (error) throw error;
-  return data;
-}
