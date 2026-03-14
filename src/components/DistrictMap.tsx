@@ -114,7 +114,7 @@ async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
       if (!res.ok) return null;
       const data = await res.json();
       if (data.error || !data.features) return null;
-      cachedGeoJSON = data as GeoJSON.FeatureCollection;
+      cachedGeoJSON = data as DistrictGeoJSON;
       return cachedGeoJSON;
     })
     .catch(() => null);
