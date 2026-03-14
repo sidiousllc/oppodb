@@ -168,6 +168,10 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     center: [-96, 38],
     zoom: 1,
   });
+  const [zoomedStateAbbr, setZoomedStateAbbr] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [highlightedDistrict, setHighlightedDistrict] = useState<string | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (cachedGeoJSON) {
