@@ -10,8 +10,11 @@ import {
   ChevronDown,
   Plus,
   X,
+  Download,
+  FileText,
 } from "lucide-react";
 import { getCookRating, getCookRatingColor, getCookRatingBg, getCookRatingText, type CookRating, COOK_RATING_ORDER, COOK_RATING_COLORS } from "@/data/cookRatings";
+import { exportCSV, exportPDF } from "@/lib/districtExport";
 import {
   BarChart,
   Bar,
@@ -245,9 +248,29 @@ export function DistrictCompare({
         Back to District Intel
       </button>
 
-      <h1 className="font-display text-xl font-bold text-foreground mb-5">
-        Compare Districts
-      </h1>
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="font-display text-xl font-bold text-foreground">
+          Compare Districts
+        </h1>
+        {selected.length >= 2 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => exportCSV(selected)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              CSV
+            </button>
+            <button
+              onClick={() => exportPDF(selected)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              PDF
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Pickers */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
