@@ -6,6 +6,7 @@ import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/d
 import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
 import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
+import { getCookRating, getCookRatingColor, COOK_RATING_ORDER, type CookRating } from "@/data/cookRatings";
 import { candidateDistrictMap } from "@/data/candidateDistricts";
 import { SearchBar } from "@/components/SearchBar";
 import { CandidateCard } from "@/components/CandidateCard";
@@ -36,6 +37,7 @@ export default function Index() {
   const [censusSyncing, setCensusSyncing] = useState(false);
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
+  const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
   const [editData, setEditData] = useState<{
     id: string; name: string; slug: string; content: string;
@@ -140,8 +142,11 @@ export default function Index() {
     if (trackedOnly) {
       results = results.filter(d => trackedDistrictIds.has(d.district_id));
     }
+    if (cookFilter !== "all") {
+      results = results.filter(d => getCookRating(d.district_id) === cookFilter);
+    }
     return results;
-  }, [search, districts, trackedOnly, trackedDistrictIds]);
+  }, [search, districts, trackedOnly, trackedDistrictIds, cookFilter]);
 
   const counts = useMemo(() => ({
     all: candidates.length,
@@ -429,6 +434,38 @@ export default function Index() {
                 )}
               </button>
             </div>
+          </div>
+
+          {/* Cook Political Report Filter */}
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setCookFilter("all")}
+              className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide border transition-colors ${
+                cookFilter === "all"
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+              }`}
+            >
+              All Ratings
+            </button>
+            {COOK_RATING_ORDER.map((rating) => {
+              const color = getCookRatingColor(rating);
+              const isActive = cookFilter === rating;
+              return (
+                <button
+                  key={rating}
+                  onClick={() => setCookFilter(isActive ? "all" : rating)}
+                  className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide border transition-all"
+                  style={{
+                    backgroundColor: isActive ? `hsl(${color})` : `hsl(${color} / 0.08)`,
+                    color: isActive ? "white" : `hsl(${color})`,
+                    borderColor: isActive ? `hsl(${color})` : `hsl(${color} / 0.25)`,
+                  }}
+                >
+                  {rating}
+                </button>
+              );
+            })}
           </div>
 
           {/* Map visualization */}

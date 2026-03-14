@@ -1,6 +1,7 @@
 import { type DistrictProfile } from "@/data/districtIntel";
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
+import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
 import {
   ArrowLeft,
   MapPin,
@@ -17,12 +18,47 @@ import {
   TrendingDown,
   Briefcase,
   Building,
+  BarChart3,
 } from "lucide-react";
 
 interface DistrictDetailProps {
   district: DistrictProfile;
   onBack: () => void;
   onSelectCandidate?: (slug: string) => void;
+}
+
+function CookRatingBanner({ rating }: { rating: CookRating }) {
+  const color = getCookRatingColor(rating);
+  return (
+    <div
+      className="rounded-xl border p-4 mb-6 flex items-center gap-3"
+      style={{
+        backgroundColor: `hsl(${color} / 0.08)`,
+        borderColor: `hsl(${color} / 0.25)`,
+      }}
+    >
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+        style={{ backgroundColor: `hsl(${color} / 0.15)` }}
+      >
+        <BarChart3 className="h-5 w-5" style={{ color: `hsl(${color})` }} />
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground font-medium">Cook Political Report Rating</p>
+        <p className="font-display text-lg font-bold" style={{ color: `hsl(${color})` }}>
+          {rating}
+        </p>
+      </div>
+      <a
+        href="https://www.cookpolitical.com/ratings/house-race-ratings"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="ml-auto text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+      >
+        Source
+      </a>
+    </div>
+  );
 }
 
 function StatCard({
@@ -74,6 +110,8 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
     .map((slug) => getCandidateBySlug(slug))
     .filter(Boolean);
 
+  const cookRating = getCookRating(district.district_id);
+
   const fmt = (n: number | null | undefined) => n != null ? n.toLocaleString() : null;
   const pct = (n: number | null | undefined) => n != null ? `${n}%` : null;
   const dollar = (n: number | null | undefined) => n != null ? `$${n.toLocaleString()}` : null;
@@ -95,9 +133,23 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             <MapPin className="h-7 w-7 text-[hsl(var(--tag-governor))]" />
           </div>
           <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">
-              {district.district_id}
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="font-display text-2xl font-bold text-foreground">
+                {district.district_id}
+              </h1>
+              {cookRating && (
+                <span
+                  className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-wide border"
+                  style={{
+                    backgroundColor: `hsl(${getCookRatingColor(cookRating)} / 0.12)`,
+                    color: `hsl(${getCookRatingColor(cookRating)})`,
+                    borderColor: `hsl(${getCookRatingColor(cookRating)} / 0.25)`,
+                  }}
+                >
+                  {cookRating}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-3 mt-2">
               <span className="tag tag-governor">{district.state}</span>
               <span className="text-sm text-muted-foreground">
@@ -107,6 +159,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
           </div>
         </div>
       </div>
+
+      {/* Cook Rating Banner */}
+      {cookRating && <CookRatingBanner rating={cookRating} />}
 
       {/* Key Stats Grid */}
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -283,7 +338,16 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
           >
             U.S. Census ACS 5-Year Estimates (2022)
           </a>
-          . Includes population, income, education, poverty, employment, racial demographics, housing, health insurance, and veteran status data.
+          . Competitiveness ratings from the{" "}
+          <a
+            href="https://www.cookpolitical.com/ratings/house-race-ratings"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            Cook Political Report (March 2026)
+          </a>
+          .
         </p>
       </div>
     </div>
