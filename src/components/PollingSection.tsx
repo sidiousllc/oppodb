@@ -9,6 +9,10 @@ function formatDate(d: string): string {
   return new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+function formatDateShort(d: string): string {
+  return new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
+}
+
 function marginColor(margin: number | null): string {
   if (margin === null) return "hsl(var(--muted-foreground))";
   if (margin > 5) return "hsl(150, 60%, 40%)";
@@ -44,60 +48,524 @@ function ApprovalBar({ approve, disapprove }: { approve: number | null; disappro
     <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted">
       <div
         className="transition-all duration-300"
-        style={{
-          width: `${(a / total) * 100}%`,
-          backgroundColor: "hsl(150, 55%, 45%)",
-        }}
+        style={{ width: `${(a / total) * 100}%`, backgroundColor: "hsl(150, 55%, 45%)" }}
       />
       <div
         className="transition-all duration-300"
-        style={{
-          width: `${(d / total) * 100}%`,
-          backgroundColor: "hsl(0, 65%, 50%)",
-        }}
+        style={{ width: `${(d / total) * 100}%`, backgroundColor: "hsl(0, 65%, 50%)" }}
       />
     </div>
   );
 }
 
-// ─── Sparkline-like trend chart (pure SVG) ──────────────────────────────────
+// ─── Multi-Source Approval Trend Chart (SVG) ────────────────────────────────
 
-function TrendLine({ data, valueKey }: { data: PollEntry[]; valueKey: "approve_pct" | "favor_pct" }) {
-  if (data.length < 2) return null;
-  const sorted = [...data].sort((a, b) => a.date_conducted.localeCompare(b.date_conducted));
-  const values = sorted.map((d) => (d[valueKey] as number) ?? 0);
-  const min = Math.min(...values) - 2;
-  const max = Math.max(...values) + 2;
-  const range = max - min || 1;
-  const w = 200;
-  const h = 40;
+function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
+  const [hoveredPoint, setHoveredPoint] = useState<{ source: string; date: string; value: number; x: number; y: number } | null>(null);
 
-  const points = values.map((v, i) => {
-    const x = (i / (values.length - 1)) * w;
-    const y = h - ((v - min) / range) * h;
-    return `${x},${y}`;
-  });
+  const approvalBySource = useMemo(() => {
+    const map = new Map<string, PollEntry[]>();
+    polls
+      .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval")
+      .forEach((p) => {
+        if (!map.has(p.source)) map.set(p.source, []);
+        map.get(p.source)!.push(p);
+      });
+    // Sort each source's polls by date
+    map.forEach((v) => v.sort((a, b) => a.date_conducted.localeCompare(b.date_conducted)));
+    return map;
+  }, [polls]);
 
-  const lastVal = values[values.length - 1];
-  const firstVal = values[0];
-  const trending = lastVal > firstVal ? "hsl(150, 55%, 45%)" : "hsl(0, 65%, 50%)";
+  if (approvalBySource.size === 0) return null;
+
+  const allDates = polls
+    .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval")
+    .map((p) => p.date_conducted)
+    .sort();
+  const minDate = allDates[0];
+  const maxDate = allDates[allDates.length - 1];
+  const dateRange = new Date(maxDate).getTime() - new Date(minDate).getTime() || 1;
+
+  const W = 700;
+  const H = 280;
+  const PAD = { top: 20, right: 20, bottom: 40, left: 45 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  // Y-axis: approval values
+  const allVals = polls
+    .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval" && p.approve_pct !== null)
+    .map((p) => p.approve_pct!);
+  const minVal = Math.floor(Math.min(...allVals) - 3);
+  const maxVal = Math.ceil(Math.max(...allVals) + 3);
+  const valRange = maxVal - minVal || 1;
+
+  const dateToX = (d: string) => PAD.left + ((new Date(d).getTime() - new Date(minDate).getTime()) / dateRange) * plotW;
+  const valToY = (v: number) => PAD.top + plotH - ((v - minVal) / valRange) * plotH;
+
+  // Y-axis ticks
+  const yTicks: number[] = [];
+  for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) yTicks.push(v);
+
+  // X-axis: monthly ticks
+  const xTicks: { date: string; label: string }[] = [];
+  const start = new Date(minDate);
+  const end = new Date(maxDate);
+  const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cur <= end) {
+    const d = cur.toISOString().split("T")[0];
+    xTicks.push({ date: d, label: cur.toLocaleDateString("en-US", { month: "short" }) });
+    cur.setMonth(cur.getMonth() + 1);
+  }
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-10" preserveAspectRatio="none">
-      <polyline
-        points={points.join(" ")}
-        fill="none"
-        stroke={trending}
-        strokeWidth={2}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      {values.map((v, i) => {
-        const x = (i / (values.length - 1)) * w;
-        const y = h - ((v - min) / range) * h;
-        return <circle key={i} cx={x} cy={y} r={2.5} fill={trending} />;
-      })}
-    </svg>
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
+        Approval Rating Trend by Source
+      </h3>
+      <p className="text-xs text-muted-foreground mb-3">
+        Presidential approval tracked across {approvalBySource.size} polling sources
+      </p>
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 320 }}>
+          {/* Grid lines */}
+          {yTicks.map((v) => (
+            <g key={v}>
+              <line x1={PAD.left} y1={valToY(v)} x2={W - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} />
+              <text x={PAD.left - 6} y={valToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
+            </g>
+          ))}
+          {/* 50% reference line */}
+          {minVal < 50 && maxVal > 50 && (
+            <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.5} />
+          )}
+          {/* X-axis ticks */}
+          {xTicks.map((t) => (
+            <text key={t.date} x={dateToX(t.date)} y={H - 8} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">{t.label}</text>
+          ))}
+          {/* Source lines */}
+          {Array.from(approvalBySource.entries()).map(([sourceId, sourcePolls]) => {
+            const src = getSourceInfo(sourceId);
+            const color = `hsl(${src.color})`;
+            const points = sourcePolls
+              .filter((p) => p.approve_pct !== null)
+              .map((p) => ({ x: dateToX(p.date_conducted), y: valToY(p.approve_pct!), date: p.date_conducted, val: p.approve_pct! }));
+            if (points.length < 2) return null;
+            const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+            return (
+              <g key={sourceId}>
+                <path d={pathD} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.8} />
+                {points.map((p, i) => (
+                  <circle
+                    key={i}
+                    cx={p.x}
+                    cy={p.y}
+                    r={hoveredPoint?.source === sourceId && hoveredPoint?.date === p.date ? 5 : 3}
+                    fill={color}
+                    stroke="hsl(var(--card))"
+                    strokeWidth={1.5}
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={() => setHoveredPoint({ source: sourceId, date: p.date, value: p.val, x: p.x, y: p.y })}
+                    onMouseLeave={() => setHoveredPoint(null)}
+                  />
+                ))}
+              </g>
+            );
+          })}
+          {/* Tooltip */}
+          {hoveredPoint && (
+            <g>
+              <rect
+                x={hoveredPoint.x + 10}
+                y={hoveredPoint.y - 28}
+                width={120}
+                height={32}
+                rx={6}
+                fill="hsl(var(--popover))"
+                stroke="hsl(var(--border))"
+                strokeWidth={1}
+              />
+              <text x={hoveredPoint.x + 18} y={hoveredPoint.y - 14} fontSize={10} fontWeight="600" fill="hsl(var(--foreground))">
+                {getSourceInfo(hoveredPoint.source).name}
+              </text>
+              <text x={hoveredPoint.x + 18} y={hoveredPoint.y - 2} fontSize={9} fill="hsl(var(--muted-foreground))">
+                {hoveredPoint.value}% · {formatDateShort(hoveredPoint.date)}
+              </text>
+            </g>
+          )}
+        </svg>
+      </div>
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 mt-3">
+        {Array.from(approvalBySource.keys()).map((sourceId) => {
+          const src = getSourceInfo(sourceId);
+          return (
+            <div key={sourceId} className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(${src.color})` }} />
+              <span className="text-[10px] font-medium text-muted-foreground">{src.name}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Source Comparison Dot Plot ──────────────────────────────────────────────
+
+function SourceDotPlot({ latestBySource }: { latestBySource: PollEntry[] }) {
+  if (latestBySource.length === 0) return null;
+
+  const sorted = [...latestBySource].sort((a, b) => (b.approve_pct ?? 0) - (a.approve_pct ?? 0));
+  const barH = 36;
+  const W = 500;
+  const H = sorted.length * barH + 40;
+  const LEFT = 130;
+  const RIGHT = 40;
+  const plotW = W - LEFT - RIGHT;
+  const minPct = 30;
+  const maxPct = 55;
+  const range = maxPct - minPct;
+  const pctToX = (v: number) => LEFT + ((v - minPct) / range) * plotW;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
+        Source-by-Source Approval Comparison
+      </h3>
+      <p className="text-xs text-muted-foreground mb-3">
+        Latest approval rating from each polling source (dot plot)
+      </p>
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[400px]">
+          {/* Grid lines */}
+          {[35, 40, 45, 50].map((v) => (
+            <g key={v}>
+              <line x1={pctToX(v)} y1={15} x2={pctToX(v)} y2={H - 20} stroke="hsl(var(--border))" strokeWidth={0.5} />
+              <text x={pctToX(v)} y={H - 5} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
+            </g>
+          ))}
+          {/* 50% line */}
+          <line x1={pctToX(50)} y1={15} x2={pctToX(50)} y2={H - 20} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
+          {sorted.map((poll, i) => {
+            const src = getSourceInfo(poll.source);
+            const color = `hsl(${src.color})`;
+            const y = 15 + i * barH + barH / 2;
+            const approveX = pctToX(poll.approve_pct ?? 0);
+            const disapproveX = pctToX(poll.disapprove_pct ?? 0);
+            return (
+              <g key={poll.id}>
+                {/* Source label */}
+                <text x={LEFT - 8} y={y + 4} textAnchor="end" fontSize={11} fontWeight="500" fill="hsl(var(--foreground))">
+                  {src.name}
+                </text>
+                {/* Connector line */}
+                <line x1={Math.min(approveX, disapproveX)} y1={y} x2={Math.max(approveX, disapproveX)} y2={y} stroke="hsl(var(--border))" strokeWidth={2} />
+                {/* Approve dot */}
+                <circle cx={approveX} cy={y} r={6} fill="hsl(150, 55%, 45%)" stroke="hsl(var(--card))" strokeWidth={2} />
+                <text x={approveX} y={y - 10} textAnchor="middle" fontSize={9} fontWeight="700" fill="hsl(150, 55%, 45%)">
+                  {poll.approve_pct}%
+                </text>
+                {/* Disapprove dot */}
+                <circle cx={disapproveX} cy={y} r={6} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={2} />
+                {/* Color indicator */}
+                <rect x={4} y={y - 5} width={10} height={10} rx={2} fill={color} />
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+      <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Approve</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Disapprove</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Generic Ballot Comparison Chart ────────────────────────────────────────
+
+function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
+  if (polls.length === 0) return null;
+
+  // Latest generic ballot per source
+  const bySource = new Map<string, PollEntry>();
+  polls.forEach((p) => {
+    const ex = bySource.get(p.source);
+    if (!ex || p.date_conducted > ex.date_conducted) bySource.set(p.source, p);
+  });
+  const entries = Array.from(bySource.values()).sort((a, b) => (b.margin ?? 0) - (a.margin ?? 0));
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
+        Generic Congressional Ballot
+      </h3>
+      <p className="text-xs text-muted-foreground mb-4">
+        Democrat vs Republican, by source
+      </p>
+      <div className="space-y-3">
+        {entries.map((poll) => {
+          const src = getSourceInfo(poll.source);
+          const dem = poll.favor_pct ?? 0;
+          const rep = poll.oppose_pct ?? 0;
+          const total = dem + rep || 100;
+          return (
+            <div key={poll.id}>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(${src.color})` }} />
+                  <span className="text-xs font-medium text-foreground">{src.name}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="font-bold" style={{ color: "hsl(210, 80%, 50%)" }}>D {dem}%</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="font-bold" style={{ color: "hsl(0, 75%, 50%)" }}>R {rep}%</span>
+                  <MarginBadge margin={poll.margin} />
+                </div>
+              </div>
+              <div className="flex h-5 w-full overflow-hidden rounded-md bg-muted">
+                <div
+                  className="flex items-center justify-end pr-1.5 transition-all duration-500"
+                  style={{ width: `${(dem / total) * 100}%`, backgroundColor: "hsl(210, 80%, 50%)" }}
+                >
+                  <span className="text-[9px] font-bold text-white">{dem}%</span>
+                </div>
+                <div
+                  className="flex items-center justify-start pl-1.5 transition-all duration-500"
+                  style={{ width: `${(rep / total) * 100}%`, backgroundColor: "hsl(0, 75%, 50%)" }}
+                >
+                  <span className="text-[9px] font-bold text-white">{rep}%</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Issue Polling Butterfly Chart ──────────────────────────────────────────
+
+function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
+  if (polls.length === 0) return null;
+
+  // Deduplicate: latest per topic across sources
+  const byTopic = new Map<string, PollEntry[]>();
+  polls.forEach((p) => {
+    if (!byTopic.has(p.candidate_or_topic)) byTopic.set(p.candidate_or_topic, []);
+    byTopic.get(p.candidate_or_topic)!.push(p);
+  });
+
+  const topics = Array.from(byTopic.entries()).sort((a, b) => {
+    const aMargin = a[1][0]?.margin ?? 0;
+    const bMargin = b[1][0]?.margin ?? 0;
+    return aMargin - bMargin;
+  });
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
+        Issue Polling Overview
+      </h3>
+      <p className="text-xs text-muted-foreground mb-4">
+        Approve vs disapprove on key issues (butterfly chart)
+      </p>
+      <div className="space-y-3">
+        {topics.map(([topic, topicPolls]) => {
+          // Average across sources for the topic
+          const avgApprove = topicPolls.reduce((s, p) => s + (p.approve_pct ?? p.favor_pct ?? 0), 0) / topicPolls.length;
+          const avgDisapprove = topicPolls.reduce((s, p) => s + (p.disapprove_pct ?? p.oppose_pct ?? 0), 0) / topicPolls.length;
+          const margin = avgApprove - avgDisapprove;
+          const maxBar = 80; // max percentage width
+          const approveW = (avgApprove / maxBar) * 100;
+          const disapproveW = (avgDisapprove / maxBar) * 100;
+          const sourceNames = topicPolls.map((p) => getSourceInfo(p.source).name);
+
+          return (
+            <div key={topic} className="group">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-semibold text-foreground">{topic}</span>
+                <div className="flex items-center gap-2">
+                  <MarginBadge margin={Math.round(margin * 10) / 10} />
+                  <span className="text-[9px] text-muted-foreground hidden group-hover:inline">
+                    {sourceNames.join(", ")}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-0.5">
+                {/* Approve bar (left to right) */}
+                <div className="flex-1 flex justify-end">
+                  <div
+                    className="h-6 rounded-l-md flex items-center justify-end pr-1.5 transition-all duration-500"
+                    style={{
+                      width: `${Math.min(approveW, 100)}%`,
+                      backgroundColor: "hsl(150, 55%, 45%)",
+                      minWidth: 30,
+                    }}
+                  >
+                    <span className="text-[10px] font-bold text-white">{Math.round(avgApprove)}%</span>
+                  </div>
+                </div>
+                {/* Center divider */}
+                <div className="w-px h-6 bg-border" />
+                {/* Disapprove bar (right) */}
+                <div className="flex-1">
+                  <div
+                    className="h-6 rounded-r-md flex items-center pl-1.5 transition-all duration-500"
+                    style={{
+                      width: `${Math.min(disapproveW, 100)}%`,
+                      backgroundColor: "hsl(0, 65%, 50%)",
+                      minWidth: 30,
+                    }}
+                  >
+                    <span className="text-[10px] font-bold text-white">{Math.round(avgDisapprove)}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-center gap-6 mt-3 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="inline-block h-2 w-8 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Approve / Favor</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-2 w-8 rounded-sm" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Disapprove / Oppose</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Approval Gauge ─────────────────────────────────────────────────────────
+
+function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disapprove: number; margin: number }) {
+  const radius = 60;
+  const strokeW = 12;
+  const cx = 80;
+  const cy = 80;
+  const circumference = Math.PI * radius; // half circle
+  const approveArc = (approve / 100) * circumference;
+  const disapproveArc = (disapprove / 100) * circumference;
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg width={160} height={100} viewBox="0 0 160 100">
+        {/* Background arc */}
+        <path
+          d={`M ${cx - radius} ${cy} A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`}
+          fill="none"
+          stroke="hsl(var(--muted))"
+          strokeWidth={strokeW}
+          strokeLinecap="round"
+        />
+        {/* Approve arc (from left) */}
+        <path
+          d={`M ${cx - radius} ${cy} A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`}
+          fill="none"
+          stroke="hsl(150, 55%, 45%)"
+          strokeWidth={strokeW}
+          strokeLinecap="round"
+          strokeDasharray={`${approveArc} ${circumference}`}
+          className="transition-all duration-700"
+        />
+        {/* Disapprove arc (from right) */}
+        <path
+          d={`M ${cx + radius} ${cy} A ${radius} ${radius} 0 0 0 ${cx - radius} ${cy}`}
+          fill="none"
+          stroke="hsl(0, 65%, 50%)"
+          strokeWidth={strokeW}
+          strokeLinecap="round"
+          strokeDasharray={`${disapproveArc} ${circumference}`}
+          className="transition-all duration-700"
+        />
+        {/* Center text */}
+        <text x={cx} y={cy - 10} textAnchor="middle" fontSize={24} fontWeight="800" fill="hsl(var(--foreground))">
+          {approve}%
+        </text>
+        <text x={cx} y={cy + 6} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">
+          approve
+        </text>
+      </svg>
+      <MarginBadge margin={margin} />
+    </div>
+  );
+}
+
+// ─── Favorability Trend Chart ───────────────────────────────────────────────
+
+function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
+  const favPolls = polls.filter((p) => p.poll_type === "favorability");
+  if (favPolls.length < 2) return null;
+
+  const sorted = [...favPolls].sort((a, b) => a.date_conducted.localeCompare(b.date_conducted));
+  const W = 500;
+  const H = 180;
+  const PAD = { top: 15, right: 15, bottom: 30, left: 40 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const allVals = sorted.flatMap((p) => [p.favor_pct ?? 0, p.oppose_pct ?? 0]);
+  const minVal = Math.floor(Math.min(...allVals) - 3);
+  const maxVal = Math.ceil(Math.max(...allVals) + 3);
+  const valRange = maxVal - minVal || 1;
+
+  const dateRange = new Date(sorted[sorted.length - 1].date_conducted).getTime() - new Date(sorted[0].date_conducted).getTime() || 1;
+  const dateToX = (d: string) => PAD.left + ((new Date(d).getTime() - new Date(sorted[0].date_conducted).getTime()) / dateRange) * plotW;
+  const valToY = (v: number) => PAD.top + plotH - ((v - minVal) / valRange) * plotH;
+
+  const favPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.favor_pct ?? 0)}`).join(" ");
+  const unfavPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.oppose_pct ?? 0)}`).join(" ");
+
+  // Area fill
+  const favAreaPath = favPath + ` L ${dateToX(sorted[sorted.length - 1].date_conducted)} ${PAD.top + plotH} L ${dateToX(sorted[0].date_conducted)} ${PAD.top + plotH} Z`;
+  const unfavAreaPath = unfavPath + ` L ${dateToX(sorted[sorted.length - 1].date_conducted)} ${PAD.top + plotH} L ${dateToX(sorted[0].date_conducted)} ${PAD.top + plotH} Z`;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
+        Favorability Tracking
+      </h3>
+      <p className="text-xs text-muted-foreground mb-3">
+        Favorable vs unfavorable over time (area chart)
+      </p>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+        {/* Y gridlines */}
+        {[35, 40, 45, 50, 55, 60].filter((v) => v >= minVal && v <= maxVal).map((v) => (
+          <g key={v}>
+            <line x1={PAD.left} y1={valToY(v)} x2={W - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} />
+            <text x={PAD.left - 5} y={valToY(v) + 3} textAnchor="end" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
+          </g>
+        ))}
+        {/* Area fills */}
+        <path d={unfavAreaPath} fill="hsl(0, 65%, 50%)" opacity={0.08} />
+        <path d={favAreaPath} fill="hsl(150, 55%, 45%)" opacity={0.08} />
+        {/* Lines */}
+        <path d={unfavPath} fill="none" stroke="hsl(0, 65%, 50%)" strokeWidth={2} strokeLinejoin="round" />
+        <path d={favPath} fill="none" stroke="hsl(150, 55%, 45%)" strokeWidth={2} strokeLinejoin="round" />
+        {/* Dots */}
+        {sorted.map((p, i) => (
+          <g key={i}>
+            <circle cx={dateToX(p.date_conducted)} cy={valToY(p.favor_pct ?? 0)} r={3} fill="hsl(150, 55%, 45%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
+            <circle cx={dateToX(p.date_conducted)} cy={valToY(p.oppose_pct ?? 0)} r={3} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
+          </g>
+        ))}
+        {/* X labels */}
+        {sorted.map((p, i) => (
+          <text key={i} x={dateToX(p.date_conducted)} y={H - 5} textAnchor="middle" fontSize={8} fill="hsl(var(--muted-foreground))">
+            {formatDate(p.date_conducted)}
+          </text>
+        ))}
+      </svg>
+      <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Favorable</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Unfavorable</span>
+        {sorted.length > 0 && (
+          <span className="ml-auto">
+            Latest: {sorted[sorted.length - 1].favor_pct}% fav / {sorted[sorted.length - 1].oppose_pct}% unfav · {getSourceInfo(sorted[sorted.length - 1].source).name}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -140,7 +608,6 @@ export function PollingSection() {
     });
   }, [polls, sourceFilter, typeFilter]);
 
-  // Group by poll type for summary cards
   const approvalPolls = useMemo(
     () => filtered.filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval"),
     [filtered]
@@ -154,7 +621,6 @@ export function PollingSection() {
     [filtered]
   );
 
-  // Latest approval by source for comparison
   const latestBySource = useMemo(() => {
     const map = new Map<string, PollEntry>();
     approvalPolls.forEach((p) => {
@@ -166,7 +632,6 @@ export function PollingSection() {
     return Array.from(map.values()).sort((a, b) => (a.margin ?? 0) - (b.margin ?? 0));
   }, [approvalPolls]);
 
-  // Average approval across all sources (latest only)
   const avgApproval = useMemo(() => {
     if (latestBySource.length === 0) return null;
     const avg = latestBySource.reduce((sum, p) => sum + (p.approve_pct ?? 0), 0) / latestBySource.length;
@@ -278,25 +743,18 @@ export function PollingSection() {
         </div>
       </div>
 
-      {/* ─── Summary Cards ─────────────────────────────────────────────────── */}
+      {/* ─── Summary Cards with Gauge ──────────────────────────────────────── */}
       {avgApproval && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          {/* Cross-source average */}
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Approval Gauge */}
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col items-center justify-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Cross-Source Average
             </p>
-            <div className="flex items-baseline gap-3 mb-2">
-              <span className="text-3xl font-display font-bold text-foreground">{avgApproval.approve}%</span>
-              <span className="text-sm text-muted-foreground">approve</span>
-            </div>
-            <ApprovalBar approve={avgApproval.approve} disapprove={avgApproval.disapprove} />
-            <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+            <ApprovalGauge approve={avgApproval.approve} disapprove={avgApproval.disapprove} margin={avgApproval.margin} />
+            <div className="flex justify-between w-full mt-2 text-xs text-muted-foreground">
               <span style={{ color: "hsl(150, 55%, 45%)" }}>Approve {avgApproval.approve}%</span>
               <span style={{ color: "hsl(0, 65%, 50%)" }}>Disapprove {avgApproval.disapprove}%</span>
-            </div>
-            <div className="mt-2">
-              <MarginBadge margin={avgApproval.margin} />
             </div>
           </div>
 
@@ -306,7 +764,7 @@ export function PollingSection() {
             return (
               <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  Generic Ballot
+                  Generic Ballot (Latest)
                 </p>
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-2xl font-display font-bold" style={{ color: "hsl(210, 80%, 50%)" }}>
@@ -317,6 +775,10 @@ export function PollingSection() {
                     R {latest.oppose_pct ?? "—"}%
                   </span>
                 </div>
+                <div className="flex h-4 w-full overflow-hidden rounded-full bg-muted mb-2">
+                  <div className="transition-all duration-500" style={{ width: `${((latest.favor_pct ?? 0) / ((latest.favor_pct ?? 0) + (latest.oppose_pct ?? 0) || 100)) * 100}%`, backgroundColor: "hsl(210, 80%, 50%)" }} />
+                  <div className="transition-all duration-500" style={{ width: `${((latest.oppose_pct ?? 0) / ((latest.favor_pct ?? 0) + (latest.oppose_pct ?? 0) || 100)) * 100}%`, backgroundColor: "hsl(0, 75%, 50%)" }} />
+                </div>
                 <MarginBadge margin={latest.margin} />
                 <p className="text-[10px] text-muted-foreground mt-2">
                   {getSourceInfo(latest.source).name} · {formatDate(latest.date_conducted)}
@@ -325,18 +787,58 @@ export function PollingSection() {
             );
           })()}
 
-          {/* Approval trend sparkline */}
+          {/* Source count */}
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-              Approval Trend (All Sources)
+              Data Coverage
             </p>
-            <TrendLine data={approvalPolls} valueKey="approve_pct" />
-            <p className="text-[10px] text-muted-foreground mt-1">
-              {approvalPolls.length} polls from {new Set(approvalPolls.map((p) => p.source)).size} sources
+            <div className="text-3xl font-display font-bold text-foreground">{new Set(polls.map((p) => p.source)).size}</div>
+            <p className="text-xs text-muted-foreground">active polling sources</p>
+            <div className="text-2xl font-display font-bold text-foreground mt-2">{polls.length}</div>
+            <p className="text-xs text-muted-foreground">total polls tracked</p>
+          </div>
+
+          {/* Poll types breakdown */}
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+              Polls by Type
             </p>
+            <div className="space-y-2">
+              {POLL_TYPES.map((t) => {
+                const count = polls.filter((p) => p.poll_type === t.id).length;
+                if (count === 0) return null;
+                const pct = (count / polls.length) * 100;
+                return (
+                  <div key={t.id}>
+                    <div className="flex justify-between text-xs mb-0.5">
+                      <span className="text-muted-foreground">{t.label}</span>
+                      <span className="font-bold text-foreground">{count}</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full bg-primary/60 transition-all duration-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
+
+      {/* ─── Multi-Source Trend Chart ─────────────────────────────────────── */}
+      <MultiSourceTrendChart polls={polls} />
+
+      {/* ─── Charts Row: Dot Plot + Generic Ballot ───────────────────────── */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <SourceDotPlot latestBySource={latestBySource} />
+        <GenericBallotChart polls={genericBallotPolls} />
+      </div>
+
+      {/* ─── Favorability + Issue Charts ─────────────────────────────────── */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <FavorabilityChart polls={polls} />
+        <IssueButterflyChart polls={issuePolls} />
+      </div>
 
       {/* ─── Source Comparison Table ──────────────────────────────────────── */}
       {latestBySource.length > 0 && (
@@ -369,15 +871,10 @@ export function PollingSection() {
                     <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <span
-                            className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: `hsl(${src.color})` }}
-                          />
+                          <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
                           <span className="font-medium text-foreground">{src.name}</span>
                           {poll.partisan_lean && (
-                            <span className="text-[9px] rounded-sm px-1.5 py-0.5 bg-muted text-muted-foreground font-medium">
-                              {poll.partisan_lean}
-                            </span>
+                            <span className="text-[9px] rounded-sm px-1.5 py-0.5 bg-muted text-muted-foreground font-medium">{poll.partisan_lean}</span>
                           )}
                         </div>
                       </td>
@@ -404,12 +901,7 @@ export function PollingSection() {
                       </td>
                       <td className="py-3 px-3">
                         {poll.source_url && (
-                          <a
-                            href={poll.source_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-foreground transition-colors"
-                          >
+                          <a href={poll.source_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         )}
@@ -419,49 +911,6 @@ export function PollingSection() {
                 })}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* ─── Issue Polling ────────────────────────────────────────────────── */}
-      {issuePolls.length > 0 && (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-border">
-            <h3 className="font-display text-sm font-semibold text-foreground">
-              Issue-Specific Polling
-            </h3>
-          </div>
-          <div className="grid gap-0 divide-y divide-border">
-            {issuePolls.map((poll) => {
-              const src = getSourceInfo(poll.source);
-              return (
-                <div key={poll.id} className="p-4 flex items-center gap-4 hover:bg-muted/20 transition-colors">
-                  <span
-                    className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: `hsl(${src.color})` }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground text-sm">{poll.candidate_or_topic}</p>
-                    <p className="text-xs text-muted-foreground">{src.name} · {formatDate(poll.date_conducted)}</p>
-                  </div>
-                  <div className="flex items-center gap-4 shrink-0">
-                    <div className="w-32">
-                      <ApprovalBar approve={poll.approve_pct} disapprove={poll.disapprove_pct} />
-                    </div>
-                    <div className="text-right min-w-[80px]">
-                      <span className="text-xs font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>
-                        {poll.approve_pct ?? poll.favor_pct ?? "—"}%
-                      </span>
-                      <span className="text-muted-foreground mx-1">/</span>
-                      <span className="text-xs font-bold" style={{ color: "hsl(0, 65%, 50%)" }}>
-                        {poll.disapprove_pct ?? poll.oppose_pct ?? "—"}%
-                      </span>
-                    </div>
-                    <MarginBadge margin={poll.margin} />
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </div>
       )}
@@ -507,10 +956,7 @@ export function PollingSection() {
                   <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-2">
-                        <span
-                          className="inline-block h-2 w-2 rounded-full shrink-0"
-                          style={{ backgroundColor: `hsl(${src.color})` }}
-                        />
+                        <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
                         <span className="text-xs font-medium text-foreground">{src.name}</span>
                       </div>
                     </td>
@@ -521,13 +967,9 @@ export function PollingSection() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center text-xs">
-                      <span className="font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>
-                        {primaryPct ?? "—"}%
-                      </span>
+                      <span className="font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>{primaryPct ?? "—"}%</span>
                       <span className="text-muted-foreground mx-1">/</span>
-                      <span className="font-bold" style={{ color: "hsl(0, 65%, 50%)" }}>
-                        {secondaryPct ?? "—"}%
-                      </span>
+                      <span className="font-bold" style={{ color: "hsl(0, 65%, 50%)" }}>{secondaryPct ?? "—"}%</span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       <MarginBadge margin={poll.margin} />
@@ -557,13 +999,8 @@ export function PollingSection() {
               rel="noopener noreferrer"
               className="flex items-center gap-2 rounded-lg border border-border p-2.5 hover:bg-muted/50 transition-colors group"
             >
-              <span
-                className="inline-block h-3 w-3 rounded-full shrink-0"
-                style={{ backgroundColor: `hsl(${s.color})` }}
-              />
-              <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors">
-                {s.name}
-              </span>
+              <span className="inline-block h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: `hsl(${s.color})` }} />
+              <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors">{s.name}</span>
               <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
             </a>
           ))}
