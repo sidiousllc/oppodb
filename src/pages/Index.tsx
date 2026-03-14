@@ -555,6 +555,17 @@ export default function Index() {
       );
     }
 
+    if (section === "state-legislative") {
+      return (
+        <StateLegislativeSection
+          districts={stateLegDistricts}
+          loading={stateLegLoading}
+          onSync={handleStateLegSync}
+          syncing={stateLegSyncing}
+        />
+      );
+    }
+
     if (section === "polling") {
       return <PollingSection />;
     }
