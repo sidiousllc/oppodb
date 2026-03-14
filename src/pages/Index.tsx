@@ -526,6 +526,10 @@ export default function Index() {
         </>
       );
     }
+
+    if (section === "polling") {
+      return <PollingSection />;
+    }
   }
 
   const detail = renderDetail();
