@@ -190,8 +190,9 @@ export default function Index() {
     "local-impact": localImpactReports.length,
     narratives: narrativeReports.length,
     "district-intel": districts.length,
+    "state-legislative": stateLegDistricts.length,
     polling: 0,
-  }), [dataVersion, districts]);
+  }), [dataVersion, districts, stateLegDistricts]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
