@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { type DistrictProfile } from "@/data/districtIntel";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
+import { getCurrentPVI, formatPVI, getPVIColor } from "@/data/cookPVI";
 import { MapPin, ChevronRight, Users } from "lucide-react";
 
 interface DistrictCardProps {
