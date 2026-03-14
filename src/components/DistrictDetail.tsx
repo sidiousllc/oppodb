@@ -172,6 +172,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
         </div>
       </div>
 
+      {/* District Boundary Map */}
+      <DistrictBoundaryMap districtId={district.district_id} stateName={district.state} />
+
       {/* Cook Rating Banner */}
       {cookRating && <CookRatingBanner rating={cookRating} />}
 
