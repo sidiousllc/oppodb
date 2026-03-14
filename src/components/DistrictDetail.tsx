@@ -1,5 +1,6 @@
 import { type DistrictProfile } from "@/data/districtIntel";
 import { DistrictBoundaryMap } from "@/components/DistrictBoundaryMap";
+import { CookRatingHistory } from "@/components/CookRatingHistory";
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
