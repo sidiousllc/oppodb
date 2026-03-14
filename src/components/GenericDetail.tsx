@@ -1,7 +1,8 @@
 import { useCallback } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver";
+import { exportContentPDF } from "@/lib/contentExport";
 
 interface GenericDetailProps {
   icon: React.ReactNode;
