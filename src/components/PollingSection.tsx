@@ -479,16 +479,17 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
 // ─── Approval Gauge ─────────────────────────────────────────────────────────
 
 function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disapprove: number; margin: number }) {
+  const { ref, inView } = useInView();
   const radius = 60;
   const strokeW = 12;
   const cx = 80;
   const cy = 80;
   const circumference = Math.PI * radius; // half circle
-  const approveArc = (approve / 100) * circumference;
-  const disapproveArc = (disapprove / 100) * circumference;
+  const approveArc = inView ? (approve / 100) * circumference : 0;
+  const disapproveArc = inView ? (disapprove / 100) * circumference : 0;
 
   return (
-    <div className="flex flex-col items-center">
+    <div ref={ref} className="flex flex-col items-center">
       <svg width={160} height={100} viewBox="0 0 160 100">
         {/* Background arc */}
         <path
@@ -506,7 +507,7 @@ function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disap
           strokeWidth={strokeW}
           strokeLinecap="round"
           strokeDasharray={`${approveArc} ${circumference}`}
-          className="transition-all duration-700"
+          style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1)" }}
         />
         {/* Disapprove arc (from right) */}
         <path
@@ -516,13 +517,15 @@ function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disap
           strokeWidth={strokeW}
           strokeLinecap="round"
           strokeDasharray={`${disapproveArc} ${circumference}`}
-          className="transition-all duration-700"
+          style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s" }}
         />
         {/* Center text */}
-        <text x={cx} y={cy - 10} textAnchor="middle" fontSize={24} fontWeight="800" fill="hsl(var(--foreground))">
+        <text x={cx} y={cy - 10} textAnchor="middle" fontSize={24} fontWeight="800" fill="hsl(var(--foreground))"
+          style={{ opacity: inView ? 1 : 0, transition: "opacity 0.5s ease 0.8s" }}>
           {approve}%
         </text>
-        <text x={cx} y={cy + 6} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">
+        <text x={cx} y={cy + 6} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))"
+          style={{ opacity: inView ? 1 : 0, transition: "opacity 0.5s ease 1s" }}>
           approve
         </text>
       </svg>
