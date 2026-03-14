@@ -369,6 +369,15 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
           >
             Cook Political Report (March 2026)
           </a>
+          . Partisan Voting Index from the{" "}
+          <a
+            href="https://www.cookpolitical.com/cook-pvi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            Cook PVI (2024)
+          </a>
           .
         </p>
       </div>
