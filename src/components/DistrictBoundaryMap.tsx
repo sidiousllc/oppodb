@@ -84,35 +84,73 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
     const controller = new AbortController();
     const cdNum = districtNum === "AL" ? "00" : districtNum.padStart(2, "0");
 
-    // Fetch from Census TIGERweb REST API for 118th Congressional Districts
-    const url = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0/query?where=STATE='${fips}' AND CD118='${cdNum}'&outFields=BASENAME,STATE,CD118&f=geojson&outSR=4326`;
+    // Build query with proper URL encoding via URLSearchParams
+    const buildUrl = (cd: string) => {
+      const params = new URLSearchParams({
+        where: `STATEFP='${fips}' AND CD118FP='${cd}'`,
+        outFields: "BASENAME,STATEFP,CD118FP",
+        f: "geojson",
+        outSR: "4326",
+        returnGeometry: "true",
+      });
+      return `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/0/query?${params}`;
+    };
 
-    fetch(url, { signal: controller.signal })
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed to fetch");
-        return r.json();
-      })
-      .then((data) => {
-        if (data.features && data.features.length > 0) {
-          setDistrictGeo(data);
-        } else {
-          // Try at-large district
-          const atLargeUrl = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0/query?where=STATE='${fips}' AND CD118='00'&outFields=BASENAME,STATE,CD118&f=geojson&outSR=4326`;
-          return fetch(atLargeUrl, { signal: controller.signal })
-            .then((r) => r.json())
-            .then((data2) => {
-              if (data2.features && data2.features.length > 0) {
-                setDistrictGeo(data2);
-              } else {
-                setError(true);
-              }
-            });
+    // Try primary field names, then fallback to legacy field names
+    const buildLegacyUrl = (cd: string) => {
+      const params = new URLSearchParams({
+        where: `STATE='${fips}' AND CD='${cd}'`,
+        outFields: "BASENAME,STATE,CD",
+        f: "geojson",
+        outSR: "4326",
+        returnGeometry: "true",
+      });
+      return `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0/query?${params}`;
+    };
+
+    const tryFetch = async (url: string): Promise<DistrictGeoJSON | null> => {
+      try {
+        const r = await fetch(url, { signal: controller.signal });
+        if (!r.ok) return null;
+        const data = await r.json();
+        if (data.error) return null;
+        if (data.features && data.features.length > 0) return data;
+        return null;
+      } catch (e) {
+        if ((e as Error).name === "AbortError") throw e;
+        return null;
+      }
+    };
+
+    (async () => {
+      try {
+        // Try current service with standard field names
+        let result = await tryFetch(buildUrl(cdNum));
+
+        // Try at-large
+        if (!result && cdNum !== "00") {
+          result = await tryFetch(buildUrl("00"));
         }
-      })
-      .catch((e) => {
-        if (e.name !== "AbortError") setError(true);
-      })
-      .finally(() => setLoading(false));
+
+        // Try legacy endpoint
+        if (!result) {
+          result = await tryFetch(buildLegacyUrl(cdNum));
+        }
+        if (!result && cdNum !== "00") {
+          result = await tryFetch(buildLegacyUrl("00"));
+        }
+
+        if (result) {
+          setDistrictGeo(result);
+        } else {
+          setError(true);
+        }
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") setError(true);
+      } finally {
+        setLoading(false);
+      }
+    })();
 
     return () => controller.abort();
   }, [fips, districtNum]);
