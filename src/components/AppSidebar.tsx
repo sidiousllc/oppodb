@@ -1,8 +1,10 @@
-import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass, LogOut } from "lucide-react";
+import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass, LogOut, ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getLastSyncTime } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
 export type Section = "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel";
@@ -138,6 +140,7 @@ export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection
       </nav>
 
       <div className="p-4 border-t border-sidebar-border space-y-3">
+        <AdminLink />
         <div className="flex items-center justify-between">
           <div className="text-xs text-sidebar-foreground/50">
             {lastSync ? (
@@ -162,5 +165,20 @@ export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection
         <SignOutButton />
       </div>
     </aside>
+  );
+}
+
+function AdminLink() {
+  const navigate = useNavigate();
+  const { canManageContent } = useUserRole();
+  if (!canManageContent) return null;
+  return (
+    <button
+      onClick={() => navigate("/admin")}
+      className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+    >
+      <ShieldCheck className="h-3.5 w-3.5" />
+      Admin Panel
+    </button>
   );
 }
