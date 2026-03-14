@@ -163,6 +163,7 @@ export default function Index() {
     "local-impact": localImpactReports.length,
     narratives: narrativeReports.length,
     "district-intel": districts.length,
+    polling: 0,
   }), [dataVersion, districts]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
