@@ -839,7 +839,7 @@ export function PollingSection() {
           {genericBallotPolls.length > 0 && (() => {
             const latest = genericBallotPolls[0];
             return (
-              <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <AnimatedCard delay={100}>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   Generic Ballot (Latest)
                 </p>
