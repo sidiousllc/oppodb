@@ -1,6 +1,7 @@
 import { type DistrictProfile } from "@/data/districtIntel";
 import { DistrictBoundaryMap } from "@/components/DistrictBoundaryMap";
 import { CookRatingHistory } from "@/components/CookRatingHistory";
+import { CookPVIChart } from "@/components/CookPVIChart";
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
@@ -181,6 +182,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
 
       {/* Cook Rating History */}
       {cookRating && <CookRatingHistory districtId={district.district_id} currentRating={cookRating} />}
+
+      {/* Cook Partisan Voting Index */}
+      <CookPVIChart districtId={district.district_id} />
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         {district.population != null && (
@@ -364,6 +368,15 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             className="text-primary underline underline-offset-2 hover:text-primary/80"
           >
             Cook Political Report (March 2026)
+          </a>
+          . Partisan Voting Index from the{" "}
+          <a
+            href="https://www.cookpolitical.com/cook-pvi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            Cook PVI (2024)
           </a>
           .
         </p>
