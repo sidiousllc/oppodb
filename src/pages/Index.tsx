@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DistrictCompare } from "@/components/DistrictCompare";
 import { BookOpen, AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { PollingSection } from "@/components/PollingSection";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
