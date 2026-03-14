@@ -47,6 +47,18 @@ export const DistrictCard = forwardRef<HTMLDivElement, DistrictCardProps>(
                   {district.district_id}
                 </h3>
                 {rating && <CookBadge rating={rating} />}
+                {pvi !== null && (
+                  <span
+                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide whitespace-nowrap border"
+                    style={{
+                      backgroundColor: `hsl(${getPVIColor(pvi)} / 0.12)`,
+                      color: `hsl(${getPVIColor(pvi)})`,
+                      borderColor: `hsl(${getPVIColor(pvi)} / 0.25)`,
+                    }}
+                  >
+                    {formatPVI(pvi)}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="tag tag-governor">{district.state}</span>
