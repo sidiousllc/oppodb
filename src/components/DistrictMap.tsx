@@ -325,7 +325,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         {/* Zoom reset */}
         {isZoomed && (
           <button
-            onClick={() => setZoomState({ center: [-96, 38], zoom: 1 })}
+            onClick={handleResetZoom}
             className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Reset zoom
