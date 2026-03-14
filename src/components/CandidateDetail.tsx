@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Edit3 } from "lucide-react";
+import { Edit3, Download } from "lucide-react";
 import { type Candidate } from "@/data/candidates";
 import { fetchSubpages, type GitHubCandidate } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,7 @@ import { ArrowLeft, User, FileText, ChevronRight, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver";
 import { VersionHistory } from "@/components/VersionHistory";
+import { exportContentPDF } from "@/lib/contentExport";
 
 interface CandidateDetailProps {
   candidate: Candidate;
