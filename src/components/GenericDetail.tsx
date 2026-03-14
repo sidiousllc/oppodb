@@ -25,6 +25,7 @@ export function GenericDetail({
   onBack,
   backLabel = "Back",
   onNavigateSlug,
+  sectionLabel = "Report",
 }: GenericDetailProps) {
   const handleLinkClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>, href: string | undefined, slug: string | null) => {
