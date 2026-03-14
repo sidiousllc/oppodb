@@ -12,8 +12,10 @@ import {
   X,
   Download,
   FileText,
+  Vote,
 } from "lucide-react";
 import { getCookRating, getCookRatingColor, getCookRatingBg, getCookRatingText, type CookRating, COOK_RATING_ORDER, COOK_RATING_COLORS } from "@/data/cookRatings";
+import { getCurrentPVI, getPVIHistory, formatPVI, getPVIColor, PVI_CYCLES } from "@/data/cookPVI";
 import { exportCSV, exportPDF } from "@/lib/districtExport";
 import {
   BarChart,
