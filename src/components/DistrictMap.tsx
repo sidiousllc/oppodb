@@ -137,6 +137,12 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         ? `hsl(${getPVIColor(avgPVI)})`
         : getIssueColor(topIssue);
 
+      // Calculate aggregate PVI shift across districts
+      const shifts = dists.map((d) => hasPVIShift(d.district_id)).filter((s) => s.shifted);
+      const avgShift = shifts.length > 0
+        ? Math.round(shifts.reduce((sum, s) => sum + s.delta, 0) / shifts.length)
+        : 0;
+
       result[state] = {
         state,
         topIssue,
@@ -144,6 +150,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         districtCount: dists.length,
         districts: dists,
         avgPVI,
+        avgShift,
       };
     });
     return result;
