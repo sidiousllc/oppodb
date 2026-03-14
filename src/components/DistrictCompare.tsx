@@ -11,6 +11,7 @@ import {
   Plus,
   X,
 } from "lucide-react";
+import { getCookRating, getCookRatingColor, getCookRatingBg, getCookRatingText, type CookRating, COOK_RATING_ORDER, COOK_RATING_COLORS } from "@/data/cookRatings";
 import {
   BarChart,
   Bar,
