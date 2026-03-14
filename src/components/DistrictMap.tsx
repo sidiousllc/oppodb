@@ -55,9 +55,35 @@ const STATE_CENTROIDS: Record<string, [number, number]> = {
   WI: [-89.8, 44.6], WY: [-107.6, 43.0], DC: [-77.0, 38.9],
 };
 
+export type PVIFilter = "all" | "strong-d" | "lean-d" | "swing" | "lean-r" | "strong-r";
+
+export const PVI_FILTER_OPTIONS: { id: PVIFilter; label: string; color: string }[] = [
+  { id: "all", label: "All", color: "" },
+  { id: "strong-d", label: "Strong D (D+8+)", color: "210 80% 45%" },
+  { id: "lean-d", label: "Lean D (D+1–7)", color: "210 50% 65%" },
+  { id: "swing", label: "Swing (±0)", color: "45 80% 50%" },
+  { id: "lean-r", label: "Lean R (R+1–7)", color: "0 50% 65%" },
+  { id: "strong-r", label: "Strong R (R+8+)", color: "0 80% 45%" },
+];
+
+function matchesPVIFilter(districtId: string, filter: PVIFilter): boolean {
+  if (filter === "all") return true;
+  const pvi = getCurrentPVI(districtId);
+  if (pvi === null) return filter === "all";
+  switch (filter) {
+    case "strong-d": return pvi <= -8;
+    case "lean-d": return pvi >= -7 && pvi <= -1;
+    case "swing": return pvi === 0;
+    case "lean-r": return pvi >= 1 && pvi <= 7;
+    case "strong-r": return pvi >= 8;
+    default: return true;
+  }
+}
+
 interface DistrictMapProps {
   districts: DistrictProfile[];
   onSelectDistrict: (districtId: string) => void;
+  pviFilter?: PVIFilter;
 }
 
 interface StateIssueData {
@@ -66,6 +92,7 @@ interface StateIssueData {
   color: string;
   districtCount: number;
   districts: DistrictProfile[];
+  avgPVI: number | null;
 }
 
 const DistrictMapInner = ({ districts, onSelectDistrict }: DistrictMapProps) => {
