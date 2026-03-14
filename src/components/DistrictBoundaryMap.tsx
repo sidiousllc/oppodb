@@ -115,20 +115,11 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
 
     (async () => {
       try {
-        // Try current service with standard field names
         let result = await tryFetch(buildUrl(cdNum));
 
         // Try at-large
         if (!result && cdNum !== "00") {
           result = await tryFetch(buildUrl("00"));
-        }
-
-        // Try legacy endpoint
-        if (!result) {
-          result = await tryFetch(buildLegacyUrl(cdNum));
-        }
-        if (!result && cdNum !== "00") {
-          result = await tryFetch(buildLegacyUrl("00"));
         }
 
         if (result) {
