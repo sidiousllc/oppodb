@@ -13,6 +13,7 @@ interface GenericDetailProps {
   onBack: () => void;
   backLabel?: string;
   onNavigateSlug?: (slug: string) => boolean;
+  sectionLabel?: string;
 }
 
 export function GenericDetail({
