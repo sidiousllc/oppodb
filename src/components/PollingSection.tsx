@@ -390,6 +390,7 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
 // ─── Issue Polling Butterfly Chart ──────────────────────────────────────────
 
 function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
   if (polls.length === 0) return null;
 
   // Deduplicate: latest per topic across sources
