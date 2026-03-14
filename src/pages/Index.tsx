@@ -69,6 +69,10 @@ export default function Index() {
     });
 
     fetchAllDistricts().then(setDistricts);
+    fetchStateLegislativeDistricts().then((d) => {
+      setStateLegDistricts(d);
+      setStateLegLoading(false);
+    }).catch(() => setStateLegLoading(false));
   }, []);
 
   const handleCensusSync = useCallback(async () => {
