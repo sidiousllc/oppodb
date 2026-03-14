@@ -326,6 +326,7 @@ function SourceDotPlot({ latestBySource }: { latestBySource: PollEntry[] }) {
 // ─── Generic Ballot Comparison Chart ────────────────────────────────────────
 
 function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
   if (polls.length === 0) return null;
 
   // Latest generic ballot per source
@@ -337,7 +338,7 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
   const entries = Array.from(bySource.values()).sort((a, b) => (b.margin ?? 0) - (a.margin ?? 0));
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <h3 className="font-display text-sm font-semibold text-foreground mb-1">
         Generic Congressional Ballot
       </h3>
@@ -345,13 +346,13 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
         Democrat vs Republican, by source
       </p>
       <div className="space-y-3">
-        {entries.map((poll) => {
+        {entries.map((poll, idx) => {
           const src = getSourceInfo(poll.source);
           const dem = poll.favor_pct ?? 0;
           const rep = poll.oppose_pct ?? 0;
           const total = dem + rep || 100;
           return (
-            <div key={poll.id}>
+            <div key={poll.id} style={{ opacity: inView ? 1 : 0, transform: inView ? "translateX(0)" : "translateX(-20px)", transition: `all 0.5s ease ${idx * 100}ms` }}>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(${src.color})` }} />
@@ -366,16 +367,16 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
               </div>
               <div className="flex h-5 w-full overflow-hidden rounded-md bg-muted">
                 <div
-                  className="flex items-center justify-end pr-1.5 transition-all duration-500"
-                  style={{ width: `${(dem / total) * 100}%`, backgroundColor: "hsl(210, 80%, 50%)" }}
+                  className="flex items-center justify-end pr-1.5"
+                  style={{ width: inView ? `${(dem / total) * 100}%` : "0%", backgroundColor: "hsl(210, 80%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 100 + 200}ms` }}
                 >
-                  <span className="text-[9px] font-bold text-white">{dem}%</span>
+                  <span className="text-[9px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 100 + 600}ms` }}>{dem}%</span>
                 </div>
                 <div
-                  className="flex items-center justify-start pl-1.5 transition-all duration-500"
-                  style={{ width: `${(rep / total) * 100}%`, backgroundColor: "hsl(0, 75%, 50%)" }}
+                  className="flex items-center justify-start pl-1.5"
+                  style={{ width: inView ? `${(rep / total) * 100}%` : "0%", backgroundColor: "hsl(0, 75%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 100 + 300}ms` }}
                 >
-                  <span className="text-[9px] font-bold text-white">{rep}%</span>
+                  <span className="text-[9px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 100 + 600}ms` }}>{rep}%</span>
                 </div>
               </div>
             </div>
