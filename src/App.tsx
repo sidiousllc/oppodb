@@ -8,6 +8,7 @@ import Index from "./pages/Index.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
+import ProfilePage from "./pages/ProfilePage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
