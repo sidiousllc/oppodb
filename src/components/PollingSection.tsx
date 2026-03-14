@@ -875,6 +875,7 @@ export function PollingSection() {
             <div className="text-2xl font-display font-bold text-foreground mt-2">{polls.length}</div>
             <p className="text-xs text-muted-foreground">total polls tracked</p>
           </div>
+          </AnimatedCard>
 
           {/* Poll types breakdown */}
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
