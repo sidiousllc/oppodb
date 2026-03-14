@@ -92,11 +92,20 @@ interface TooltipData {
   topIssues: string[];
 }
 
-// Cache the GeoJSON globally so it survives re-renders
-let cachedGeoJSON: GeoJSON.FeatureCollection | null = null;
-let fetchPromise: Promise<GeoJSON.FeatureCollection | null> | null = null;
+// Simple type for the fetched GeoJSON
+interface DistrictGeoJSON {
+  type: string;
+  features: Array<{
+    type: string;
+    properties: Record<string, string>;
+    geometry: unknown;
+  }>;
+}
 
-async function fetchDistrictGeo(): Promise<GeoJSON.FeatureCollection | null> {
+let cachedGeoJSON: DistrictGeoJSON | null = null;
+let fetchPromise: Promise<DistrictGeoJSON | null> | null = null;
+
+async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
   if (cachedGeoJSON) return cachedGeoJSON;
   if (fetchPromise) return fetchPromise;
 
