@@ -125,7 +125,7 @@ async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
 const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: DistrictMapProps) => {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-  const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection | null>(cachedGeoJSON);
+  const [geoData, setGeoData] = useState<DistrictGeoJSON | null>(cachedGeoJSON);
   const [loading, setLoading] = useState(!cachedGeoJSON);
 
   useEffect(() => {
