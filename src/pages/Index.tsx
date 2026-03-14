@@ -225,6 +225,7 @@ export default function Index() {
           title={selectedMaga.name}
           tag={{ label: "MAGA File", className: "bg-destructive/10 text-destructive" }}
           content={selectedMaga.content}
+          sectionLabel="MAGA File"
           onBack={() => setSelectedSlug(null)}
           onNavigateSlug={navigateBySlug}
           backLabel="Back to MAGA Files"
