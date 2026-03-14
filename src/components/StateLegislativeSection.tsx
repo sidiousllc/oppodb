@@ -7,6 +7,7 @@ import {
   STATE_NAMES,
 } from "@/data/stateLegislativeIntel";
 import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign } from "lucide-react";
+import { StateLegBoundaryMap } from "./StateLegBoundaryMap";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
@@ -145,6 +146,16 @@ function StatLegDetail({
           </h2>
           <p className="text-sm text-muted-foreground">{district.state}</p>
         </div>
+      </div>
+
+      {/* District Boundary Map */}
+      <div className="mb-6">
+        <StateLegBoundaryMap
+          stateAbbr={district.state_abbr}
+          stateName={district.state}
+          chamber={district.chamber as "house" | "senate"}
+          districtNumber={district.district_number}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
