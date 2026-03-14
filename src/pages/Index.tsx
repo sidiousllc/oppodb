@@ -22,6 +22,7 @@ import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { DistrictCompare } from "@/components/DistrictCompare";
 import { BookOpen, AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
