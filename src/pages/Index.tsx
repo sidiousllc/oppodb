@@ -240,6 +240,7 @@ export default function Index() {
           subtitle={selectedLocal.summary}
           tag={{ label: "Local Impact", className: "bg-accent/10 text-accent" }}
           content={selectedLocal.content}
+          sectionLabel="Local Impact"
           onBack={() => setSelectedSlug(null)}
           onNavigateSlug={navigateBySlug}
           backLabel="Back to Local Impact"
