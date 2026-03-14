@@ -284,13 +284,15 @@ export default function Index() {
             <p className="text-sm text-muted-foreground">
               {filteredCandidates.length} {filteredCandidates.length === 1 ? "profile" : "profiles"}
             </p>
-            <button
-              onClick={() => { setEditorMode("create"); setEditData(undefined); }}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add Profile
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => { setEditorMode("create"); setEditData(undefined); }}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Profile
+              </button>
+            )}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {filteredCandidates.map(c => (
