@@ -19,7 +19,9 @@ import {
   Briefcase,
   Building,
   BarChart3,
+  Download,
 } from "lucide-react";
+import { exportDistrictPDF } from "@/lib/districtDetailExport";
 
 interface DistrictDetailProps {
   district: DistrictProfile;
