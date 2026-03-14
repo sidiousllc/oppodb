@@ -306,7 +306,7 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
       if (error) { toast.error(error.message); return; }
       toast.success("Updated");
     } else {
-      const { error } = await supabase.from(table as any).insert(record);
+      const { error } = await supabase.from(table as "maga_files" | "local_impacts" | "narrative_reports").insert(record);
       if (error) { toast.error(error.message); return; }
       toast.success("Created");
     }
