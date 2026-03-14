@@ -104,6 +104,29 @@ Deno.serve(async (req) => {
         });
       }
 
+      case 'create_user': {
+        const { email, password, role: newUserRole } = params;
+        if (!email || !password) throw new Error('email and password required');
+        if (password.length < 6) throw new Error('Password must be at least 6 characters');
+
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        });
+        if (createError) throw createError;
+
+        if (newUserRole && newUserRole !== 'user') {
+          await supabaseAdmin
+            .from('user_roles')
+            .upsert({ user_id: newUser.user.id, role: newUserRole }, { onConflict: 'user_id,role' });
+        }
+
+        return new Response(JSON.stringify({ success: true, user_id: newUser.user.id }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'delete_user': {
         const { user_id } = params;
         if (!user_id) throw new Error('user_id required');

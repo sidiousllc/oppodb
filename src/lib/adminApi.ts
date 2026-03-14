@@ -24,7 +24,21 @@ export async function setUserRole(userId: string, role: string, remove = false) 
   return data;
 }
 
+export async function createUser(email: string, password: string, role: string = "user") {
+  const { data, error } = await supabase.functions.invoke("admin-users", {
+    body: { action: "create_user", email, password, role },
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteUser(userId: string) {
+  const { data, error } = await supabase.functions.invoke("admin-users", {
+    body: { action: "delete_user", user_id: userId },
+  });
+  if (error) throw error;
+  return data;
+}
   const { data, error } = await supabase.functions.invoke("admin-users", {
     body: { action: "delete_user", user_id: userId },
   });
