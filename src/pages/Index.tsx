@@ -25,6 +25,7 @@ import { BookOpen, AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 export default function Index() {
+  const { isAdmin } = useIsAdmin();
   const [loaded, setLoaded] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [search, setSearch] = useState("");
