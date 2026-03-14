@@ -236,6 +236,23 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                     {data.districtCount}
                   </text>
                 )}
+                {/* PVI trend arrow */}
+                {data.avgShift !== 0 && (() => {
+                  const r = Math.max(4, Math.min(12, data.districtCount * 2));
+                  const arrowX = r + 3;
+                  const arrowColor = data.avgShift > 0 ? "hsl(0, 80%, 45%)" : "hsl(210, 80%, 45%)";
+                  // Positive shift = R (arrow right-up), negative = D (arrow left-up)
+                  const rotation = data.avgShift > 0 ? -45 : -135;
+                  return (
+                    <g transform={`translate(${arrowX}, 0)`} style={{ pointerEvents: "none" }}>
+                      <polygon
+                        points="0,-4 3,0 0,-1 -3,0"
+                        fill={arrowColor}
+                        transform={`rotate(${rotation})`}
+                      />
+                    </g>
+                  );
+                })()}
               </Marker>
             );
           })}
