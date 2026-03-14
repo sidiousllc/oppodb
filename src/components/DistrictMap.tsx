@@ -436,6 +436,83 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
             </Geographies>
           </ZoomableGroup>
         </ComposableMap>
+
+        {/* Search overlay when zoomed */}
+        {isZoomed && zoomedStateAbbr && (
+          <div className="absolute top-14 right-3 z-40 w-64 rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg">
+            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
+              <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder={`Search ${zoomedStateAbbr} districts…`}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setHighlightedDistrict(null);
+                }}
+                className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setHighlightedDistrict(null);
+                  }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            <div className="max-h-52 overflow-y-auto">
+              {filteredStateDistricts.length === 0 ? (
+                <p className="px-3 py-3 text-xs text-muted-foreground text-center">No districts found</p>
+              ) : (
+                filteredStateDistricts.map((did) => {
+                  const rating = getCookRating(did);
+                  const pvi = getCurrentPVI(did);
+                  const isHighlighted = highlightedDistrict === did;
+                  return (
+                    <button
+                      key={did}
+                      onClick={() => {
+                        setHighlightedDistrict(did);
+                      }}
+                      onDoubleClick={() => onSelectDistrict(did)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/60 ${
+                        isHighlighted ? "bg-accent/20 border-l-2 border-primary" : ""
+                      }`}
+                    >
+                      <span
+                        className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                        style={{
+                          backgroundColor: rating
+                            ? `hsl(${getCookRatingColor(rating)})`
+                            : "hsl(220, 15%, 85%)",
+                        }}
+                      />
+                      <span className="text-xs font-semibold text-foreground">{did}</span>
+                      <span className="text-[10px] text-muted-foreground ml-auto">
+                        {rating || "N/A"}
+                      </span>
+                      {pvi !== null && (
+                        <span className="text-[10px] font-medium" style={{ color: `hsl(${getPVIColor(pvi)})` }}>
+                          {formatPVI(pvi)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            <div className="px-3 py-1.5 border-t border-border">
+              <p className="text-[10px] text-muted-foreground">
+                Click to highlight · Double-click to view details
+              </p>
+            </div>
+          </div>
+        )}
       )}
 
       {!loading && !geoData && (
