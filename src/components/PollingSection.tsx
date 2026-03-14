@@ -860,7 +860,7 @@ export function PollingSection() {
                 <p className="text-[10px] text-muted-foreground mt-2">
                   {getSourceInfo(latest.source).name} · {formatDate(latest.date_conducted)}
                 </p>
-              </div>
+              </AnimatedCard>
             );
           })()}
 
