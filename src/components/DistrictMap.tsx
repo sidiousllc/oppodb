@@ -1,59 +1,57 @@
-import { useState, useMemo, memo } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import {
   ComposableMap,
   Geographies,
   Geography,
-  Marker,
   ZoomableGroup,
 } from "react-simple-maps";
 import { type DistrictProfile } from "@/data/districtIntel";
 import { getCurrentPVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
+import {
+  getCookRating,
+  getCookRatingColor,
+  COOK_RATING_ORDER,
+  COOK_RATING_COLORS,
+  type CookRating,
+} from "@/data/cookRatings";
 
-const GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+// State boundary base layer
+const STATE_GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
-// Issue → HSL color mapping using design tokens where possible
-const ISSUE_COLORS: Record<string, string> = {
-  "Healthcare": "hsl(4, 80%, 52%)",
-  "Economy": "hsl(215, 80%, 42%)",
-  "Education": "hsl(260, 60%, 50%)",
-  "Immigration": "hsl(30, 75%, 50%)",
-  "Infrastructure": "hsl(150, 60%, 35%)",
-  "Environment": "hsl(160, 55%, 40%)",
-  "Housing": "hsl(340, 60%, 50%)",
-  "Agriculture": "hsl(85, 50%, 40%)",
-  "Military": "hsl(200, 40%, 35%)",
-  "Jobs": "hsl(45, 80%, 45%)",
+// Congressional districts from Census TIGERweb — simplified geometry for performance
+const CD_GEO_URL =
+  "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/0/query?" +
+  new URLSearchParams({
+    where: "1=1",
+    outFields: "BASENAME,STATEFP,CD118FP",
+    f: "geojson",
+    outSR: "4326",
+    returnGeometry: "true",
+    maxAllowableOffset: "0.03",
+  }).toString();
+
+// FIPS → state abbreviation
+const FIPS_TO_STATE: Record<string, string> = {
+  "01": "AL", "02": "AK", "04": "AZ", "05": "AR", "06": "CA",
+  "08": "CO", "09": "CT", "10": "DE", "11": "DC", "12": "FL",
+  "13": "GA", "15": "HI", "16": "ID", "17": "IL", "18": "IN",
+  "19": "IA", "20": "KS", "21": "KY", "22": "LA", "23": "ME",
+  "24": "MD", "25": "MA", "26": "MI", "27": "MN", "28": "MS",
+  "29": "MO", "30": "MT", "31": "NE", "32": "NV", "33": "NH",
+  "34": "NJ", "35": "NM", "36": "NY", "37": "NC", "38": "ND",
+  "39": "OH", "40": "OK", "41": "OR", "42": "PA", "44": "RI",
+  "45": "SC", "46": "SD", "47": "TN", "48": "TX", "49": "UT",
+  "50": "VT", "51": "VA", "53": "WA", "54": "WV", "55": "WI",
+  "56": "WY",
 };
 
-const DEFAULT_ISSUE_COLOR = "hsl(220, 15%, 65%)";
-
-function getIssueColor(issue: string): string {
-  const key = Object.keys(ISSUE_COLORS).find((k) =>
-    issue.toLowerCase().includes(k.toLowerCase())
-  );
-  return key ? ISSUE_COLORS[key] : DEFAULT_ISSUE_COLOR;
+/** Convert Census FIPS codes to our district ID format (e.g. "AL-01", "WY-AL") */
+function toDistrictId(statefp: string, cd: string): string | null {
+  const state = FIPS_TO_STATE[statefp];
+  if (!state) return null;
+  if (cd === "00" || cd === "98") return `${state}-AL`;
+  return `${state}-${cd}`;
 }
-
-// Approximate state centroids for marker placement
-const STATE_CENTROIDS: Record<string, [number, number]> = {
-  AL: [-86.9, 32.8], AK: [-153.5, 63.6], AZ: [-111.9, 34.2],
-  AR: [-92.4, 34.8], CA: [-119.7, 37.3], CO: [-105.5, 39.0],
-  CT: [-72.7, 41.6], DE: [-75.5, 39.0], FL: [-81.7, 28.1],
-  GA: [-83.5, 32.7], HI: [-155.5, 20.0], ID: [-114.7, 44.2],
-  IL: [-89.4, 40.0], IN: [-86.3, 39.8], IA: [-93.5, 42.0],
-  KS: [-98.5, 38.5], KY: [-84.8, 37.8], LA: [-91.9, 31.0],
-  ME: [-69.4, 45.4], MD: [-76.6, 39.0], MA: [-71.8, 42.3],
-  MI: [-84.7, 44.3], MN: [-94.3, 46.3], MS: [-89.7, 32.7],
-  MO: [-92.5, 38.5], MT: [-109.6, 46.9], NE: [-99.8, 41.5],
-  NV: [-116.6, 39.3], NH: [-71.6, 43.7], NJ: [-74.4, 40.1],
-  NM: [-106.0, 34.5], NY: [-75.5, 43.0], NC: [-79.4, 35.6],
-  ND: [-100.5, 47.5], OH: [-82.8, 40.4], OK: [-97.5, 35.5],
-  OR: [-120.5, 44.0], PA: [-77.6, 41.2], RI: [-71.5, 41.7],
-  SC: [-80.9, 34.0], SD: [-100.2, 44.4], TN: [-86.3, 35.8],
-  TX: [-99.4, 31.5], UT: [-111.7, 39.3], VT: [-72.6, 44.1],
-  VA: [-79.4, 37.5], WA: [-120.7, 47.5], WV: [-80.6, 38.6],
-  WI: [-89.8, 44.6], WY: [-107.6, 43.0], DC: [-77.0, 38.9],
-};
 
 export type PVIFilter = "all" | "strong-d" | "lean-d" | "swing" | "lean-r" | "strong-r";
 
@@ -86,242 +84,259 @@ interface DistrictMapProps {
   pviFilter?: PVIFilter;
 }
 
-interface StateIssueData {
-  state: string;
-  topIssue: string;
-  color: string;
-  districtCount: number;
-  districts: DistrictProfile[];
-  avgPVI: number | null;
-  /** Aggregate PVI shift: positive = shifting R, negative = shifting D, 0 = stable */
-  avgShift: number;
+interface TooltipData {
+  districtId: string;
+  rating: CookRating | null;
+  pvi: number | null;
+  shift: { shifted: boolean; delta: number };
+  topIssues: string[];
+}
+
+// Cache the GeoJSON globally so it survives re-renders
+let cachedGeoJSON: GeoJSON.FeatureCollection | null = null;
+let fetchPromise: Promise<GeoJSON.FeatureCollection | null> | null = null;
+
+async function fetchDistrictGeo(): Promise<GeoJSON.FeatureCollection | null> {
+  if (cachedGeoJSON) return cachedGeoJSON;
+  if (fetchPromise) return fetchPromise;
+
+  fetchPromise = fetch(CD_GEO_URL)
+    .then(async (res) => {
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.error || !data.features) return null;
+      cachedGeoJSON = data as GeoJSON.FeatureCollection;
+      return cachedGeoJSON;
+    })
+    .catch(() => null);
+
+  return fetchPromise;
 }
 
 const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: DistrictMapProps) => {
-  const [tooltip, setTooltip] = useState<StateIssueData | null>(null);
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection | null>(cachedGeoJSON);
+  const [loading, setLoading] = useState(!cachedGeoJSON);
 
-  // Filter districts by PVI
-  const filteredDistricts = useMemo(() => {
-    if (pviFilter === "all") return districts;
-    return districts.filter((d) => matchesPVIFilter(d.district_id, pviFilter));
-  }, [districts, pviFilter]);
-
-  // Group districts by state and find top issue per state
-  const stateData = useMemo(() => {
-    const byState: Record<string, DistrictProfile[]> = {};
-    filteredDistricts.forEach((d) => {
-      const st = d.district_id.split("-")[0];
-      if (!byState[st]) byState[st] = [];
-      byState[st].push(d);
+  useEffect(() => {
+    if (cachedGeoJSON) {
+      setGeoData(cachedGeoJSON);
+      setLoading(false);
+      return;
+    }
+    fetchDistrictGeo().then((data) => {
+      setGeoData(data);
+      setLoading(false);
     });
+  }, []);
 
-    const result: Record<string, StateIssueData> = {};
-    Object.entries(byState).forEach(([state, dists]) => {
-      const issueCounts: Record<string, number> = {};
-      dists.forEach((d) =>
-        d.top_issues.forEach((i) => {
-          issueCounts[i] = (issueCounts[i] || 0) + 1;
-        })
-      );
-      const topIssue =
-        Object.entries(issueCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
-        "No data";
+  // Build a lookup for tracked district data
+  const districtLookup = useMemo(() => {
+    const map = new Map<string, DistrictProfile>();
+    districts.forEach((d) => map.set(d.district_id, d));
+    return map;
+  }, [districts]);
 
-      // Calculate average PVI for the state's filtered districts
-      const pviValues = dists.map((d) => getCurrentPVI(d.district_id)).filter((v): v is number => v !== null);
-      const avgPVI = pviValues.length > 0 ? Math.round(pviValues.reduce((a, b) => a + b, 0) / pviValues.length) : null;
-
-      // When PVI filter is active, color by PVI; otherwise by issue
-      const color = pviFilter !== "all" && avgPVI !== null
-        ? `hsl(${getPVIColor(avgPVI)})`
-        : getIssueColor(topIssue);
-
-      // Calculate aggregate PVI shift across districts
-      const shifts = dists.map((d) => hasPVIShift(d.district_id)).filter((s) => s.shifted);
-      const avgShift = shifts.length > 0
-        ? Math.round(shifts.reduce((sum, s) => sum + s.delta, 0) / shifts.length)
-        : 0;
-
-      result[state] = {
-        state,
-        topIssue,
-        color,
-        districtCount: dists.length,
-        districts: dists,
-        avgPVI,
-        avgShift,
-      };
-    });
-    return result;
-  }, [filteredDistricts, pviFilter]);
-
-  // Unique issues for legend
-  const legendIssues = useMemo(() => {
-    const seen = new Set<string>();
-    Object.values(stateData).forEach((s) => seen.add(s.topIssue));
-    return Array.from(seen)
-      .filter((i) => i !== "No data")
-      .sort();
-  }, [stateData]);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     setTooltipPos({ x: e.clientX, y: e.clientY });
-  };
+  }, []);
+
+  const getDistrictFill = useCallback(
+    (districtId: string | null): string => {
+      if (!districtId) return "hsl(220, 15%, 90%)";
+
+      const rating = getCookRating(districtId);
+
+      // PVI filter: dim districts that don't match
+      if (pviFilter !== "all" && !matchesPVIFilter(districtId, pviFilter)) {
+        return "hsl(220, 5%, 92%)";
+      }
+
+      if (rating) {
+        return `hsl(${getCookRatingColor(rating)})`;
+      }
+      return "hsl(220, 15%, 85%)";
+    },
+    [pviFilter]
+  );
+
+  const handleDistrictHover = useCallback(
+    (statefp: string, cd: string) => {
+      const districtId = toDistrictId(statefp, cd);
+      if (!districtId) return;
+
+      const tracked = districtLookup.get(districtId);
+      setTooltip({
+        districtId,
+        rating: getCookRating(districtId),
+        pvi: getCurrentPVI(districtId),
+        shift: hasPVIShift(districtId),
+        topIssues: tracked?.top_issues || [],
+      });
+    },
+    [districtLookup]
+  );
 
   return (
     <div className="relative" onMouseMove={handleMouseMove}>
-      <ComposableMap
-        projection="geoAlbersUsa"
-        projectionConfig={{ scale: 1000 }}
-        width={800}
-        height={500}
-        className="w-full h-auto"
-      >
-        <ZoomableGroup>
-          <Geographies geography={GEO_URL}>
-            {({ geographies }) =>
-              geographies.map((geo) => {
-                return (
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+            <span className="text-sm">Loading district boundaries…</span>
+          </div>
+        </div>
+      )}
+
+      {!loading && (
+        <ComposableMap
+          projection="geoAlbersUsa"
+          projectionConfig={{ scale: 1000 }}
+          width={800}
+          height={500}
+          className="w-full h-auto"
+        >
+          <ZoomableGroup>
+            {/* Congressional district boundaries */}
+            {geoData && (
+              <Geographies geography={geoData}>
+                {({ geographies }) =>
+                  geographies.map((geo) => {
+                    const statefp = geo.properties?.STATEFP;
+                    const cd = geo.properties?.CD118FP;
+                    const districtId = toDistrictId(statefp, cd);
+
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill={getDistrictFill(districtId)}
+                        stroke="hsl(0, 0%, 100%)"
+                        strokeWidth={0.3}
+                        onMouseEnter={() => handleDistrictHover(statefp, cd)}
+                        onMouseLeave={() => setTooltip(null)}
+                        onClick={() => {
+                          if (districtId) onSelectDistrict(districtId);
+                        }}
+                        style={{
+                          default: { outline: "none" },
+                          hover: {
+                            outline: "none",
+                            strokeWidth: 1.2,
+                            stroke: "hsl(var(--foreground))",
+                            cursor: "pointer",
+                          },
+                          pressed: { outline: "none" },
+                        }}
+                      />
+                    );
+                  })
+                }
+              </Geographies>
+            )}
+
+            {/* State boundary overlay lines */}
+            <Geographies geography={STATE_GEO_URL}>
+              {({ geographies }) =>
+                geographies.map((geo) => (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
-                    fill="hsl(220, 15%, 90%)"
-                    stroke="hsl(220, 15%, 80%)"
-                    strokeWidth={0.5}
+                    fill="none"
+                    stroke="hsl(220, 20%, 70%)"
+                    strokeWidth={0.7}
                     style={{
-                      default: { outline: "none" },
-                      hover: { outline: "none", fill: "hsl(220, 15%, 85%)" },
-                      pressed: { outline: "none" },
+                      default: { outline: "none", pointerEvents: "none" },
+                      hover: { outline: "none", pointerEvents: "none" },
+                      pressed: { outline: "none", pointerEvents: "none" },
                     }}
                   />
-                );
-              })
-            }
-          </Geographies>
+                ))
+              }
+            </Geographies>
+          </ZoomableGroup>
+        </ComposableMap>
+      )}
 
-          {/* District markers */}
-          {Object.entries(stateData).map(([stateAbbr, data]) => {
-            const coords = STATE_CENTROIDS[stateAbbr];
-            if (!coords) return null;
-            return (
-              <Marker
-                key={stateAbbr}
-                coordinates={coords}
-                onMouseEnter={() => setTooltip(data)}
-                onMouseLeave={() => setTooltip(null)}
-                onClick={() => {
-                  if (data.districts.length === 1) {
-                    onSelectDistrict(data.districts[0].district_id);
-                  }
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                <circle
-                  r={Math.max(4, Math.min(12, data.districtCount * 2))}
-                  fill={data.color}
-                  fillOpacity={0.85}
-                  stroke="hsl(0, 0%, 100%)"
-                  strokeWidth={1.5}
-                />
-                {data.districtCount > 1 && (
-                  <text
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill="white"
-                    fontSize={7}
-                    fontWeight={700}
-                    style={{ pointerEvents: "none" }}
-                  >
-                    {data.districtCount}
-                  </text>
-                )}
-                {/* PVI trend arrow */}
-                {data.avgShift !== 0 && (() => {
-                  const r = Math.max(4, Math.min(12, data.districtCount * 2));
-                  const arrowX = r + 3;
-                  const arrowColor = data.avgShift > 0 ? "hsl(0, 80%, 45%)" : "hsl(210, 80%, 45%)";
-                  // Positive shift = R (arrow right-up), negative = D (arrow left-up)
-                  const rotation = data.avgShift > 0 ? -45 : -135;
-                  return (
-                    <g transform={`translate(${arrowX}, 0)`} style={{ pointerEvents: "none" }}>
-                      <polygon
-                        points="0,-4 3,0 0,-1 -3,0"
-                        fill={arrowColor}
-                        transform={`rotate(${rotation})`}
-                      />
-                    </g>
-                  );
-                })()}
-              </Marker>
-            );
-          })}
-        </ZoomableGroup>
-      </ComposableMap>
+      {/* Fallback if GeoJSON failed to load */}
+      {!loading && !geoData && (
+        <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+          Could not load district boundaries. Try refreshing the page.
+        </div>
+      )}
 
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 pointer-events-none rounded-lg border border-border bg-card px-3 py-2 shadow-lg"
+          className="fixed z-50 pointer-events-none rounded-lg border border-border bg-card px-3 py-2 shadow-lg max-w-[220px]"
           style={{
-            left: tooltipPos.x + 12,
-            top: tooltipPos.y - 40,
+            left: tooltipPos.x + 14,
+            top: tooltipPos.y - 50,
           }}
         >
           <p className="font-display text-sm font-semibold text-foreground">
-            {tooltip.state}
+            {tooltip.districtId}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {tooltip.districtCount} district{tooltip.districtCount !== 1 ? "s" : ""} tracked
-          </p>
-          <div className="mt-1 flex items-center gap-1.5">
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: tooltip.color }}
-            />
-            <span className="text-xs font-medium text-foreground">
-              {tooltip.topIssue}
-            </span>
-          </div>
-          {tooltip.avgPVI !== null && (
+          {tooltip.rating && (
             <div className="mt-1 flex items-center gap-1.5">
               <span
                 className="inline-block h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: `hsl(${getPVIColor(tooltip.avgPVI)})` }}
+                style={{ backgroundColor: `hsl(${getCookRatingColor(tooltip.rating)})` }}
               />
               <span className="text-xs font-medium text-foreground">
-                PVI: {formatPVI(tooltip.avgPVI)}
+                {tooltip.rating}
               </span>
             </div>
           )}
-          {tooltip.avgShift !== 0 && (
+          {tooltip.pvi !== null && (
             <div className="mt-1 flex items-center gap-1.5">
-              <span className="text-xs font-medium" style={{ color: tooltip.avgShift > 0 ? "hsl(0, 80%, 45%)" : "hsl(210, 80%, 45%)" }}>
-                {tooltip.avgShift > 0 ? "↗" : "↙"} Shifting {tooltip.avgShift > 0 ? "R" : "D"}+{Math.abs(tooltip.avgShift)} since 2012
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: `hsl(${getPVIColor(tooltip.pvi)})` }}
+              />
+              <span className="text-xs font-medium text-foreground">
+                PVI: {formatPVI(tooltip.pvi)}
               </span>
+            </div>
+          )}
+          {tooltip.shift.shifted && (
+            <div className="mt-1">
+              <span
+                className="text-xs font-medium"
+                style={{ color: tooltip.shift.delta > 0 ? "hsl(0, 80%, 45%)" : "hsl(210, 80%, 45%)" }}
+              >
+                {tooltip.shift.delta > 0 ? "↗" : "↙"} Shifting{" "}
+                {tooltip.shift.delta > 0 ? "R" : "D"}+{Math.abs(tooltip.shift.delta)} since 2012
+              </span>
+            </div>
+          )}
+          {tooltip.topIssues.length > 0 && (
+            <div className="mt-1.5 border-t border-border pt-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Top Issues</p>
+              <p className="text-xs text-foreground">{tooltip.topIssues.slice(0, 3).join(", ")}</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Legend */}
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 px-1">
-        {legendIssues.map((issue) => (
-          <div key={issue} className="flex items-center gap-1.5">
+      {/* Cook Rating Legend */}
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 px-1">
+        {COOK_RATING_ORDER.map((rating) => (
+          <div key={rating} className="flex items-center gap-1.5">
             <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: getIssueColor(issue) }}
+              className="inline-block h-2.5 w-2.5 rounded-sm"
+              style={{ backgroundColor: `hsl(${COOK_RATING_COLORS[rating]})` }}
             />
-            <span className="text-xs text-muted-foreground">{issue}</span>
+            <span className="text-xs text-muted-foreground">{rating}</span>
           </div>
         ))}
-        <div className="flex items-center gap-1.5 border-l border-border pl-4 ml-2">
-          <span className="text-xs font-medium" style={{ color: "hsl(0, 80%, 45%)" }}>↗</span>
-          <span className="text-xs text-muted-foreground">Shifting R</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-medium" style={{ color: "hsl(210, 80%, 45%)" }}>↙</span>
-          <span className="text-xs text-muted-foreground">Shifting D</span>
+        <div className="flex items-center gap-1.5 border-l border-border pl-3 ml-1">
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-sm"
+            style={{ backgroundColor: "hsl(220, 15%, 85%)" }}
+          />
+          <span className="text-xs text-muted-foreground">No rating</span>
         </div>
       </div>
     </div>
