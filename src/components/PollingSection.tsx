@@ -833,6 +833,7 @@ export function PollingSection() {
               <span style={{ color: "hsl(0, 65%, 50%)" }}>Disapprove {avgApproval.disapprove}%</span>
             </div>
           </div>
+          </AnimatedCard>
 
           {/* Generic ballot summary */}
           {genericBallotPolls.length > 0 && (() => {
