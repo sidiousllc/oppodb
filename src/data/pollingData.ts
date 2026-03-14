@@ -33,6 +33,10 @@ export const POLLING_SOURCES = [
   { id: "cook", name: "Cook Political Report", color: "260 55% 48%", url: "https://www.cookpolitical.com/survey-research/cpr-polltracker/trump-trendlines" },
   { id: "atlas", name: "Atlas Intel", color: "200 75% 45%", url: "https://atlasintel.org/polls/general-release-polls" },
   { id: "cnn", name: "CNN/SSRS", color: "350 80% 50%", url: "https://www.cnn.com/polling" },
+  { id: "yougov", name: "YouGov", color: "210 90% 50%", url: "https://yougov.com/en-us/trackers/donald-trump-favorability" },
+  { id: "foxnews", name: "Fox News", color: "15 85% 45%", url: "https://www.foxnews.com/official-polls" },
+  { id: "emerson", name: "Emerson College", color: "270 65% 55%", url: "https://emersoncollegepolling.com/" },
+  { id: "ipsos", name: "Reuters/Ipsos", color: "185 70% 40%", url: "https://www.ipsos.com/en-us/latest-us-opinion-polls" },
 ] as const;
 
 export type PollingSourceId = (typeof POLLING_SOURCES)[number]["id"];
