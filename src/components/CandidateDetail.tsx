@@ -190,22 +190,24 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
               </div>
             </div>
           </div>
-          {onEdit && (
+          <div className="flex items-center gap-2 shrink-0">
+            {onEdit && (
+              <button
+                onClick={() => onEdit(candidate.slug)}
+                className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+                Edit
+              </button>
+            )}
             <button
-              onClick={() => onEdit(candidate.slug)}
+              onClick={() => exportContentPDF({ title: candidate.name, subtitle: candidate.state, tag: categoryLabels[candidate.category], content: candidate.content, section: "Candidate Profile" })}
               className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
             >
-              <Edit3 className="h-3.5 w-3.5" />
-              Edit
+              <Download className="h-3.5 w-3.5" />
+              PDF
             </button>
-          )}
-          <button
-            onClick={() => exportContentPDF({ title: candidate.name, subtitle: candidate.state, tag: categoryLabels[candidate.category], content: candidate.content, section: "Candidate Profile" })}
-            className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-          >
-            <Download className="h-3.5 w-3.5" />
-            PDF
-          </button>
+          </div>
         </div>
       </div>
 
