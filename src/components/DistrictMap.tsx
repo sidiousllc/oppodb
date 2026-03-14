@@ -69,7 +69,7 @@ export const PVI_FILTER_OPTIONS: { id: PVIFilter; label: string; color: string }
 function matchesPVIFilter(districtId: string, filter: PVIFilter): boolean {
   if (filter === "all") return true;
   const pvi = getCurrentPVI(districtId);
-  if (pvi === null) return filter === "all";
+  if (pvi === null) return false;
   switch (filter) {
     case "strong-d": return pvi <= -8;
     case "lean-d": return pvi >= -7 && pvi <= -1;
