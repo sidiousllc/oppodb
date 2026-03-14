@@ -93,6 +93,8 @@ interface StateIssueData {
   districtCount: number;
   districts: DistrictProfile[];
   avgPVI: number | null;
+  /** Aggregate PVI shift: positive = shifting R, negative = shifting D, 0 = stable */
+  avgShift: number;
 }
 
 const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: DistrictMapProps) => {
