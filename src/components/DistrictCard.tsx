@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { type DistrictProfile } from "@/data/districtIntel";
+import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
 import { MapPin, ChevronRight, Users } from "lucide-react";
 
 interface DistrictCardProps {
@@ -7,8 +8,26 @@ interface DistrictCardProps {
   onClick: (districtId: string) => void;
 }
 
+function CookBadge({ rating }: { rating: CookRating }) {
+  const color = getCookRatingColor(rating);
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide whitespace-nowrap border"
+      style={{
+        backgroundColor: `hsl(${color} / 0.12)`,
+        color: `hsl(${color})`,
+        borderColor: `hsl(${color} / 0.25)`,
+      }}
+    >
+      {rating}
+    </span>
+  );
+}
+
 export const DistrictCard = forwardRef<HTMLDivElement, DistrictCardProps>(
   ({ district, onClick }, ref) => {
+    const rating = getCookRating(district.district_id);
+
     return (
       <div
         ref={ref}
@@ -21,9 +40,12 @@ export const DistrictCard = forwardRef<HTMLDivElement, DistrictCardProps>(
               <MapPin className="h-5 w-5 text-[hsl(var(--tag-governor))]" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-display text-base font-semibold text-foreground truncate">
-                {district.district_id}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-display text-base font-semibold text-foreground truncate">
+                  {district.district_id}
+                </h3>
+                {rating && <CookBadge rating={rating} />}
+              </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="tag tag-governor">{district.state}</span>
                 {district.population && (
