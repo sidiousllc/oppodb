@@ -7,7 +7,7 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 import { type DistrictProfile } from "@/data/districtIntel";
-import { getCurrentPVI, formatPVI, getPVIColor } from "@/data/cookPVI";
+import { getCurrentPVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
