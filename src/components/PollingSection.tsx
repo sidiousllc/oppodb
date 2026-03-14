@@ -195,7 +195,13 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
             const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
             return (
               <g key={sourceId}>
-                <path d={pathD} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.8} />
+                <path d={pathD} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.8}
+                  style={{
+                    strokeDasharray: inView ? "none" : "2000",
+                    strokeDashoffset: inView ? 0 : 2000,
+                    transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                />
                 {points.map((p, i) => (
                   <circle
                     key={i}
