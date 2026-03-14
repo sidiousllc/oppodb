@@ -502,7 +502,7 @@ export default function Index() {
           {districts.length > 0 && (
             <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
               <h3 className="font-display text-sm font-semibold text-foreground mb-3">
-                District Map — {pviFilter !== "all" ? "Filtered by PVI" : "Top Issues by State"}
+                Congressional District Map — Cook Political Report Ratings
               </h3>
               <DistrictMap
                 districts={districts}
