@@ -436,6 +436,38 @@ export default function Index() {
             </div>
           </div>
 
+          {/* Cook Political Report Filter */}
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setCookFilter("all")}
+              className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide border transition-colors ${
+                cookFilter === "all"
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+              }`}
+            >
+              All Ratings
+            </button>
+            {COOK_RATING_ORDER.map((rating) => {
+              const color = getCookRatingColor(rating);
+              const isActive = cookFilter === rating;
+              return (
+                <button
+                  key={rating}
+                  onClick={() => setCookFilter(isActive ? "all" : rating)}
+                  className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide border transition-all"
+                  style={{
+                    backgroundColor: isActive ? `hsl(${color})` : `hsl(${color} / 0.08)`,
+                    color: isActive ? "white" : `hsl(${color})`,
+                    borderColor: isActive ? `hsl(${color})` : `hsl(${color} / 0.25)`,
+                  }}
+                >
+                  {rating}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Map visualization */}
           {districts.length > 0 && (
             <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
