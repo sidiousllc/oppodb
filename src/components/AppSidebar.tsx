@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
-export type Section = "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel";
+export type Section = "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel" | "polling";
 
 interface AppSidebarProps {
   activeFilter: FilterCategory;
