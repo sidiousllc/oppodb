@@ -38,6 +38,7 @@ export default function Index() {
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
+  const [pviFilter, setPviFilter] = useState<PVIFilter>("all");
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
   const [editData, setEditData] = useState<{
     id: string; name: string; slug: string; content: string;
