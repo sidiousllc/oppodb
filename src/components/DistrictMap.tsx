@@ -199,6 +199,11 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     (districtId: string | null): string => {
       if (!districtId) return "hsl(220, 15%, 90%)";
 
+      // Highlight selected district from search
+      if (highlightedDistrict && districtId === highlightedDistrict) {
+        return "hsl(45, 100%, 55%)";
+      }
+
       // PVI filter: dim non-matching districts
       if (pviFilter !== "all" && !matchesPVIFilter(districtId, pviFilter)) {
         return "hsl(220, 5%, 92%)";
@@ -215,7 +220,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       if (rating) return `hsl(${getCookRatingColor(rating)})`;
       return "hsl(220, 15%, 85%)";
     },
-    [pviFilter, colorMode]
+    [pviFilter, colorMode, highlightedDistrict]
   );
 
   const handleDistrictHover = useCallback(
