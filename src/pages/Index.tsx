@@ -211,7 +211,7 @@ export default function Index() {
 
   function renderDetail() {
     if (section === "candidates" && selectedCandidate) {
-      return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} onNavigateSlug={navigateBySlug} onEdit={handleEditCandidate} />;
+      return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} onNavigateSlug={navigateBySlug} onEdit={isAdmin ? handleEditCandidate : undefined} />;
     }
     if (section === "maga-files" && selectedMaga) {
       return (
