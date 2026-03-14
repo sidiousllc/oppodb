@@ -472,15 +472,42 @@ export default function Index() {
             })}
           </div>
 
+          {/* PVI Filter */}
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider self-center mr-1">PVI:</span>
+            {PVI_FILTER_OPTIONS.map((opt) => {
+              const isActive = pviFilter === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setPviFilter(isActive && opt.id !== "all" ? "all" : opt.id)}
+                  className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide border transition-all"
+                  style={opt.color ? {
+                    backgroundColor: isActive ? `hsl(${opt.color})` : `hsl(${opt.color} / 0.08)`,
+                    color: isActive ? "white" : `hsl(${opt.color})`,
+                    borderColor: isActive ? `hsl(${opt.color})` : `hsl(${opt.color} / 0.25)`,
+                  } : {
+                    backgroundColor: isActive ? "hsl(var(--foreground))" : "hsl(var(--muted))",
+                    color: isActive ? "hsl(var(--background))" : "hsl(var(--muted-foreground))",
+                    borderColor: isActive ? "hsl(var(--foreground))" : "hsl(var(--border))",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Map visualization */}
           {districts.length > 0 && (
             <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
               <h3 className="font-display text-sm font-semibold text-foreground mb-3">
-                District Map — Top Issues by State
+                District Map — {pviFilter !== "all" ? "Filtered by PVI" : "Top Issues by State"}
               </h3>
               <DistrictMap
                 districts={districts}
                 onSelectDistrict={setSelectedSlug}
+                pviFilter={pviFilter}
               />
             </div>
           )}
