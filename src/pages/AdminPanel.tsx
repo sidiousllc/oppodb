@@ -317,7 +317,7 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this item?")) return;
-    const { error } = await supabase.from(table as any).delete().eq("id", id);
+    const { error } = await supabase.from(table as "maga_files" | "local_impacts" | "narrative_reports").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Deleted");
     load();
