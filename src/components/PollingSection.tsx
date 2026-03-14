@@ -407,7 +407,7 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
   });
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <h3 className="font-display text-sm font-semibold text-foreground mb-1">
         Issue Polling Overview
       </h3>
