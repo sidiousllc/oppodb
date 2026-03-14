@@ -46,6 +46,14 @@ function categorize(name: string, slug: string): { category: Candidate["category
     "ryan-mackenzie": "PA", "ryan-zinke": "MT", "scott-perry": "PA",
     "tom-barrett": "MI", "tom-kean": "NJ", "derrick-van-orden": "WI",
     "young-kim": "CA", "zach-nunn": "IA",
+    // New "How To Win Against" candidates
+    "aaron-bean": "FL", "abe-hamadeh": "AZ", "addison-mcdowell": "NC",
+    "andy-harris": "MD", "brad-knott": "NC", "dan-meuser": "PA",
+    "daniel-webster": "FL", "darrell-issa": "CA", "french-hill": "AR",
+    "glenn-grothman": "WI", "jay-obernolte": "CA", "lauren-boebert": "CO",
+    "neal-dunn": "FL", "richard-hudson": "NC", "stephanie-bice": "OK",
+    "tim-moore": "NC", "tom-mcclintock": "CA", "tony-wied": "WI",
+    "victoria-spartz": "IN", "virginia-foxx": "NC",
   };
   
   return { category: "house", state: houseStates[lslug] || "" };
