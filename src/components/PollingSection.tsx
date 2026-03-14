@@ -878,6 +878,7 @@ export function PollingSection() {
           </AnimatedCard>
 
           {/* Poll types breakdown */}
+          <AnimatedCard delay={300}>
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Polls by Type
