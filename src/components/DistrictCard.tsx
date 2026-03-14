@@ -28,6 +28,7 @@ function CookBadge({ rating }: { rating: CookRating }) {
 export const DistrictCard = forwardRef<HTMLDivElement, DistrictCardProps>(
   ({ district, onClick }, ref) => {
     const rating = getCookRating(district.district_id);
+    const pvi = getCurrentPVI(district.district_id);
 
     return (
       <div
