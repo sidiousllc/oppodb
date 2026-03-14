@@ -257,6 +257,78 @@ export type Database = {
         }
         Relationships: []
       }
+      polling_data: {
+        Row: {
+          approve_pct: number | null
+          candidate_or_topic: string
+          created_at: string
+          date_conducted: string
+          disapprove_pct: number | null
+          end_date: string | null
+          favor_pct: number | null
+          id: string
+          margin: number | null
+          margin_of_error: number | null
+          methodology: string | null
+          oppose_pct: number | null
+          partisan_lean: string | null
+          poll_type: string
+          question: string | null
+          raw_data: Json | null
+          sample_size: number | null
+          sample_type: string | null
+          source: string
+          source_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          approve_pct?: number | null
+          candidate_or_topic: string
+          created_at?: string
+          date_conducted: string
+          disapprove_pct?: number | null
+          end_date?: string | null
+          favor_pct?: number | null
+          id?: string
+          margin?: number | null
+          margin_of_error?: number | null
+          methodology?: string | null
+          oppose_pct?: number | null
+          partisan_lean?: string | null
+          poll_type?: string
+          question?: string | null
+          raw_data?: Json | null
+          sample_size?: number | null
+          sample_type?: string | null
+          source: string
+          source_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approve_pct?: number | null
+          candidate_or_topic?: string
+          created_at?: string
+          date_conducted?: string
+          disapprove_pct?: number | null
+          end_date?: string | null
+          favor_pct?: number | null
+          id?: string
+          margin?: number | null
+          margin_of_error?: number | null
+          methodology?: string | null
+          oppose_pct?: number | null
+          partisan_lean?: string | null
+          poll_type?: string
+          question?: string | null
+          raw_data?: Json | null
+          sample_size?: number | null
+          sample_type?: string | null
+          source?: string
+          source_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
