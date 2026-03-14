@@ -129,3 +129,104 @@
     @apply my-6 border-border;
   }
 }
+
+@media print {
+  /* Hide non-content UI */
+  [data-sidebar],
+  .sidebar-nav,
+  nav,
+  .search-input,
+  button,
+  [role="navigation"],
+  .mobile-nav,
+  header {
+    display: none !important;
+  }
+
+  /* Reset layout */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  #root {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Cards become flat */
+  .bg-card,
+  [class*="rounded-xl"] {
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Prose content fills page */
+  .prose-research {
+    color: black !important;
+    max-width: 100% !important;
+  }
+
+  .prose-research h1 {
+    font-size: 18pt;
+    margin-top: 12pt;
+    page-break-after: avoid;
+  }
+
+  .prose-research h2 {
+    font-size: 14pt;
+    margin-top: 10pt;
+    page-break-after: avoid;
+  }
+
+  .prose-research h3 {
+    font-size: 12pt;
+    margin-top: 8pt;
+    page-break-after: avoid;
+  }
+
+  .prose-research a {
+    color: black !important;
+    text-decoration: underline;
+  }
+
+  .prose-research blockquote {
+    border-left: 2pt solid #999 !important;
+    color: #333 !important;
+  }
+
+  /* Tags print cleanly */
+  .tag {
+    border: 1px solid #ccc;
+    background: transparent !important;
+    color: black !important;
+  }
+
+  /* Avoid page breaks inside cards/sections */
+  .candidate-card,
+  .prose-research p,
+  .prose-research li {
+    page-break-inside: avoid;
+  }
+
+  /* Show PDF buttons as Print instead — hide them */
+  [class*="bg-muted"] {
+    display: none !important;
+  }
+
+  /* Keep detail header visible */
+  .flex.items-start.gap-4 {
+    display: flex !important;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1.5cm;
+  }
+}
