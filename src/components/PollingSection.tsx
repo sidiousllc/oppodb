@@ -426,7 +426,7 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
           const sourceNames = topicPolls.map((p) => getSourceInfo(p.source).name);
 
           return (
-            <div key={topic} className="group">
+            <div key={topic} className="group" style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(10px)", transition: `all 0.5s ease ${idx * 80}ms` }}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-semibold text-foreground">{topic}</span>
                 <div className="flex items-center gap-2">
@@ -440,14 +440,15 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
                 {/* Approve bar (left to right) */}
                 <div className="flex-1 flex justify-end">
                   <div
-                    className="h-6 rounded-l-md flex items-center justify-end pr-1.5 transition-all duration-500"
+                    className="h-6 rounded-l-md flex items-center justify-end pr-1.5"
                     style={{
-                      width: `${Math.min(approveW, 100)}%`,
+                      width: inView ? `${Math.min(approveW, 100)}%` : "0%",
                       backgroundColor: "hsl(150, 55%, 45%)",
-                      minWidth: 30,
+                      minWidth: inView ? 30 : 0,
+                      transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 200}ms`,
                     }}
                   >
-                    <span className="text-[10px] font-bold text-white">{Math.round(avgApprove)}%</span>
+                    <span className="text-[10px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 80 + 600}ms` }}>{Math.round(avgApprove)}%</span>
                   </div>
                 </div>
                 {/* Center divider */}
@@ -455,14 +456,15 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
                 {/* Disapprove bar (right) */}
                 <div className="flex-1">
                   <div
-                    className="h-6 rounded-r-md flex items-center pl-1.5 transition-all duration-500"
+                    className="h-6 rounded-r-md flex items-center pl-1.5"
                     style={{
-                      width: `${Math.min(disapproveW, 100)}%`,
+                      width: inView ? `${Math.min(disapproveW, 100)}%` : "0%",
                       backgroundColor: "hsl(0, 65%, 50%)",
-                      minWidth: 30,
+                      minWidth: inView ? 30 : 0,
+                      transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 300}ms`,
                     }}
                   >
-                    <span className="text-[10px] font-bold text-white">{Math.round(avgDisapprove)}%</span>
+                    <span className="text-[10px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 80 + 600}ms` }}>{Math.round(avgDisapprove)}%</span>
                   </div>
                 </div>
               </div>
