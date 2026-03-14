@@ -92,6 +92,23 @@ export default function Index() {
     }
   }, []);
 
+  const handleStateLegSync = useCallback(async (stateAbbr?: string, chamber?: string) => {
+    setStateLegSyncing(true);
+    try {
+      const result = await syncStateLegislativeData(stateAbbr, chamber);
+      if (result.success) {
+        const fresh = await fetchStateLegislativeDistricts();
+        setStateLegDistricts(fresh);
+      } else {
+        console.error("State legislative sync failed:", result.error);
+      }
+    } catch (e) {
+      console.error("State legislative sync error:", e);
+    } finally {
+      setStateLegSyncing(false);
+    }
+  }, []);
+
   const refreshCandidates = useCallback(() => {
     fetchCandidatesFromDB().then((dbCandidates) => {
       if (dbCandidates.length > 0) {
