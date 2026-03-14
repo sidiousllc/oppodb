@@ -732,8 +732,9 @@ export function PollingSection() {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 items-center">
+      {/* Filters + Export */}
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+       <div className="flex flex-wrap gap-4 items-center flex-1">
         <div className="flex items-center gap-2">
           <Filter className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Source:</span>
