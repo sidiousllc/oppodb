@@ -302,7 +302,7 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
     }
 
     if (item.id) {
-      const { error } = await supabase.from(table as any).update(record).eq("id", item.id);
+      const { error } = await supabase.from(table as "maga_files" | "local_impacts" | "narrative_reports").update(record).eq("id", item.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Updated");
     } else {
