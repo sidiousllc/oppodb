@@ -797,8 +797,17 @@ export function PollingSection() {
           </div>
         </div>
        </div>
-       {/* Export Buttons */}
+       {/* Update + Export Buttons */}
        <div className="flex items-center gap-1.5 shrink-0">
+         <button
+           onClick={seedData}
+           disabled={seeding}
+           className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors shadow-sm disabled:opacity-50"
+           title="Update polling data from all sources"
+         >
+           <RefreshCw className={`h-3.5 w-3.5 ${seeding ? "animate-spin" : ""}`} />
+           {seeding ? "Updating…" : "Update Data"}
+         </button>
          <button
            onClick={() => exportPollingCSV(filtered)}
            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shadow-sm"
