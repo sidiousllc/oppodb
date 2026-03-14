@@ -283,10 +283,10 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
   const load = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase
-      .from(table as any)
+      .from(table as "maga_files" | "local_impacts" | "narrative_reports")
       .select("*")
       .order(nameField);
-    setItems((data || []) as ContentItem[]);
+    setItems((data || []) as unknown as ContentItem[]);
     setLoading(false);
   }, [table, nameField]);
 
