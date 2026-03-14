@@ -7,7 +7,7 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 import { type DistrictProfile } from "@/data/districtIntel";
-import { getCurrentPVI, formatPVI, getPVIColor } from "@/data/cookPVI";
+import { getCurrentPVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
@@ -93,6 +93,8 @@ interface StateIssueData {
   districtCount: number;
   districts: DistrictProfile[];
   avgPVI: number | null;
+  /** Aggregate PVI shift: positive = shifting R, negative = shifting D, 0 = stable */
+  avgShift: number;
 }
 
 const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: DistrictMapProps) => {
@@ -135,6 +137,12 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         ? `hsl(${getPVIColor(avgPVI)})`
         : getIssueColor(topIssue);
 
+      // Calculate aggregate PVI shift across districts
+      const shifts = dists.map((d) => hasPVIShift(d.district_id)).filter((s) => s.shifted);
+      const avgShift = shifts.length > 0
+        ? Math.round(shifts.reduce((sum, s) => sum + s.delta, 0) / shifts.length)
+        : 0;
+
       result[state] = {
         state,
         topIssue,
@@ -142,6 +150,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         districtCount: dists.length,
         districts: dists,
         avgPVI,
+        avgShift,
       };
     });
     return result;
@@ -227,6 +236,23 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                     {data.districtCount}
                   </text>
                 )}
+                {/* PVI trend arrow */}
+                {data.avgShift !== 0 && (() => {
+                  const r = Math.max(4, Math.min(12, data.districtCount * 2));
+                  const arrowX = r + 3;
+                  const arrowColor = data.avgShift > 0 ? "hsl(0, 80%, 45%)" : "hsl(210, 80%, 45%)";
+                  // Positive shift = R (arrow right-up), negative = D (arrow left-up)
+                  const rotation = data.avgShift > 0 ? -45 : -135;
+                  return (
+                    <g transform={`translate(${arrowX}, 0)`} style={{ pointerEvents: "none" }}>
+                      <polygon
+                        points="0,-4 3,0 0,-1 -3,0"
+                        fill={arrowColor}
+                        transform={`rotate(${rotation})`}
+                      />
+                    </g>
+                  );
+                })()}
               </Marker>
             );
           })}
@@ -265,6 +291,13 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
               />
               <span className="text-xs font-medium text-foreground">
                 PVI: {formatPVI(tooltip.avgPVI)}
+              </span>
+            </div>
+          )}
+          {tooltip.avgShift !== 0 && (
+            <div className="mt-1 flex items-center gap-1.5">
+              <span className="text-xs font-medium" style={{ color: tooltip.avgShift > 0 ? "hsl(0, 80%, 45%)" : "hsl(210, 80%, 45%)" }}>
+                {tooltip.avgShift > 0 ? "↗" : "↙"} Shifting {tooltip.avgShift > 0 ? "R" : "D"}+{Math.abs(tooltip.avgShift)} since 2012
               </span>
             </div>
           )}
