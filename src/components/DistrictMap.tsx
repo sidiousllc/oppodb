@@ -300,6 +300,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                 {tooltip.avgShift > 0 ? "↗" : "↙"} Shifting {tooltip.avgShift > 0 ? "R" : "D"}+{Math.abs(tooltip.avgShift)} since 2012
               </span>
             </div>
+          )}
         </div>
       )}
 
