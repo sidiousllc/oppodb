@@ -294,6 +294,12 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
               </span>
             </div>
           )}
+          {tooltip.avgShift !== 0 && (
+            <div className="mt-1 flex items-center gap-1.5">
+              <span className="text-xs font-medium" style={{ color: tooltip.avgShift > 0 ? "hsl(0, 80%, 45%)" : "hsl(210, 80%, 45%)" }}>
+                {tooltip.avgShift > 0 ? "↗" : "↙"} Shifting {tooltip.avgShift > 0 ? "R" : "D"}+{Math.abs(tooltip.avgShift)} since 2012
+              </span>
+            </div>
         </div>
       )}
 
