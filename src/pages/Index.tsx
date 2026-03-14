@@ -6,6 +6,7 @@ import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/d
 import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
 import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
+import { fetchStateLegislativeDistricts, syncStateLegislativeData, type StateLegislativeProfile } from "@/data/stateLegislativeIntel";
 import { getCookRating, getCookRatingColor, COOK_RATING_ORDER, type CookRating } from "@/data/cookRatings";
 import { candidateDistrictMap } from "@/data/candidateDistricts";
 import { SearchBar } from "@/components/SearchBar";
@@ -25,6 +26,7 @@ import { DistrictCompare } from "@/components/DistrictCompare";
 import { BookOpen, AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
+import { StateLegislativeSection } from "@/components/StateLegislativeSection";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
@@ -35,6 +37,9 @@ export default function Index() {
   const [section, setSection] = useState<Section>("candidates");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
+  const [stateLegDistricts, setStateLegDistricts] = useState<StateLegislativeProfile[]>([]);
+  const [stateLegLoading, setStateLegLoading] = useState(true);
+  const [stateLegSyncing, setStateLegSyncing] = useState(false);
   const [censusSyncing, setCensusSyncing] = useState(false);
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
@@ -64,6 +69,10 @@ export default function Index() {
     });
 
     fetchAllDistricts().then(setDistricts);
+    fetchStateLegislativeDistricts().then((d) => {
+      setStateLegDistricts(d);
+      setStateLegLoading(false);
+    }).catch(() => setStateLegLoading(false));
   }, []);
 
   const handleCensusSync = useCallback(async () => {
@@ -80,6 +89,23 @@ export default function Index() {
       console.error("Census sync error:", e);
     } finally {
       setCensusSyncing(false);
+    }
+  }, []);
+
+  const handleStateLegSync = useCallback(async (stateAbbr?: string, chamber?: string) => {
+    setStateLegSyncing(true);
+    try {
+      const result = await syncStateLegislativeData(stateAbbr, chamber);
+      if (result.success) {
+        const fresh = await fetchStateLegislativeDistricts();
+        setStateLegDistricts(fresh);
+      } else {
+        console.error("State legislative sync failed:", result.error);
+      }
+    } catch (e) {
+      console.error("State legislative sync error:", e);
+    } finally {
+      setStateLegSyncing(false);
     }
   }, []);
 
@@ -164,8 +190,9 @@ export default function Index() {
     "local-impact": localImpactReports.length,
     narratives: narrativeReports.length,
     "district-intel": districts.length,
+    "state-legislative": stateLegDistricts.length,
     polling: 0,
-  }), [dataVersion, districts]);
+  }), [dataVersion, districts, stateLegDistricts]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
@@ -528,6 +555,17 @@ export default function Index() {
       );
     }
 
+    if (section === "state-legislative") {
+      return (
+        <StateLegislativeSection
+          districts={stateLegDistricts}
+          loading={stateLegLoading}
+          onSync={handleStateLegSync}
+          syncing={stateLegSyncing}
+        />
+      );
+    }
+
     if (section === "polling") {
       return <PollingSection />;
     }
@@ -540,6 +578,7 @@ export default function Index() {
     "local-impact": "Local Impact by State",
     narratives: "Narrative Reports",
     "district-intel": "District Intelligence",
+    "state-legislative": "State Legislative Districts",
     polling: "Polling Data",
   };
 
