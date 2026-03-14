@@ -315,6 +315,14 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
             <span className="text-xs text-muted-foreground">{issue}</span>
           </div>
         ))}
+        <div className="flex items-center gap-1.5 border-l border-border pl-4 ml-2">
+          <span className="text-xs font-medium" style={{ color: "hsl(0, 80%, 45%)" }}>↗</span>
+          <span className="text-xs text-muted-foreground">Shifting R</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium" style={{ color: "hsl(210, 80%, 45%)" }}>↙</span>
+          <span className="text-xs text-muted-foreground">Shifting D</span>
+        </div>
       </div>
     </div>
   );
