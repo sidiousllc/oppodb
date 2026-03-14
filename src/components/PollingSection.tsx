@@ -822,6 +822,7 @@ export function PollingSection() {
       {avgApproval && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Approval Gauge */}
+          <AnimatedCard delay={0}>
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col items-center justify-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Cross-Source Average
