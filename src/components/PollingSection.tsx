@@ -865,6 +865,7 @@ export function PollingSection() {
           })()}
 
           {/* Source count */}
+          <AnimatedCard delay={200}>
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Data Coverage
