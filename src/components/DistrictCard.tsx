@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { type DistrictProfile } from "@/data/districtIntel";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
+import { getCurrentPVI, formatPVI, getPVIColor } from "@/data/cookPVI";
 import { MapPin, ChevronRight, Users } from "lucide-react";
 
 interface DistrictCardProps {
@@ -27,6 +28,7 @@ function CookBadge({ rating }: { rating: CookRating }) {
 export const DistrictCard = forwardRef<HTMLDivElement, DistrictCardProps>(
   ({ district, onClick }, ref) => {
     const rating = getCookRating(district.district_id);
+    const pvi = getCurrentPVI(district.district_id);
 
     return (
       <div
@@ -45,6 +47,18 @@ export const DistrictCard = forwardRef<HTMLDivElement, DistrictCardProps>(
                   {district.district_id}
                 </h3>
                 {rating && <CookBadge rating={rating} />}
+                {pvi !== null && (
+                  <span
+                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide whitespace-nowrap border"
+                    style={{
+                      backgroundColor: `hsl(${getPVIColor(pvi)} / 0.12)`,
+                      color: `hsl(${getPVIColor(pvi)})`,
+                      borderColor: `hsl(${getPVIColor(pvi)} / 0.25)`,
+                    }}
+                  >
+                    {formatPVI(pvi)}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="tag tag-governor">{district.state}</span>
