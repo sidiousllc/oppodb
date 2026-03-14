@@ -271,6 +271,53 @@ export function DistrictCompare({
 
       {selected.length >= 2 ? (
         <div className="space-y-6">
+          {/* Cook Rating Color Legend */}
+          <div className="bg-card rounded-xl border border-border p-5">
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              Cook Political Report Rating Scale
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {COOK_RATING_ORDER.map((r) => (
+                <span
+                  key={r}
+                  className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
+                  style={{ background: getCookRatingBg(r), color: getCookRatingText(r) }}
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Cook Ratings Side-by-Side */}
+          <div className="bg-card rounded-xl border border-border p-5">
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">
+              Cook Political Report Ratings
+            </h2>
+            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(selected.length, 6)}, 1fr)` }}>
+              {selected.map((d) => {
+                const rating = getCookRating(d.district_id);
+                return (
+                  <div key={d.district_id} className="text-center">
+                    <p className="text-xs font-bold mb-2" style={{ color: colorMap.get(d.district_id) }}>
+                      {d.district_id}
+                    </p>
+                    {rating ? (
+                      <span
+                        className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-bold"
+                        style={{ background: getCookRatingBg(rating), color: getCookRatingText(rating) }}
+                      >
+                        {rating}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No rating</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {SECTIONS.map((section) => (
             <div key={section.title} className="bg-card rounded-xl border border-border p-5">
               <div className="flex items-center gap-2 mb-4">
