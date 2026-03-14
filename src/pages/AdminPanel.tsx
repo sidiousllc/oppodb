@@ -110,6 +110,11 @@ export default function AdminPanel() {
 function UsersTab() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState("user");
+  const [creating, setCreating] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -146,57 +151,152 @@ function UsersTab() {
     }
   };
 
+  const handleCreateUser = async () => {
+    const trimmedEmail = newEmail.trim();
+    const trimmedPassword = newPassword.trim();
+    if (!trimmedEmail || !trimmedPassword) {
+      toast.error("Email and password are required");
+      return;
+    }
+    if (trimmedPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    setCreating(true);
+    try {
+      await createUser(trimmedEmail, trimmedPassword, newRole);
+      toast.success(`User ${trimmedEmail} created successfully`);
+      setNewEmail("");
+      setNewPassword("");
+      setNewRole("user");
+      setShowAddUser(false);
+      loadUsers();
+    } catch (e: any) {
+      toast.error("Failed to create user: " + e.message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border bg-muted/30">
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Email</th>
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Joined</th>
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Last Sign In</th>
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Roles</th>
-            <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(u => (
-            <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-              <td className="px-4 py-3 font-medium text-foreground">{u.email}</td>
-              <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
-              <td className="px-4 py-3 text-muted-foreground">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "Never"}</td>
-              <td className="px-4 py-3">
-                <div className="flex gap-1.5">
-                  {["admin", "moderator"].map(role => {
-                    const has = u.roles.includes(role);
-                    return (
-                      <button
-                        key={role}
-                        onClick={() => handleToggleRole(u.id, role, has)}
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                          has
-                            ? role === "admin"
-                              ? "bg-primary/15 text-primary"
-                              : "bg-accent/15 text-accent"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        }`}
-                      >
-                        {has ? "✓ " : ""}{role}
-                      </button>
-                    );
-                  })}
-                </div>
-              </td>
-              <td className="px-4 py-3 text-right">
-                <button onClick={() => handleDelete(u.id, u.email || "")} className="text-destructive hover:text-destructive/80 p-1">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </td>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <p className="text-sm text-muted-foreground">{users.length} users</p>
+        <button
+          onClick={() => setShowAddUser(!showAddUser)}
+          className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary/90"
+        >
+          {showAddUser ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {showAddUser ? "Cancel" : "Add User"}
+        </button>
+      </div>
+
+      {showAddUser && (
+        <div className="bg-card rounded-xl border border-border p-5 mb-4">
+          <h3 className="font-medium text-foreground mb-4">Create New User</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                placeholder="user@example.com"
+                maxLength={255}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                placeholder="Min 6 characters"
+                maxLength={128}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Role</label>
+              <select
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              >
+                <option value="user">User</option>
+                <option value="moderator">Moderator</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <button
+            onClick={handleCreateUser}
+            disabled={creating}
+            className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+          >
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            Create User
+          </button>
+        </div>
+      )}
+
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Email</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Joined</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Last Sign In</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Roles</th>
+              <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/20">
+                <td className="px-4 py-3 font-medium text-foreground">{u.email}</td>
+                <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-muted-foreground">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "Never"}</td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-1.5">
+                    {["admin", "moderator"].map(role => {
+                      const has = u.roles.includes(role);
+                      return (
+                        <button
+                          key={role}
+                          onClick={() => handleToggleRole(u.id, role, has)}
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                            has
+                              ? role === "admin"
+                                ? "bg-primary/15 text-primary"
+                                : "bg-accent/15 text-accent"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          }`}
+                        >
+                          {has ? "✓ " : ""}{role}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <button onClick={() => handleDelete(u.id, u.email || "")} className="text-destructive hover:text-destructive/80 p-1">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
