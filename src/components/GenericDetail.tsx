@@ -1,7 +1,8 @@
 import { useCallback } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver";
+import { exportContentPDF } from "@/lib/contentExport";
 
 interface GenericDetailProps {
   icon: React.ReactNode;
@@ -12,6 +13,7 @@ interface GenericDetailProps {
   onBack: () => void;
   backLabel?: string;
   onNavigateSlug?: (slug: string) => boolean;
+  sectionLabel?: string;
 }
 
 export function GenericDetail({
@@ -23,6 +25,7 @@ export function GenericDetail({
   onBack,
   backLabel = "Back",
   onNavigateSlug,
+  sectionLabel = "Report",
 }: GenericDetailProps) {
   const handleLinkClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>, href: string | undefined, slug: string | null) => {
@@ -47,17 +50,26 @@ export function GenericDetail({
       </button>
 
       <div className="bg-card rounded-xl border border-border p-6 mb-6">
-        <div className="flex items-start gap-4">
-          {icon}
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">
-              {title}
-            </h1>
-            <div className="flex items-center gap-3 mt-2">
-              {tag && <span className={`tag ${tag.className}`}>{tag.label}</span>}
-              {subtitle && <span className="text-sm text-muted-foreground">{subtitle}</span>}
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            {icon}
+            <div>
+              <h1 className="font-display text-2xl font-bold text-foreground">
+                {title}
+              </h1>
+              <div className="flex items-center gap-3 mt-2">
+                {tag && <span className={`tag ${tag.className}`}>{tag.label}</span>}
+                {subtitle && <span className="text-sm text-muted-foreground">{subtitle}</span>}
+              </div>
             </div>
           </div>
+          <button
+            onClick={() => exportContentPDF({ title, subtitle, tag: tag?.label, content, section: sectionLabel })}
+            className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors shrink-0"
+          >
+            <Download className="h-3.5 w-3.5" />
+            PDF
+          </button>
         </div>
       </div>
 

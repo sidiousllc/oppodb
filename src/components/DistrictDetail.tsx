@@ -19,7 +19,9 @@ import {
   Briefcase,
   Building,
   BarChart3,
+  Download,
 } from "lucide-react";
+import { exportDistrictPDF } from "@/lib/districtDetailExport";
 
 interface DistrictDetailProps {
   district: DistrictProfile;
@@ -128,35 +130,44 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
 
       {/* Header */}
       <div className="bg-card rounded-xl border border-border p-6 mb-6">
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--tag-governor)/0.1)]">
-            <MapPin className="h-7 w-7 text-[hsl(var(--tag-governor))]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="font-display text-2xl font-bold text-foreground">
-                {district.district_id}
-              </h1>
-              {cookRating && (
-                <span
-                  className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-wide border"
-                  style={{
-                    backgroundColor: `hsl(${getCookRatingColor(cookRating)} / 0.12)`,
-                    color: `hsl(${getCookRatingColor(cookRating)})`,
-                    borderColor: `hsl(${getCookRatingColor(cookRating)} / 0.25)`,
-                  }}
-                >
-                  {cookRating}
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--tag-governor)/0.1)]">
+              <MapPin className="h-7 w-7 text-[hsl(var(--tag-governor))]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="font-display text-2xl font-bold text-foreground">
+                  {district.district_id}
+                </h1>
+                {cookRating && (
+                  <span
+                    className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-wide border"
+                    style={{
+                      backgroundColor: `hsl(${getCookRatingColor(cookRating)} / 0.12)`,
+                      color: `hsl(${getCookRatingColor(cookRating)})`,
+                      borderColor: `hsl(${getCookRatingColor(cookRating)} / 0.25)`,
+                    }}
+                  >
+                    {cookRating}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="tag tag-governor">{district.state}</span>
+                <span className="text-sm text-muted-foreground">
+                  Congressional District
                 </span>
-              )}
-            </div>
-            <div className="flex items-center gap-3 mt-2">
-              <span className="tag tag-governor">{district.state}</span>
-              <span className="text-sm text-muted-foreground">
-                Congressional District
-              </span>
+              </div>
             </div>
           </div>
+          <button
+            onClick={() => exportDistrictPDF(district, cookRating)}
+            className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors shrink-0"
+          >
+            <Download className="h-3.5 w-3.5" />
+            PDF
+          </button>
         </div>
       </div>
 

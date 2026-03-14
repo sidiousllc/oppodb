@@ -225,6 +225,7 @@ export default function Index() {
           title={selectedMaga.name}
           tag={{ label: "MAGA File", className: "bg-destructive/10 text-destructive" }}
           content={selectedMaga.content}
+          sectionLabel="MAGA File"
           onBack={() => setSelectedSlug(null)}
           onNavigateSlug={navigateBySlug}
           backLabel="Back to MAGA Files"
@@ -239,6 +240,7 @@ export default function Index() {
           subtitle={selectedLocal.summary}
           tag={{ label: "Local Impact", className: "bg-accent/10 text-accent" }}
           content={selectedLocal.content}
+          sectionLabel="Local Impact"
           onBack={() => setSelectedSlug(null)}
           onNavigateSlug={navigateBySlug}
           backLabel="Back to Local Impact"
@@ -252,6 +254,7 @@ export default function Index() {
           title={selectedNarrative.name}
           tag={{ label: "Narrative Report", className: "tag-senate" }}
           content={selectedNarrative.content}
+          sectionLabel="Narrative Report"
           onBack={() => setSelectedSlug(null)}
           onNavigateSlug={navigateBySlug}
           backLabel="Back to Narrative Reports"
