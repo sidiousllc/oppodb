@@ -84,28 +84,19 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
     const controller = new AbortController();
     const cdNum = districtNum === "AL" ? "00" : districtNum.padStart(2, "0");
 
-    // Build query with proper URL encoding via URLSearchParams
+    const ESRI_URL =
+      "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query";
+
     const buildUrl = (cd: string) => {
       const params = new URLSearchParams({
-        where: `STATEFP='${fips}' AND CD118FP='${cd}'`,
-        outFields: "BASENAME,STATEFP,CD118FP",
+        where: `STATE_ABBR='${stateAbbr}' AND CDFIPS='${cd}'`,
+        outFields: "STATE_ABBR,CDFIPS,BASENAME",
         f: "geojson",
         outSR: "4326",
         returnGeometry: "true",
+        maxAllowableOffset: "0.005",
       });
-      return `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/0/query?${params}`;
-    };
-
-    // Try primary field names, then fallback to legacy field names
-    const buildLegacyUrl = (cd: string) => {
-      const params = new URLSearchParams({
-        where: `STATE='${fips}' AND CD='${cd}'`,
-        outFields: "BASENAME,STATE,CD",
-        f: "geojson",
-        outSR: "4326",
-        returnGeometry: "true",
-      });
-      return `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0/query?${params}`;
+      return `${ESRI_URL}?${params}`;
     };
 
     const tryFetch = async (url: string): Promise<DistrictGeoJSON | null> => {
