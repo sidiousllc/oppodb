@@ -15,7 +15,7 @@ import { GenericCard } from "@/components/GenericCard";
 import { GenericDetail } from "@/components/GenericDetail";
 import { DistrictCard } from "@/components/DistrictCard";
 import { DistrictDetail } from "@/components/DistrictDetail";
-import { DistrictMap } from "@/components/DistrictMap";
+import { DistrictMap, type PVIFilter, PVI_FILTER_OPTIONS } from "@/components/DistrictMap";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ChatPanel } from "@/components/ChatPanel";
