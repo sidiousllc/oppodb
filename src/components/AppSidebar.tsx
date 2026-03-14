@@ -33,6 +33,7 @@ const sections: Array<{id: Section; label: string; icon: React.ElementType}> = [
   { id: "local-impact", label: "Local Impact", icon: Globe },
   { id: "narratives", label: "Narrative Reports", icon: FileText },
   { id: "district-intel", label: "District Intel", icon: Compass },
+  { id: "polling", label: "Polling Data", icon: BarChart3 },
 ];
 
 function SignOutButton() {
