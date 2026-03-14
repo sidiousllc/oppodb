@@ -29,6 +29,7 @@ const CD_GEO_URL =
     outSR: "4326",
     returnGeometry: "true",
     resultRecordCount: "500",
+    maxAllowableOffset: "0.03",
   }).toString();
 
 // ─── Types & Exports ────────────────────────────────────────────────────────
@@ -129,15 +130,31 @@ async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
   if (cachedGeoJSON) return cachedGeoJSON;
   if (fetchPromise) return fetchPromise;
 
-  fetchPromise = fetch(CD_GEO_URL)
-    .then(async (res) => {
-      if (!res.ok) return null;
+  fetchPromise = (async () => {
+    try {
+      console.log("[DistrictMap] Fetching district boundaries from Esri…");
+      const res = await fetch(CD_GEO_URL);
+      if (!res.ok) {
+        console.error("[DistrictMap] Fetch failed:", res.status, res.statusText);
+        return null;
+      }
       const data = await res.json();
-      if (data.error || !data.features) return null;
+      if (data.error) {
+        console.error("[DistrictMap] API error:", data.error);
+        return null;
+      }
+      if (!data.features || data.features.length === 0) {
+        console.error("[DistrictMap] No features returned");
+        return null;
+      }
+      console.log(`[DistrictMap] Loaded ${data.features.length} district boundaries`);
       cachedGeoJSON = data as DistrictGeoJSON;
       return cachedGeoJSON;
-    })
-    .catch(() => null);
+    } catch (e) {
+      console.error("[DistrictMap] Fetch error:", e);
+      return null;
+    }
+  })();
 
   return fetchPromise;
 }
