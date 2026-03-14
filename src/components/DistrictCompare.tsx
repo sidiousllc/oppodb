@@ -215,7 +215,11 @@ export function DistrictCompare({
 
   const colorMap = useMemo(() => {
     const map = new Map<string, string>();
-    selected.forEach((d, i) => map.set(d.district_id, COLORS[i % COLORS.length]));
+    selected.forEach((d, i) => {
+      const rating = getCookRating(d.district_id);
+      const color = rating ? `hsl(${getCookRatingColor(rating)})` : COLORS[i % COLORS.length];
+      map.set(d.district_id, color);
+    });
     return map;
   }, [selected]);
 
