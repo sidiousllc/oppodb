@@ -257,6 +257,17 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
               {tooltip.topIssue}
             </span>
           </div>
+          {tooltip.avgPVI !== null && (
+            <div className="mt-1 flex items-center gap-1.5">
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: `hsl(${getPVIColor(tooltip.avgPVI)})` }}
+              />
+              <span className="text-xs font-medium text-foreground">
+                PVI: {formatPVI(tooltip.avgPVI)}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
