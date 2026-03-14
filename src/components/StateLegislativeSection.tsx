@@ -148,6 +148,16 @@ function StatLegDetail({
         </div>
       </div>
 
+      {/* District Boundary Map */}
+      <div className="mb-6">
+        <StateLegBoundaryMap
+          stateAbbr={district.state_abbr}
+          stateName={district.state}
+          chamber={district.chamber as "house" | "senate"}
+          districtNumber={district.district_number}
+        />
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         {/* Demographics */}
         <div className="rounded-xl border border-border bg-card p-4">
