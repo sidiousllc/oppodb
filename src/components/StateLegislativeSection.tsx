@@ -7,6 +7,7 @@ import {
   STATE_NAMES,
 } from "@/data/stateLegislativeIntel";
 import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign } from "lucide-react";
+import { StateLegBoundaryMap } from "./StateLegBoundaryMap";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
