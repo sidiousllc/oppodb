@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DistrictCompare } from "@/components/DistrictCompare";
 import { BookOpen, AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { PollingSection } from "@/components/PollingSection";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
@@ -163,6 +164,7 @@ export default function Index() {
     "local-impact": localImpactReports.length,
     narratives: narrativeReports.length,
     "district-intel": districts.length,
+    polling: 0,
   }), [dataVersion, districts]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
@@ -525,6 +527,10 @@ export default function Index() {
         </>
       );
     }
+
+    if (section === "polling") {
+      return <PollingSection />;
+    }
   }
 
   const detail = renderDetail();
@@ -534,6 +540,7 @@ export default function Index() {
     "local-impact": "Local Impact by State",
     narratives: "Narrative Reports",
     "district-intel": "District Intelligence",
+    polling: "Polling Data",
   };
 
   return (

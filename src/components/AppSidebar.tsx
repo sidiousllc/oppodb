@@ -1,4 +1,4 @@
-import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass, LogOut, ShieldCheck } from "lucide-react";
+import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass, LogOut, ShieldCheck, BarChart3 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getLastSyncTime } from "@/data/githubSync";
@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
-export type Section = "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel";
+export type Section = "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel" | "polling";
 
 interface AppSidebarProps {
   activeFilter: FilterCategory;
@@ -33,6 +33,7 @@ const sections: Array<{id: Section; label: string; icon: React.ElementType}> = [
   { id: "local-impact", label: "Local Impact", icon: Globe },
   { id: "narratives", label: "Narrative Reports", icon: FileText },
   { id: "district-intel", label: "District Intel", icon: Compass },
+  { id: "polling", label: "Polling Data", icon: BarChart3 },
 ];
 
 function SignOutButton() {
