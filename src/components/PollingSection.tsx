@@ -902,6 +902,7 @@ export function PollingSection() {
               })}
             </div>
           </div>
+          </AnimatedCard>
         </div>
       )}
 
