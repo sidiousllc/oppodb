@@ -254,6 +254,7 @@ export default function Index() {
           title={selectedNarrative.name}
           tag={{ label: "Narrative Report", className: "tag-senate" }}
           content={selectedNarrative.content}
+          sectionLabel="Narrative Report"
           onBack={() => setSelectedSlug(null)}
           onNavigateSlug={navigateBySlug}
           backLabel="Back to Narrative Reports"
