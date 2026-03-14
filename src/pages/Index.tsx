@@ -142,8 +142,11 @@ export default function Index() {
     if (trackedOnly) {
       results = results.filter(d => trackedDistrictIds.has(d.district_id));
     }
+    if (cookFilter !== "all") {
+      results = results.filter(d => getCookRating(d.district_id) === cookFilter);
+    }
     return results;
-  }, [search, districts, trackedOnly, trackedDistrictIds]);
+  }, [search, districts, trackedOnly, trackedDistrictIds, cookFilter]);
 
   const counts = useMemo(() => ({
     all: candidates.length,
