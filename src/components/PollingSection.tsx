@@ -211,7 +211,7 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
                     fill={color}
                     stroke="hsl(var(--card))"
                     strokeWidth={1.5}
-                    style={{ cursor: "pointer" }}
+                    style={{ cursor: "pointer", opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${1000 + i * 100}ms` }}
                     onMouseEnter={() => setHoveredPoint({ source: sourceId, date: p.date, value: p.val, x: p.x, y: p.y })}
                     onMouseLeave={() => setHoveredPoint(null)}
                   />
