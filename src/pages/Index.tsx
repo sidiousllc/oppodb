@@ -22,8 +22,10 @@ import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { DistrictCompare } from "@/components/DistrictCompare";
 import { BookOpen, AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 export default function Index() {
+  const { isAdmin } = useIsAdmin();
   const [loaded, setLoaded] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [search, setSearch] = useState("");
@@ -209,7 +211,7 @@ export default function Index() {
 
   function renderDetail() {
     if (section === "candidates" && selectedCandidate) {
-      return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} onNavigateSlug={navigateBySlug} onEdit={handleEditCandidate} />;
+      return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} onNavigateSlug={navigateBySlug} onEdit={isAdmin ? handleEditCandidate : undefined} />;
     }
     if (section === "maga-files" && selectedMaga) {
       return (
@@ -282,13 +284,15 @@ export default function Index() {
             <p className="text-sm text-muted-foreground">
               {filteredCandidates.length} {filteredCandidates.length === 1 ? "profile" : "profiles"}
             </p>
-            <button
-              onClick={() => { setEditorMode("create"); setEditData(undefined); }}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add Profile
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => { setEditorMode("create"); setEditData(undefined); }}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Profile
+              </button>
+            )}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {filteredCandidates.map(c => (
