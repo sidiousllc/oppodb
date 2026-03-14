@@ -535,6 +535,7 @@ export default function Index() {
     "local-impact": "Local Impact by State",
     narratives: "Narrative Reports",
     "district-intel": "District Intelligence",
+    polling: "Polling Data",
   };
 
   return (
