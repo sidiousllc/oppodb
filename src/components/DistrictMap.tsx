@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, memo } from "react";
 import {
   ComposableMap,
   Geographies,
   Geography,
   ZoomableGroup,
 } from "react-simple-maps";
+import { Search, X } from "lucide-react";
 import { type DistrictProfile } from "@/data/districtIntel";
 import { getCurrentPVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
 import {
@@ -167,6 +168,10 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     center: [-96, 38],
     zoom: 1,
   });
+  const [zoomedStateAbbr, setZoomedStateAbbr] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [highlightedDistrict, setHighlightedDistrict] = useState<string | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (cachedGeoJSON) {
@@ -194,6 +199,11 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     (districtId: string | null): string => {
       if (!districtId) return "hsl(220, 15%, 90%)";
 
+      // Highlight selected district from search
+      if (highlightedDistrict && districtId === highlightedDistrict) {
+        return "hsl(45, 100%, 55%)";
+      }
+
       // PVI filter: dim non-matching districts
       if (pviFilter !== "all" && !matchesPVIFilter(districtId, pviFilter)) {
         return "hsl(220, 5%, 92%)";
@@ -210,7 +220,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       if (rating) return `hsl(${getCookRatingColor(rating)})`;
       return "hsl(220, 15%, 85%)";
     },
-    [pviFilter, colorMode]
+    [pviFilter, colorMode, highlightedDistrict]
   );
 
   const handleDistrictHover = useCallback(
@@ -233,13 +243,54 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     const target = STATE_CENTERS[stateAbbr];
     if (!target) return;
 
-    // If already zoomed into this state, reset
-    if (zoomState.zoom > 1 && zoomState.center[0] === target.coords[0] && zoomState.center[1] === target.coords[1]) {
+    if (zoomState.zoom > 1 && zoomedStateAbbr === stateAbbr) {
       setZoomState({ center: [-96, 38], zoom: 1 });
+      setZoomedStateAbbr(null);
+      setSearchQuery("");
+      setHighlightedDistrict(null);
     } else {
       setZoomState({ center: target.coords, zoom: target.zoom });
+      setZoomedStateAbbr(stateAbbr);
+      setSearchQuery("");
+      setHighlightedDistrict(null);
     }
-  }, [zoomState]);
+  }, [zoomState, zoomedStateAbbr]);
+
+  // Districts in the zoomed state for the search overlay
+  const stateDistricts = useMemo(() => {
+    if (!zoomedStateAbbr || !geoData) return [];
+    const ids = new Set<string>();
+    geoData.features.forEach((f) => {
+      if (f.properties?.STATE_ABBR === zoomedStateAbbr) {
+        const did = toDistrictId(f.properties.STATE_ABBR, f.properties.CDFIPS);
+        if (did) ids.add(did);
+      }
+    });
+    return Array.from(ids).sort();
+  }, [zoomedStateAbbr, geoData]);
+
+  const filteredStateDistricts = useMemo(() => {
+    if (!searchQuery.trim()) return stateDistricts;
+    const q = searchQuery.toLowerCase();
+    return stateDistricts.filter((id) => {
+      const rating = getCookRating(id);
+      const pvi = getCurrentPVI(id);
+      const profile = districtLookup.get(id);
+      return (
+        id.toLowerCase().includes(q) ||
+        (rating && rating.toLowerCase().includes(q)) ||
+        (pvi !== null && formatPVI(pvi).toLowerCase().includes(q)) ||
+        (profile?.top_issues || []).some((i) => i.toLowerCase().includes(q))
+      );
+    });
+  }, [searchQuery, stateDistricts, districtLookup]);
+
+  const handleResetZoom = useCallback(() => {
+    setZoomState({ center: [-96, 38], zoom: 1 });
+    setZoomedStateAbbr(null);
+    setSearchQuery("");
+    setHighlightedDistrict(null);
+  }, []);
 
   const isZoomed = zoomState.zoom > 1;
 
@@ -274,7 +325,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         {/* Zoom reset */}
         {isZoomed && (
           <button
-            onClick={() => setZoomState({ center: [-96, 38], zoom: 1 })}
+            onClick={handleResetZoom}
             className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Reset zoom
@@ -296,95 +347,171 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       )}
 
       {!loading && geoData && (
-        <ComposableMap
-          projection="geoAlbersUsa"
-          projectionConfig={{ scale: 1000 }}
-          width={800}
-          height={500}
-          className="w-full h-auto"
-        >
-          <ZoomableGroup
-            center={zoomState.center}
-            zoom={zoomState.zoom}
-            onMoveEnd={({ coordinates, zoom }) =>
-              setZoomState({ center: coordinates as [number, number], zoom })
-            }
-            minZoom={1}
-            maxZoom={20}
+        <>
+          <ComposableMap
+            projection="geoAlbersUsa"
+            projectionConfig={{ scale: 1000 }}
+            width={800}
+            height={500}
+            className="w-full h-auto"
           >
-            {/* Congressional district polygons */}
-            <Geographies geography={geoData}>
-              {({ geographies }) =>
-                geographies.map((geo) => {
-                  const stateAbbr = geo.properties?.STATE_ABBR;
-                  const cdfips = geo.properties?.CDFIPS;
-                  const districtId = toDistrictId(stateAbbr, cdfips);
-
-                  return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill={getDistrictFill(districtId)}
-                      stroke="hsl(0, 0%, 100%)"
-                      strokeWidth={0.3}
-                      onMouseEnter={() => handleDistrictHover(stateAbbr, cdfips)}
-                      onMouseLeave={() => setTooltip(null)}
-                      onClick={() => {
-                        if (districtId) onSelectDistrict(districtId);
-                      }}
-                      style={{
-                        default: { outline: "none" },
-                        hover: {
-                          outline: "none",
-                          strokeWidth: 1.2,
-                          stroke: "hsl(var(--foreground))",
-                          cursor: "pointer",
-                        },
-                        pressed: { outline: "none" },
-                      }}
-                    />
-                  );
-                })
+            <ZoomableGroup
+              center={zoomState.center}
+              zoom={zoomState.zoom}
+              onMoveEnd={({ coordinates, zoom }) =>
+                setZoomState({ center: coordinates as [number, number], zoom })
               }
-            </Geographies>
+              minZoom={1}
+              maxZoom={20}
+            >
+              {/* Congressional district polygons */}
+              <Geographies geography={geoData}>
+                {({ geographies }) =>
+                  geographies.map((geo) => {
+                    const stateAbbr = geo.properties?.STATE_ABBR;
+                    const cdfips = geo.properties?.CDFIPS;
+                    const districtId = toDistrictId(stateAbbr, cdfips);
 
-            {/* State boundary overlay — clickable for zoom */}
-            <Geographies geography={STATE_GEO_URL}>
-              {({ geographies }) =>
-                geographies.map((geo) => {
-                  // Extract state name from topology and find abbreviation
-                  const geoName = geo.properties?.name;
-                  const stateAbbr = Object.entries(STATE_NAME_TO_ABBR).find(
-                    ([name]) => name === geoName
-                  )?.[1];
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill={getDistrictFill(districtId)}
+                        stroke={highlightedDistrict === districtId ? "hsl(45, 100%, 40%)" : "hsl(0, 0%, 100%)"}
+                        strokeWidth={highlightedDistrict === districtId ? 2 : 0.3}
+                        onMouseEnter={() => handleDistrictHover(stateAbbr, cdfips)}
+                        onMouseLeave={() => setTooltip(null)}
+                        onClick={() => {
+                          if (districtId) onSelectDistrict(districtId);
+                        }}
+                        style={{
+                          default: { outline: "none" },
+                          hover: {
+                            outline: "none",
+                            strokeWidth: 1.2,
+                            stroke: "hsl(var(--foreground))",
+                            cursor: "pointer",
+                          },
+                          pressed: { outline: "none" },
+                        }}
+                      />
+                    );
+                  })
+                }
+              </Geographies>
 
-                  return (
-                    <Geography
-                      key={`state-${geo.rsmKey}`}
-                      geography={geo}
-                      fill="transparent"
-                      stroke="hsl(220, 20%, 60%)"
-                      strokeWidth={0.7}
-                      onClick={() => {
-                        if (stateAbbr) handleStateClick(stateAbbr);
-                      }}
-                      style={{
-                        default: { outline: "none", cursor: "pointer" },
-                        hover: {
-                          outline: "none",
-                          stroke: "hsl(var(--foreground))",
-                          strokeWidth: 1.5,
-                          cursor: "pointer",
-                        },
-                        pressed: { outline: "none" },
-                      }}
-                    />
-                  );
-                })
-              }
-            </Geographies>
-          </ZoomableGroup>
-        </ComposableMap>
+              {/* State boundary overlay — clickable for zoom */}
+              <Geographies geography={STATE_GEO_URL}>
+                {({ geographies }) =>
+                  geographies.map((geo) => {
+                    const geoName = geo.properties?.name;
+                    const stateAbbr = Object.entries(STATE_NAME_TO_ABBR).find(
+                      ([name]) => name === geoName
+                    )?.[1];
+
+                    return (
+                      <Geography
+                        key={`state-${geo.rsmKey}`}
+                        geography={geo}
+                        fill="transparent"
+                        stroke="hsl(220, 20%, 60%)"
+                        strokeWidth={0.7}
+                        onClick={() => {
+                          if (stateAbbr) handleStateClick(stateAbbr);
+                        }}
+                        style={{
+                          default: { outline: "none", cursor: "pointer" },
+                          hover: {
+                            outline: "none",
+                            stroke: "hsl(var(--foreground))",
+                            strokeWidth: 1.5,
+                            cursor: "pointer",
+                          },
+                          pressed: { outline: "none" },
+                        }}
+                      />
+                    );
+                  })
+                }
+              </Geographies>
+            </ZoomableGroup>
+          </ComposableMap>
+
+          {/* Search overlay when zoomed */}
+          {isZoomed && zoomedStateAbbr && (
+            <div className="absolute top-14 right-3 z-40 w-64 rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg">
+              <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
+                <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder={`Search ${zoomedStateAbbr} districts…`}
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setHighlightedDistrict(null);
+                  }}
+                  className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setHighlightedDistrict(null);
+                    }}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+              <div className="max-h-52 overflow-y-auto">
+                {filteredStateDistricts.length === 0 ? (
+                  <p className="px-3 py-3 text-xs text-muted-foreground text-center">No districts found</p>
+                ) : (
+                  filteredStateDistricts.map((did) => {
+                    const rating = getCookRating(did);
+                    const pvi = getCurrentPVI(did);
+                    const isHighlighted = highlightedDistrict === did;
+                    return (
+                      <button
+                        key={did}
+                        onClick={() => setHighlightedDistrict(did)}
+                        onDoubleClick={() => onSelectDistrict(did)}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/60 ${
+                          isHighlighted ? "bg-accent/20 border-l-2 border-primary" : ""
+                        }`}
+                      >
+                        <span
+                          className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{
+                            backgroundColor: rating
+                              ? `hsl(${getCookRatingColor(rating)})`
+                              : "hsl(220, 15%, 85%)",
+                          }}
+                        />
+                        <span className="text-xs font-semibold text-foreground">{did}</span>
+                        <span className="text-[10px] text-muted-foreground ml-auto">
+                          {rating || "N/A"}
+                        </span>
+                        {pvi !== null && (
+                          <span className="text-[10px] font-medium" style={{ color: `hsl(${getPVIColor(pvi)})` }}>
+                            {formatPVI(pvi)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+              <div className="px-3 py-1.5 border-t border-border">
+                <p className="text-[10px] text-muted-foreground">
+                  Click to highlight · Double-click to view details
+                </p>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {!loading && !geoData && (
