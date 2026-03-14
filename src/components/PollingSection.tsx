@@ -1,7 +1,47 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { fetchPollingData, getSourceInfo, POLLING_SOURCES, POLL_TYPES, type PollEntry } from "@/data/pollingData";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart3, ExternalLink, TrendingDown, TrendingUp, Minus, Filter, RefreshCw } from "lucide-react";
+import { BarChart3, ExternalLink, TrendingDown, TrendingUp, Minus, Filter, RefreshCw, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { exportPollingCSV, exportPollingPDF } from "@/lib/pollingExport";
+
+// ─── useInView Hook ─────────────────────────────────────────────────────────
+
+function useInView(options?: IntersectionObserverInit) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        obs.disconnect();
+      }
+    }, { threshold: 0.15, ...options });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return { ref, inView };
+}
+
+// ─── AnimatedCard wrapper ───────────────────────────────────────────────────
+
+function AnimatedCard({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const { ref, inView } = useInView();
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-700 ease-out ${className}`}
+      style={{
+        opacity: inView ? 1 : 0,
+        transform: inView ? "translateY(0)" : "translateY(20px)",
+        transitionDelay: `${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -61,6 +101,7 @@ function ApprovalBar({ approve, disapprove }: { approve: number | null; disappro
 // ─── Multi-Source Approval Trend Chart (SVG) ────────────────────────────────
 
 function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
   const [hoveredPoint, setHoveredPoint] = useState<{ source: string; date: string; value: number; x: number; y: number } | null>(null);
 
   const approvalBySource = useMemo(() => {
@@ -119,7 +160,7 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <h3 className="font-display text-sm font-semibold text-foreground mb-1">
         Approval Rating Trend by Source
       </h3>
@@ -154,7 +195,13 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
             const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
             return (
               <g key={sourceId}>
-                <path d={pathD} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.8} />
+                <path d={pathD} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.8}
+                  style={{
+                    strokeDasharray: inView ? "none" : "2000",
+                    strokeDashoffset: inView ? 0 : 2000,
+                    transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                />
                 {points.map((p, i) => (
                   <circle
                     key={i}
@@ -164,7 +211,7 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
                     fill={color}
                     stroke="hsl(var(--card))"
                     strokeWidth={1.5}
-                    style={{ cursor: "pointer" }}
+                    style={{ cursor: "pointer", opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${1000 + i * 100}ms` }}
                     onMouseEnter={() => setHoveredPoint({ source: sourceId, date: p.date, value: p.val, x: p.x, y: p.y })}
                     onMouseLeave={() => setHoveredPoint(null)}
                   />
@@ -286,6 +333,7 @@ function SourceDotPlot({ latestBySource }: { latestBySource: PollEntry[] }) {
 // ─── Generic Ballot Comparison Chart ────────────────────────────────────────
 
 function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
   if (polls.length === 0) return null;
 
   // Latest generic ballot per source
@@ -297,7 +345,7 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
   const entries = Array.from(bySource.values()).sort((a, b) => (b.margin ?? 0) - (a.margin ?? 0));
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <h3 className="font-display text-sm font-semibold text-foreground mb-1">
         Generic Congressional Ballot
       </h3>
@@ -305,13 +353,13 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
         Democrat vs Republican, by source
       </p>
       <div className="space-y-3">
-        {entries.map((poll) => {
+        {entries.map((poll, idx) => {
           const src = getSourceInfo(poll.source);
           const dem = poll.favor_pct ?? 0;
           const rep = poll.oppose_pct ?? 0;
           const total = dem + rep || 100;
           return (
-            <div key={poll.id}>
+            <div key={poll.id} style={{ opacity: inView ? 1 : 0, transform: inView ? "translateX(0)" : "translateX(-20px)", transition: `all 0.5s ease ${idx * 100}ms` }}>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(${src.color})` }} />
@@ -326,16 +374,16 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
               </div>
               <div className="flex h-5 w-full overflow-hidden rounded-md bg-muted">
                 <div
-                  className="flex items-center justify-end pr-1.5 transition-all duration-500"
-                  style={{ width: `${(dem / total) * 100}%`, backgroundColor: "hsl(210, 80%, 50%)" }}
+                  className="flex items-center justify-end pr-1.5"
+                  style={{ width: inView ? `${(dem / total) * 100}%` : "0%", backgroundColor: "hsl(210, 80%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 100 + 200}ms` }}
                 >
-                  <span className="text-[9px] font-bold text-white">{dem}%</span>
+                  <span className="text-[9px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 100 + 600}ms` }}>{dem}%</span>
                 </div>
                 <div
-                  className="flex items-center justify-start pl-1.5 transition-all duration-500"
-                  style={{ width: `${(rep / total) * 100}%`, backgroundColor: "hsl(0, 75%, 50%)" }}
+                  className="flex items-center justify-start pl-1.5"
+                  style={{ width: inView ? `${(rep / total) * 100}%` : "0%", backgroundColor: "hsl(0, 75%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 100 + 300}ms` }}
                 >
-                  <span className="text-[9px] font-bold text-white">{rep}%</span>
+                  <span className="text-[9px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 100 + 600}ms` }}>{rep}%</span>
                 </div>
               </div>
             </div>
@@ -349,6 +397,7 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
 // ─── Issue Polling Butterfly Chart ──────────────────────────────────────────
 
 function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
   if (polls.length === 0) return null;
 
   // Deduplicate: latest per topic across sources
@@ -365,7 +414,7 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
   });
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <h3 className="font-display text-sm font-semibold text-foreground mb-1">
         Issue Polling Overview
       </h3>
@@ -373,7 +422,7 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
         Approve vs disapprove on key issues (butterfly chart)
       </p>
       <div className="space-y-3">
-        {topics.map(([topic, topicPolls]) => {
+        {topics.map(([topic, topicPolls], idx) => {
           // Average across sources for the topic
           const avgApprove = topicPolls.reduce((s, p) => s + (p.approve_pct ?? p.favor_pct ?? 0), 0) / topicPolls.length;
           const avgDisapprove = topicPolls.reduce((s, p) => s + (p.disapprove_pct ?? p.oppose_pct ?? 0), 0) / topicPolls.length;
@@ -384,7 +433,7 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
           const sourceNames = topicPolls.map((p) => getSourceInfo(p.source).name);
 
           return (
-            <div key={topic} className="group">
+            <div key={topic} className="group" style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(10px)", transition: `all 0.5s ease ${idx * 80}ms` }}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-semibold text-foreground">{topic}</span>
                 <div className="flex items-center gap-2">
@@ -398,14 +447,15 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
                 {/* Approve bar (left to right) */}
                 <div className="flex-1 flex justify-end">
                   <div
-                    className="h-6 rounded-l-md flex items-center justify-end pr-1.5 transition-all duration-500"
+                    className="h-6 rounded-l-md flex items-center justify-end pr-1.5"
                     style={{
-                      width: `${Math.min(approveW, 100)}%`,
+                      width: inView ? `${Math.min(approveW, 100)}%` : "0%",
                       backgroundColor: "hsl(150, 55%, 45%)",
-                      minWidth: 30,
+                      minWidth: inView ? 30 : 0,
+                      transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 200}ms`,
                     }}
                   >
-                    <span className="text-[10px] font-bold text-white">{Math.round(avgApprove)}%</span>
+                    <span className="text-[10px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 80 + 600}ms` }}>{Math.round(avgApprove)}%</span>
                   </div>
                 </div>
                 {/* Center divider */}
@@ -413,14 +463,15 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
                 {/* Disapprove bar (right) */}
                 <div className="flex-1">
                   <div
-                    className="h-6 rounded-r-md flex items-center pl-1.5 transition-all duration-500"
+                    className="h-6 rounded-r-md flex items-center pl-1.5"
                     style={{
-                      width: `${Math.min(disapproveW, 100)}%`,
+                      width: inView ? `${Math.min(disapproveW, 100)}%` : "0%",
                       backgroundColor: "hsl(0, 65%, 50%)",
-                      minWidth: 30,
+                      minWidth: inView ? 30 : 0,
+                      transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 300}ms`,
                     }}
                   >
-                    <span className="text-[10px] font-bold text-white">{Math.round(avgDisapprove)}%</span>
+                    <span className="text-[10px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 80 + 600}ms` }}>{Math.round(avgDisapprove)}%</span>
                   </div>
                 </div>
               </div>
@@ -439,16 +490,17 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
 // ─── Approval Gauge ─────────────────────────────────────────────────────────
 
 function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disapprove: number; margin: number }) {
+  const { ref, inView } = useInView();
   const radius = 60;
   const strokeW = 12;
   const cx = 80;
   const cy = 80;
   const circumference = Math.PI * radius; // half circle
-  const approveArc = (approve / 100) * circumference;
-  const disapproveArc = (disapprove / 100) * circumference;
+  const approveArc = inView ? (approve / 100) * circumference : 0;
+  const disapproveArc = inView ? (disapprove / 100) * circumference : 0;
 
   return (
-    <div className="flex flex-col items-center">
+    <div ref={ref} className="flex flex-col items-center">
       <svg width={160} height={100} viewBox="0 0 160 100">
         {/* Background arc */}
         <path
@@ -466,7 +518,7 @@ function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disap
           strokeWidth={strokeW}
           strokeLinecap="round"
           strokeDasharray={`${approveArc} ${circumference}`}
-          className="transition-all duration-700"
+          style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1)" }}
         />
         {/* Disapprove arc (from right) */}
         <path
@@ -476,13 +528,15 @@ function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disap
           strokeWidth={strokeW}
           strokeLinecap="round"
           strokeDasharray={`${disapproveArc} ${circumference}`}
-          className="transition-all duration-700"
+          style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s" }}
         />
         {/* Center text */}
-        <text x={cx} y={cy - 10} textAnchor="middle" fontSize={24} fontWeight="800" fill="hsl(var(--foreground))">
+        <text x={cx} y={cy - 10} textAnchor="middle" fontSize={24} fontWeight="800" fill="hsl(var(--foreground))"
+          style={{ opacity: inView ? 1 : 0, transition: "opacity 0.5s ease 0.8s" }}>
           {approve}%
         </text>
-        <text x={cx} y={cy + 6} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">
+        <text x={cx} y={cy + 6} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))"
+          style={{ opacity: inView ? 1 : 0, transition: "opacity 0.5s ease 1s" }}>
           approve
         </text>
       </svg>
@@ -678,8 +732,9 @@ export function PollingSection() {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 items-center">
+      {/* Filters + Export */}
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+       <div className="flex flex-wrap gap-4 items-center flex-1">
         <div className="flex items-center gap-2">
           <Filter className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Source:</span>
@@ -741,12 +796,33 @@ export function PollingSection() {
             ))}
           </div>
         </div>
+       </div>
+       {/* Export Buttons */}
+       <div className="flex items-center gap-1.5 shrink-0">
+         <button
+           onClick={() => exportPollingCSV(filtered)}
+           className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shadow-sm"
+           title="Export as CSV"
+         >
+           <FileSpreadsheet className="h-3.5 w-3.5" />
+           CSV
+         </button>
+         <button
+           onClick={() => exportPollingPDF(filtered)}
+           className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shadow-sm"
+           title="Export as PDF"
+         >
+           <FileText className="h-3.5 w-3.5" />
+           PDF
+         </button>
+       </div>
       </div>
 
       {/* ─── Summary Cards with Gauge ──────────────────────────────────────── */}
       {avgApproval && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Approval Gauge */}
+          <AnimatedCard delay={0}>
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col items-center justify-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Cross-Source Average
@@ -757,12 +833,13 @@ export function PollingSection() {
               <span style={{ color: "hsl(0, 65%, 50%)" }}>Disapprove {avgApproval.disapprove}%</span>
             </div>
           </div>
+          </AnimatedCard>
 
           {/* Generic ballot summary */}
           {genericBallotPolls.length > 0 && (() => {
             const latest = genericBallotPolls[0];
             return (
-              <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <AnimatedCard delay={100}>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   Generic Ballot (Latest)
                 </p>
@@ -783,11 +860,12 @@ export function PollingSection() {
                 <p className="text-[10px] text-muted-foreground mt-2">
                   {getSourceInfo(latest.source).name} · {formatDate(latest.date_conducted)}
                 </p>
-              </div>
+              </AnimatedCard>
             );
           })()}
 
           {/* Source count */}
+          <AnimatedCard delay={200}>
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Data Coverage
@@ -797,8 +875,10 @@ export function PollingSection() {
             <div className="text-2xl font-display font-bold text-foreground mt-2">{polls.length}</div>
             <p className="text-xs text-muted-foreground">total polls tracked</p>
           </div>
+          </AnimatedCard>
 
           {/* Poll types breakdown */}
+          <AnimatedCard delay={300}>
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Polls by Type
@@ -822,6 +902,7 @@ export function PollingSection() {
               })}
             </div>
           </div>
+          </AnimatedCard>
         </div>
       )}
 
