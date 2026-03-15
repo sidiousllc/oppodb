@@ -24,7 +24,10 @@ import { ChatPanel } from "@/components/ChatPanel";
 import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { DistrictCompare } from "@/components/DistrictCompare";
-import { BookOpen, AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
+import { Win98Window } from "@/components/Win98Window";
+import { Win98Taskbar } from "@/components/Win98Taskbar";
+import { AOLToolbar } from "@/components/AOLToolbar";
+import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
 import { StateLegislativeSection } from "@/components/StateLegislativeSection";
@@ -63,14 +66,12 @@ export default function Index() {
   useEffect(() => {
     loadCandidateData();
     setLoaded(true);
-
     fetchCandidatesFromDB().then((dbCandidates) => {
       if (dbCandidates.length > 0) {
         initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
         setDataVersion((v) => v + 1);
       }
     });
-
     fetchAllDistricts().then(setDistricts);
     fetchStateLegislativeDistricts().then((d) => {
       setStateLegDistricts(d);
@@ -114,7 +115,6 @@ export default function Index() {
         } catch {
           console.warn(`Election sync failed for ${st}`);
         }
-        // Small delay to avoid overwhelming the API
         if (i < ALL_STATES.length - 1) await new Promise(r => setTimeout(r, 500));
       }
       setElectionSyncProgress(`Done — ${totalUpserted} results synced`);
@@ -160,17 +160,11 @@ export default function Index() {
       .eq("slug", slug)
       .eq("is_subpage", false)
       .single();
-
     if (data) {
       setEditData({
-        id: data.id,
-        name: data.name,
-        slug: data.slug,
-        content: data.content,
-        github_path: data.github_path,
-        is_subpage: data.is_subpage,
-        parent_slug: data.parent_slug,
-        subpage_title: data.subpage_title,
+        id: data.id, name: data.name, slug: data.slug, content: data.content,
+        github_path: data.github_path, is_subpage: data.is_subpage,
+        parent_slug: data.parent_slug, subpage_title: data.subpage_title,
       });
       setEditorMode("edit");
     }
@@ -189,11 +183,25 @@ export default function Index() {
     setSearch("");
   }, []);
 
+  const navigateBySlug = useCallback((rawSlug: string) => {
+    const slug = rawSlug.trim().toLowerCase();
+    if (!slug) return false;
+    const candidateMatch = getCandidateBySlug(slug);
+    if (candidateMatch) { setSection("candidates"); setSelectedSlug(candidateMatch.slug); return true; }
+    const magaMatch = magaFiles.find(m => m.slug.toLowerCase() === slug);
+    if (magaMatch) { setSection("maga-files"); setSelectedSlug(magaMatch.slug); return true; }
+    const localMatch = getLocalImpactBySlug(slug);
+    if (localMatch) { setSection("local-impact"); setSelectedSlug(localMatch.slug); return true; }
+    const narrativeMatch = narrativeReports.find(n => n.slug.toLowerCase() === slug);
+    if (narrativeMatch) { setSection("narratives"); setSelectedSlug(narrativeMatch.slug); return true; }
+    const districtMatch = districts.find(d => d.district_id.toLowerCase() === slug);
+    if (districtMatch) { setSection("district-intel"); setSelectedSlug(districtMatch.district_id); return true; }
+    return false;
+  }, [districts]);
+
   const filteredCandidates = useMemo(() => {
     let results = search ? searchCandidates(search) : candidates;
-    if (filter !== "all") {
-      results = results.filter(c => c.category === filter);
-    }
+    if (filter !== "all") results = results.filter(c => c.category === filter);
     return results;
   }, [search, filter, dataVersion]);
 
@@ -202,12 +210,8 @@ export default function Index() {
   const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search]);
   const filteredDistricts = useMemo(() => {
     let results = searchDistricts(districts, search);
-    if (trackedOnly) {
-      results = results.filter(d => trackedDistrictIds.has(d.district_id));
-    }
-    if (cookFilter !== "all") {
-      results = results.filter(d => getCookRating(d.district_id) === cookFilter);
-    }
+    if (trackedOnly) results = results.filter(d => trackedDistrictIds.has(d.district_id));
+    if (cookFilter !== "all") results = results.filter(d => getCookRating(d.district_id) === cookFilter);
     return results;
   }, [search, districts, trackedOnly, trackedDistrictIds, cookFilter]);
 
@@ -235,49 +239,17 @@ export default function Index() {
   const selectedNarrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
   const selectedDistrict = selectedSlug ? districts.find(d => d.district_id === selectedSlug) : null;
 
-  const navigateBySlug = useCallback((rawSlug: string) => {
-    const slug = rawSlug.trim().toLowerCase();
-    if (!slug) return false;
-
-    const candidateMatch = getCandidateBySlug(slug);
-    if (candidateMatch) {
-      setSection("candidates");
-      setSelectedSlug(candidateMatch.slug);
-      return true;
-    }
-
-    const magaMatch = magaFiles.find(m => m.slug.toLowerCase() === slug);
-    if (magaMatch) {
-      setSection("maga-files");
-      setSelectedSlug(magaMatch.slug);
-      return true;
-    }
-
-    const localMatch = getLocalImpactBySlug(slug);
-    if (localMatch) {
-      setSection("local-impact");
-      setSelectedSlug(localMatch.slug);
-      return true;
-    }
-
-    const narrativeMatch = narrativeReports.find(n => n.slug.toLowerCase() === slug);
-    if (narrativeMatch) {
-      setSection("narratives");
-      setSelectedSlug(narrativeMatch.slug);
-      return true;
-    }
-
-    const districtMatch = districts.find(d => d.district_id.toLowerCase() === slug);
-    if (districtMatch) {
-      setSection("district-intel");
-      setSelectedSlug(districtMatch.district_id);
-      return true;
-    }
-
-    return false;
-  }, [districts]);
-
   if (!loaded) return null;
+
+  const sectionLabels: Record<Section, string> = {
+    candidates: "Candidate Profiles",
+    "maga-files": "MAGA Files",
+    "local-impact": "Local Impact by State",
+    narratives: "Narrative Reports",
+    "district-intel": "District Intelligence",
+    "state-legislative": "State Legislative Districts",
+    polling: "Polling Data",
+  };
 
   function renderDetail() {
     if (section === "candidates" && selectedCandidate) {
@@ -286,7 +258,7 @@ export default function Index() {
     if (section === "maga-files" && selectedMaga) {
       return (
         <GenericDetail
-          icon={<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-destructive/10"><AlertTriangle className="h-7 w-7 text-destructive" /></div>}
+          icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center text-2xl">⚠️</div>}
           title={selectedMaga.name}
           tag={{ label: "MAGA File", className: "bg-destructive/10 text-destructive" }}
           content={selectedMaga.content}
@@ -300,7 +272,7 @@ export default function Index() {
     if (section === "local-impact" && selectedLocal) {
       return (
         <GenericDetail
-          icon={<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent/10"><Globe className="h-7 w-7 text-accent" /></div>}
+          icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center text-2xl">🌐</div>}
           title={selectedLocal.state}
           subtitle={selectedLocal.summary}
           tag={{ label: "Local Impact", className: "bg-accent/10 text-accent" }}
@@ -315,7 +287,7 @@ export default function Index() {
     if (section === "narratives" && selectedNarrative) {
       return (
         <GenericDetail
-          icon={<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10"><FileText className="h-7 w-7 text-primary" /></div>}
+          icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center text-2xl">📄</div>}
           title={selectedNarrative.name}
           tag={{ label: "Narrative Report", className: "tag-senate" }}
           content={selectedNarrative.content}
@@ -327,22 +299,14 @@ export default function Index() {
       );
     }
     if (section === "district-intel" && compareMode) {
-      return (
-        <DistrictCompare
-          districts={districts}
-          onBack={() => setCompareMode(false)}
-        />
-      );
+      return <DistrictCompare districts={districts} onBack={() => setCompareMode(false)} />;
     }
     if (section === "district-intel" && selectedDistrict) {
       return (
         <DistrictDetail
           district={selectedDistrict}
           onBack={() => setSelectedSlug(null)}
-          onSelectCandidate={(slug) => {
-            setSection("candidates");
-            setSelectedSlug(slug);
-          }}
+          onSelectCandidate={(slug) => { setSection("candidates"); setSelectedSlug(slug); }}
         />
       );
     }
@@ -353,28 +317,28 @@ export default function Index() {
     if (section === "candidates") {
       return (
         <>
-           <div className="mt-4 mb-2 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+          <div className="mt-2 mb-1 flex items-center justify-between">
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
               {filteredCandidates.length} {filteredCandidates.length === 1 ? "profile" : "profiles"}
             </p>
             {isAdmin && (
               <button
                 onClick={() => { setEditorMode("create"); setEditData(undefined); }}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="win98-button flex items-center gap-1 text-[10px]"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-3 w-3" />
                 Add Profile
               </button>
             )}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {filteredCandidates.map(c => (
               <CandidateCard key={c.slug} candidate={c} onClick={setSelectedSlug} onDistrictClick={(districtId) => { setSection("district-intel"); setSelectedSlug(districtId); }} />
             ))}
           </div>
           {filteredCandidates.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">No candidates match your search.</p>
+            <div className="text-center py-8">
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No candidates match your search.</p>
             </div>
           )}
         </>
@@ -384,14 +348,14 @@ export default function Index() {
     if (section === "maga-files") {
       return (
         <>
-          <div className="mt-4 mb-2">
-            <p className="text-sm text-muted-foreground">{filteredMaga.length} appointee files</p>
+          <div className="mt-2 mb-1">
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{filteredMaga.length} appointee files</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {filteredMaga.map(m => (
               <GenericCard
                 key={m.slug}
-                icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10"><AlertTriangle className="h-5 w-5 text-destructive" /></div>}
+                icon={<div className="flex h-8 w-8 shrink-0 items-center justify-center text-lg">⚠️</div>}
                 title={m.name}
                 tag={{ label: "MAGA File", className: "bg-destructive/10 text-destructive" }}
                 preview={m.content.split("\n").find(l => l.trim().length > 20)?.trim().slice(0, 140) || ""}
@@ -400,8 +364,8 @@ export default function Index() {
             ))}
           </div>
           {filteredMaga.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">No MAGA files match your search.</p>
+            <div className="text-center py-8">
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No MAGA files match your search.</p>
             </div>
           )}
         </>
@@ -411,14 +375,14 @@ export default function Index() {
     if (section === "local-impact") {
       return (
         <>
-          <div className="mt-4 mb-2">
-            <p className="text-sm text-muted-foreground">{filteredLocal.length} state reports</p>
+          <div className="mt-2 mb-1">
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{filteredLocal.length} state reports</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {filteredLocal.map(r => (
               <GenericCard
                 key={r.slug}
-                icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10"><Globe className="h-5 w-5 text-accent" /></div>}
+                icon={<div className="flex h-8 w-8 shrink-0 items-center justify-center text-lg">🌐</div>}
                 title={r.state}
                 preview={r.summary}
                 onClick={() => setSelectedSlug(r.slug)}
@@ -426,8 +390,8 @@ export default function Index() {
             ))}
           </div>
           {filteredLocal.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">No state reports match your search.</p>
+            <div className="text-center py-8">
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No state reports match your search.</p>
             </div>
           )}
         </>
@@ -437,14 +401,14 @@ export default function Index() {
     if (section === "narratives") {
       return (
         <>
-          <div className="mt-4 mb-2">
-            <p className="text-sm text-muted-foreground">{filteredNarratives.length} narrative reports</p>
+          <div className="mt-2 mb-1">
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{filteredNarratives.length} narrative reports</p>
           </div>
-          <div className="grid gap-3">
+          <div className="grid gap-2">
             {filteredNarratives.map(n => (
               <GenericCard
                 key={n.slug}
-                icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10"><FileText className="h-5 w-5 text-primary" /></div>}
+                icon={<div className="flex h-8 w-8 shrink-0 items-center justify-center text-lg">📄</div>}
                 title={n.name}
                 tag={{ label: "Narrative", className: "tag-senate" }}
                 preview={n.content.split("\n").find(l => l.trim().length > 20)?.trim().slice(0, 160) || ""}
@@ -453,8 +417,8 @@ export default function Index() {
             ))}
           </div>
           {filteredNarratives.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">No narrative reports match your search.</p>
+            <div className="text-center py-8">
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No narrative reports match your search.</p>
             </div>
           )}
         </>
@@ -464,71 +428,47 @@ export default function Index() {
     if (section === "district-intel") {
       return (
         <>
-          <div className="mt-4 mb-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground">{filteredDistricts.length} district profiles</p>
+          <div className="mt-2 mb-1 flex flex-wrap items-center justify-between gap-1">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{filteredDistricts.length} district profiles</p>
               <button
                 onClick={() => setTrackedOnly(v => !v)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  trackedOnly
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
+                className={`win98-button text-[10px] flex items-center gap-1 ${trackedOnly ? "font-bold" : ""}`}
               >
-                <span className={`h-2 w-2 rounded-full ${trackedOnly ? "bg-primary-foreground" : "bg-muted-foreground/50"}`} />
-                Tracked candidates only
+                <span className={`h-2 w-2 border ${trackedOnly ? "bg-[hsl(var(--win98-titlebar))]" : ""}`} />
+                Tracked only
               </button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setCompareMode(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                className="win98-button text-[10px] flex items-center gap-1"
               >
-                <GitCompareArrows className="h-3.5 w-3.5" />
+                <GitCompareArrows className="h-3 w-3" />
                 Compare
               </button>
               <button
                 onClick={handleCensusSync}
                 disabled={censusSyncing}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                className="win98-button text-[10px] flex items-center gap-1 disabled:opacity-50"
               >
-                {censusSyncing ? (
-                  <>
-                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                    Syncing Census Data…
-                  </>
-                ) : (
-                  "Refresh from Census API"
-                )}
+                {censusSyncing ? "Syncing…" : "Census Sync"}
               </button>
               <button
                 onClick={handleBulkElectionSync}
                 disabled={electionSyncing}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+                className="win98-button text-[10px] flex items-center gap-1 disabled:opacity-50"
               >
-                {electionSyncing ? (
-                  <>
-                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-                    {electionSyncProgress}
-                  </>
-                ) : electionSyncProgress ? (
-                  electionSyncProgress
-                ) : (
-                  "Sync All Elections"
-                )}
+                {electionSyncing ? electionSyncProgress : electionSyncProgress || "Sync Elections"}
               </button>
             </div>
           </div>
 
-          {/* Cook Political Report Filter */}
-          <div className="mb-4 flex flex-wrap gap-1.5">
+          {/* Cook filter */}
+          <div className="mb-2 flex flex-wrap gap-1">
             <button
               onClick={() => setCookFilter("all")}
-              className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide border transition-colors ${
-                cookFilter === "all"
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-              }`}
+              className={`win98-button text-[9px] px-1 py-0 ${cookFilter === "all" ? "font-bold" : ""}`}
             >
               All Ratings
             </button>
@@ -539,11 +479,11 @@ export default function Index() {
                 <button
                   key={rating}
                   onClick={() => setCookFilter(isActive ? "all" : rating)}
-                  className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide border transition-all"
+                  className="win98-button text-[9px] px-1 py-0"
                   style={{
-                    backgroundColor: isActive ? `hsl(${color})` : `hsl(${color} / 0.08)`,
+                    backgroundColor: isActive ? `hsl(${color})` : undefined,
                     color: isActive ? "white" : `hsl(${color})`,
-                    borderColor: isActive ? `hsl(${color})` : `hsl(${color} / 0.25)`,
+                    fontWeight: isActive ? 700 : 400,
                   }}
                 >
                   {rating}
@@ -552,24 +492,22 @@ export default function Index() {
             })}
           </div>
 
-          {/* PVI Filter */}
-          <div className="mb-4 flex flex-wrap gap-1.5">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider self-center mr-1">PVI:</span>
+          {/* PVI filter */}
+          <div className="mb-2 flex flex-wrap gap-1 items-center">
+            <span className="text-[9px] font-bold mr-1">PVI:</span>
             {PVI_FILTER_OPTIONS.map((opt) => {
               const isActive = pviFilter === opt.id;
               return (
                 <button
                   key={opt.id}
                   onClick={() => setPviFilter(isActive && opt.id !== "all" ? "all" : opt.id)}
-                  className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide border transition-all"
+                  className="win98-button text-[9px] px-1 py-0"
                   style={opt.color ? {
-                    backgroundColor: isActive ? `hsl(${opt.color})` : `hsl(${opt.color} / 0.08)`,
+                    backgroundColor: isActive ? `hsl(${opt.color})` : undefined,
                     color: isActive ? "white" : `hsl(${opt.color})`,
-                    borderColor: isActive ? `hsl(${opt.color})` : `hsl(${opt.color} / 0.25)`,
+                    fontWeight: isActive ? 700 : 400,
                   } : {
-                    backgroundColor: isActive ? "hsl(var(--foreground))" : "hsl(var(--muted))",
-                    color: isActive ? "hsl(var(--background))" : "hsl(var(--muted-foreground))",
-                    borderColor: isActive ? "hsl(var(--foreground))" : "hsl(var(--border))",
+                    fontWeight: isActive ? 700 : 400,
                   }}
                 >
                   {opt.label}
@@ -578,28 +516,22 @@ export default function Index() {
             })}
           </div>
 
-          {/* Map visualization */}
+          {/* Map */}
           {districts.length > 0 && (
-            <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
-              <h3 className="font-display text-sm font-semibold text-foreground mb-3">
-                Congressional District Map
-              </h3>
-              <DistrictMap
-                districts={districts}
-                onSelectDistrict={setSelectedSlug}
-                pviFilter={pviFilter}
-              />
+            <div className="mb-3 win98-sunken bg-white p-2">
+              <p className="text-[11px] font-bold mb-1">Congressional District Map</p>
+              <DistrictMap districts={districts} onSelectDistrict={setSelectedSlug} pviFilter={pviFilter} />
             </div>
           )}
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {filteredDistricts.map(d => (
               <DistrictCard key={d.district_id} district={d} onClick={setSelectedSlug} />
             ))}
           </div>
           {filteredDistricts.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">No districts match your search.</p>
+            <div className="text-center py-8">
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No districts match your search.</p>
             </div>
           )}
         </>
@@ -623,81 +555,92 @@ export default function Index() {
   }
 
   const detail = renderDetail();
-  const sectionLabels: Record<Section, string> = {
-    candidates: "Candidate Profiles",
-    "maga-files": "MAGA Files",
-    "local-impact": "Local Impact by State",
-    narratives: "Narrative Reports",
-    "district-intel": "District Intelligence",
-    "state-legislative": "State Legislative Districts",
-    polling: "Polling Data",
-  };
 
   return (
     <>
-      <div className="flex h-screen overflow-hidden">
-        <AppSidebar
-          activeFilter={filter}
-          onFilterChange={setFilter}
-          counts={counts}
-          activeSection={section}
-          onSectionChange={handleSectionChange}
-          sectionCounts={sectionCounts}
-          onSyncComplete={() => {
-            fetchCandidatesFromDB().then((dbCandidates) => {
-              if (dbCandidates.length > 0) {
-                initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
-                setDataVersion((v) => v + 1);
-              }
-            });
-          }}
-        />
+      {/* Desktop background */}
+      <div className="flex flex-col h-screen bg-[hsl(var(--background))] pb-[28px]">
+        {/* Main AOL browser window */}
+        <Win98Window
+          title="AOL - Opposition Research Database - Sidio.us Group"
+          icon={<span className="text-[14px]">🌐</span>}
+          maximized
+        >
+          {/* AOL Browser chrome */}
+          <AOLToolbar
+            onBack={selectedSlug ? () => setSelectedSlug(null) : undefined}
+            onRefresh={() => window.location.reload()}
+          />
 
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
-            {/* Mobile header */}
-            <div className="lg:hidden flex items-center gap-2.5 mb-5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <BookOpen className="h-4 w-4 text-primary-foreground" />
+          {/* Content area with sidebar */}
+          <div className="flex flex-1 overflow-hidden bg-white">
+            <AppSidebar
+              activeFilter={filter}
+              onFilterChange={setFilter}
+              counts={counts}
+              activeSection={section}
+              onSectionChange={handleSectionChange}
+              sectionCounts={sectionCounts}
+              onSyncComplete={() => {
+                fetchCandidatesFromDB().then((dbCandidates) => {
+                  if (dbCandidates.length > 0) {
+                    initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+                    setDataVersion((v) => v + 1);
+                  }
+                });
+              }}
+            />
+
+            <main className="flex-1 overflow-y-auto bg-white">
+              <div className="max-w-4xl mx-auto px-3 py-3">
+                {/* Mobile header */}
+                <div className="lg:hidden flex items-center gap-2 mb-3">
+                  <span className="text-xl">📁</span>
+                  <h1 className="text-sm font-bold">Opposition Research Database</h1>
+                </div>
+
+                {editorMode ? (
+                  <CandidateEditor
+                    mode={editorMode}
+                    initialData={editData}
+                    onBack={() => { setEditorMode(null); setEditData(undefined); }}
+                    onSaved={handleEditorSaved}
+                  />
+                ) : detail ? (
+                  detail
+                ) : (
+                  <>
+                    <div className="mb-1">
+                      <h2 className="text-sm font-bold mb-2 hidden lg:block">
+                        📂 {sectionLabels[section]}
+                      </h2>
+                    </div>
+
+                    <div className="mb-3">
+                      <SearchBar value={search} onChange={setSearch} />
+                    </div>
+
+                    <MobileNav
+                      activeFilter={filter}
+                      onFilterChange={setFilter}
+                      counts={counts}
+                      activeSection={section}
+                      onSectionChange={handleSectionChange}
+                    />
+
+                    {renderList()}
+                  </>
+                )}
               </div>
-              <h1 className="font-display text-lg font-semibold">Opposition Research Database</h1>
-            </div>
-
-            {editorMode ? (
-              <CandidateEditor
-                mode={editorMode}
-                initialData={editData}
-                onBack={() => { setEditorMode(null); setEditData(undefined); }}
-                onSaved={handleEditorSaved}
-              />
-            ) : detail ? (
-              detail
-            ) : (
-              <>
-                <div className="mb-1">
-                  <h2 className="font-display text-xl font-bold text-foreground mb-3 hidden lg:block">
-                    {sectionLabels[section]}
-                  </h2>
-                </div>
-
-                <div className="mb-4">
-                  <SearchBar value={search} onChange={setSearch} />
-                </div>
-
-                <MobileNav
-                  activeFilter={filter}
-                  onFilterChange={setFilter}
-                  counts={counts}
-                  activeSection={section}
-                  onSectionChange={handleSectionChange}
-                />
-
-                {renderList()}
-              </>
-            )}
+            </main>
           </div>
-        </main>
+        </Win98Window>
       </div>
+
+      {/* Win98 Taskbar */}
+      <Win98Taskbar />
+
+      {/* Chat panel */}
       <ChatPanel />
     </>
   );

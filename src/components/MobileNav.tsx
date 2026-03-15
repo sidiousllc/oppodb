@@ -28,16 +28,14 @@ const filters: Array<{ id: FilterCategory; label: string }> = [
 export const MobileNav = forwardRef<HTMLDivElement, MobileNavProps>(
   ({ activeFilter, onFilterChange, counts, activeSection, onSectionChange }, ref) => {
     return (
-      <div ref={ref} className="lg:hidden space-y-2">
-        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+      <div ref={ref} className="lg:hidden space-y-1">
+        <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
           {sectionItems.map(s => (
             <button
               key={s.id}
               onClick={() => onSectionChange(s.id)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                activeSection === s.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              className={`win98-button shrink-0 text-[10px] ${
+                activeSection === s.id ? "font-bold" : ""
               }`}
             >
               {s.label}
@@ -45,15 +43,13 @@ export const MobileNav = forwardRef<HTMLDivElement, MobileNavProps>(
           ))}
         </div>
         {activeSection === "candidates" && (
-          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+          <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
             {filters.map(f => (
               <button
                 key={f.id}
                 onClick={() => onFilterChange(f.id)}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  activeFilter === f.id
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                className={`win98-button shrink-0 text-[9px] ${
+                  activeFilter === f.id ? "font-bold" : ""
                 }`}
               >
                 {f.label}
