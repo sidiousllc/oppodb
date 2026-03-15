@@ -124,14 +124,32 @@ async function fetchChamber(
   const url = `${CENSUS_BASE}?get=${CENSUS_VARS}&for=${geoType}:*&in=state:${stateFips}`;
   console.log(`Fetching ${chamber} districts for ${stateAbbr}: ${url}`);
 
-  const response = await fetch(url);
+  let response: Response;
+  try {
+    response = await fetch(url);
+  } catch (e) {
+    console.error(`Fetch failed for ${stateAbbr} ${chamber}: ${e}`);
+    return [];
+  }
+
   if (!response.ok) {
     const text = await response.text();
     console.error(`Census API error for ${stateAbbr} ${chamber}: ${response.status} ${text}`);
     return [];
   }
 
-  const rawData: string[][] = await response.json();
+  let rawData: string[][];
+  try {
+    const text = await response.text();
+    if (!text || text.trim().length === 0) {
+      console.warn(`Empty response for ${stateAbbr} ${chamber}, skipping`);
+      return [];
+    }
+    rawData = JSON.parse(text);
+  } catch (e) {
+    console.warn(`JSON parse failed for ${stateAbbr} ${chamber}, skipping: ${e}`);
+    return [];
+  }
   if (!rawData || rawData.length < 2) return [];
 
   const headers = rawData[0];
