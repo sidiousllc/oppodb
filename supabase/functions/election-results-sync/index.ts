@@ -97,26 +97,41 @@ async function fetchElectionFilesFromGitHub(
   const data = await response.json();
   if (!data.tree) return [];
 
-  // Filter for state legislative general election CSV files
-  // Pattern: YYYYMMDD__xx__general__state_house.csv or __state_senate.csv
-  const files: string[] = [];
+  // Filter for CSV files containing state legislative results
+  // Some states have dedicated state_house/state_senate files, others have combined files
+  const dedicatedFiles: string[] = [];
+  const combinedFiles: string[] = [];
+
   for (const item of data.tree) {
     if (item.type !== "blob") continue;
     const path = item.path as string;
     if (!path.endsWith(".csv")) continue;
     const lower = path.toLowerCase();
-    // Look for state legislative files
+    if (!lower.includes("general")) continue;
+
+    // Dedicated state legislative files
     if (
-      (lower.includes("state_house") || lower.includes("state_senate") ||
-       lower.includes("state_rep") || lower.includes("state_assembly") ||
-       lower.includes("state_legislature"))
-      && lower.includes("general")
-      && !lower.includes("precinct") // skip precinct-level (too large)
-      && !lower.includes("county")   // skip county-level breakdowns
+      lower.includes("state_house") || lower.includes("state_senate") ||
+      lower.includes("state_rep") || lower.includes("state_assembly") ||
+      lower.includes("state_legislature")
     ) {
-      files.push(path);
+      if (!lower.includes("precinct")) { // prefer non-precinct
+        dedicatedFiles.push(path);
+      }
+      continue;
+    }
+
+    // Combined files (have all offices) - prefer county over precinct (smaller)
+    if (lower.includes("__county.csv") || lower.match(/__general\.csv$/)) {
+      combinedFiles.push(path);
+    } else if (lower.includes("precinct") && combinedFiles.length === 0) {
+      // Fall back to precinct if no county-level exists
+      combinedFiles.push(path);
     }
   }
+
+  // Use dedicated files if available, otherwise combined files
+  let files = dedicatedFiles.length > 0 ? dedicatedFiles : combinedFiles;
 
   // Sort by date descending, take recent elections
   files.sort().reverse();
