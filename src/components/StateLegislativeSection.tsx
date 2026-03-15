@@ -422,7 +422,7 @@ export function StateLegislativeSection({
           )}
         </button>
         <button
-          onClick={handleElectionSync}
+          onClick={() => handleElectionSync(false)}
           disabled={syncingElections}
           className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
         >
@@ -438,7 +438,22 @@ export function StateLegislativeSection({
             </>
           )}
         </button>
+        {canResume && !syncingElections && (
+          <button
+            onClick={() => handleElectionSync(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+          >
+            Resume Sync
+          </button>
+        )}
       </div>
+
+      {/* Sync results panel */}
+      {syncReport && (
+        <div className="mb-4">
+          <SyncResultsPanel report={syncReport} onClose={() => setSyncReport(null)} />
+        </div>
+      )}
 
       {/* Results count */}
       <p className="text-sm text-muted-foreground mb-3">
