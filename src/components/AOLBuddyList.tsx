@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Win98Window } from "./Win98Window";
 import { AOLIMWindow } from "./AOLIMWindow";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMail } from "@/contexts/MailContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface OnlineUser {
