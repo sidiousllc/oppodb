@@ -27,6 +27,7 @@ import { DistrictCompare } from "@/components/DistrictCompare";
 import { Win98Window } from "@/components/Win98Window";
 import { Win98Taskbar } from "@/components/Win98Taskbar";
 import { AOLToolbar } from "@/components/AOLToolbar";
+import { AOLBuddyList } from "@/components/AOLBuddyList";
 import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
@@ -639,6 +640,9 @@ export default function Index() {
 
       {/* Win98 Taskbar */}
       <Win98Taskbar />
+
+      {/* AOL Buddy List */}
+      <AOLBuddyList />
 
       {/* Chat panel */}
       <ChatPanel />
