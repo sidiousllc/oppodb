@@ -2,6 +2,7 @@ import { type DistrictProfile } from "@/data/districtIntel";
 import { DistrictBoundaryMap } from "@/components/DistrictBoundaryMap";
 import { CookRatingHistory } from "@/components/CookRatingHistory";
 import { CookPVIChart } from "@/components/CookPVIChart";
+import { CongressionalElectionsSection } from "@/components/CongressionalElectionsSection";
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
