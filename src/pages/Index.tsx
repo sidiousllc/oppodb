@@ -20,7 +20,6 @@ import { DistrictDetail } from "@/components/DistrictDetail";
 import { DistrictMap, type PVIFilter, PVI_FILTER_OPTIONS } from "@/components/DistrictMap";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
-import { ChatPanel } from "@/components/ChatPanel";
 import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { DistrictCompare } from "@/components/DistrictCompare";
@@ -571,6 +570,8 @@ export default function Index() {
           <AOLToolbar
             onBack={selectedSlug ? () => setSelectedSlug(null) : undefined}
             onRefresh={() => window.location.reload()}
+            currentSection={section}
+            currentSlug={selectedSlug}
           />
 
           {/* Content area with sidebar */}
@@ -644,8 +645,7 @@ export default function Index() {
       {/* AOL Buddy List */}
       <AOLBuddyList />
 
-      {/* Chat panel */}
-      <ChatPanel />
+      {/* Research assistant is now in the AOL address bar */}
     </>
   );
 }
