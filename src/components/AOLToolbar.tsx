@@ -61,6 +61,7 @@ interface AOLToolbarProps {
 }
 
 export function AOLToolbar({ onBack, onRefresh, currentSection, currentSlug }: AOLToolbarProps) {
+  const navigate = useNavigate();
   const { session } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
