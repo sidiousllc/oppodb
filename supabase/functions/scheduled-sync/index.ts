@@ -44,8 +44,7 @@ Deno.serve(async (req) => {
       console.error("GitHub sync error:", e);
     }
 
-    // 2. Determine which batch of states to process for election results
-    // Use a simple metadata row to track the current batch offset
+    // 2. Determine which batch of states to process for state-level election results
     const { data: meta } = await supabase
       .from("sync_metadata")
       .select("*")
@@ -56,8 +55,6 @@ Deno.serve(async (req) => {
     if (meta?.last_commit_sha) {
       batchOffset = parseInt(meta.last_commit_sha) || 0;
     }
-
-    // Wrap around if we've gone through all states
     if (batchOffset >= ALL_STATES.length) {
       batchOffset = 0;
     }
@@ -73,22 +70,14 @@ Deno.serve(async (req) => {
       try {
         const res = await fetch(
           `${supabaseUrl}/functions/v1/election-results-sync?state=${state}`,
-          {
-            headers: {
-              "Authorization": `Bearer ${anonKey}`,
-            },
-          },
+          { headers: { "Authorization": `Bearer ${anonKey}` } },
         );
         const data = await res.json();
-        electionResults.push({
-          state,
-          status: res.ok ? "ok" : "error",
-          upserted: data?.upserted ?? 0,
-        });
-        console.log(`${state}: ${data?.upserted ?? 0} upserted`);
+        electionResults.push({ state, status: res.ok ? "ok" : "error", upserted: data?.upserted ?? 0 });
+        console.log(`State leg ${state}: ${data?.upserted ?? 0} upserted`);
       } catch (e) {
         electionResults.push({ state, status: "error" });
-        console.error(`${state} sync error:`, e);
+        console.error(`${state} state leg sync error:`, e);
       }
     }
 
@@ -98,10 +87,58 @@ Deno.serve(async (req) => {
       states: electionResults,
     };
 
-    // Save next batch offset (reuse sync_metadata row id=2)
     await supabase.from("sync_metadata").upsert({
       id: 2,
       last_commit_sha: String(nextOffset >= ALL_STATES.length ? 0 : nextOffset),
+      last_synced_at: new Date().toISOString(),
+    });
+
+    // 3. Congressional election sync (batch 5 states per run, tracked via sync_metadata id=3)
+    const { data: congMeta } = await supabase
+      .from("sync_metadata")
+      .select("*")
+      .eq("id", 3)
+      .maybeSingle();
+
+    let congOffset = 0;
+    if (congMeta?.last_commit_sha) {
+      congOffset = parseInt(congMeta.last_commit_sha) || 0;
+    }
+    if (congOffset >= ALL_STATES.length) {
+      congOffset = 0;
+    }
+
+    const congBatchStates = ALL_STATES.slice(congOffset, congOffset + STATES_PER_BATCH);
+    const congNextOffset = congOffset + STATES_PER_BATCH;
+
+    console.log(`Congressional sync batch: states ${congOffset}-${congOffset + congBatchStates.length - 1} (${congBatchStates.join(", ")})`);
+
+    const congressionalResults: Array<{ state: string; status: string; upserted?: number }> = [];
+
+    for (const state of congBatchStates) {
+      try {
+        const res = await fetch(
+          `${supabaseUrl}/functions/v1/congressional-election-sync?state=${state}`,
+          { headers: { "Authorization": `Bearer ${anonKey}` } },
+        );
+        const data = await res.json();
+        congressionalResults.push({ state, status: res.ok ? "ok" : "error", upserted: data?.upserted ?? 0 });
+        console.log(`Congressional ${state}: ${data?.upserted ?? 0} upserted`);
+      } catch (e) {
+        congressionalResults.push({ state, status: "error" });
+        console.error(`${state} congressional sync error:`, e);
+      }
+    }
+
+    results.congressional = {
+      batch_offset: congOffset,
+      next_offset: congNextOffset >= ALL_STATES.length ? 0 : congNextOffset,
+      states: congressionalResults,
+    };
+
+    await supabase.from("sync_metadata").upsert({
+      id: 3,
+      last_commit_sha: String(congNextOffset >= ALL_STATES.length ? 0 : congNextOffset),
       last_synced_at: new Date().toISOString(),
     });
 
