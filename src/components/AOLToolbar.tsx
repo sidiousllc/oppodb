@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, ArrowRight, RotateCw, Home, Star, Mail, Send, Bot, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMail } from "@/contexts/MailContext";
 import { useNavigate } from "react-router-dom";
 import { Win98MenuBar } from "./Win98MenuBar";
 
