@@ -354,6 +354,96 @@ console.log(\`\${meta.total} results\`, data);`}
             </div>
           </div>
         </div>
+
+        {/* MCP Server Documentation */}
+        <div className="rounded-xl border border-border bg-card p-6 mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ExternalLink className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">MCP Server (AI Agent Access)</h2>
+          </div>
+
+          <p className="text-sm text-muted-foreground mb-4">
+            Connect any MCP-compatible AI agent (Claude, Cursor, Windsurf, etc.) to access ORDB data directly.
+            No API key required — the MCP server is open for public read access.
+          </p>
+
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-1">MCP Server URL</h3>
+              <div className="flex items-center gap-2">
+                <code className="rounded-lg bg-muted px-3 py-1.5 text-sm font-mono text-foreground break-all">
+                  {mcpUrl}
+                </code>
+                <button
+                  onClick={() => handleCopy(mcpUrl)}
+                  className="p-1.5 rounded hover:bg-muted transition-colors"
+                >
+                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-1">Protocol</h3>
+              <p className="text-sm text-muted-foreground">
+                MCP Streamable HTTP — send JSON-RPC POST requests with{" "}
+                <code className="text-xs bg-muted px-1 rounded">Accept: application/json, text/event-stream</code>
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Available Tools (10)</h3>
+              <div className="grid gap-2">
+                {[
+                  { name: "search_candidates", desc: "Search opposition research candidate profiles by name" },
+                  { name: "get_candidate", desc: "Get full candidate profile by slug" },
+                  { name: "search_congressional_districts", desc: "Search congressional district demographics" },
+                  { name: "search_state_legislative", desc: "Search ~9,300 state house/senate district profiles" },
+                  { name: "get_election_results", desc: "Get election results with vote counts and winners" },
+                  { name: "get_polling_data", desc: "Get polling data with approval/favorability ratings" },
+                  { name: "get_maga_files", desc: "Get vetting reports on Trump admin appointees" },
+                  { name: "get_narrative_reports", desc: "Get issue-based policy impact reports" },
+                  { name: "get_local_impacts", desc: "Get state-specific policy impact analyses" },
+                ].map((tool) => (
+                  <div
+                    key={tool.name}
+                    className="flex items-start gap-3 rounded-lg bg-muted/50 px-3 py-2"
+                  >
+                    <code className="text-sm font-mono font-medium text-foreground whitespace-nowrap">
+                      {tool.name}
+                    </code>
+                    <p className="text-xs text-muted-foreground">{tool.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Claude Desktop Configuration</h3>
+              <CodeBlock
+                label="Add to claude_desktop_config.json"
+                code={`{
+  "mcpServers": {
+    "ordb": {
+      "type": "streamable-http",
+      "url": "${mcpUrl}"
+    }
+  }
+}`}
+                onCopy={handleCopy}
+              />
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Test with MCP Inspector</h3>
+              <CodeBlock
+                label=""
+                code={`npx @modelcontextprotocol/inspector ${mcpUrl}`}
+                onCopy={handleCopy}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
