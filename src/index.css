@@ -245,7 +245,7 @@
 
   .prose-research {
     @apply leading-relaxed;
-    font-size: 16.5px;
+    font-size: 11px;
     color: black;
   }
 
