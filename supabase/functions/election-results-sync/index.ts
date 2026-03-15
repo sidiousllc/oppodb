@@ -272,11 +272,14 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Calculate totals per district-race and build upsert records
+        // Calculate totals and find winners per district-race
         const districtTotals = new Map<string, number>();
-        for (const [key, result] of districtResults) {
+        const districtTopVotes = new Map<string, number>();
+        for (const [, result] of districtResults) {
           const raceKey = `${result.chamber}-${result.district}`;
           districtTotals.set(raceKey, (districtTotals.get(raceKey) || 0) + result.votes);
+          const current = districtTopVotes.get(raceKey) || 0;
+          if (result.votes > current) districtTopVotes.set(raceKey, result.votes);
         }
 
         const records: Array<Record<string, unknown>> = [];
@@ -284,9 +287,10 @@ Deno.serve(async (req) => {
           const raceKey = `${result.chamber}-${result.district}`;
           const totalVotes = districtTotals.get(raceKey) || 0;
           const votePct = totalVotes > 0 ? Math.round((result.votes / totalVotes) * 1000) / 10 : null;
-
-          // Pad district number for consistency
           const paddedDistrict = result.district.replace(/^0+/, "") || "0";
+
+          // Auto-detect winner: candidate with most votes in this race
+          const isWinner = result.winner || (result.votes > 0 && result.votes === districtTopVotes.get(raceKey));
 
           records.push({
             state_abbr: stateAbbr,
@@ -299,7 +303,7 @@ Deno.serve(async (req) => {
             party: result.party,
             votes: result.votes,
             vote_pct: votePct,
-            is_winner: result.winner,
+            is_winner: isWinner,
             is_write_in: result.writeIn,
             total_votes: totalVotes,
             source: "openelections",
