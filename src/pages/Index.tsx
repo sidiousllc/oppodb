@@ -564,95 +564,101 @@ export default function Index() {
     <>
       {/* Desktop background */}
       <div className="flex flex-col h-screen bg-[hsl(var(--background))] pb-[28px]">
-        {/* Main AOL browser window */}
-        <Win98Window
-          title="AOL - Opposition Research Database - Sidio.us Group"
-          icon={<span className="text-[14px]">🌐</span>}
-          maximized
-        >
-          {/* AOL Browser chrome */}
-          <AOLToolbar
-            onBack={selectedSlug ? () => setSelectedSlug(null) : undefined}
-            onRefresh={() => window.location.reload()}
-            currentSection={section}
-            currentSlug={selectedSlug}
-          />
-
-          {/* Content area with sidebar */}
-          <div className="flex flex-1 overflow-hidden bg-white">
-            <AppSidebar
-              activeFilter={filter}
-              onFilterChange={setFilter}
-              counts={counts}
-              activeSection={section}
-              onSectionChange={handleSectionChange}
-              sectionCounts={sectionCounts}
-              onSyncComplete={() => {
-                fetchCandidatesFromDB().then((dbCandidates) => {
-                  if (dbCandidates.length > 0) {
-                    initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
-                    setDataVersion((v) => v + 1);
-                  }
-                });
-              }}
+        {isMinimized ? (
+          <Win98Desktop onOpenWindow={() => setIsMinimized(false)} />
+        ) : (
+          /* Main AOL browser window */
+          <Win98Window
+            title="AOL - Opposition Research Database - Sidio.us Group"
+            icon={<span className="text-[14px]">🌐</span>}
+            maximized
+            onMinimize={() => setIsMinimized(true)}
+          >
+            {/* AOL Browser chrome */}
+            <AOLToolbar
+              onBack={selectedSlug ? () => setSelectedSlug(null) : undefined}
+              onRefresh={() => window.location.reload()}
+              currentSection={section}
+              currentSlug={selectedSlug}
             />
 
-            <main className="flex-1 overflow-y-auto bg-white">
-              <div className="max-w-4xl mx-auto px-3 py-3">
-                {/* Mobile header */}
-                <div className="lg:hidden flex items-center gap-2 mb-3">
-                  <span className="text-xl">📁</span>
-                  <h1 className="text-sm font-bold">Opposition Research Database</h1>
-                </div>
+            {/* Content area with sidebar */}
+            <div className="flex flex-1 overflow-hidden bg-white">
+              <AppSidebar
+                activeFilter={filter}
+                onFilterChange={setFilter}
+                counts={counts}
+                activeSection={section}
+                onSectionChange={handleSectionChange}
+                sectionCounts={sectionCounts}
+                onSyncComplete={() => {
+                  fetchCandidatesFromDB().then((dbCandidates) => {
+                    if (dbCandidates.length > 0) {
+                      initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+                      setDataVersion((v) => v + 1);
+                    }
+                  });
+                }}
+              />
 
-                {editorMode ? (
-                  <CandidateEditor
-                    mode={editorMode}
-                    initialData={editData}
-                    onBack={() => { setEditorMode(null); setEditData(undefined); }}
-                    onSaved={handleEditorSaved}
-                  />
-                ) : detail ? (
-                  detail
-                ) : (
-                  <>
-                    <div className="mb-1">
-                      <h2 className="text-sm font-bold mb-2 hidden lg:block">
-                        📂 {sectionLabels[section]}
-                      </h2>
-                    </div>
+              <main className="flex-1 overflow-y-auto bg-white">
+                <div className="max-w-4xl mx-auto px-3 py-3">
+                  {/* Mobile header */}
+                  <div className="lg:hidden flex items-center gap-2 mb-3">
+                    <span className="text-xl">📁</span>
+                    <h1 className="text-sm font-bold">Opposition Research Database</h1>
+                  </div>
 
-                    <div className="mb-3">
-                      <SearchBar value={search} onChange={setSearch} />
-                    </div>
-
-                    <MobileNav
-                      activeFilter={filter}
-                      onFilterChange={setFilter}
-                      counts={counts}
-                      activeSection={section}
-                      onSectionChange={handleSectionChange}
+                  {editorMode ? (
+                    <CandidateEditor
+                      mode={editorMode}
+                      initialData={editData}
+                      onBack={() => { setEditorMode(null); setEditData(undefined); }}
+                      onSaved={handleEditorSaved}
                     />
+                  ) : detail ? (
+                    detail
+                  ) : (
+                    <>
+                      <div className="mb-1">
+                        <h2 className="text-sm font-bold mb-2 hidden lg:block">
+                          📂 {sectionLabels[section]}
+                        </h2>
+                      </div>
 
-                    {renderList()}
-                  </>
-                )}
-              </div>
-            </main>
-          </div>
-        </Win98Window>
+                      <div className="mb-3">
+                        <SearchBar value={search} onChange={setSearch} />
+                      </div>
+
+                      <MobileNav
+                        activeFilter={filter}
+                        onFilterChange={setFilter}
+                        counts={counts}
+                        activeSection={section}
+                        onSectionChange={handleSectionChange}
+                      />
+
+                      {renderList()}
+                    </>
+                  )}
+                </div>
+              </main>
+            </div>
+          </Win98Window>
+        )}
       </div>
 
       {/* Win98 Taskbar */}
-      <Win98Taskbar />
+      <Win98Taskbar
+        minimizedWindow={isMinimized ? "Opposition Research Database" : undefined}
+        onRestoreWindow={() => setIsMinimized(false)}
+      />
 
       {/* AOL Buddy List */}
       <AOLBuddyList />
 
       {/* AOL Mail Window */}
       {isMailOpen && <AOLMailWindow onClose={closeMail} />}
-
-      {/* Research assistant is now in the AOL address bar */}
     </>
   );
 }
