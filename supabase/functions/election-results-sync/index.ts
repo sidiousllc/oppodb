@@ -149,10 +149,11 @@ async function fetchElectionFilesFromGitHub(
 async function fetchAndParseCSV(
   stateAbbr: string,
   filePath: string,
+  branch: string,
   githubToken: string | undefined,
 ): Promise<Record<string, string>[]> {
   const stateLower = STATE_ABBREV_TO_LOWER[stateAbbr];
-  const rawUrl = `https://raw.githubusercontent.com/openelections/openelections-data-${stateLower}/master/${filePath}`;
+  const rawUrl = `https://raw.githubusercontent.com/openelections/openelections-data-${stateLower}/${branch}/${filePath}`;
   const headers: Record<string, string> = { "User-Agent": "ORDB-Election-Sync" };
   if (githubToken) headers["Authorization"] = `token ${githubToken}`;
 
