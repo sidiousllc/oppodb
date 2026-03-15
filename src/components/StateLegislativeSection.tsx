@@ -150,6 +150,15 @@ function StatLegDetail({
         </div>
       </div>
 
+      {/* Election History */}
+      <div className="mb-6">
+        <ElectionResultsSection
+          stateAbbr={district.state_abbr}
+          chamber={district.chamber}
+          districtNumber={district.district_number}
+        />
+      </div>
+
       {/* District Boundary Map */}
       <div className="mb-6">
         <StateLegBoundaryMap
