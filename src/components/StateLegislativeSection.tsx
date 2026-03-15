@@ -8,6 +8,7 @@ import {
 } from "@/data/stateLegislativeIntel";
 import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign, Vote } from "lucide-react";
 import { StateLegBoundaryMap } from "./StateLegBoundaryMap";
+import { StateLegOverviewMap } from "./StateLegOverviewMap";
 import { ElectionResultsSection } from "./ElectionResultsSection";
 import { syncElectionResults } from "@/data/electionResults";
 
@@ -431,6 +432,19 @@ export function StateLegislativeSection({
         {selectedState !== "all" && ` in ${STATE_NAMES[selectedState] || selectedState}`}
         {chamberFilter !== "all" && ` (${chamberFilter})`}
       </p>
+
+      {/* State overview map — shown when a specific state is selected */}
+      {selectedState !== "all" && !loading && (
+        <StateLegOverviewMap
+          stateAbbr={selectedState}
+          onDistrictClick={(chamber, districtNumber) => {
+            const match = districts.find(
+              (d) => d.state_abbr === selectedState && d.chamber === chamber && d.district_number === districtNumber
+            );
+            if (match) setSelectedDistrict(match);
+          }}
+        />
+      )}
 
       {loading && (
         <div className="flex items-center justify-center py-16">
