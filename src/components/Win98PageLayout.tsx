@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Win98Window } from "./Win98Window";
 import { Win98Taskbar } from "./Win98Taskbar";
 import { AOLBuddyList } from "./AOLBuddyList";
+import { AOLMailWindow } from "./AOLMailWindow";
 import { Win98MenuBar } from "./Win98MenuBar";
+import { useMail } from "@/contexts/MailContext";
 import { ArrowLeft, ArrowRight, RotateCw, Home, Star, Mail } from "lucide-react";
 
 interface Win98PageLayoutProps {
