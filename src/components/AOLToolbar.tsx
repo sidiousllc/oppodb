@@ -175,9 +175,14 @@ export function AOLToolbar({ onBack, onRefresh, currentSection, currentSlug }: A
           <Star className="h-4 w-4" />
           <span>Favorites</span>
         </button>
-        <button onClick={() => { const el = document.querySelector('[title="AOL Buddy List"]') as HTMLButtonElement; el?.click(); }} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Open Buddy List / Mail">
+        <button onClick={toggleMail} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px] relative" title="You've Got Mail!">
           <Mail className="h-4 w-4" />
           <span>Mail</span>
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[7px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center animate-pulse">
+              {unreadCount}
+            </span>
+          )}
         </button>
 
         {/* AOL logo */}
