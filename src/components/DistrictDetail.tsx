@@ -382,6 +382,15 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
           >
             Cook PVI (2024)
           </a>
+          . Election history from{" "}
+          <a
+            href="https://openelections.net"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            OpenElections
+          </a>
           .
         </p>
       </div>
