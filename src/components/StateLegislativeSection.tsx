@@ -433,6 +433,19 @@ export function StateLegislativeSection({
         {chamberFilter !== "all" && ` (${chamberFilter})`}
       </p>
 
+      {/* State overview map — shown when a specific state is selected */}
+      {selectedState !== "all" && !loading && (
+        <StateLegOverviewMap
+          stateAbbr={selectedState}
+          onDistrictClick={(chamber, districtNumber) => {
+            const match = districts.find(
+              (d) => d.state_abbr === selectedState && d.chamber === chamber && d.district_number === districtNumber
+            );
+            if (match) setSelectedDistrict(match);
+          }}
+        />
+      )}
+
       {loading && (
         <div className="flex items-center justify-center py-16">
           <div className="flex items-center gap-3 text-muted-foreground">
