@@ -17,6 +17,7 @@ interface Win98PageLayoutProps {
 
 export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: Win98PageLayoutProps) {
   const navigate = useNavigate();
+  const { toggleMail, closeMail, isMailOpen, unreadCount } = useMail();
 
   return (
     <>
