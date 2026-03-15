@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, ArrowRight, RotateCw, Home, Star, Mail, Send, Bot, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { Win98MenuBar } from "./Win98MenuBar";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
