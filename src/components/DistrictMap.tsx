@@ -136,23 +136,36 @@ async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
 
   fetchPromise = (async () => {
     try {
-      console.log("[DistrictMap] Fetching district boundaries from Esri…");
-      const res = await fetch(CD_GEO_URL);
-      if (!res.ok) {
-        console.error("[DistrictMap] Fetch failed:", res.status, res.statusText);
-        return null;
+      console.log("[DistrictMap] Fetching district boundaries from Esri (paginated)…");
+      const allFeatures: DistrictGeoJSON["features"] = [];
+      let offset = 0;
+      const PAGE_SIZE = 250;
+
+      while (true) {
+        const res = await fetch(buildCdUrl(offset));
+        if (!res.ok) {
+          console.error("[DistrictMap] Fetch failed:", res.status, res.statusText);
+          break;
+        }
+        const data = await res.json();
+        if (data.error) {
+          console.error("[DistrictMap] API error:", data.error);
+          break;
+        }
+        if (!data.features || data.features.length === 0) break;
+        allFeatures.push(...data.features);
+        console.log(`[DistrictMap] Loaded batch: ${data.features.length} features (total: ${allFeatures.length})`);
+        if (data.features.length < PAGE_SIZE) break;
+        offset += data.features.length;
       }
-      const data = await res.json();
-      if (data.error) {
-        console.error("[DistrictMap] API error:", data.error);
-        return null;
-      }
-      if (!data.features || data.features.length === 0) {
+
+      if (allFeatures.length === 0) {
         console.error("[DistrictMap] No features returned");
         return null;
       }
-      console.log(`[DistrictMap] Loaded ${data.features.length} district boundaries`);
-      cachedGeoJSON = data as DistrictGeoJSON;
+
+      console.log(`[DistrictMap] Loaded ${allFeatures.length} total district boundaries`);
+      cachedGeoJSON = { type: "FeatureCollection", features: allFeatures };
       return cachedGeoJSON;
     } catch (e) {
       console.error("[DistrictMap] Fetch error:", e);
