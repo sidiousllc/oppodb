@@ -1,4 +1,4 @@
-import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass, LogOut, ShieldCheck, BarChart3, Scale } from "lucide-react";
+import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass, LogOut, ShieldCheck, BarChart3, Scale, Key } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getLastSyncTime } from "@/data/githubSync";
@@ -42,6 +42,13 @@ function SignOutButton() {
   const navigate = useNavigate();
   return (
     <div className="space-y-1.5">
+      <button
+        onClick={() => navigate("/api")}
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-1.5 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+      >
+        <Key className="h-3.5 w-3.5" />
+        API Access
+      </button>
       <button
         onClick={() => navigate("/profile")}
         className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-1.5 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"

@@ -9,6 +9,7 @@ import AuthPage from "./pages/AuthPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
+import ApiPage from "./pages/ApiPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/api" element={<ProtectedRoute><ApiPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

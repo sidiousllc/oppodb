@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          request_count: number
+          revoked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name?: string
+          request_count?: number
+          revoked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          request_count?: number
+          revoked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       candidate_profiles: {
         Row: {
           content: string
@@ -559,6 +595,17 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_api_key_usage: {
+        Args: { p_key_id: string }
+        Returns: undefined
+      }
+      validate_api_key: {
+        Args: { p_key_hash: string }
+        Returns: {
+          key_id: string
+          user_id: string
+        }[]
       }
     }
     Enums: {
