@@ -21,7 +21,7 @@ import { DistrictMap, type PVIFilter, PVI_FILTER_OPTIONS } from "@/components/Di
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { CandidateEditor } from "@/components/CandidateEditor";
-import { CandidateEditor } from "@/components/CandidateEditor";
+import { supabase } from "@/integrations/supabase/client";
 import { supabase } from "@/integrations/supabase/client";
 import { DistrictCompare } from "@/components/DistrictCompare";
 import { Win98Window } from "@/components/Win98Window";
