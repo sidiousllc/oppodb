@@ -5,7 +5,8 @@ import {
   fetchElectionResults,
   groupByElectionCycle,
 } from "@/data/electionResults";
-import { Vote, Trophy, Users, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
+import { Vote, Trophy, Users, TrendingUp, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { exportElectionResultsPDF } from "@/lib/electionExport";
 
 const PARTY_COLORS: Record<string, string> = {
   DEM: "hsl(var(--primary))",
