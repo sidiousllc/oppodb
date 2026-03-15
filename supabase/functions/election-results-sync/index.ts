@@ -423,6 +423,11 @@ Deno.serve(async (req) => {
 
     console.log(`${stateFilter}: ${totalUpserted} results upserted`);
 
+    // Add skipped info for files beyond the 3 limit
+    for (const file of files.slice(3)) {
+      skippedFiles.push({ file, reason: "Exceeded per-invocation file limit (max 3)" });
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -430,6 +435,8 @@ Deno.serve(async (req) => {
         upserted: totalUpserted,
         errors: totalErrors,
         files_processed: filesToProcess.length,
+        files_found: files.length,
+        skipped_files: skippedFiles,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
