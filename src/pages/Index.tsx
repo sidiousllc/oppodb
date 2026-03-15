@@ -6,6 +6,7 @@ import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/d
 import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
 import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
+import { syncCongressionalElections } from "@/data/congressionalElections";
 import { fetchStateLegislativeDistricts, syncStateLegislativeData, type StateLegislativeProfile } from "@/data/stateLegislativeIntel";
 import { getCookRating, getCookRatingColor, COOK_RATING_ORDER, type CookRating } from "@/data/cookRatings";
 import { candidateDistrictMap } from "@/data/candidateDistricts";
@@ -41,6 +42,8 @@ export default function Index() {
   const [stateLegLoading, setStateLegLoading] = useState(true);
   const [stateLegSyncing, setStateLegSyncing] = useState(false);
   const [censusSyncing, setCensusSyncing] = useState(false);
+  const [electionSyncing, setElectionSyncing] = useState(false);
+  const [electionSyncProgress, setElectionSyncProgress] = useState("");
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
@@ -89,6 +92,38 @@ export default function Index() {
       console.error("Census sync error:", e);
     } finally {
       setCensusSyncing(false);
+    }
+  }, []);
+
+  const ALL_STATES = [
+    "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS",
+    "KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY",
+    "NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
+  ];
+
+  const handleBulkElectionSync = useCallback(async () => {
+    setElectionSyncing(true);
+    let totalUpserted = 0;
+    try {
+      for (let i = 0; i < ALL_STATES.length; i++) {
+        const st = ALL_STATES[i];
+        setElectionSyncProgress(`${st} (${i + 1}/${ALL_STATES.length})`);
+        try {
+          const result = await syncCongressionalElections(st);
+          if (result.success) totalUpserted += result.upserted;
+        } catch {
+          console.warn(`Election sync failed for ${st}`);
+        }
+        // Small delay to avoid overwhelming the API
+        if (i < ALL_STATES.length - 1) await new Promise(r => setTimeout(r, 500));
+      }
+      setElectionSyncProgress(`Done — ${totalUpserted} results synced`);
+      setTimeout(() => setElectionSyncProgress(""), 4000);
+    } catch (e) {
+      console.error("Bulk election sync error:", e);
+      setElectionSyncProgress("Error");
+    } finally {
+      setElectionSyncing(false);
     }
   }, []);
 
@@ -464,6 +499,22 @@ export default function Index() {
                   </>
                 ) : (
                   "Refresh from Census API"
+                )}
+              </button>
+              <button
+                onClick={handleBulkElectionSync}
+                disabled={electionSyncing}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+              >
+                {electionSyncing ? (
+                  <>
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                    {electionSyncProgress}
+                  </>
+                ) : electionSyncProgress ? (
+                  electionSyncProgress
+                ) : (
+                  "Sync All Elections"
                 )}
               </button>
             </div>
