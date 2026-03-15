@@ -48,11 +48,9 @@ const STATE_VIEW: Record<string, { center: [number, number]; zoom: number }> = {
   DC:{center:[-77,38.9],zoom:50},
 };
 
-// Esri Living Atlas feature service URLs for state legislative districts
-const ESRI_HOUSE_URL =
-  "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_State_House_Districts/FeatureServer/0/query";
-const ESRI_SENATE_URL =
-  "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_State_Senate_Districts/FeatureServer/0/query";
+// Census TIGERweb MapServer layers for state legislative districts
+// Layer 3 = Lower (House), Layer 2 = Upper (Senate)
+const TIGERWEB_BASE = "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024/Legislative/MapServer";
 
 interface StateLegBoundaryMapProps {
   stateAbbr: string;
@@ -86,51 +84,32 @@ function StateLegBoundaryMapInner({ stateAbbr, stateName, chamber, districtNumbe
     }
 
     const controller = new AbortController();
-    const baseUrl = chamber === "house" ? ESRI_HOUSE_URL : ESRI_SENATE_URL;
+    // Layer 3 = Lower (House), Layer 2 = Upper (Senate)
+    const layerId = chamber === "house" ? 3 : 2;
+    // GEOID = state FIPS (2 digits) + district number (3 digits)
     const distNum = districtNumber.replace(/^0+/, "") || "0";
+    const geoid = `${fips}${distNum.padStart(3, "0")}`;
 
-    // Try multiple query strategies
-    const queries = [
-      // Strategy 1: match by STATE_ABBR and district number in NAME/BASENAME
-      `STATE_ABBR='${stateAbbr}' AND (BASENAME='${distNum}' OR BASENAME='District ${distNum}' OR BASENAME='${districtNumber}')`,
-      // Strategy 2: match by state FIPS and DISTRICTID containing the number
-      `STATE_FIPS='${fips}' AND DISTRICTID LIKE '%${distNum.padStart(3, "0")}'`,
-      // Strategy 3: broader NAME search
-      `STATE_ABBR='${stateAbbr}' AND NAME LIKE '%${distNum}%'`,
-    ];
-
-    const tryFetch = async (where: string): Promise<DistrictGeoJSON | null> => {
-      try {
-        const params = new URLSearchParams({
-          where,
-          outFields: "STATE_ABBR,BASENAME,NAME,DISTRICTID",
-          f: "geojson",
-          outSR: "4326",
-          returnGeometry: "true",
-          maxAllowableOffset: "0.005",
-          resultRecordCount: "1",
-        });
-        const r = await fetch(`${baseUrl}?${params}`, { signal: controller.signal });
-        if (!r.ok) return null;
-        const data = await r.json();
-        if (data.error) return null;
-        if (data.features && data.features.length > 0) return data;
-        return null;
-      } catch (e) {
-        if ((e as Error).name === "AbortError") throw e;
-        return null;
-      }
-    };
+    const url = `${TIGERWEB_BASE}/${layerId}/query?` + new URLSearchParams({
+      where: `GEOID='${geoid}'`,
+      outFields: "GEOID,BASENAME",
+      f: "geojson",
+      outSR: "4326",
+      returnGeometry: "true",
+    }).toString();
 
     (async () => {
       try {
-        let result: DistrictGeoJSON | null = null;
-        for (const q of queries) {
-          result = await tryFetch(q);
-          if (result) break;
+        const r = await fetch(url, { signal: controller.signal });
+        if (!r.ok) {
+          console.warn(`TIGERweb ${r.status} for ${stateAbbr} ${chamber} ${districtNumber}`);
+          setError(true);
+          setLoading(false);
+          return;
         }
-        if (result) {
-          setDistrictGeo(result);
+        const data = await r.json();
+        if (data.features && data.features.length > 0) {
+          setDistrictGeo(data);
         } else {
           setError(true);
         }
@@ -270,7 +249,7 @@ function StateLegBoundaryMapInner({ stateAbbr, stateName, chamber, districtNumbe
         >
           U.S. Census Bureau TIGER/Line
         </a>{" "}
-        — State Legislative Districts (Esri Living Atlas)
+        — State Legislative Districts (TIGERweb)
       </p>
     </div>
   );
