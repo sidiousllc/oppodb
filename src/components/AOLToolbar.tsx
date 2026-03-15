@@ -153,27 +153,27 @@ export function AOLToolbar({ onBack, onRefresh, currentSection, currentSlug }: A
 
       {/* Navigation toolbar */}
       <div className="flex items-center gap-1 px-2 py-1">
-        <button onClick={onBack} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Back">
+        <button onClick={onBack} disabled={!onBack} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px] disabled:opacity-40" title="Back">
           <ArrowLeft className="h-4 w-4" />
           <span>Back</span>
         </button>
-        <button className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Forward">
+        <button onClick={() => window.history.forward()} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Forward">
           <ArrowRight className="h-4 w-4" />
           <span>Forward</span>
         </button>
-        <button onClick={onRefresh} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Refresh">
+        <button onClick={onRefresh || (() => window.location.reload())} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Refresh">
           <RotateCw className="h-4 w-4" />
           <span>Refresh</span>
         </button>
-        <button className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Home">
+        <button onClick={() => navigate("/")} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Home">
           <Home className="h-4 w-4" />
           <span>Home</span>
         </button>
-        <button className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Favorites">
+        <button onClick={() => navigate("/profile")} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Favorites / Profile">
           <Star className="h-4 w-4" />
           <span>Favorites</span>
         </button>
-        <button className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Mail">
+        <button onClick={() => { const el = document.querySelector('[title="AOL Buddy List"]') as HTMLButtonElement; el?.click(); }} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Open Buddy List / Mail">
           <Mail className="h-4 w-4" />
           <span>Mail</span>
         </button>
