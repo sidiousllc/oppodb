@@ -15,6 +15,9 @@ verify_jwt = false
 [functions.election-results-sync]
 verify_jwt = false
 
+[functions.congressional-election-sync]
+verify_jwt = false
+
 [functions.public-api]
 verify_jwt = false
 

@@ -187,6 +187,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
       {/* Cook Partisan Voting Index */}
       <CookPVIChart districtId={district.district_id} />
 
+      {/* Election History */}
+      <CongressionalElectionsSection districtId={district.district_id} />
+
       <div className="grid grid-cols-2 gap-3 mb-6">
         {district.population != null && (
           <StatCard
