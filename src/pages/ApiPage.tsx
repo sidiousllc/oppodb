@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { createApiKey, listApiKeys, revokeApiKey, deleteApiKey, getApiBaseUrl, type ApiKey } from "@/lib/apiKeys";
 import { ApiAnalytics } from "@/components/ApiAnalytics";
 import {
   ArrowLeft, Key, Plus, Copy, Check, Trash2, Ban, Eye, EyeOff,
-  Loader2, Code, ExternalLink, BookOpen,
+  Loader2, Code, ExternalLink, BookOpen, Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 
