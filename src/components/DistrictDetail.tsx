@@ -2,6 +2,7 @@ import { type DistrictProfile } from "@/data/districtIntel";
 import { DistrictBoundaryMap } from "@/components/DistrictBoundaryMap";
 import { CookRatingHistory } from "@/components/CookRatingHistory";
 import { CookPVIChart } from "@/components/CookPVIChart";
+import { CongressionalElectionsSection } from "@/components/CongressionalElectionsSection";
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
@@ -185,6 +186,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
 
       {/* Cook Partisan Voting Index */}
       <CookPVIChart districtId={district.district_id} />
+
+      {/* Election History */}
+      <CongressionalElectionsSection districtId={district.district_id} />
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         {district.population != null && (
@@ -377,6 +381,15 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             className="text-primary underline underline-offset-2 hover:text-primary/80"
           >
             Cook PVI (2024)
+          </a>
+          . Election history from{" "}
+          <a
+            href="https://openelections.net"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            OpenElections
           </a>
           .
         </p>

@@ -157,6 +157,66 @@ export type Database = {
         }
         Relationships: []
       }
+      congressional_election_results: {
+        Row: {
+          candidate_name: string
+          created_at: string
+          district_number: string
+          election_date: string | null
+          election_type: string
+          election_year: number
+          id: string
+          is_incumbent: boolean | null
+          is_winner: boolean | null
+          is_write_in: boolean | null
+          party: string | null
+          source: string | null
+          state_abbr: string
+          total_votes: number | null
+          updated_at: string
+          vote_pct: number | null
+          votes: number | null
+        }
+        Insert: {
+          candidate_name: string
+          created_at?: string
+          district_number: string
+          election_date?: string | null
+          election_type?: string
+          election_year: number
+          id?: string
+          is_incumbent?: boolean | null
+          is_winner?: boolean | null
+          is_write_in?: boolean | null
+          party?: string | null
+          source?: string | null
+          state_abbr: string
+          total_votes?: number | null
+          updated_at?: string
+          vote_pct?: number | null
+          votes?: number | null
+        }
+        Update: {
+          candidate_name?: string
+          created_at?: string
+          district_number?: string
+          election_date?: string | null
+          election_type?: string
+          election_year?: number
+          id?: string
+          is_incumbent?: boolean | null
+          is_winner?: boolean | null
+          is_write_in?: boolean | null
+          party?: string | null
+          source?: string | null
+          state_abbr?: string
+          total_votes?: number | null
+          updated_at?: string
+          vote_pct?: number | null
+          votes?: number | null
+        }
+        Relationships: []
+      }
       district_profiles: {
         Row: {
           asian_pct: number | null
