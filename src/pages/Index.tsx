@@ -42,6 +42,8 @@ export default function Index() {
   const [stateLegLoading, setStateLegLoading] = useState(true);
   const [stateLegSyncing, setStateLegSyncing] = useState(false);
   const [censusSyncing, setCensusSyncing] = useState(false);
+  const [electionSyncing, setElectionSyncing] = useState(false);
+  const [electionSyncProgress, setElectionSyncProgress] = useState("");
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
