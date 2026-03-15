@@ -220,6 +220,7 @@ async function fetchElectionFilesFromGitHub(
   // Some states have dedicated state_house/state_senate files, others have combined files
   const dedicatedFiles: string[] = [];
   const combinedFiles: string[] = [];
+  const precinctFallbackFiles: string[] = [];
 
   for (const item of data.tree) {
     if (item.type !== "blob") continue;
@@ -234,27 +235,29 @@ async function fetchElectionFilesFromGitHub(
       lower.includes("state_rep") || lower.includes("state_assembly") ||
       lower.includes("state_legislature")
     ) {
-      if (!lower.includes("precinct")) { // prefer non-precinct
+      if (!lower.includes("precinct")) {
         dedicatedFiles.push(path);
       }
       continue;
     }
 
-    // Combined files (have all offices) - prefer county over precinct (smaller)
+    // Combined files (have all offices) - prefer county/statewide files
     if (lower.includes("__county.csv") || lower.match(/__general\.csv$/)) {
       combinedFiles.push(path);
-    } else if (lower.includes("precinct") && combinedFiles.length === 0) {
-      // Fall back to precinct if no county-level exists
-      combinedFiles.push(path);
+    } else if (lower.includes("precinct")) {
+      // only use precinct if nothing else exists
+      precinctFallbackFiles.push(path);
     }
   }
 
-  // Use dedicated files if available, otherwise combined files
-  let files = dedicatedFiles.length > 0 ? dedicatedFiles : combinedFiles;
+  // Use dedicated files if available, otherwise combined files, finally precinct fallback
+  let files = dedicatedFiles.length > 0
+    ? dedicatedFiles
+    : (combinedFiles.length > 0 ? combinedFiles : precinctFallbackFiles);
 
   // Sort by date descending, take recent elections
   files.sort().reverse();
-  return { files: files.slice(0, 10), branch: usedBranch };
+  return { files: files.slice(0, 8), branch: usedBranch };
 }
 
 async function fetchAndParseCSV(
