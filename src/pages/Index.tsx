@@ -641,6 +641,9 @@ export default function Index() {
       {/* Win98 Taskbar */}
       <Win98Taskbar />
 
+      {/* AOL Buddy List */}
+      <AOLBuddyList />
+
       {/* Chat panel */}
       <ChatPanel />
     </>
