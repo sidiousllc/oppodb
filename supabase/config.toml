@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.district-intel]
 verify_jwt = false
+
+[functions.election-results-sync]
+verify_jwt = false

@@ -6,8 +6,10 @@ import {
   ALL_STATE_ABBRS,
   STATE_NAMES,
 } from "@/data/stateLegislativeIntel";
-import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign } from "lucide-react";
+import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign, Vote } from "lucide-react";
 import { StateLegBoundaryMap } from "./StateLegBoundaryMap";
+import { ElectionResultsSection } from "./ElectionResultsSection";
+import { syncElectionResults } from "@/data/electionResults";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
@@ -148,6 +150,15 @@ function StatLegDetail({
         </div>
       </div>
 
+      {/* Election History */}
+      <div className="mb-6">
+        <ElectionResultsSection
+          stateAbbr={district.state_abbr}
+          chamber={district.chamber}
+          districtNumber={district.district_number}
+        />
+      </div>
+
       {/* District Boundary Map */}
       <div className="mb-6">
         <StateLegBoundaryMap
@@ -260,6 +271,7 @@ export function StateLegislativeSection({
   const [selectedState, setSelectedState] = useState<string>("all");
   const [chamberFilter, setChamberFilter] = useState<ChamberFilter>("all");
   const [selectedDistrict, setSelectedDistrict] = useState<StateLegislativeProfile | null>(null);
+  const [syncingElections, setSyncingElections] = useState(false);
 
   const filtered = useMemo(() => {
     let results = districts;
@@ -287,6 +299,19 @@ export function StateLegislativeSection({
     const chamber = chamberFilter !== "all" ? chamberFilter : undefined;
     onSync(state, chamber);
   }, [selectedState, chamberFilter, onSync]);
+
+  const handleElectionSync = useCallback(async () => {
+    setSyncingElections(true);
+    try {
+      const state = selectedState !== "all" ? selectedState : undefined;
+      const result = await syncElectionResults(state);
+      console.log("Election sync result:", result);
+    } catch (e) {
+      console.error("Election sync error:", e);
+    } finally {
+      setSyncingElections(false);
+    }
+  }, [selectedState]);
 
   if (selectedDistrict) {
     return (
@@ -366,7 +391,7 @@ export function StateLegislativeSection({
           />
         </div>
 
-        {/* Sync button */}
+        {/* Sync buttons */}
         <button
           onClick={handleSync}
           disabled={syncing}
@@ -379,6 +404,23 @@ export function StateLegislativeSection({
             </>
           ) : (
             <>Sync from Census</>
+          )}
+        </button>
+        <button
+          onClick={handleElectionSync}
+          disabled={syncingElections}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+        >
+          {syncingElections ? (
+            <>
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+              Syncing Elections…
+            </>
+          ) : (
+            <>
+              <Vote className="h-3 w-3" />
+              Sync Election Results
+            </>
           )}
         </button>
       </div>
