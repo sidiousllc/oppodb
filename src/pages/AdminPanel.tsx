@@ -4,8 +4,9 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { listUsers, setUserRole, deleteUser, createUser, updateUser, resetUserPassword, type AdminUser } from "@/lib/adminApi";
-import { ArrowLeft, Users, FileText, Globe, AlertTriangle, BookOpen, Shield, ShieldCheck, Trash2, Plus, Save, X, Edit3, Loader2, LogOut, KeyRound, Pencil } from "lucide-react";
+import { Users, FileText, Globe, AlertTriangle, BookOpen, Shield, Trash2, Plus, Save, X, Edit3, Loader2, KeyRound, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { Win98PageLayout } from "@/components/Win98PageLayout";
 
 type Tab = "users" | "candidates" | "maga" | "local" | "narratives";
 
@@ -26,87 +27,79 @@ export default function AdminPanel() {
 
   if (roleLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center h-screen bg-[hsl(var(--background))]">
+        <span className="text-[11px]">Loading...</span>
       </div>
     );
   }
 
   if (!isAdmin && !isModerator) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-background gap-4">
-        <Shield className="h-16 w-16 text-destructive" />
-        <h1 className="text-2xl font-bold text-foreground">Access Denied</h1>
-        <p className="text-muted-foreground">You need admin or moderator privileges to access this page.</p>
-        <button onClick={() => navigate("/")} className="text-primary hover:underline text-sm">
-          ← Back to Dashboard
-        </button>
-      </div>
+      <Win98PageLayout title="Access Denied" icon="🛑" addressUrl="aol://ordb.research/admin">
+        <div className="text-center py-12">
+          <div className="text-4xl mb-3">🚫</div>
+          <p className="text-[11px] font-bold mb-2">Access Denied</p>
+          <p className="text-[10px] text-[hsl(var(--muted-foreground))]">You need admin or moderator privileges.</p>
+          <button onClick={() => navigate("/")} className="win98-button text-[10px] mt-4">← Back to Dashboard</button>
+        </div>
+      </Win98PageLayout>
     );
   }
 
-  const tabs: Array<{ id: Tab; label: string; icon: React.ElementType; adminOnly?: boolean }> = [
-    { id: "users", label: "Users", icon: Users, adminOnly: true },
-    { id: "candidates", label: "Candidates", icon: BookOpen },
-    { id: "maga", label: "MAGA Files", icon: AlertTriangle },
-    { id: "local", label: "Local Impact", icon: Globe },
-    { id: "narratives", label: "Narratives", icon: FileText },
+  const tabs: Array<{ id: Tab; label: string; emoji: string; adminOnly?: boolean }> = [
+    { id: "users", label: "Users", emoji: "👥", adminOnly: true },
+    { id: "candidates", label: "Candidates", emoji: "📋" },
+    { id: "maga", label: "MAGA Files", emoji: "⚠️" },
+    { id: "local", label: "Local Impact", emoji: "🌐" },
+    { id: "narratives", label: "Narratives", emoji: "📄" },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate("/")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-              Dashboard
+    <Win98PageLayout title="Admin Panel" icon="🛡️" addressUrl="aol://ordb.research/admin">
+      {/* User info bar */}
+      <div className="win98-sunken bg-[hsl(var(--win98-light))] px-2 py-1 mb-3 flex items-center justify-between text-[10px]">
+        <span>Logged in as: <b>{user?.email}</b></span>
+        <span className="win98-button px-2 py-0 h-[16px] text-[9px] font-bold">
+          {isAdmin ? "🔑 Admin" : "📋 Moderator"}
+        </span>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-0 mb-3">
+        {tabs
+          .filter(t => !t.adminOnly || isAdmin)
+          .map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`win98-button text-[10px] flex items-center gap-1 ${
+                tab === t.id ? "font-bold bg-white" : ""
+              }`}
+              style={tab === t.id ? {
+                borderBottomColor: "white",
+                marginBottom: "-1px",
+                position: "relative",
+                zIndex: 1,
+              } : {}}
+            >
+              <span>{t.emoji}</span>
+              {t.label}
             </button>
-            <div className="h-6 w-px bg-border" />
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-primary" />
-              <h1 className="font-display text-lg font-semibold text-foreground">Admin Panel</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <span>{user?.email}</span>
-            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-              {isAdmin ? "Admin" : "Moderator"}
-            </span>
-          </div>
-        </div>
-      </header>
+          ))}
+      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <nav className="flex gap-1 mb-6 border-b border-border">
-          {tabs
-            .filter(t => !t.adminOnly || isAdmin)
-            .map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                  tab === t.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <t.icon className="h-4 w-4" />
-                {t.label}
-              </button>
-            ))}
-        </nav>
-
+      <div className="win98-sunken bg-white p-3">
         {tab === "users" && isAdmin && <UsersTab />}
         {tab === "candidates" && <CandidatesTab />}
         {tab === "maga" && <ContentTab table="maga_files" nameField="name" />}
         {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
         {tab === "narratives" && <ContentTab table="narrative_reports" nameField="name" />}
       </div>
-    </div>
+    </Win98PageLayout>
   );
 }
 
+// ============== UsersTab ==============
 function UsersTab() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,9 +130,7 @@ function UsersTab() {
       await setUserRole(userId, role, hasRole);
       toast.success(hasRole ? `Removed ${role} role` : `Granted ${role} role`);
       loadUsers();
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const handleDelete = async (userId: string, email: string) => {
@@ -148,91 +139,53 @@ function UsersTab() {
       await deleteUser(userId);
       toast.success("User deleted");
       loadUsers();
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const handleCreateUser = async () => {
     const trimmedEmail = newEmail.trim();
     const trimmedPassword = newPassword.trim();
-    if (!trimmedEmail || !trimmedPassword) {
-      toast.error("Email and password are required");
-      return;
-    }
-    if (trimmedPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
+    if (!trimmedEmail || !trimmedPassword) { toast.error("Email and password are required"); return; }
+    if (trimmedPassword.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
+    if (!emailRegex.test(trimmedEmail)) { toast.error("Please enter a valid email address"); return; }
     setCreating(true);
     try {
       await createUser(trimmedEmail, trimmedPassword, newRole);
-      toast.success(`User ${trimmedEmail} created successfully`);
-      setNewEmail("");
-      setNewPassword("");
-      setNewRole("user");
-      setShowAddUser(false);
+      toast.success(`User ${trimmedEmail} created`);
+      setNewEmail(""); setNewPassword(""); setNewRole("user"); setShowAddUser(false);
       loadUsers();
-    } catch (e: any) {
-      toast.error("Failed to create user: " + e.message);
-    } finally {
-      setCreating(false);
-    }
+    } catch (e: any) { toast.error("Failed: " + e.message); }
+    finally { setCreating(false); }
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (loading) return <div className="text-center py-8 text-[10px]">Loading users...</div>;
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-muted-foreground">{users.length} users</p>
-        <button
-          onClick={() => setShowAddUser(!showAddUser)}
-          className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary/90"
-        >
-          {showAddUser ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{users.length} users</span>
+        <button onClick={() => setShowAddUser(!showAddUser)} className="win98-button text-[10px] flex items-center gap-1">
+          {showAddUser ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
           {showAddUser ? "Cancel" : "Add User"}
         </button>
       </div>
 
       {showAddUser && (
-        <div className="bg-card rounded-xl border border-border p-5 mb-4">
-          <h3 className="font-medium text-foreground mb-4">Create New User</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mb-3">
+          <p className="text-[11px] font-bold mb-2">Create New User</p>
+          <div className="grid grid-cols-3 gap-2 mb-2">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
-              <input
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                placeholder="user@example.com"
-                maxLength={255}
-              />
+              <label className="block text-[10px] font-bold mb-1">Email:</label>
+              <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="win98-input w-full" placeholder="user@example.com" maxLength={255} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                placeholder="Min 6 characters"
-                maxLength={128}
-              />
+              <label className="block text-[10px] font-bold mb-1">Password:</label>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="win98-input w-full" placeholder="Min 6 chars" maxLength={128} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Role</label>
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-              >
+              <label className="block text-[10px] font-bold mb-1">Role:</label>
+              <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="win98-input w-full">
                 <option value="user">User</option>
                 <option value="premium">Premium</option>
                 <option value="moderator">Moderator</option>
@@ -240,106 +193,56 @@ function UsersTab() {
               </select>
             </div>
           </div>
-          <button
-            onClick={handleCreateUser}
-            disabled={creating}
-            className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
-          >
-            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Create User
+          <button onClick={handleCreateUser} disabled={creating} className="win98-button text-[10px] font-bold disabled:opacity-50">
+            {creating ? "Creating..." : "Create User"}
           </button>
         </div>
       )}
 
-      {/* Edit User Modal */}
-      {editingUser && (
-        <EditUserModal
-          user={editingUser}
-          onClose={() => setEditingUser(null)}
-          onSaved={() => { setEditingUser(null); loadUsers(); }}
-        />
-      )}
+      {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSaved={() => { setEditingUser(null); loadUsers(); }} />}
+      {resetPasswordUser && <ResetPasswordModal user={resetPasswordUser} onClose={() => setResetPasswordUser(null)} onSaved={() => setResetPasswordUser(null)} />}
 
-      {/* Reset Password Modal */}
-      {resetPasswordUser && (
-        <ResetPasswordModal
-          user={resetPasswordUser}
-          onClose={() => setResetPasswordUser(null)}
-          onSaved={() => { setResetPasswordUser(null); }}
-        />
-      )}
-
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
+      {/* Users table */}
+      <div className="win98-sunken bg-white">
+        <table className="w-full text-[10px]">
           <thead>
-            <tr className="border-b border-border bg-muted/30">
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">User</th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Joined</th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Last Sign In</th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Roles</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
+            <tr className="bg-[hsl(var(--win98-face))] border-b border-[hsl(var(--win98-shadow))]">
+              <th className="text-left px-2 py-1 font-bold">User</th>
+              <th className="text-left px-2 py-1 font-bold">Joined</th>
+              <th className="text-left px-2 py-1 font-bold">Last Sign In</th>
+              <th className="text-left px-2 py-1 font-bold">Roles</th>
+              <th className="text-right px-2 py-1 font-bold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map(u => (
-              <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-                <td className="px-4 py-3">
-                  <div>
-                    <p className="font-medium text-foreground">{u.email}</p>
-                    {u.display_name && (
-                      <p className="text-xs text-muted-foreground">{u.display_name}</p>
-                    )}
-                  </div>
+              <tr key={u.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))]">
+                <td className="px-2 py-1.5">
+                  <div className="font-bold">{u.email}</div>
+                  {u.display_name && <div className="text-[9px] text-[hsl(var(--muted-foreground))]">{u.display_name}</div>}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-muted-foreground">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "Never"}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-1.5">
+                <td className="px-2 py-1.5 text-[hsl(var(--muted-foreground))]">{new Date(u.created_at).toLocaleDateString()}</td>
+                <td className="px-2 py-1.5 text-[hsl(var(--muted-foreground))]">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "Never"}</td>
+                <td className="px-2 py-1.5">
+                  <div className="flex gap-1">
                     {["admin", "moderator", "premium"].map(role => {
                       const has = u.roles.includes(role);
                       return (
-                        <button
-                          key={role}
-                          onClick={() => handleToggleRole(u.id, role, has)}
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                            has
-                              ? role === "admin"
-                                ? "bg-primary/15 text-primary"
-                                : role === "premium"
-                                  ? "bg-yellow-500/15 text-yellow-600"
-                                  : "bg-accent/15 text-accent"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          }`}
+                        <button key={role} onClick={() => handleToggleRole(u.id, role, has)}
+                          className={`win98-button text-[9px] px-1 py-0 ${has ? "font-bold" : "opacity-50"}`}
+                          style={has ? { backgroundColor: role === "admin" ? "#cce" : role === "premium" ? "#fec" : "#cec" } : {}}
                         >
-                          {has ? "✓ " : ""}{role}
+                          {has ? "✓" : ""}{role}
                         </button>
                       );
                     })}
                   </div>
                 </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      onClick={() => setEditingUser(u)}
-                      className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
-                      title="Edit user details"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setResetPasswordUser(u)}
-                      className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
-                      title="Reset password"
-                    >
-                      <KeyRound className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(u.id, u.email || "")}
-                      className="p-1.5 text-muted-foreground hover:text-destructive rounded-md hover:bg-muted transition-colors"
-                      title="Delete user"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                <td className="px-2 py-1.5 text-right">
+                  <div className="flex items-center justify-end gap-0.5">
+                    <button onClick={() => setEditingUser(u)} className="win98-button px-1 py-0 text-[9px]" title="Edit"><Pencil className="h-2.5 w-2.5" /></button>
+                    <button onClick={() => setResetPasswordUser(u)} className="win98-button px-1 py-0 text-[9px]" title="Reset Password"><KeyRound className="h-2.5 w-2.5" /></button>
+                    <button onClick={() => handleDelete(u.id, u.email || "")} className="win98-button px-1 py-0 text-[9px]" title="Delete"><Trash2 className="h-2.5 w-2.5" /></button>
                   </div>
                 </td>
               </tr>
@@ -351,6 +254,7 @@ function UsersTab() {
   );
 }
 
+// ============== Modals ==============
 function EditUserModal({ user, onClose, onSaved }: { user: AdminUser; onClose: () => void; onSaved: () => void }) {
   const [email, setEmail] = useState(user.email || "");
   const [displayName, setDisplayName] = useState(user.display_name || "");
@@ -362,69 +266,36 @@ function EditUserModal({ user, onClose, onSaved }: { user: AdminUser; onClose: (
       const updates: { email?: string; display_name?: string } = {};
       if (email !== user.email) updates.email = email;
       if (displayName !== (user.display_name || "")) updates.display_name = displayName;
-
-      if (Object.keys(updates).length === 0) {
-        toast.info("No changes to save");
-        onClose();
-        return;
-      }
-
+      if (Object.keys(updates).length === 0) { toast.info("No changes"); onClose(); return; }
       await updateUser(user.id, updates);
-      toast.success("User updated successfully");
+      toast.success("User updated");
       onSaved();
-    } catch (e: any) {
-      toast.error("Failed to update user: " + e.message);
-    } finally {
-      setSaving(false);
-    }
+    } catch (e: any) { toast.error("Failed: " + e.message); }
+    finally { setSaving(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-display text-lg font-semibold text-foreground">Edit User</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={onClose}>
+      <div className="win98-raised bg-[hsl(var(--win98-face))] w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="win98-titlebar">
+          <span className="text-[11px] flex-1">Edit User</span>
+          <button className="win98-titlebar-btn" onClick={onClose}>✕</button>
         </div>
-
-        <div className="space-y-4">
+        <div className="p-3 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-              maxLength={255}
-            />
+            <label className="block text-[10px] font-bold mb-1">Email:</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="win98-input w-full" maxLength={255} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Display Name</label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-              placeholder="Display name"
-              maxLength={100}
-            />
+            <label className="block text-[10px] font-bold mb-1">Display Name:</label>
+            <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="win98-input w-full" placeholder="Display name" maxLength={100} />
           </div>
-        </div>
-
-        <div className="flex items-center gap-3 mt-6">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save Changes
-          </button>
-          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">
-            Cancel
-          </button>
+          <div className="flex gap-2 pt-1">
+            <button onClick={handleSave} disabled={saving} className="win98-button text-[10px] font-bold disabled:opacity-50">
+              {saving ? "Saving..." : "Save"}
+            </button>
+            <button onClick={onClose} className="win98-button text-[10px]">Cancel</button>
+          </div>
         </div>
       </div>
     </div>
@@ -437,87 +308,47 @@ function ResetPasswordModal({ user, onClose, onSaved }: { user: AdminUser; onClo
   const [saving, setSaving] = useState(false);
 
   const handleReset = async () => {
-    if (!password.trim()) {
-      toast.error("Password is required");
-      return;
-    }
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
+    if (!password.trim()) { toast.error("Password is required"); return; }
+    if (password.length < 6) { toast.error("Min 6 characters"); return; }
+    if (password !== confirmPassword) { toast.error("Passwords don't match"); return; }
     setSaving(true);
     try {
       await resetUserPassword(user.id, password);
       toast.success(`Password reset for ${user.email}`);
       onSaved();
-    } catch (e: any) {
-      toast.error("Failed to reset password: " + e.message);
-    } finally {
-      setSaving(false);
-    }
+    } catch (e: any) { toast.error("Failed: " + e.message); }
+    finally { setSaving(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h3 className="font-display text-lg font-semibold text-foreground">Reset Password</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">{user.email}</p>
-          </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={onClose}>
+      <div className="win98-raised bg-[hsl(var(--win98-face))] w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="win98-titlebar">
+          <span className="text-[11px] flex-1">Reset Password — {user.email}</span>
+          <button className="win98-titlebar-btn" onClick={onClose}>✕</button>
         </div>
-
-        <div className="space-y-4">
+        <div className="p-3 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">New Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-              placeholder="Min 6 characters"
-              maxLength={128}
-            />
+            <label className="block text-[10px] font-bold mb-1">New Password:</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="win98-input w-full" placeholder="Min 6 characters" maxLength={128} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-              placeholder="Re-enter password"
-              maxLength={128}
-              onKeyDown={(e) => e.key === "Enter" && handleReset()}
-            />
+            <label className="block text-[10px] font-bold mb-1">Confirm Password:</label>
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="win98-input w-full" placeholder="Re-enter" maxLength={128} onKeyDown={(e) => e.key === "Enter" && handleReset()} />
           </div>
-        </div>
-
-        <div className="flex items-center gap-3 mt-6">
-          <button
-            onClick={handleReset}
-            disabled={saving}
-            className="flex items-center gap-1.5 bg-destructive text-destructive-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-destructive/90 disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
-            Reset Password
-          </button>
-          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">
-            Cancel
-          </button>
+          <div className="flex gap-2 pt-1">
+            <button onClick={handleReset} disabled={saving} className="win98-button text-[10px] font-bold disabled:opacity-50">
+              {saving ? "Resetting..." : "Reset Password"}
+            </button>
+            <button onClick={onClose} className="win98-button text-[10px]">Cancel</button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
+// ============== CandidatesTab ==============
 function CandidatesTab() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -526,11 +357,7 @@ function CandidatesTab() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("candidate_profiles")
-      .select("id, name, slug, content")
-      .eq("is_subpage", false)
-      .order("name");
+    const { data } = await supabase.from("candidate_profiles").select("id, name, slug, content").eq("is_subpage", false).order("name");
     setItems((data || []) as ContentItem[]);
     setLoading(false);
   }, []);
@@ -539,58 +366,42 @@ function CandidatesTab() {
 
   const handleSave = async (item: ContentItem) => {
     if (item.id) {
-      const { error } = await supabase
-        .from("candidate_profiles")
-        .update({ name: item.name, slug: item.slug, content: item.content })
-        .eq("id", item.id);
+      const { error } = await supabase.from("candidate_profiles").update({ name: item.name, slug: item.slug, content: item.content }).eq("id", item.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Updated");
     } else {
-      const { error } = await supabase
-        .from("candidate_profiles")
-        .insert({ name: item.name || "", slug: item.slug, content: item.content, github_path: `candidates/${item.slug}.md` });
+      const { error } = await supabase.from("candidate_profiles").insert({ name: item.name || "", slug: item.slug, content: item.content, github_path: `candidates/${item.slug}.md` });
       if (error) { toast.error(error.message); return; }
       toast.success("Created");
     }
-    setEditing(null);
-    setCreating(false);
-    load();
+    setEditing(null); setCreating(false); load();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this candidate profile?")) return;
     const { error } = await supabase.from("candidate_profiles").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
-    toast.success("Deleted");
-    load();
+    toast.success("Deleted"); load();
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (loading) return <div className="text-center py-8 text-[10px]">Loading...</div>;
 
   if (editing || creating) {
-    return (
-      <ContentEditor
-        item={editing || { id: "", name: "", slug: "", content: "" }}
-        nameLabel="Name"
-        onSave={handleSave}
-        onCancel={() => { setEditing(null); setCreating(false); }}
-      />
-    );
+    return <ContentEditor item={editing || { id: "", name: "", slug: "", content: "" }} nameLabel="Name" onSave={handleSave} onCancel={() => { setEditing(null); setCreating(false); }} />;
   }
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-muted-foreground">{items.length} candidate profiles</p>
-        <button onClick={() => setCreating(true)} className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Add Profile
-        </button>
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{items.length} profiles</span>
+        <button onClick={() => setCreating(true)} className="win98-button text-[10px] flex items-center gap-1"><Plus className="h-3 w-3" /> Add</button>
       </div>
       <ContentList items={items} onEdit={setEditing} onDelete={handleDelete} nameField="name" />
     </div>
   );
 }
 
+// ============== ContentTab ==============
 function ContentTab({ table, nameField, hasState, hasSummary }: { table: string; nameField: string; hasState?: boolean; hasSummary?: boolean }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -599,10 +410,7 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from(table as "maga_files" | "local_impacts" | "narrative_reports")
-      .select("*")
-      .order(nameField);
+    const { data } = await supabase.from(table as "maga_files" | "local_impacts" | "narrative_reports").select("*").order(nameField);
     setItems((data || []) as unknown as ContentItem[]);
     setLoading(false);
   }, [table, nameField]);
@@ -611,13 +419,8 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
 
   const handleSave = async (item: ContentItem) => {
     const record: any = { slug: item.slug, content: item.content };
-    if (hasState) {
-      record.state = item.state || item.name;
-      if (hasSummary) record.summary = item.summary || "";
-    } else {
-      record.name = item.name;
-    }
-
+    if (hasState) { record.state = item.state || item.name; if (hasSummary) record.summary = item.summary || ""; }
+    else { record.name = item.name; }
     if (item.id) {
       const { error } = await supabase.from(table as "maga_files" | "local_impacts" | "narrative_reports").update(record).eq("id", item.id);
       if (error) { toast.error(error.message); return; }
@@ -627,165 +430,97 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
       if (error) { toast.error(error.message); return; }
       toast.success("Created");
     }
-    setEditing(null);
-    setCreating(false);
-    load();
+    setEditing(null); setCreating(false); load();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this item?")) return;
     const { error } = await supabase.from(table as "maga_files" | "local_impacts" | "narrative_reports").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
-    toast.success("Deleted");
-    load();
+    toast.success("Deleted"); load();
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (loading) return <div className="text-center py-8 text-[10px]">Loading...</div>;
 
   if (editing || creating) {
-    return (
-      <ContentEditor
-        item={editing || { id: "", name: "", state: "", slug: "", content: "", summary: "" }}
-        nameLabel={hasState ? "State" : "Name"}
-        hasState={hasState}
-        hasSummary={hasSummary}
-        onSave={handleSave}
-        onCancel={() => { setEditing(null); setCreating(false); }}
-      />
-    );
+    return <ContentEditor item={editing || { id: "", name: "", state: "", slug: "", content: "", summary: "" }} nameLabel={hasState ? "State" : "Name"} hasState={hasState} hasSummary={hasSummary} onSave={handleSave} onCancel={() => { setEditing(null); setCreating(false); }} />;
   }
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-muted-foreground">{items.length} items</p>
-        <button onClick={() => setCreating(true)} className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Add Item
-        </button>
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{items.length} items</span>
+        <button onClick={() => setCreating(true)} className="win98-button text-[10px] flex items-center gap-1"><Plus className="h-3 w-3" /> Add</button>
       </div>
       <ContentList items={items} onEdit={setEditing} onDelete={handleDelete} nameField={nameField} />
     </div>
   );
 }
 
-function ContentList({ items, onEdit, onDelete, nameField }: {
-  items: ContentItem[];
-  onEdit: (item: ContentItem) => void;
-  onDelete: (id: string) => void;
-  nameField: string;
-}) {
+// ============== Shared components ==============
+function ContentList({ items, onEdit, onDelete, nameField }: { items: ContentItem[]; onEdit: (item: ContentItem) => void; onDelete: (id: string) => void; nameField: string; }) {
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <div className="divide-y divide-border">
-        {items.map(item => (
-          <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/20">
-            <div className="min-w-0">
-              <p className="font-medium text-foreground truncate">
-                {(item as any)[nameField] || item.slug}
-              </p>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">
-                /{item.slug} · {item.content.length} chars
-              </p>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <button onClick={() => onEdit(item)} className="p-2 text-muted-foreground hover:text-foreground">
-                <Edit3 className="h-4 w-4" />
-              </button>
-              <button onClick={() => onDelete(item.id)} className="p-2 text-muted-foreground hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
+    <div className="win98-sunken bg-white">
+      {items.map(item => (
+        <div key={item.id} className="flex items-center justify-between px-2 py-1.5 border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] text-[10px]">
+          <div className="min-w-0">
+            <div className="font-bold truncate">{(item as any)[nameField] || item.slug}</div>
+            <div className="text-[9px] text-[hsl(var(--muted-foreground))] truncate">/{item.slug} · {item.content.length} chars</div>
           </div>
-        ))}
-        {items.length === 0 && (
-          <div className="px-4 py-12 text-center text-muted-foreground">No items yet. Click "Add" to create one.</div>
-        )}
-      </div>
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button onClick={() => onEdit(item)} className="win98-button px-1 py-0 text-[9px]"><Edit3 className="h-2.5 w-2.5" /></button>
+            <button onClick={() => onDelete(item.id)} className="win98-button px-1 py-0 text-[9px]"><Trash2 className="h-2.5 w-2.5" /></button>
+          </div>
+        </div>
+      ))}
+      {items.length === 0 && (
+        <div className="px-2 py-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">No items yet.</div>
+      )}
     </div>
   );
 }
 
 function ContentEditor({ item, nameLabel, hasState, hasSummary, onSave, onCancel }: {
-  item: ContentItem;
-  nameLabel: string;
-  hasState?: boolean;
-  hasSummary?: boolean;
-  onSave: (item: ContentItem) => void;
-  onCancel: () => void;
+  item: ContentItem; nameLabel: string; hasState?: boolean; hasSummary?: boolean; onSave: (item: ContentItem) => void; onCancel: () => void;
 }) {
   const [form, setForm] = useState({ ...item });
   const isNew = !item.id;
 
   return (
-    <div className="bg-card rounded-xl border border-border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-display text-lg font-semibold text-foreground">
-          {isNew ? "Create New" : "Edit"} Item
-        </h2>
-        <button onClick={onCancel} className="text-muted-foreground hover:text-foreground">
-          <X className="h-5 w-5" />
-        </button>
+    <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[11px] font-bold">{isNew ? "Create New" : "Edit"} Item</span>
+        <button onClick={onCancel} className="win98-titlebar-btn">✕</button>
       </div>
-
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">{nameLabel}</label>
-            <input
-              value={hasState ? (form.state || "") : (form.name || "")}
-              onChange={(e) => hasState
-                ? setForm(f => ({ ...f, state: e.target.value }))
-                : setForm(f => ({ ...f, name: e.target.value }))
-              }
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-              placeholder={nameLabel}
-            />
+            <label className="block text-[10px] font-bold mb-1">{nameLabel}:</label>
+            <input value={hasState ? (form.state || "") : (form.name || "")}
+              onChange={(e) => hasState ? setForm(f => ({ ...f, state: e.target.value })) : setForm(f => ({ ...f, name: e.target.value }))}
+              className="win98-input w-full" placeholder={nameLabel} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Slug</label>
-            <input
-              value={form.slug}
-              onChange={(e) => setForm(f => ({ ...f, slug: e.target.value }))}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-              placeholder="url-friendly-slug"
-            />
+            <label className="block text-[10px] font-bold mb-1">Slug:</label>
+            <input value={form.slug} onChange={(e) => setForm(f => ({ ...f, slug: e.target.value }))} className="win98-input w-full" placeholder="url-slug" />
           </div>
         </div>
-
         {hasSummary && (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Summary</label>
-            <input
-              value={form.summary || ""}
-              onChange={(e) => setForm(f => ({ ...f, summary: e.target.value }))}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-              placeholder="Brief summary..."
-            />
+            <label className="block text-[10px] font-bold mb-1">Summary:</label>
+            <input value={form.summary || ""} onChange={(e) => setForm(f => ({ ...f, summary: e.target.value }))} className="win98-input w-full" placeholder="Brief summary" />
           </div>
         )}
-
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Content (Markdown)</label>
-          <textarea
-            value={form.content}
-            onChange={(e) => setForm(f => ({ ...f, content: e.target.value }))}
-            rows={20}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground font-mono"
-            placeholder="# Title\n\nContent here..."
-          />
+          <label className="block text-[10px] font-bold mb-1">Content (Markdown):</label>
+          <textarea value={form.content} onChange={(e) => setForm(f => ({ ...f, content: e.target.value }))} rows={16}
+            className="win98-input w-full font-[monospace] text-[10px]" placeholder="# Title..." />
         </div>
-
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            onClick={() => onSave(form)}
-            className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90"
-          >
-            <Save className="h-4 w-4" />
-            {isNew ? "Create" : "Save Changes"}
+        <div className="flex gap-2 pt-1">
+          <button onClick={() => onSave(form)} className="win98-button text-[10px] font-bold">
+            <Save className="h-3 w-3 inline mr-1" />{isNew ? "Create" : "Save"}
           </button>
-          <button onClick={onCancel} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">
-            Cancel
-          </button>
+          <button onClick={onCancel} className="win98-button text-[10px]">Cancel</button>
         </div>
       </div>
     </div>
