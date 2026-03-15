@@ -182,6 +182,9 @@ export default function ApiPage() {
           )}
         </div>
 
+        {/* Usage Analytics */}
+        <ApiAnalytics />
+
         {/* Active keys */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-3">
