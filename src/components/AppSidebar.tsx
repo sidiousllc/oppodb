@@ -1,4 +1,4 @@
-import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass, LogOut, ShieldCheck, BarChart3, Scale } from "lucide-react";
+import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass, LogOut, ShieldCheck, BarChart3, Scale, Key } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getLastSyncTime } from "@/data/githubSync";
