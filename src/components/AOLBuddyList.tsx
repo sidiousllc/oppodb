@@ -275,7 +275,7 @@ export function AOLBuddyList() {
                 </div>
                 <div className="flex justify-center gap-1 mt-1">
                   <button
-                    onClick={playYouveGotMail}
+                    onClick={() => { playYouveGotMail(); openMail(); }}
                     disabled={soundPlaying}
                     className="win98-button text-[9px] px-2 py-0 h-[16px] flex items-center gap-1"
                   >
