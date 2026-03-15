@@ -49,6 +49,10 @@ export default function AuthPage() {
 
   const onSubmit = mode === "login" ? handleLogin : mode === "signup" ? handleSignup : handleForgotPassword;
 
+  if (showDialUp) {
+    return <AOLDialUpAnimation onComplete={() => setShowDialUp(false)} />;
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[hsl(180,50%,50%)] px-4">
       <Win98Window
