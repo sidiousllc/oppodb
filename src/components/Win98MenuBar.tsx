@@ -3,13 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 
-interface MenuItem {
+type MenuItem = {
   label: string;
   icon?: string;
   onClick?: () => void;
-  separator?: boolean;
   disabled?: boolean;
-}
+  separator?: false;
+} | {
+  separator: true;
+  label?: never;
+  icon?: never;
+  onClick?: never;
+  disabled?: never;
+};
 
 interface MenuDef {
   label: string;
