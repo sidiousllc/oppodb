@@ -95,6 +95,38 @@ export default function Index() {
     }
   }, []);
 
+  const ALL_STATES = [
+    "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS",
+    "KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY",
+    "NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
+  ];
+
+  const handleBulkElectionSync = useCallback(async () => {
+    setElectionSyncing(true);
+    let totalUpserted = 0;
+    try {
+      for (let i = 0; i < ALL_STATES.length; i++) {
+        const st = ALL_STATES[i];
+        setElectionSyncProgress(`${st} (${i + 1}/${ALL_STATES.length})`);
+        try {
+          const result = await syncCongressionalElections(st);
+          if (result.success) totalUpserted += result.upserted;
+        } catch {
+          console.warn(`Election sync failed for ${st}`);
+        }
+        // Small delay to avoid overwhelming the API
+        if (i < ALL_STATES.length - 1) await new Promise(r => setTimeout(r, 500));
+      }
+      setElectionSyncProgress(`Done — ${totalUpserted} results synced`);
+      setTimeout(() => setElectionSyncProgress(""), 4000);
+    } catch (e) {
+      console.error("Bulk election sync error:", e);
+      setElectionSyncProgress("Error");
+    } finally {
+      setElectionSyncing(false);
+    }
+  }, []);
+
   const handleStateLegSync = useCallback(async (stateAbbr?: string, chamber?: string) => {
     setStateLegSyncing(true);
     try {
