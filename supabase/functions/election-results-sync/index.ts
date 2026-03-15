@@ -96,8 +96,11 @@ async function fetchElectionFilesFromGitHub(
 
   if (!response) {
     console.error(`Could not find repo for ${stateAbbr}`);
-    return [];
+    return { files: [], branch: "master" };
   }
+
+  // Determine which branch worked
+  const usedBranch = response.url.includes("/main?") ? "main" : "master";
 
   const data = await response.json();
   if (!data.tree) return [];
