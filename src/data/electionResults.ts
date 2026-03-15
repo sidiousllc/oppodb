@@ -69,21 +69,49 @@ export function groupByElectionCycle(results: ElectionResult[]): ElectionCycle[]
   return Array.from(cycleMap.values()).sort((a, b) => b.year - a.year);
 }
 
+const ALL_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS",
+  "KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY",
+  "NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
+];
+
 export async function syncElectionResults(
   stateAbbr?: string,
+  onProgress?: (completed: number, total: number, currentState: string) => void,
 ): Promise<{ success: boolean; upserted?: number; error?: string }> {
-  const params: Record<string, string> = {};
-  if (stateAbbr) params.state = stateAbbr;
-
-  const queryString = new URLSearchParams(params).toString();
-  const functionUrl = queryString
-    ? `election-results-sync?${queryString}`
-    : "election-results-sync";
-
-  const { data, error } = await supabase.functions.invoke(functionUrl);
-  if (error) {
-    console.error("Election results sync error:", error);
-    return { success: false, error: error.message };
+  if (stateAbbr) {
+    // Single state — one call
+    const { data, error } = await supabase.functions.invoke(
+      `election-results-sync?state=${stateAbbr}`,
+    );
+    if (error) {
+      console.error("Election results sync error:", error);
+      return { success: false, error: error.message };
+    }
+    return data as { success: boolean; upserted?: number; error?: string };
   }
-  return data as { success: boolean; upserted?: number; error?: string };
+
+  // All states — batch one at a time
+  let totalUpserted = 0;
+  let errors = 0;
+  for (let i = 0; i < ALL_STATES.length; i++) {
+    const st = ALL_STATES[i];
+    onProgress?.(i, ALL_STATES.length, st);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        `election-results-sync?state=${st}`,
+      );
+      if (error) {
+        console.error(`Sync error for ${st}:`, error);
+        errors++;
+      } else if (data?.upserted) {
+        totalUpserted += data.upserted;
+      }
+    } catch (e) {
+      console.error(`Sync failed for ${st}:`, e);
+      errors++;
+    }
+  }
+  onProgress?.(ALL_STATES.length, ALL_STATES.length, "done");
+  return { success: true, upserted: totalUpserted, error: errors > 0 ? `${errors} states had errors` : undefined };
 }
