@@ -1,17 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { createApiKey, listApiKeys, revokeApiKey, deleteApiKey, getApiBaseUrl, type ApiKey } from "@/lib/apiKeys";
 import { ApiAnalytics } from "@/components/ApiAnalytics";
 import {
   ArrowLeft, Key, Plus, Copy, Check, Trash2, Ban, Eye, EyeOff,
-  Loader2, Code, ExternalLink, BookOpen,
+  Loader2, Code, ExternalLink, BookOpen, Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ApiPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { canAccessApi, loading: roleLoading } = useUserRole();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -33,6 +35,28 @@ export default function ApiPage() {
     loadKeys();
   }, [loadKeys]);
 
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!canAccessApi) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-background gap-4">
+        <Shield className="h-16 w-16 text-destructive" />
+        <h1 className="text-2xl font-bold text-foreground">Premium Access Required</h1>
+        <p className="text-muted-foreground text-center max-w-md">
+          API and MCP server access is available to premium users. Contact an administrator to upgrade your account.
+        </p>
+        <button onClick={() => navigate("/")} className="text-primary hover:underline text-sm">
+          ← Back to Dashboard
+        </button>
+      </div>
+    );
+  }
   const handleCreate = async () => {
     if (!newKeyName.trim()) {
       toast.error("Please enter a name for your API key");

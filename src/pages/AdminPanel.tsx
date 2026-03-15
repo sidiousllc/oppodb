@@ -232,6 +232,7 @@ function UsersTab() {
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
               >
                 <option value="user">User</option>
+                <option value="premium">Premium</option>
                 <option value="moderator">Moderator</option>
                 <option value="admin">Admin</option>
               </select>
@@ -267,7 +268,7 @@ function UsersTab() {
                 <td className="px-4 py-3 text-muted-foreground">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "Never"}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1.5">
-                    {["admin", "moderator"].map(role => {
+                    {["admin", "moderator", "premium"].map(role => {
                       const has = u.roles.includes(role);
                       return (
                         <button
@@ -277,7 +278,9 @@ function UsersTab() {
                             has
                               ? role === "admin"
                                 ? "bg-primary/15 text-primary"
-                                : "bg-accent/15 text-accent"
+                                : role === "premium"
+                                  ? "bg-yellow-500/15 text-yellow-600"
+                                  : "bg-accent/15 text-accent"
                               : "bg-muted text-muted-foreground hover:bg-muted/80"
                           }`}
                         >
