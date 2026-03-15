@@ -28,6 +28,72 @@ export interface ElectionCycle {
   totalVotes: number;
 }
 
+export interface SkippedFile {
+  file: string;
+  reason: string;
+}
+
+export interface StateSyncResult {
+  state: string;
+  success: boolean;
+  upserted: number;
+  errors: number;
+  files_processed: number;
+  files_found: number;
+  skipped_files: SkippedFile[];
+  error?: string;
+}
+
+export interface SyncReport {
+  success: boolean;
+  totalUpserted: number;
+  totalErrors: number;
+  stateResults: StateSyncResult[];
+  resumedFrom?: string;
+}
+
+// ─── Checkpoint helpers ──────────────────────────────────────────────────────
+
+const CHECKPOINT_KEY = "election-sync-checkpoint";
+
+interface SyncCheckpoint {
+  completedStates: string[];
+  timestamp: number;
+  stateResults: StateSyncResult[];
+}
+
+function loadCheckpoint(): SyncCheckpoint | null {
+  try {
+    const raw = localStorage.getItem(CHECKPOINT_KEY);
+    if (!raw) return null;
+    const cp = JSON.parse(raw) as SyncCheckpoint;
+    // Expire checkpoints older than 2 hours
+    if (Date.now() - cp.timestamp > 2 * 60 * 60 * 1000) {
+      localStorage.removeItem(CHECKPOINT_KEY);
+      return null;
+    }
+    return cp;
+  } catch {
+    return null;
+  }
+}
+
+function saveCheckpoint(cp: SyncCheckpoint) {
+  try {
+    localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(cp));
+  } catch { /* ignore quota errors */ }
+}
+
+export function clearSyncCheckpoint() {
+  localStorage.removeItem(CHECKPOINT_KEY);
+}
+
+export function hasSyncCheckpoint(): boolean {
+  return loadCheckpoint() !== null;
+}
+
+// ─── Queries ─────────────────────────────────────────────────────────────────
+
 export async function fetchElectionResults(
   stateAbbr: string,
   chamber: string,
@@ -69,6 +135,8 @@ export function groupByElectionCycle(results: ElectionResult[]): ElectionCycle[]
   return Array.from(cycleMap.values()).sort((a, b) => b.year - a.year);
 }
 
+// ─── Sync ────────────────────────────────────────────────────────────────────
+
 const ALL_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS",
   "KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY",
@@ -78,7 +146,8 @@ const ALL_STATES = [
 export async function syncElectionResults(
   stateAbbr?: string,
   onProgress?: (completed: number, total: number, currentState: string) => void,
-): Promise<{ success: boolean; upserted?: number; error?: string }> {
+  resume?: boolean,
+): Promise<SyncReport> {
   if (stateAbbr) {
     // Single state — one call
     const { data, error } = await supabase.functions.invoke(
@@ -86,32 +155,108 @@ export async function syncElectionResults(
     );
     if (error) {
       console.error("Election results sync error:", error);
-      return { success: false, error: error.message };
+      return {
+        success: false,
+        totalUpserted: 0,
+        totalErrors: 1,
+        stateResults: [{
+          state: stateAbbr,
+          success: false,
+          upserted: 0,
+          errors: 1,
+          files_processed: 0,
+          files_found: 0,
+          skipped_files: [],
+          error: error.message,
+        }],
+      };
     }
-    return data as { success: boolean; upserted?: number; error?: string };
+    const stateResult: StateSyncResult = {
+      state: stateAbbr,
+      success: data?.success ?? true,
+      upserted: data?.upserted ?? 0,
+      errors: data?.errors ?? 0,
+      files_processed: data?.files_processed ?? 0,
+      files_found: data?.files_found ?? 0,
+      skipped_files: data?.skipped_files ?? [],
+      error: data?.error,
+    };
+    return {
+      success: true,
+      totalUpserted: stateResult.upserted,
+      totalErrors: stateResult.errors,
+      stateResults: [stateResult],
+    };
   }
 
-  // All states — batch one at a time
-  let totalUpserted = 0;
-  let errors = 0;
+  // All states — batch one at a time with checkpoint support
+  let checkpoint = resume ? loadCheckpoint() : null;
+  const completedStates = new Set(checkpoint?.completedStates ?? []);
+  const stateResults: StateSyncResult[] = checkpoint?.stateResults ?? [];
+  let totalUpserted = stateResults.reduce((s, r) => s + r.upserted, 0);
+  let totalErrors = stateResults.reduce((s, r) => s + r.errors, 0);
+  const resumedFrom = checkpoint ? ALL_STATES.find(s => !completedStates.has(s)) : undefined;
+
   for (let i = 0; i < ALL_STATES.length; i++) {
     const st = ALL_STATES[i];
-    onProgress?.(i, ALL_STATES.length, st);
+    if (completedStates.has(st)) continue;
+
+    onProgress?.(completedStates.size, ALL_STATES.length, st);
     try {
       const { data, error } = await supabase.functions.invoke(
         `election-results-sync?state=${st}`,
       );
+      const stateResult: StateSyncResult = {
+        state: st,
+        success: !error && (data?.success ?? true),
+        upserted: data?.upserted ?? 0,
+        errors: data?.errors ?? 0,
+        files_processed: data?.files_processed ?? 0,
+        files_found: data?.files_found ?? 0,
+        skipped_files: data?.skipped_files ?? [],
+        error: error?.message || data?.error,
+      };
+      stateResults.push(stateResult);
       if (error) {
         console.error(`Sync error for ${st}:`, error);
-        errors++;
-      } else if (data?.upserted) {
-        totalUpserted += data.upserted;
+        totalErrors++;
+      } else {
+        totalUpserted += stateResult.upserted;
+        totalErrors += stateResult.errors;
       }
     } catch (e) {
       console.error(`Sync failed for ${st}:`, e);
-      errors++;
+      stateResults.push({
+        state: st,
+        success: false,
+        upserted: 0,
+        errors: 1,
+        files_processed: 0,
+        files_found: 0,
+        skipped_files: [],
+        error: e instanceof Error ? e.message : "Unknown error",
+      });
+      totalErrors++;
     }
+
+    completedStates.add(st);
+    // Save checkpoint after each state
+    saveCheckpoint({
+      completedStates: Array.from(completedStates),
+      timestamp: Date.now(),
+      stateResults,
+    });
   }
+
   onProgress?.(ALL_STATES.length, ALL_STATES.length, "done");
-  return { success: true, upserted: totalUpserted, error: errors > 0 ? `${errors} states had errors` : undefined };
+  // Clear checkpoint on successful completion
+  clearSyncCheckpoint();
+
+  return {
+    success: true,
+    totalUpserted,
+    totalErrors,
+    stateResults,
+    resumedFrom,
+  };
 }

@@ -344,19 +344,29 @@ Deno.serve(async (req) => {
     const filesToProcess = files.slice(0, 3);
     let totalUpserted = 0;
     let totalErrors = 0;
+    const skippedFiles: Array<{ file: string; reason: string }> = [];
 
+    // Also track files we already skipped due to size in fetchCSVResponse
     for (const file of filesToProcess) {
       const electionInfo = extractElectionDate(file);
-      if (!electionInfo) continue;
+      if (!electionInfo) {
+        skippedFiles.push({ file, reason: "Could not parse election date from filename" });
+        continue;
+      }
 
       const csvResponse = await fetchCSVResponse(stateFilter, file, branch, githubToken);
-      if (!csvResponse) continue;
+      if (!csvResponse) {
+        skippedFiles.push({ file, reason: "File too large (>6MB) or fetch failed" });
+        continue;
+      }
 
       const { districtResults, processedRows } = await processCSVResponse(csvResponse);
       console.log(`${file}: ${processedRows} rows processed`);
 
-      if (districtResults.size === 0) continue;
-
+      if (districtResults.size === 0) {
+        skippedFiles.push({ file, reason: "No state legislative races found in file" });
+        continue;
+      }
       // Calculate totals and find winners per race
       const districtTotals = new Map<string, number>();
       const districtTopVotes = new Map<string, number>();
@@ -413,6 +423,11 @@ Deno.serve(async (req) => {
 
     console.log(`${stateFilter}: ${totalUpserted} results upserted`);
 
+    // Add skipped info for files beyond the 3 limit
+    for (const file of files.slice(3)) {
+      skippedFiles.push({ file, reason: "Exceeded per-invocation file limit (max 3)" });
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -420,6 +435,8 @@ Deno.serve(async (req) => {
         upserted: totalUpserted,
         errors: totalErrors,
         files_processed: filesToProcess.length,
+        files_found: files.length,
+        skipped_files: skippedFiles,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
