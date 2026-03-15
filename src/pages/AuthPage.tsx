@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Win98Window } from "@/components/Win98Window";
+import { AOLDialUpAnimation } from "@/components/AOLDialUpAnimation";
 
 export default function AuthPage() {
+  const [showDialUp, setShowDialUp] = useState(true);
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,6 +48,10 @@ export default function AuthPage() {
   };
 
   const onSubmit = mode === "login" ? handleLogin : mode === "signup" ? handleSignup : handleForgotPassword;
+
+  if (showDialUp) {
+    return <AOLDialUpAnimation onComplete={() => setShowDialUp(false)} />;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[hsl(180,50%,50%)] px-4">
