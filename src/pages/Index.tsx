@@ -20,7 +20,7 @@ import { DistrictDetail } from "@/components/DistrictDetail";
 import { DistrictMap, type PVIFilter, PVI_FILTER_OPTIONS } from "@/components/DistrictMap";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
-import { ChatPanel } from "@/components/ChatPanel";
+import { CandidateEditor } from "@/components/CandidateEditor";
 import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { DistrictCompare } from "@/components/DistrictCompare";
