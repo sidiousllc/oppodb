@@ -109,19 +109,27 @@ function StateLegOverviewMapInner({ stateAbbr, onDistrictClick }: StateLegOvervi
 
     const fetchLayer = async (layerId: number): Promise<GeoJSON | null> => {
       const url = `${TIGERWEB_BASE}/${layerId}/query?` + new URLSearchParams({
-        where: `STATE='${fips}'`,
+        where: `GEOID LIKE '${fips}%'`,
         outFields: "GEOID,BASENAME,NAME",
         f: "geojson",
         outSR: "4326",
         returnGeometry: "true",
-        maxAllowableOffset: "0.005",
+        maxAllowableOffset: "0.01",
       }).toString();
 
       try {
         const r = await fetch(url, { signal: controller.signal });
-        if (!r.ok) return null;
+        if (!r.ok) {
+          console.warn(`TIGERweb ${r.status} for layer ${layerId}, state ${stateAbbr}`);
+          return null;
+        }
         const data = await r.json();
+        if (data.error) {
+          console.warn(`TIGERweb query error for layer ${layerId}:`, data.error);
+          return null;
+        }
         if (data.features && data.features.length > 0) return data;
+        console.warn(`TIGERweb no features for layer ${layerId}, state ${stateAbbr}`);
         return null;
       } catch (e) {
         if ((e as Error).name !== "AbortError") console.warn(`TIGERweb error for layer ${layerId}:`, e);
