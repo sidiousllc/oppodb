@@ -21,6 +21,7 @@ export default function ApiPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const baseUrl = getApiBaseUrl();
+  const mcpUrl = baseUrl.replace("/public-api", "/mcp-server");
 
   const loadKeys = useCallback(async () => {
     const data = await listApiKeys();
