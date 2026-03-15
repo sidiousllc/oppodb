@@ -6,12 +6,13 @@ import {
   ALL_STATE_ABBRS,
   STATE_NAMES,
 } from "@/data/stateLegislativeIntel";
-import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign, Vote } from "lucide-react";
+import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign, Vote, Download } from "lucide-react";
 import { StateLegBoundaryMap } from "./StateLegBoundaryMap";
 import { StateLegOverviewMap } from "./StateLegOverviewMap";
 import { ElectionResultsSection } from "./ElectionResultsSection";
 import { syncElectionResults, hasSyncCheckpoint, clearSyncCheckpoint, type SyncReport } from "@/data/electionResults";
 import { SyncResultsPanel } from "./SyncResultsPanel";
+import { exportStateLegPDF } from "@/lib/stateLegExport";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
