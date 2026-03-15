@@ -8,6 +8,7 @@ import {
 } from "@/data/stateLegislativeIntel";
 import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign, Vote } from "lucide-react";
 import { StateLegBoundaryMap } from "./StateLegBoundaryMap";
+import { StateLegOverviewMap } from "./StateLegOverviewMap";
 import { ElectionResultsSection } from "./ElectionResultsSection";
 import { syncElectionResults } from "@/data/electionResults";
 
