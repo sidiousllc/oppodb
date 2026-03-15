@@ -648,6 +648,9 @@ export default function Index() {
       {/* AOL Buddy List */}
       <AOLBuddyList />
 
+      {/* AOL Mail Window */}
+      {isMailOpen && <AOLMailWindow onClose={closeMail} />}
+
       {/* Research assistant is now in the AOL address bar */}
     </>
   );
