@@ -27,6 +27,7 @@ import { Win98Window } from "@/components/Win98Window";
 import { Win98Taskbar } from "@/components/Win98Taskbar";
 import { AOLToolbar } from "@/components/AOLToolbar";
 import { Win98Desktop } from "@/components/Win98Desktop";
+import { AOLBuddyList } from "@/components/AOLBuddyList";
 import { AOLMailWindow } from "@/components/AOLMailWindow";
 import { useMail } from "@/contexts/MailContext";
 import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";

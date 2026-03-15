@@ -3,7 +3,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 
-export function Win98Taskbar() {
+interface Win98TaskbarProps {
+  minimizedWindow?: string;
+  onRestoreWindow?: () => void;
+}
+
+export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarProps) {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { canManageContent, canAccessApi } = useUserRole();
@@ -94,8 +99,15 @@ export function Win98Taskbar() {
 
         <div className="h-[20px] w-[2px] border-l border-l-[hsl(var(--win98-shadow))] border-r border-r-[hsl(var(--win98-highlight))]" />
 
-        {/* Active window */}
-        <button className="win98-button flex-1 max-w-[250px] text-left truncate text-[11px] font-bold h-[22px] border-[hsl(var(--win98-dark-shadow))_hsl(var(--win98-highlight))_hsl(var(--win98-highlight))_hsl(var(--win98-dark-shadow))]">
+        {/* Active/minimized window button */}
+        <button
+          onClick={() => onRestoreWindow?.()}
+          className={`win98-button flex-1 max-w-[250px] text-left truncate text-[11px] h-[22px] ${
+            minimizedWindow
+              ? "font-normal"
+              : "font-bold border-[hsl(var(--win98-dark-shadow))_hsl(var(--win98-highlight))_hsl(var(--win98-highlight))_hsl(var(--win98-dark-shadow))]"
+          }`}
+        >
           📁 Opposition Research Database
         </button>
 
