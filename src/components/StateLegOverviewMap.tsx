@@ -109,7 +109,7 @@ function StateLegOverviewMapInner({ stateAbbr, onDistrictClick }: StateLegOvervi
 
     const fetchLayer = async (layerId: number): Promise<GeoJSON | null> => {
       const url = `${TIGERWEB_BASE}/${layerId}/query?` + new URLSearchParams({
-        where: `STATE='${fips}'`,
+        where: `GEOID LIKE '${fips}%'`,
         outFields: "GEOID,BASENAME,NAME",
         f: "geojson",
         outSR: "4326",
