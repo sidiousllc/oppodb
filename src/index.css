@@ -97,7 +97,7 @@
     border-color: hsl(var(--win98-highlight)) hsl(var(--win98-dark-shadow)) hsl(var(--win98-dark-shadow)) hsl(var(--win98-highlight));
     box-shadow: inset 1px 1px 0 hsl(var(--win98-light)), inset -1px -1px 0 hsl(var(--win98-shadow));
     padding: 2px 8px;
-    font-size: 11px;
+    font-size: 16.5px;
     font-family: var(--font-body);
     min-height: 22px;
     cursor: pointer;
