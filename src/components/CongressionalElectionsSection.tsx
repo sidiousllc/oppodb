@@ -6,8 +6,9 @@ import {
   groupCongressionalByCycle,
   syncCongressionalElections,
 } from "@/data/congressionalElections";
-import { Vote, Trophy, Users, TrendingUp, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { Vote, Trophy, Users, TrendingUp, ChevronDown, ChevronUp, RefreshCw, Download } from "lucide-react";
 import { toast } from "sonner";
+import { exportElectionResultsPDF } from "@/lib/electionExport";
 
 const PARTY_COLORS: Record<string, string> = {
   DEM: "hsl(var(--primary))",
