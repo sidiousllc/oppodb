@@ -99,12 +99,15 @@ export async function fetchElectionResults(
   chamber: string,
   districtNumber: string,
 ): Promise<ElectionResult[]> {
+  // Normalize district number: strip leading zeros to match election results format
+  const normalizedDistrict = districtNumber.replace(/^0+/, "") || "0";
+
   const { data, error } = await supabase
     .from("state_leg_election_results")
     .select("*")
     .eq("state_abbr", stateAbbr)
     .eq("chamber", chamber)
-    .eq("district_number", districtNumber)
+    .eq("district_number", normalizedDistrict)
     .order("election_year", { ascending: false })
     .order("votes", { ascending: false });
 
