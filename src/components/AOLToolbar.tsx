@@ -149,13 +149,7 @@ export function AOLToolbar({ onBack, onRefresh, currentSection, currentSlug }: A
   return (
     <div className="bg-[hsl(var(--win98-face))] border-b-2 border-b-[hsl(var(--win98-shadow))]">
       {/* Menu bar */}
-      <div className="flex items-center gap-0 px-1 py-[1px] text-[11px] border-b border-b-[hsl(var(--win98-shadow))]">
-        <button className="px-2 py-[1px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">File</button>
-        <button className="px-2 py-[1px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">Edit</button>
-        <button className="px-2 py-[1px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">View</button>
-        <button className="px-2 py-[1px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">Favorites</button>
-        <button className="px-2 py-[1px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">Help</button>
-      </div>
+      <Win98MenuBar />
 
       {/* Navigation toolbar */}
       <div className="flex items-center gap-1 px-2 py-1">
