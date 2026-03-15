@@ -232,15 +232,30 @@ export function ElectionResultsSection({
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
-      <h3 className="font-display text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-        <Vote className="h-4 w-4 text-primary" />
-        Election History
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
+          <Vote className="h-4 w-4 text-primary" />
+          Election History
+          {cycles.length > 0 && (
+            <span className="text-xs font-normal text-muted-foreground">
+              ({cycles.length} {cycles.length === 1 ? "cycle" : "cycles"})
+            </span>
+          )}
+        </h3>
         {cycles.length > 0 && (
-          <span className="text-xs font-normal text-muted-foreground">
-            ({cycles.length} {cycles.length === 1 ? "cycle" : "cycles"})
-          </span>
+          <button
+            onClick={() => exportElectionResultsPDF(
+              cycles,
+              `${stateAbbr} ${chamber === "house" ? "House" : "Senate"} District ${districtNumber}`,
+              `State Legislative • ${chamber === "house" ? "House" : "Senate"} Chamber`,
+            )}
+            className="flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+          >
+            <Download className="h-3 w-3" />
+            PDF
+          </button>
         )}
-      </h3>
+      </div>
 
       {cycles.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-4">
