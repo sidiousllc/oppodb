@@ -305,9 +305,10 @@ export function StateLegislativeSection({
     onSync(state, chamber);
   }, [selectedState, chamberFilter, onSync]);
 
-  const handleElectionSync = useCallback(async () => {
+  const handleElectionSync = useCallback(async (resume = false) => {
     setSyncingElections(true);
     setSyncProgress("");
+    setSyncReport(null);
     try {
       const state = selectedState !== "all" ? selectedState : undefined;
       const result = await syncElectionResults(state, (completed, total, currentState) => {
@@ -316,7 +317,8 @@ export function StateLegislativeSection({
         } else {
           setSyncProgress(`${currentState} (${completed + 1}/${total})`);
         }
-      });
+      }, resume);
+      setSyncReport(result);
       console.log("Election sync result:", result);
     } catch (e) {
       console.error("Election sync error:", e);
