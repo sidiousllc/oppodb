@@ -646,8 +646,7 @@ export default function Index() {
       {/* AOL Buddy List */}
       <AOLBuddyList />
 
-      {/* Chat panel */}
-      <ChatPanel />
+      {/* Research assistant is now in the AOL address bar */}
     </>
   );
 }
