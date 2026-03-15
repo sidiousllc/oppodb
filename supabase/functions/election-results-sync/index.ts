@@ -143,7 +143,7 @@ async function fetchElectionFilesFromGitHub(
 
   // Sort by date descending, take recent elections
   files.sort().reverse();
-  return files.slice(0, 10); // Last 10 election files
+  return { files: files.slice(0, 10), branch: usedBranch };
 }
 
 async function fetchAndParseCSV(
