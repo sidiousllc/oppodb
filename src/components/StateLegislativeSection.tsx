@@ -424,7 +424,7 @@ export function StateLegislativeSection({
           {syncingElections ? (
             <>
               <span className="h-3 w-3 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-              Syncing Elections…
+              {syncProgress || "Syncing Elections…"}
             </>
           ) : (
             <>
