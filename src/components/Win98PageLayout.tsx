@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Win98Window } from "./Win98Window";
 import { Win98Taskbar } from "./Win98Taskbar";
 import { AOLBuddyList } from "./AOLBuddyList";
+import { Win98MenuBar } from "./Win98MenuBar";
 import { ArrowLeft, ArrowRight, RotateCw, Home, Star, Mail } from "lucide-react";
 
 interface Win98PageLayoutProps {
@@ -26,21 +27,15 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
           {/* Toolbar */}
           <div className="bg-[hsl(var(--win98-face))] border-b-2 border-b-[hsl(var(--win98-shadow))]">
             {/* Menu bar */}
-            <div className="flex items-center gap-0 px-1 py-[1px] text-[11px] border-b border-b-[hsl(var(--win98-shadow))]">
-              <button className="px-2 py-[1px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">File</button>
-              <button className="px-2 py-[1px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">Edit</button>
-              <button className="px-2 py-[1px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">View</button>
-              <button className="px-2 py-[1px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">Favorites</button>
-              <button className="px-2 py-[1px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">Help</button>
-            </div>
+            <Win98MenuBar />
 
             {/* Navigation toolbar */}
             <div className="flex items-center gap-1 px-2 py-1">
-              <button onClick={() => navigate("/")} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Back">
+              <button onClick={() => navigate(-1 as any)} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Back">
                 <ArrowLeft className="h-4 w-4" />
                 <span>Back</span>
               </button>
-              <button className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Forward">
+              <button onClick={() => window.history.forward()} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Forward">
                 <ArrowRight className="h-4 w-4" />
                 <span>Forward</span>
               </button>
@@ -52,11 +47,11 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
                 <Home className="h-4 w-4" />
                 <span>Home</span>
               </button>
-              <button className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Favorites">
+              <button onClick={() => navigate("/profile")} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Favorites / Profile">
                 <Star className="h-4 w-4" />
                 <span>Favorites</span>
               </button>
-              <button className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Mail">
+              <button onClick={() => { const el = document.querySelector('[title="AOL Buddy List"]') as HTMLButtonElement; el?.click(); }} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Open Buddy List / Mail">
                 <Mail className="h-4 w-4" />
                 <span>Mail</span>
               </button>
@@ -75,7 +70,7 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
                   {addressUrl || `aol://ordb.research/${title.toLowerCase().replace(/\s+/g, "-")}`}
                 </span>
               </div>
-              <button className="win98-button text-[11px] px-3">Go</button>
+              <button className="win98-button text-[11px] px-3" onClick={() => window.location.reload()}>Go</button>
             </div>
           </div>
 
