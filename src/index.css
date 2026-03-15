@@ -129,7 +129,7 @@
     background: linear-gradient(90deg, hsl(var(--win98-titlebar)), hsl(220 60% 60%));
     color: white;
     font-weight: 700;
-    font-size: 16.5px;
+    font-size: 11px;
     padding: 2px 4px;
     display: flex;
     align-items: center;
