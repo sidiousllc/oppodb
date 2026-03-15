@@ -353,6 +353,75 @@ export type Database = {
         }
         Relationships: []
       }
+      state_leg_election_results: {
+        Row: {
+          candidate_name: string
+          chamber: string
+          created_at: string
+          district_number: string
+          election_date: string | null
+          election_type: string
+          election_year: number
+          id: string
+          is_incumbent: boolean | null
+          is_winner: boolean | null
+          is_write_in: boolean | null
+          party: string | null
+          raw_data: Json | null
+          source: string | null
+          state_abbr: string
+          total_votes: number | null
+          turnout: number | null
+          updated_at: string
+          vote_pct: number | null
+          votes: number | null
+        }
+        Insert: {
+          candidate_name: string
+          chamber: string
+          created_at?: string
+          district_number: string
+          election_date?: string | null
+          election_type?: string
+          election_year: number
+          id?: string
+          is_incumbent?: boolean | null
+          is_winner?: boolean | null
+          is_write_in?: boolean | null
+          party?: string | null
+          raw_data?: Json | null
+          source?: string | null
+          state_abbr: string
+          total_votes?: number | null
+          turnout?: number | null
+          updated_at?: string
+          vote_pct?: number | null
+          votes?: number | null
+        }
+        Update: {
+          candidate_name?: string
+          chamber?: string
+          created_at?: string
+          district_number?: string
+          election_date?: string | null
+          election_type?: string
+          election_year?: number
+          id?: string
+          is_incumbent?: boolean | null
+          is_winner?: boolean | null
+          is_write_in?: boolean | null
+          party?: string | null
+          raw_data?: Json | null
+          source?: string | null
+          state_abbr?: string
+          total_votes?: number | null
+          turnout?: number | null
+          updated_at?: string
+          vote_pct?: number | null
+          votes?: number | null
+        }
+        Relationships: []
+      }
       state_legislative_profiles: {
         Row: {
           asian_pct: number | null
