@@ -1,10 +1,11 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Win98Window } from "./Win98Window";
 import { Win98Taskbar } from "./Win98Taskbar";
 import { AOLBuddyList } from "./AOLBuddyList";
 import { AOLMailWindow } from "./AOLMailWindow";
 import { Win98MenuBar } from "./Win98MenuBar";
+import { Win98Desktop } from "./Win98Desktop";
 import { useMail } from "@/contexts/MailContext";
 import { ArrowLeft, ArrowRight, RotateCw, Home, Star, Mail } from "lucide-react";
 
@@ -18,14 +19,19 @@ interface Win98PageLayoutProps {
 export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: Win98PageLayoutProps) {
   const navigate = useNavigate();
   const { toggleMail, closeMail, isMailOpen, unreadCount } = useMail();
+  const [isMinimized, setIsMinimized] = useState(false);
 
   return (
     <>
       <div className="flex flex-col h-screen bg-[hsl(var(--background))] pb-[28px]">
+        {isMinimized ? (
+          <Win98Desktop onOpenWindow={() => setIsMinimized(false)} />
+        ) : (
         <Win98Window
           title={`AOL - ${title}`}
           icon={<span className="text-[14px]">🌐</span>}
           maximized
+          onMinimize={() => setIsMinimized(true)}
         >
           {/* Toolbar */}
           <div className="bg-[hsl(var(--win98-face))] border-b-2 border-b-[hsl(var(--win98-shadow))]">
@@ -109,9 +115,13 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
             </div>
           </div>
         </Win98Window>
+        )}
       </div>
 
-      <Win98Taskbar />
+      <Win98Taskbar
+        minimizedWindow={isMinimized ? title : undefined}
+        onRestoreWindow={() => setIsMinimized(false)}
+      />
       <AOLBuddyList />
       {isMailOpen && <AOLMailWindow onClose={closeMail} />}
     </>
