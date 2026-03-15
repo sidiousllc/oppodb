@@ -20,17 +20,21 @@ import {
 const STATE_GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
 // Esri Living Atlas — 118th Congressional Districts (reliable, CORS-enabled)
-const CD_GEO_URL =
-  "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query?" +
-  new URLSearchParams({
+const ESRI_CD_BASE =
+  "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query";
+
+function buildCdUrl(offset: number): string {
+  return `${ESRI_CD_BASE}?${new URLSearchParams({
     where: "1=1",
     outFields: "STATE_ABBR,CDFIPS,DISTRICTID",
     f: "geojson",
     outSR: "4326",
     returnGeometry: "true",
-    resultRecordCount: "500",
+    resultRecordCount: "250",
+    resultOffset: String(offset),
     maxAllowableOffset: "0.03",
-  }).toString();
+  }).toString()}`;
+}
 
 // ─── Types & Exports ────────────────────────────────────────────────────────
 
