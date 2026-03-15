@@ -115,9 +115,13 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
             </div>
           </div>
         </Win98Window>
+        )}
       </div>
 
-      <Win98Taskbar />
+      <Win98Taskbar
+        minimizedWindow={isMinimized ? title : undefined}
+        onRestoreWindow={() => setIsMinimized(false)}
+      />
       <AOLBuddyList />
       {isMailOpen && <AOLMailWindow onClose={closeMail} />}
     </>
