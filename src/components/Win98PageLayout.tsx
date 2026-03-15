@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Win98Window } from "./Win98Window";
 import { Win98Taskbar } from "./Win98Taskbar";
 import { AOLBuddyList } from "./AOLBuddyList";
+import { AOLMailWindow } from "./AOLMailWindow";
 import { Win98MenuBar } from "./Win98MenuBar";
+import { useMail } from "@/contexts/MailContext";
 import { ArrowLeft, ArrowRight, RotateCw, Home, Star, Mail } from "lucide-react";
 
 interface Win98PageLayoutProps {
@@ -15,6 +17,7 @@ interface Win98PageLayoutProps {
 
 export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: Win98PageLayoutProps) {
   const navigate = useNavigate();
+  const { toggleMail, closeMail, isMailOpen, unreadCount } = useMail();
 
   return (
     <>
@@ -51,9 +54,14 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
                 <Star className="h-4 w-4" />
                 <span>Favorites</span>
               </button>
-              <button onClick={() => { const el = document.querySelector('[title="AOL Buddy List"]') as HTMLButtonElement; el?.click(); }} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px]" title="Open Buddy List / Mail">
+              <button onClick={toggleMail} className="win98-button flex flex-col items-center gap-0 px-2 py-0.5 text-[9px] relative" title="You've Got Mail!">
                 <Mail className="h-4 w-4" />
                 <span>Mail</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] text-[7px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
               </button>
               <div className="ml-auto flex items-center">
                 <div className="w-[50px] h-[40px] flex items-center justify-center">
@@ -98,6 +106,7 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
 
       <Win98Taskbar />
       <AOLBuddyList />
+      {isMailOpen && <AOLMailWindow onClose={closeMail} />}
     </>
   );
 }

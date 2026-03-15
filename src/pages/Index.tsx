@@ -27,6 +27,8 @@ import { Win98Window } from "@/components/Win98Window";
 import { Win98Taskbar } from "@/components/Win98Taskbar";
 import { AOLToolbar } from "@/components/AOLToolbar";
 import { AOLBuddyList } from "@/components/AOLBuddyList";
+import { AOLMailWindow } from "@/components/AOLMailWindow";
+import { useMail } from "@/contexts/MailContext";
 import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
@@ -34,6 +36,7 @@ import { StateLegislativeSection } from "@/components/StateLegislativeSection";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
+  const { isMailOpen, closeMail } = useMail();
   const [loaded, setLoaded] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [search, setSearch] = useState("");
@@ -644,6 +647,9 @@ export default function Index() {
 
       {/* AOL Buddy List */}
       <AOLBuddyList />
+
+      {/* AOL Mail Window */}
+      {isMailOpen && <AOLMailWindow onClose={closeMail} />}
 
       {/* Research assistant is now in the AOL address bar */}
     </>

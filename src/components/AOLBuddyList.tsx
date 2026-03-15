@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Win98Window } from "./Win98Window";
 import { AOLIMWindow } from "./AOLIMWindow";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMail } from "@/contexts/MailContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface OnlineUser {
@@ -19,6 +20,7 @@ const STATUS_ICONS: Record<string, string> = {
 
 export function AOLBuddyList() {
   const { user } = useAuth();
+  const { openMail } = useMail();
   const [isOpen, setIsOpen] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [openChats, setOpenChats] = useState<Map<string, string>>(new Map()); // userId -> displayName
@@ -273,7 +275,7 @@ export function AOLBuddyList() {
                 </div>
                 <div className="flex justify-center gap-1 mt-1">
                   <button
-                    onClick={playYouveGotMail}
+                    onClick={() => { playYouveGotMail(); openMail(); }}
                     disabled={soundPlaying}
                     className="win98-button text-[9px] px-2 py-0 h-[16px] flex items-center gap-1"
                   >

@@ -688,6 +688,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_mail: {
+        Row: {
+          body: string
+          created_at: string
+          deleted_by_recipient: boolean
+          deleted_by_sender: boolean
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+          subject: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          deleted_by_recipient?: boolean
+          deleted_by_sender?: boolean
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+          subject?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          deleted_by_recipient?: boolean
+          deleted_by_sender?: boolean
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       user_presence: {
         Row: {
           created_at: string
