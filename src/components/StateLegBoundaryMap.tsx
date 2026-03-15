@@ -126,15 +126,18 @@ function StateLegBoundaryMapInner({ stateAbbr, stateName, chamber, districtNumbe
   const bounds = useMemo(() => {
     if (!districtGeo?.features?.length) return null;
     let minLng = 180, maxLng = -180, minLat = 90, maxLat = -90;
+    let hasCoords = false;
     const processCoords = (coords: number[]) => {
       const [lng, lat] = coords;
       if (lng < minLng) minLng = lng;
       if (lng > maxLng) maxLng = lng;
       if (lat < minLat) minLat = lat;
       if (lat > maxLat) maxLat = lat;
+      hasCoords = true;
     };
     districtGeo.features.forEach((f) => {
       const geom = f.geometry;
+      if (!geom) return;
       if (geom.type === "Polygon") {
         (geom.coordinates as number[][][]).forEach((ring) => ring.forEach(processCoords));
       } else if (geom.type === "MultiPolygon") {
@@ -143,7 +146,7 @@ function StateLegBoundaryMapInner({ stateAbbr, stateName, chamber, districtNumbe
         );
       }
     });
-    return { minLng, maxLng, minLat, maxLat };
+    return hasCoords ? { minLng, maxLng, minLat, maxLat } : null;
   }, [districtGeo]);
 
   if (loading) {
