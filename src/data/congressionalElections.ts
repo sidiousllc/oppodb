@@ -33,7 +33,7 @@ export async function fetchCongressionalElectionResults(
   const normalizedDistrict = districtNumber.replace(/^0+/, "") || "0";
 
   const { data, error } = await supabase
-    .from("congressional_election_results" as any)
+    .from("congressional_election_results")
     .select("*")
     .eq("state_abbr", stateAbbr)
     .eq("district_number", normalizedDistrict)
