@@ -43,6 +43,13 @@ function SignOutButton() {
   return (
     <div className="space-y-1.5">
       <button
+        onClick={() => navigate("/api")}
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-1.5 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+      >
+        <Key className="h-3.5 w-3.5" />
+        API Access
+      </button>
+      <button
         onClick={() => navigate("/profile")}
         className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-1.5 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
       >
