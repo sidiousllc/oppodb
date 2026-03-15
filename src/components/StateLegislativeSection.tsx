@@ -10,7 +10,8 @@ import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, Tr
 import { StateLegBoundaryMap } from "./StateLegBoundaryMap";
 import { StateLegOverviewMap } from "./StateLegOverviewMap";
 import { ElectionResultsSection } from "./ElectionResultsSection";
-import { syncElectionResults } from "@/data/electionResults";
+import { syncElectionResults, hasSyncCheckpoint, clearSyncCheckpoint, type SyncReport } from "@/data/electionResults";
+import { SyncResultsPanel } from "./SyncResultsPanel";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
