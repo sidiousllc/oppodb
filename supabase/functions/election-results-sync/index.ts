@@ -33,40 +33,151 @@ function classifyChamber(office: string): "house" | "senate" | null {
   return null;
 }
 
-function parseCSV(text: string): Record<string, string>[] {
-  const lines = text.split("\n").filter(l => l.trim());
-  if (lines.length < 2) return [];
+type DistrictAggregate = {
+  candidate: string;
+  party: string;
+  votes: number;
+  district: string;
+  chamber: "house" | "senate";
+  winner: boolean;
+  writeIn: boolean;
+};
 
-  // Handle quoted CSV fields
-  function splitCSVLine(line: string): string[] {
-    const fields: string[] = [];
-    let current = "";
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') {
-        inQuotes = !inQuotes;
-      } else if (ch === "," && !inQuotes) {
-        fields.push(current.trim());
-        current = "";
+function splitCSVLine(line: string): string[] {
+  const fields: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+    } else if (ch === "," && !inQuotes) {
+      fields.push(current.trim());
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+
+  fields.push(current.trim());
+  return fields;
+}
+
+async function processCSVResponse(
+  response: Response,
+): Promise<{ districtResults: Map<string, DistrictAggregate>; processedRows: number }> {
+  const districtResults = new Map<string, DistrictAggregate>();
+  let processedRows = 0;
+
+  const stream = response.body?.pipeThrough(new TextDecoderStream());
+  if (!stream) return { districtResults, processedRows };
+
+  const reader = stream.getReader();
+  let headers: string[] | null = null;
+  let buffer = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    buffer += value;
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
+
+      if (!headers) {
+        headers = splitCSVLine(line).map((h) => h.toLowerCase().replace(/"/g, ""));
+        continue;
+      }
+
+      const vals = splitCSVLine(line);
+      if (vals.length < headers.length - 2) continue;
+
+      const row: Record<string, string> = {};
+      headers.forEach((h, idx) => {
+        row[h] = (vals[idx] || "").replace(/"/g, "");
+      });
+
+      const office = row["office"] || "";
+      const chamber = classifyChamber(office);
+      if (!chamber) continue;
+
+      const district = (row["district"] || "").replace(/^0+/, "") || "0";
+      const candidate = row["candidate"] || "";
+      if (!candidate || candidate === "Total") continue;
+
+      const votes = parseInt(row["votes"] || "0") || 0;
+      const party = row["party"] || "";
+      const winner = (row["winner"] || "").toLowerCase() === "true";
+      const writeIn = (row["write_in"] || row["writein"] || "").toLowerCase() === "true";
+
+      const key = `${chamber}-${district}-${candidate}`;
+      const existing = districtResults.get(key);
+      if (existing) {
+        existing.votes += votes;
+        if (winner) existing.winner = true;
       } else {
-        current += ch;
+        districtResults.set(key, {
+          candidate,
+          party,
+          votes,
+          district,
+          chamber,
+          winner,
+          writeIn,
+        });
+      }
+
+      processedRows++;
+    }
+  }
+
+  if (buffer.trim() && headers) {
+    const vals = splitCSVLine(buffer.trim());
+    if (vals.length >= headers.length - 2) {
+      const row: Record<string, string> = {};
+      headers.forEach((h, idx) => {
+        row[h] = (vals[idx] || "").replace(/"/g, "");
+      });
+
+      const office = row["office"] || "";
+      const chamber = classifyChamber(office);
+      if (chamber) {
+        const district = (row["district"] || "").replace(/^0+/, "") || "0";
+        const candidate = row["candidate"] || "";
+        if (candidate && candidate !== "Total") {
+          const votes = parseInt(row["votes"] || "0") || 0;
+          const party = row["party"] || "";
+          const winner = (row["winner"] || "").toLowerCase() === "true";
+          const writeIn = (row["write_in"] || row["writein"] || "").toLowerCase() === "true";
+
+          const key = `${chamber}-${district}-${candidate}`;
+          const existing = districtResults.get(key);
+          if (existing) {
+            existing.votes += votes;
+            if (winner) existing.winner = true;
+          } else {
+            districtResults.set(key, {
+              candidate,
+              party,
+              votes,
+              district,
+              chamber,
+              winner,
+              writeIn,
+            });
+          }
+          processedRows++;
+        }
       }
     }
-    fields.push(current.trim());
-    return fields;
   }
 
-  const headers = splitCSVLine(lines[0]).map(h => h.toLowerCase().replace(/"/g, ""));
-  const rows: Record<string, string>[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const vals = splitCSVLine(lines[i]);
-    if (vals.length < headers.length - 2) continue; // skip malformed
-    const row: Record<string, string> = {};
-    headers.forEach((h, idx) => { row[h] = (vals[idx] || "").replace(/"/g, ""); });
-    rows.push(row);
-  }
-  return rows;
+  return { districtResults, processedRows };
 }
 
 async function fetchElectionFilesFromGitHub(
@@ -103,12 +214,13 @@ async function fetchElectionFilesFromGitHub(
   const usedBranch = response.url.includes("/main?") ? "main" : "master";
 
   const data = await response.json();
-  if (!data.tree) return [];
+  if (!data.tree) return { files: [], branch: usedBranch };
 
   // Filter for CSV files containing state legislative results
   // Some states have dedicated state_house/state_senate files, others have combined files
   const dedicatedFiles: string[] = [];
   const combinedFiles: string[] = [];
+  const precinctFallbackFiles: string[] = [];
 
   for (const item of data.tree) {
     if (item.type !== "blob") continue;
@@ -123,55 +235,60 @@ async function fetchElectionFilesFromGitHub(
       lower.includes("state_rep") || lower.includes("state_assembly") ||
       lower.includes("state_legislature")
     ) {
-      if (!lower.includes("precinct")) { // prefer non-precinct
+      if (!lower.includes("precinct")) {
         dedicatedFiles.push(path);
       }
       continue;
     }
 
-    // Combined files (have all offices) - prefer county over precinct (smaller)
+    // Combined files (have all offices) - prefer county/statewide files
     if (lower.includes("__county.csv") || lower.match(/__general\.csv$/)) {
       combinedFiles.push(path);
-    } else if (lower.includes("precinct") && combinedFiles.length === 0) {
-      // Fall back to precinct if no county-level exists
-      combinedFiles.push(path);
+    } else if (lower.includes("precinct")) {
+      // only use precinct if nothing else exists
+      precinctFallbackFiles.push(path);
     }
   }
 
-  // Use dedicated files if available, otherwise combined files
-  let files = dedicatedFiles.length > 0 ? dedicatedFiles : combinedFiles;
+  // Use dedicated files if available, otherwise combined files, finally precinct fallback
+  let files = dedicatedFiles.length > 0
+    ? dedicatedFiles
+    : (combinedFiles.length > 0 ? combinedFiles : precinctFallbackFiles);
 
   // Sort by date descending, take recent elections
   files.sort().reverse();
-  return { files: files.slice(0, 10), branch: usedBranch };
+  return { files: files.slice(0, 8), branch: usedBranch };
 }
 
-async function fetchAndParseCSV(
+async function fetchCSVResponse(
   stateAbbr: string,
   filePath: string,
   branch: string,
   githubToken: string | undefined,
-): Promise<Record<string, string>[]> {
+): Promise<Response | null> {
   const stateLower = STATE_ABBREV_TO_LOWER[stateAbbr];
   const rawUrl = `https://raw.githubusercontent.com/openelections/openelections-data-${stateLower}/${branch}/${filePath}`;
   const headers: Record<string, string> = { "User-Agent": "ORDB-Election-Sync" };
   if (githubToken) headers["Authorization"] = `token ${githubToken}`;
 
-  let response: Response;
   try {
-    response = await fetch(rawUrl, { headers });
+    const response = await fetch(rawUrl, { headers });
+    if (!response.ok) {
+      console.error(`CSV fetch error ${filePath}: ${response.status}`);
+      return null;
+    }
+
+    const contentLength = Number(response.headers.get("content-length") || "0");
+    if (contentLength > 6_000_000) {
+      console.warn(`Skipping large file ${filePath} (${contentLength} bytes)`);
+      return null;
+    }
+
+    return response;
   } catch (e) {
     console.error(`Failed to fetch CSV ${filePath}: ${e}`);
-    return [];
+    return null;
   }
-
-  if (!response.ok) {
-    console.error(`CSV fetch error ${filePath}: ${response.status}`);
-    return [];
-  }
-
-  const text = await response.text();
-  return parseCSV(text);
 }
 
 function extractElectionDate(filename: string): { date: string; year: number } | null {
@@ -223,8 +340,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Limit to 5 most recent files to stay within resource limits
-    const filesToProcess = files.slice(0, 5);
+    // Limit to 3 most recent files to stay within resource limits
+    const filesToProcess = files.slice(0, 3);
     let totalUpserted = 0;
     let totalErrors = 0;
 
@@ -232,43 +349,13 @@ Deno.serve(async (req) => {
       const electionInfo = extractElectionDate(file);
       if (!electionInfo) continue;
 
-      const rows = await fetchAndParseCSV(stateFilter, file, branch, githubToken);
-      console.log(`${file}: ${rows.length} rows`);
+      const csvResponse = await fetchCSVResponse(stateFilter, file, branch, githubToken);
+      if (!csvResponse) continue;
 
-      // Aggregate results by district
-      const districtResults = new Map<string, {
-        candidate: string;
-        party: string;
-        votes: number;
-        district: string;
-        chamber: "house" | "senate";
-        winner: boolean;
-        writeIn: boolean;
-      }>();
+      const { districtResults, processedRows } = await processCSVResponse(csvResponse);
+      console.log(`${file}: ${processedRows} rows processed`);
 
-      for (const row of rows) {
-        const office = row["office"] || "";
-        const chamber = classifyChamber(office);
-        if (!chamber) continue;
-
-        const district = (row["district"] || "").replace(/^0+/, "") || "0";
-        const candidate = row["candidate"] || "";
-        if (!candidate || candidate === "Total") continue;
-
-        const votes = parseInt(row["votes"] || "0") || 0;
-        const party = row["party"] || "";
-        const winner = (row["winner"] || "").toLowerCase() === "true";
-        const writeIn = (row["write_in"] || row["writein"] || "").toLowerCase() === "true";
-
-        const key = `${chamber}-${district}-${candidate}`;
-        const existing = districtResults.get(key);
-        if (existing) {
-          existing.votes += votes;
-          if (winner) existing.winner = true;
-        } else {
-          districtResults.set(key, { candidate, party, votes, district, chamber, winner, writeIn });
-        }
-      }
+      if (districtResults.size === 0) continue;
 
       // Calculate totals and find winners per race
       const districtTotals = new Map<string, number>();
