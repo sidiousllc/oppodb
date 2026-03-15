@@ -212,8 +212,8 @@ Deno.serve(async (req) => {
     // Process states sequentially to avoid rate limits
     for (const stateAbbr of statesToProcess) {
       console.log(`Processing ${stateAbbr}...`);
-      const files = await fetchElectionFilesFromGitHub(stateAbbr, githubToken);
-      console.log(`Found ${files.length} election files for ${stateAbbr}`);
+      const { files, branch } = await fetchElectionFilesFromGitHub(stateAbbr, githubToken);
+      console.log(`Found ${files.length} election files for ${stateAbbr} (${branch})`);
 
       if (files.length === 0) {
         stateResults[stateAbbr] = 0;
@@ -226,7 +226,7 @@ Deno.serve(async (req) => {
         const electionInfo = extractElectionDate(file);
         if (!electionInfo) continue;
 
-        const rows = await fetchAndParseCSV(stateAbbr, file, githubToken);
+        const rows = await fetchAndParseCSV(stateAbbr, file, branch, githubToken);
         console.log(`${file}: ${rows.length} rows`);
 
         // Aggregate results by district (rows might be county-level)
