@@ -55,6 +55,7 @@ export default function Index() {
   const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
   const [pviFilter, setPviFilter] = useState<PVIFilter>("all");
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [editData, setEditData] = useState<{
     id: string; name: string; slug: string; content: string;
     github_path: string; is_subpage: boolean; parent_slug: string | null; subpage_title: string | null;
