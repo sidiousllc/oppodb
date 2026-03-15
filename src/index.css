@@ -120,7 +120,7 @@
     border-color: hsl(var(--win98-shadow)) hsl(var(--win98-highlight)) hsl(var(--win98-highlight)) hsl(var(--win98-shadow));
     box-shadow: inset 1px 1px 0 hsl(var(--win98-dark-shadow));
     padding: 2px 4px;
-    font-size: 16.5px;
+    font-size: 11px;
     font-family: var(--font-body);
   }
 
