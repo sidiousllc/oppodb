@@ -349,43 +349,13 @@ Deno.serve(async (req) => {
       const electionInfo = extractElectionDate(file);
       if (!electionInfo) continue;
 
-      const rows = await fetchAndParseCSV(stateFilter, file, branch, githubToken);
-      console.log(`${file}: ${rows.length} rows`);
+      const csvResponse = await fetchCSVResponse(stateFilter, file, branch, githubToken);
+      if (!csvResponse) continue;
 
-      // Aggregate results by district
-      const districtResults = new Map<string, {
-        candidate: string;
-        party: string;
-        votes: number;
-        district: string;
-        chamber: "house" | "senate";
-        winner: boolean;
-        writeIn: boolean;
-      }>();
+      const { districtResults, processedRows } = await processCSVResponse(csvResponse);
+      console.log(`${file}: ${processedRows} rows processed`);
 
-      for (const row of rows) {
-        const office = row["office"] || "";
-        const chamber = classifyChamber(office);
-        if (!chamber) continue;
-
-        const district = (row["district"] || "").replace(/^0+/, "") || "0";
-        const candidate = row["candidate"] || "";
-        if (!candidate || candidate === "Total") continue;
-
-        const votes = parseInt(row["votes"] || "0") || 0;
-        const party = row["party"] || "";
-        const winner = (row["winner"] || "").toLowerCase() === "true";
-        const writeIn = (row["write_in"] || row["writein"] || "").toLowerCase() === "true";
-
-        const key = `${chamber}-${district}-${candidate}`;
-        const existing = districtResults.get(key);
-        if (existing) {
-          existing.votes += votes;
-          if (winner) existing.winner = true;
-        } else {
-          districtResults.set(key, { candidate, party, votes, district, chamber, winner, writeIn });
-        }
-      }
+      if (districtResults.size === 0) continue;
 
       // Calculate totals and find winners per race
       const districtTotals = new Map<string, number>();
