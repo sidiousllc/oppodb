@@ -57,27 +57,6 @@ export default function ApiPage() {
       </div>
     );
   }
-  const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [newKeyName, setNewKeyName] = useState("");
-  const [showNewKey, setShowNewKey] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-
-  const baseUrl = getApiBaseUrl();
-  const mcpUrl = baseUrl.replace("/public-api", "/mcp-server");
-
-  const loadKeys = useCallback(async () => {
-    const data = await listApiKeys();
-    setKeys(data);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    loadKeys();
-  }, [loadKeys]);
-
   const handleCreate = async () => {
     if (!newKeyName.trim()) {
       toast.error("Please enter a name for your API key");
