@@ -214,7 +214,7 @@ async function fetchElectionFilesFromGitHub(
   const usedBranch = response.url.includes("/main?") ? "main" : "master";
 
   const data = await response.json();
-  if (!data.tree) return [];
+  if (!data.tree) return { files: [], branch: usedBranch };
 
   // Filter for CSV files containing state legislative results
   // Some states have dedicated state_house/state_senate files, others have combined files
