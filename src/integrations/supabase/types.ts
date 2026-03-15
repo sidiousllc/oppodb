@@ -50,6 +50,41 @@ export type Database = {
         }
         Relationships: []
       }
+      api_request_logs: {
+        Row: {
+          api_key_id: string
+          created_at: string
+          endpoint: string
+          id: string
+          status_code: number
+          user_id: string
+        }
+        Insert: {
+          api_key_id: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          status_code?: number
+          user_id: string
+        }
+        Update: {
+          api_key_id?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          status_code?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_request_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidate_profiles: {
         Row: {
           content: string
@@ -598,6 +633,15 @@ export type Database = {
       }
       increment_api_key_usage: {
         Args: { p_key_id: string }
+        Returns: undefined
+      }
+      log_api_request: {
+        Args: {
+          p_endpoint: string
+          p_key_id: string
+          p_status?: number
+          p_user_id: string
+        }
         Returns: undefined
       }
       validate_api_key: {
