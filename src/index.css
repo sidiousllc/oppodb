@@ -67,7 +67,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
-    font-size: 11px;
+    font-size: 16.5px;
     cursor: default;
   }
 
