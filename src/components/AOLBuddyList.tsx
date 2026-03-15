@@ -20,6 +20,7 @@ const STATUS_ICONS: Record<string, string> = {
 
 export function AOLBuddyList() {
   const { user } = useAuth();
+  const { openMail } = useMail();
   const [isOpen, setIsOpen] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [openChats, setOpenChats] = useState<Map<string, string>>(new Map()); // userId -> displayName
