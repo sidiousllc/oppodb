@@ -48,15 +48,17 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/api" element={<ProtectedRoute><ApiPage /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <MailProvider>
+            <Routes>
+              <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/api" element={<ProtectedRoute><ApiPage /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </MailProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
