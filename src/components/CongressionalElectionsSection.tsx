@@ -247,14 +247,29 @@ export function CongressionalElectionsSection({ districtId }: CongressionalElect
             </span>
           )}
         </h3>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
-        >
-          <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "Syncing…" : "Sync"}
-        </button>
+        <div className="flex items-center gap-2">
+          {cycles.length > 0 && (
+            <button
+              onClick={() => exportElectionResultsPDF(
+                cycles,
+                `${districtId} Congressional Elections`,
+                `Congressional District • U.S. House`,
+              )}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+            >
+              <Download className="h-3 w-3" />
+              PDF
+            </button>
+          )}
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing…" : "Sync"}
+          </button>
+        </div>
       </div>
 
       {cycles.length === 0 ? (
