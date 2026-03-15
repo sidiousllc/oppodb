@@ -255,7 +255,7 @@ export function CongressionalElectionsSection({ districtId }: CongressionalElect
                 `${districtId} Congressional Elections`,
                 `Congressional District • U.S. House`,
               )}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+              className="win98-button text-[10px] flex items-center gap-1"
             >
               <Download className="h-3 w-3" />
               PDF

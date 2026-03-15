@@ -167,9 +167,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
           </div>
           <button
             onClick={() => exportDistrictPDF(district, cookRating)}
-            className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors shrink-0"
+            className="win98-button text-[10px] flex items-center gap-1 shrink-0"
           >
-            <Download className="h-3.5 w-3.5" />
+            <Download className="h-3 w-3" />
             PDF
           </button>
         </div>

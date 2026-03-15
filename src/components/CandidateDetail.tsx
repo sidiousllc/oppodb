@@ -194,9 +194,9 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
             {onEdit && (
               <button
                 onClick={() => onEdit(candidate.slug)}
-                className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                className="win98-button text-[10px] flex items-center gap-1"
               >
-                <Edit3 className="h-3.5 w-3.5" />
+                <Edit3 className="h-3 w-3" />
                 Edit
               </button>
             )}
