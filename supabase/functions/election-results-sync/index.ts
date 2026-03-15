@@ -76,21 +76,26 @@ async function fetchElectionFilesFromGitHub(
   const stateLower = STATE_ABBREV_TO_LOWER[stateAbbr];
   if (!stateLower) return [];
 
-  // Use GitHub API to list files in the repo
-  const repoUrl = `https://api.github.com/repos/openelections/openelections-data-${stateLower}/git/trees/master?recursive=1`;
+  // Use GitHub API to list files - try master first, then main
   const headers: Record<string, string> = { "User-Agent": "ORDB-Election-Sync" };
   if (githubToken) headers["Authorization"] = `token ${githubToken}`;
 
-  let response: Response;
-  try {
-    response = await fetch(repoUrl, { headers });
-  } catch (e) {
-    console.error(`Failed to fetch repo tree for ${stateAbbr}: ${e}`);
-    return [];
+  let response: Response | null = null;
+  for (const branch of ["master", "main"]) {
+    const repoUrl = `https://api.github.com/repos/openelections/openelections-data-${stateLower}/git/trees/${branch}?recursive=1`;
+    try {
+      const r = await fetch(repoUrl, { headers });
+      if (r.ok) {
+        response = r;
+        break;
+      }
+    } catch (e) {
+      console.error(`Failed to fetch repo tree for ${stateAbbr} (${branch}): ${e}`);
+    }
   }
 
-  if (!response.ok) {
-    console.error(`GitHub API error for ${stateAbbr}: ${response.status}`);
+  if (!response) {
+    console.error(`Could not find repo for ${stateAbbr}`);
     return [];
   }
 
