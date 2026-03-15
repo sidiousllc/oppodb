@@ -1,9 +1,8 @@
-# Welcome to your Lovable project
+# Welcome to Sidio.us Group's Opposition Research Database
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
-
+**URL**: https://lovable.dev/projects/4f0f9990-c3c0-4e04-9ceb-2c41704d227e
 ## How can I edit this code?
 
 There are several ways of editing your application.
