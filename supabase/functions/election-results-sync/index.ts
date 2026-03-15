@@ -340,8 +340,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Limit to 5 most recent files to stay within resource limits
-    const filesToProcess = files.slice(0, 5);
+    // Limit to 3 most recent files to stay within resource limits
+    const filesToProcess = files.slice(0, 3);
     let totalUpserted = 0;
     let totalErrors = 0;
 
