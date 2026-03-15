@@ -64,6 +64,10 @@
     @apply border-border;
   }
 
+  html {
+    zoom: 1.5;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
