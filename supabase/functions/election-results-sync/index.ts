@@ -72,9 +72,9 @@ function parseCSV(text: string): Record<string, string>[] {
 async function fetchElectionFilesFromGitHub(
   stateAbbr: string,
   githubToken: string | undefined,
-): Promise<string[]> {
+): Promise<{ files: string[]; branch: string }> {
   const stateLower = STATE_ABBREV_TO_LOWER[stateAbbr];
-  if (!stateLower) return [];
+  if (!stateLower) return { files: [], branch: "master" };
 
   // Use GitHub API to list files - try master first, then main
   const headers: Record<string, string> = { "User-Agent": "ORDB-Election-Sync" };
