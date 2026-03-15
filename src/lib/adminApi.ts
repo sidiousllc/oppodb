@@ -6,6 +6,8 @@ export interface AdminUser {
   created_at: string;
   last_sign_in_at: string | null;
   roles: string[];
+  display_name: string | null;
+  avatar_url: string | null;
 }
 
 export async function listUsers(): Promise<AdminUser[]> {
@@ -19,6 +21,22 @@ export async function listUsers(): Promise<AdminUser[]> {
 export async function setUserRole(userId: string, role: string, remove = false) {
   const { data, error } = await supabase.functions.invoke("admin-users", {
     body: { action: "set_role", user_id: userId, role, remove },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function updateUser(userId: string, updates: { email?: string; display_name?: string }) {
+  const { data, error } = await supabase.functions.invoke("admin-users", {
+    body: { action: "update_user", user_id: userId, ...updates },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function resetUserPassword(userId: string, newPassword: string) {
+  const { data, error } = await supabase.functions.invoke("admin-users", {
+    body: { action: "reset_password", user_id: userId, new_password: newPassword },
   });
   if (error) throw error;
   return data;

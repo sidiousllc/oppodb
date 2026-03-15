@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 Deno.serve(async (req) => {
@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify caller is admin
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -37,7 +36,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check caller is admin
     const { data: callerRoles } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -59,7 +57,6 @@ Deno.serve(async (req) => {
         });
         if (error) throw error;
 
-        // Get all roles
         const { data: allRoles } = await supabaseAdmin
           .from('user_roles')
           .select('user_id, role');
@@ -70,12 +67,23 @@ Deno.serve(async (req) => {
           roleMap[r.user_id].push(r.role);
         }
 
+        const { data: profiles } = await supabaseAdmin
+          .from('profiles')
+          .select('id, display_name, avatar_url');
+
+        const profileMap: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
+        for (const p of profiles || []) {
+          profileMap[p.id] = { display_name: p.display_name, avatar_url: p.avatar_url };
+        }
+
         const result = users.map(u => ({
           id: u.id,
           email: u.email,
           created_at: u.created_at,
           last_sign_in_at: u.last_sign_in_at,
           roles: roleMap[u.id] || ['user'],
+          display_name: profileMap[u.id]?.display_name || null,
+          avatar_url: profileMap[u.id]?.avatar_url || null,
         }));
 
         return new Response(JSON.stringify({ users: result }), {
@@ -98,6 +106,45 @@ Deno.serve(async (req) => {
             .from('user_roles')
             .upsert({ user_id, role }, { onConflict: 'user_id,role' });
         }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'update_user': {
+        const { user_id, email, display_name } = params;
+        if (!user_id) throw new Error('user_id required');
+
+        // Update email in auth if provided
+        if (email) {
+          const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { email });
+          if (error) throw error;
+        }
+
+        // Update display name in profiles if provided
+        if (display_name !== undefined) {
+          const { error } = await supabaseAdmin
+            .from('profiles')
+            .update({ display_name, updated_at: new Date().toISOString() })
+            .eq('id', user_id);
+          if (error) throw error;
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'reset_password': {
+        const { user_id, new_password } = params;
+        if (!user_id || !new_password) throw new Error('user_id and new_password required');
+        if (new_password.length < 6) throw new Error('Password must be at least 6 characters');
+
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          password: new_password,
+        });
+        if (error) throw error;
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

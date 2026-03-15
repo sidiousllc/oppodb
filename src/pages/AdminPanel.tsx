@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { listUsers, setUserRole, deleteUser, createUser, type AdminUser } from "@/lib/adminApi";
-import { ArrowLeft, Users, FileText, Globe, AlertTriangle, BookOpen, Shield, ShieldCheck, Trash2, Plus, Save, X, Edit3, Loader2, LogOut } from "lucide-react";
+import { listUsers, setUserRole, deleteUser, createUser, updateUser, resetUserPassword, type AdminUser } from "@/lib/adminApi";
+import { ArrowLeft, Users, FileText, Globe, AlertTriangle, BookOpen, Shield, ShieldCheck, Trash2, Plus, Save, X, Edit3, Loader2, LogOut, KeyRound, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 type Tab = "users" | "candidates" | "maga" | "local" | "narratives";
@@ -115,6 +115,8 @@ function UsersTab() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("user");
   const [creating, setCreating] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -249,11 +251,29 @@ function UsersTab() {
         </div>
       )}
 
+      {/* Edit User Modal */}
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSaved={() => { setEditingUser(null); loadUsers(); }}
+        />
+      )}
+
+      {/* Reset Password Modal */}
+      {resetPasswordUser && (
+        <ResetPasswordModal
+          user={resetPasswordUser}
+          onClose={() => setResetPasswordUser(null)}
+          onSaved={() => { setResetPasswordUser(null); }}
+        />
+      )}
+
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Email</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground">User</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Joined</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Last Sign In</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Roles</th>
@@ -263,7 +283,14 @@ function UsersTab() {
           <tbody>
             {users.map(u => (
               <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-                <td className="px-4 py-3 font-medium text-foreground">{u.email}</td>
+                <td className="px-4 py-3">
+                  <div>
+                    <p className="font-medium text-foreground">{u.email}</p>
+                    {u.display_name && (
+                      <p className="text-xs text-muted-foreground">{u.display_name}</p>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-muted-foreground">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "Never"}</td>
                 <td className="px-4 py-3">
@@ -291,14 +318,201 @@ function UsersTab() {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => handleDelete(u.id, u.email || "")} className="text-destructive hover:text-destructive/80 p-1">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => setEditingUser(u)}
+                      className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+                      title="Edit user details"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setResetPasswordUser(u)}
+                      className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+                      title="Reset password"
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(u.id, u.email || "")}
+                      className="p-1.5 text-muted-foreground hover:text-destructive rounded-md hover:bg-muted transition-colors"
+                      title="Delete user"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+function EditUserModal({ user, onClose, onSaved }: { user: AdminUser; onClose: () => void; onSaved: () => void }) {
+  const [email, setEmail] = useState(user.email || "");
+  const [displayName, setDisplayName] = useState(user.display_name || "");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const updates: { email?: string; display_name?: string } = {};
+      if (email !== user.email) updates.email = email;
+      if (displayName !== (user.display_name || "")) updates.display_name = displayName;
+
+      if (Object.keys(updates).length === 0) {
+        toast.info("No changes to save");
+        onClose();
+        return;
+      }
+
+      await updateUser(user.id, updates);
+      toast.success("User updated successfully");
+      onSaved();
+    } catch (e: any) {
+      toast.error("Failed to update user: " + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="font-display text-lg font-semibold text-foreground">Edit User</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              maxLength={255}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Display Name</label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              placeholder="Display name"
+              maxLength={100}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 mt-6">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Save Changes
+          </button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResetPasswordModal({ user, onClose, onSaved }: { user: AdminUser; onClose: () => void; onSaved: () => void }) {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleReset = async () => {
+    if (!password.trim()) {
+      toast.error("Password is required");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setSaving(true);
+    try {
+      await resetUserPassword(user.id, password);
+      toast.success(`Password reset for ${user.email}`);
+      onSaved();
+    } catch (e: any) {
+      toast.error("Failed to reset password: " + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="font-display text-lg font-semibold text-foreground">Reset Password</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">{user.email}</p>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">New Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              placeholder="Min 6 characters"
+              maxLength={128}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              placeholder="Re-enter password"
+              maxLength={128}
+              onKeyDown={(e) => e.key === "Enter" && handleReset()}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 mt-6">
+          <button
+            onClick={handleReset}
+            disabled={saving}
+            className="flex items-center gap-1.5 bg-destructive text-destructive-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-destructive/90 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+            Reset Password
+          </button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
