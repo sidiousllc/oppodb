@@ -13,6 +13,50 @@ import { toast } from "sonner";
 export default function ApiPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { canAccessApi, loading: roleLoading } = useUserRole();
+  const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [showNewKey, setShowNewKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  const baseUrl = getApiBaseUrl();
+  const mcpUrl = baseUrl.replace("/public-api", "/mcp-server");
+
+  const loadKeys = useCallback(async () => {
+    const data = await listApiKeys();
+    setKeys(data);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadKeys();
+  }, [loadKeys]);
+
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!canAccessApi) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-background gap-4">
+        <Shield className="h-16 w-16 text-destructive" />
+        <h1 className="text-2xl font-bold text-foreground">Premium Access Required</h1>
+        <p className="text-muted-foreground text-center max-w-md">
+          API and MCP server access is available to premium users. Contact an administrator to upgrade your account.
+        </p>
+        <button onClick={() => navigate("/")} className="text-primary hover:underline text-sm">
+          ← Back to Dashboard
+        </button>
+      </div>
+    );
+  }
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);

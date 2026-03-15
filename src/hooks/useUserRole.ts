@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-type AppRole = "admin" | "moderator" | "user";
+type AppRole = "admin" | "moderator" | "user" | "premium";
 
 export function useUserRole() {
   const { user } = useAuth();
@@ -11,7 +11,9 @@ export function useUserRole() {
 
   const isAdmin = roles.includes("admin");
   const isModerator = roles.includes("moderator");
+  const isPremium = roles.includes("premium");
   const canManageContent = isAdmin || isModerator;
+  const canAccessApi = isAdmin || isPremium;
 
   useEffect(() => {
     if (!user) {
@@ -32,5 +34,5 @@ export function useUserRole() {
       });
   }, [user]);
 
-  return { roles, isAdmin, isModerator, canManageContent, loading };
+  return { roles, isAdmin, isModerator, isPremium, canManageContent, canAccessApi, loading };
 }
