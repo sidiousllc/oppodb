@@ -271,6 +271,7 @@ export function StateLegislativeSection({
   const [selectedState, setSelectedState] = useState<string>("all");
   const [chamberFilter, setChamberFilter] = useState<ChamberFilter>("all");
   const [selectedDistrict, setSelectedDistrict] = useState<StateLegislativeProfile | null>(null);
+  const [syncingElections, setSyncingElections] = useState(false);
 
   const filtered = useMemo(() => {
     let results = districts;
@@ -298,6 +299,19 @@ export function StateLegislativeSection({
     const chamber = chamberFilter !== "all" ? chamberFilter : undefined;
     onSync(state, chamber);
   }, [selectedState, chamberFilter, onSync]);
+
+  const handleElectionSync = useCallback(async () => {
+    setSyncingElections(true);
+    try {
+      const state = selectedState !== "all" ? selectedState : undefined;
+      const result = await syncElectionResults(state);
+      console.log("Election sync result:", result);
+    } catch (e) {
+      console.error("Election sync error:", e);
+    } finally {
+      setSyncingElections(false);
+    }
+  }, [selectedState]);
 
   if (selectedDistrict) {
     return (
