@@ -260,32 +260,35 @@ async function fetchElectionFilesFromGitHub(
   return { files: files.slice(0, 8), branch: usedBranch };
 }
 
-async function fetchAndParseCSV(
+async function fetchCSVResponse(
   stateAbbr: string,
   filePath: string,
   branch: string,
   githubToken: string | undefined,
-): Promise<Record<string, string>[]> {
+): Promise<Response | null> {
   const stateLower = STATE_ABBREV_TO_LOWER[stateAbbr];
   const rawUrl = `https://raw.githubusercontent.com/openelections/openelections-data-${stateLower}/${branch}/${filePath}`;
   const headers: Record<string, string> = { "User-Agent": "ORDB-Election-Sync" };
   if (githubToken) headers["Authorization"] = `token ${githubToken}`;
 
-  let response: Response;
   try {
-    response = await fetch(rawUrl, { headers });
+    const response = await fetch(rawUrl, { headers });
+    if (!response.ok) {
+      console.error(`CSV fetch error ${filePath}: ${response.status}`);
+      return null;
+    }
+
+    const contentLength = Number(response.headers.get("content-length") || "0");
+    if (contentLength > 6_000_000) {
+      console.warn(`Skipping large file ${filePath} (${contentLength} bytes)`);
+      return null;
+    }
+
+    return response;
   } catch (e) {
     console.error(`Failed to fetch CSV ${filePath}: ${e}`);
-    return [];
+    return null;
   }
-
-  if (!response.ok) {
-    console.error(`CSV fetch error ${filePath}: ${response.status}`);
-    return [];
-  }
-
-  const text = await response.text();
-  return parseCSV(text);
 }
 
 function extractElectionDate(filename: string): { date: string; year: number } | null {
