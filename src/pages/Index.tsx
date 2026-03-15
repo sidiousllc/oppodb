@@ -22,7 +22,6 @@ import { AppSidebar, type FilterCategory, type Section } from "@/components/AppS
 import { MobileNav } from "@/components/MobileNav";
 import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
-import { supabase } from "@/integrations/supabase/client";
 import { DistrictCompare } from "@/components/DistrictCompare";
 import { Win98Window } from "@/components/Win98Window";
 import { Win98Taskbar } from "@/components/Win98Taskbar";
