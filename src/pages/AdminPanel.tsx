@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { listUsers, setUserRole, deleteUser, createUser, type AdminUser } from "@/lib/adminApi";
-import { ArrowLeft, Users, FileText, Globe, AlertTriangle, BookOpen, Shield, ShieldCheck, Trash2, Plus, Save, X, Edit3, Loader2, LogOut } from "lucide-react";
+import { listUsers, setUserRole, deleteUser, createUser, updateUser, resetUserPassword, type AdminUser } from "@/lib/adminApi";
+import { ArrowLeft, Users, FileText, Globe, AlertTriangle, BookOpen, Shield, ShieldCheck, Trash2, Plus, Save, X, Edit3, Loader2, LogOut, KeyRound, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 type Tab = "users" | "candidates" | "maga" | "local" | "narratives";
