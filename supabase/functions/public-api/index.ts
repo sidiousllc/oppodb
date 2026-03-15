@@ -241,6 +241,14 @@ Deno.serve(async (req) => {
         );
     }
 
+    // Log the request (fire and forget)
+    supabase.rpc("log_api_request", {
+      p_key_id: keyId,
+      p_user_id: userId,
+      p_endpoint: endpoint,
+      p_status: 200,
+    }).then(() => {});
+
     return new Response(
       JSON.stringify({
         data: result.data,
