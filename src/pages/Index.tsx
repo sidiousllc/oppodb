@@ -36,6 +36,7 @@ import { StateLegislativeSection } from "@/components/StateLegislativeSection";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
+  const { isMailOpen, closeMail } = useMail();
   const [loaded, setLoaded] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [search, setSearch] = useState("");
