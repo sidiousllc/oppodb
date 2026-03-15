@@ -106,6 +106,7 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
 
       <Win98Taskbar />
       <AOLBuddyList />
+      {isMailOpen && <AOLMailWindow onClose={closeMail} />}
     </>
   );
 }
