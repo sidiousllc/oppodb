@@ -273,6 +273,7 @@ export function StateLegislativeSection({
   const [chamberFilter, setChamberFilter] = useState<ChamberFilter>("all");
   const [selectedDistrict, setSelectedDistrict] = useState<StateLegislativeProfile | null>(null);
   const [syncingElections, setSyncingElections] = useState(false);
+  const [syncProgress, setSyncProgress] = useState("");
 
   const filtered = useMemo(() => {
     let results = districts;
@@ -303,14 +304,22 @@ export function StateLegislativeSection({
 
   const handleElectionSync = useCallback(async () => {
     setSyncingElections(true);
+    setSyncProgress("");
     try {
       const state = selectedState !== "all" ? selectedState : undefined;
-      const result = await syncElectionResults(state);
+      const result = await syncElectionResults(state, (completed, total, currentState) => {
+        if (currentState === "done") {
+          setSyncProgress("Complete!");
+        } else {
+          setSyncProgress(`${currentState} (${completed + 1}/${total})`);
+        }
+      });
       console.log("Election sync result:", result);
     } catch (e) {
       console.error("Election sync error:", e);
     } finally {
       setSyncingElections(false);
+      setTimeout(() => setSyncProgress(""), 3000);
     }
   }, [selectedState]);
 
@@ -415,7 +424,7 @@ export function StateLegislativeSection({
           {syncingElections ? (
             <>
               <span className="h-3 w-3 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-              Syncing Elections…
+              {syncProgress || "Syncing Elections…"}
             </>
           ) : (
             <>

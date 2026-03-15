@@ -199,153 +199,140 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const stateFilter = url.searchParams.get("state")?.toUpperCase();
 
-    const statesToProcess = stateFilter
-      ? [stateFilter]
-      : Object.keys(STATE_ABBREV_TO_LOWER);
+    // CRITICAL: Only process ONE state per invocation to stay within memory limits
+    if (!stateFilter) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Please specify a state parameter, e.g. ?state=CA. Processing all states at once exceeds memory limits. Use the frontend batch sync instead.",
+          all_states: Object.keys(STATE_ABBREV_TO_LOWER),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
-    console.log(`Processing election results for ${statesToProcess.length} states`);
+    console.log(`Processing election results for ${stateFilter}`);
 
+    const { files, branch } = await fetchElectionFilesFromGitHub(stateFilter, githubToken);
+    console.log(`Found ${files.length} election files for ${stateFilter} (${branch})`);
+
+    if (files.length === 0) {
+      return new Response(
+        JSON.stringify({ success: true, state: stateFilter, upserted: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Limit to 5 most recent files to stay within resource limits
+    const filesToProcess = files.slice(0, 5);
     let totalUpserted = 0;
     let totalErrors = 0;
-    const stateResults: Record<string, number> = {};
 
-    // Process states sequentially to avoid rate limits
-    for (const stateAbbr of statesToProcess) {
-      console.log(`Processing ${stateAbbr}...`);
-      const { files, branch } = await fetchElectionFilesFromGitHub(stateAbbr, githubToken);
-      console.log(`Found ${files.length} election files for ${stateAbbr} (${branch})`);
+    for (const file of filesToProcess) {
+      const electionInfo = extractElectionDate(file);
+      if (!electionInfo) continue;
 
-      if (files.length === 0) {
-        stateResults[stateAbbr] = 0;
-        continue;
+      const rows = await fetchAndParseCSV(stateFilter, file, branch, githubToken);
+      console.log(`${file}: ${rows.length} rows`);
+
+      // Aggregate results by district
+      const districtResults = new Map<string, {
+        candidate: string;
+        party: string;
+        votes: number;
+        district: string;
+        chamber: "house" | "senate";
+        winner: boolean;
+        writeIn: boolean;
+      }>();
+
+      for (const row of rows) {
+        const office = row["office"] || "";
+        const chamber = classifyChamber(office);
+        if (!chamber) continue;
+
+        const district = (row["district"] || "").replace(/^0+/, "") || "0";
+        const candidate = row["candidate"] || "";
+        if (!candidate || candidate === "Total") continue;
+
+        const votes = parseInt(row["votes"] || "0") || 0;
+        const party = row["party"] || "";
+        const winner = (row["winner"] || "").toLowerCase() === "true";
+        const writeIn = (row["write_in"] || row["writein"] || "").toLowerCase() === "true";
+
+        const key = `${chamber}-${district}-${candidate}`;
+        const existing = districtResults.get(key);
+        if (existing) {
+          existing.votes += votes;
+          if (winner) existing.winner = true;
+        } else {
+          districtResults.set(key, { candidate, party, votes, district, chamber, winner, writeIn });
+        }
       }
 
-      let stateRecords = 0;
+      // Calculate totals and find winners per race
+      const districtTotals = new Map<string, number>();
+      const districtTopVotes = new Map<string, number>();
+      for (const [, result] of districtResults) {
+        const raceKey = `${result.chamber}-${result.district}`;
+        districtTotals.set(raceKey, (districtTotals.get(raceKey) || 0) + result.votes);
+        const current = districtTopVotes.get(raceKey) || 0;
+        if (result.votes > current) districtTopVotes.set(raceKey, result.votes);
+      }
 
-      for (const file of files) {
-        const electionInfo = extractElectionDate(file);
-        if (!electionInfo) continue;
+      const records: Array<Record<string, unknown>> = [];
+      for (const [, result] of districtResults) {
+        const raceKey = `${result.chamber}-${result.district}`;
+        const totalVotes = districtTotals.get(raceKey) || 0;
+        const votePct = totalVotes > 0 ? Math.round((result.votes / totalVotes) * 1000) / 10 : null;
+        const isWinner = result.winner || (result.votes > 0 && result.votes === districtTopVotes.get(raceKey));
 
-        const rows = await fetchAndParseCSV(stateAbbr, file, branch, githubToken);
-        console.log(`${file}: ${rows.length} rows`);
+        records.push({
+          state_abbr: stateFilter,
+          chamber: result.chamber,
+          district_number: result.district.replace(/^0+/, "") || "0",
+          election_year: electionInfo.year,
+          election_date: electionInfo.date,
+          election_type: "general",
+          candidate_name: result.candidate,
+          party: result.party,
+          votes: result.votes,
+          vote_pct: votePct,
+          is_winner: isWinner,
+          is_write_in: result.writeIn,
+          total_votes: totalVotes,
+          source: "openelections",
+          updated_at: new Date().toISOString(),
+        });
+      }
 
-        // Aggregate results by district (rows might be county-level)
-        const districtResults = new Map<string, {
-          candidate: string;
-          party: string;
-          votes: number;
-          district: string;
-          chamber: "house" | "senate";
-          winner: boolean;
-          writeIn: boolean;
-        }>();
-
-        for (const row of rows) {
-          const office = row["office"] || "";
-          const chamber = classifyChamber(office);
-          if (!chamber) continue;
-
-          const district = (row["district"] || "").replace(/^0+/, "") || "0";
-          const candidate = row["candidate"] || "";
-          if (!candidate || candidate === "Total") continue;
-
-          const votes = parseInt(row["votes"] || "0") || 0;
-          const party = row["party"] || "";
-          const winner = (row["winner"] || "").toLowerCase() === "true";
-          const writeIn = (row["write_in"] || row["writein"] || "").toLowerCase() === "true";
-
-          const key = `${chamber}-${district}-${candidate}`;
-          const existing = districtResults.get(key);
-          if (existing) {
-            existing.votes += votes;
-            if (winner) existing.winner = true;
-          } else {
-            districtResults.set(key, {
-              candidate,
-              party,
-              votes,
-              district,
-              chamber,
-              winner,
-              writeIn,
-            });
-          }
-        }
-
-        // Calculate totals and find winners per district-race
-        const districtTotals = new Map<string, number>();
-        const districtTopVotes = new Map<string, number>();
-        for (const [, result] of districtResults) {
-          const raceKey = `${result.chamber}-${result.district}`;
-          districtTotals.set(raceKey, (districtTotals.get(raceKey) || 0) + result.votes);
-          const current = districtTopVotes.get(raceKey) || 0;
-          if (result.votes > current) districtTopVotes.set(raceKey, result.votes);
-        }
-
-        const records: Array<Record<string, unknown>> = [];
-        for (const [, result] of districtResults) {
-          const raceKey = `${result.chamber}-${result.district}`;
-          const totalVotes = districtTotals.get(raceKey) || 0;
-          const votePct = totalVotes > 0 ? Math.round((result.votes / totalVotes) * 1000) / 10 : null;
-          const paddedDistrict = result.district.replace(/^0+/, "") || "0";
-
-          // Auto-detect winner: candidate with most votes in this race
-          const isWinner = result.winner || (result.votes > 0 && result.votes === districtTopVotes.get(raceKey));
-
-          records.push({
-            state_abbr: stateAbbr,
-            chamber: result.chamber,
-            district_number: paddedDistrict,
-            election_year: electionInfo.year,
-            election_date: electionInfo.date,
-            election_type: "general",
-            candidate_name: result.candidate,
-            party: result.party,
-            votes: result.votes,
-            vote_pct: votePct,
-            is_winner: isWinner,
-            is_write_in: result.writeIn,
-            total_votes: totalVotes,
-            source: "openelections",
-            updated_at: new Date().toISOString(),
+      // Upsert in chunks
+      for (let i = 0; i < records.length; i += 100) {
+        const chunk = records.slice(i, i + 100);
+        const { error } = await supabase
+          .from("state_leg_election_results")
+          .upsert(chunk, {
+            onConflict: "state_abbr,chamber,district_number,election_year,election_type,candidate_name",
           });
+
+        if (error) {
+          console.error(`Upsert error for ${stateFilter}: ${error.message}`);
+          totalErrors += chunk.length;
+        } else {
+          totalUpserted += chunk.length;
         }
-
-        // Upsert in chunks
-        for (let i = 0; i < records.length; i += 100) {
-          const chunk = records.slice(i, i + 100);
-          const { error } = await supabase
-            .from("state_leg_election_results")
-            .upsert(chunk, {
-              onConflict: "state_abbr,chamber,district_number,election_year,election_type,candidate_name",
-            });
-
-          if (error) {
-            console.error(`Upsert error for ${stateAbbr}: ${error.message}`);
-            totalErrors += chunk.length;
-          } else {
-            totalUpserted += chunk.length;
-            stateRecords += chunk.length;
-          }
-        }
-      }
-
-      stateResults[stateAbbr] = stateRecords;
-      console.log(`${stateAbbr}: ${stateRecords} results upserted`);
-
-      // Small delay between states to be polite to GitHub
-      if (!stateFilter) {
-        await new Promise(r => setTimeout(r, 500));
       }
     }
+
+    console.log(`${stateFilter}: ${totalUpserted} results upserted`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        states_processed: statesToProcess.length,
+        state: stateFilter,
         upserted: totalUpserted,
         errors: totalErrors,
-        state_results: stateResults,
+        files_processed: filesToProcess.length,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
