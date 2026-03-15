@@ -165,10 +165,12 @@ async function fetchChamber(
     const r: Record<string, string> = {};
     headers.forEach((h, i) => { r[h] = row[i]; });
 
-    const distNum = r[geoField] || "00";
+    const rawDistNum = r[geoField] || "00";
     // Skip "ZZ" districts (undefined/remainder)
-    if (distNum === "ZZZ" || distNum.startsWith("ZZ")) continue;
+    if (rawDistNum === "ZZZ" || rawDistNum.startsWith("ZZ")) continue;
 
+    // Normalize: strip leading zeros from purely numeric district numbers
+    const distNum = /^0+[0-9]+$/.test(rawDistNum) ? rawDistNum.replace(/^0+/, "") : rawDistNum;
     const prefix = chamber === "senate" ? "SD" : "HD";
     const districtId = `${stateAbbr}-${prefix}-${distNum}`;
 
