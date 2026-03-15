@@ -6,12 +6,13 @@ import {
   ALL_STATE_ABBRS,
   STATE_NAMES,
 } from "@/data/stateLegislativeIntel";
-import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign, Vote } from "lucide-react";
+import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign, Vote, Download } from "lucide-react";
 import { StateLegBoundaryMap } from "./StateLegBoundaryMap";
 import { StateLegOverviewMap } from "./StateLegOverviewMap";
 import { ElectionResultsSection } from "./ElectionResultsSection";
 import { syncElectionResults, hasSyncCheckpoint, clearSyncCheckpoint, type SyncReport } from "@/data/electionResults";
 import { SyncResultsPanel } from "./SyncResultsPanel";
+import { exportStateLegPDF } from "@/lib/stateLegExport";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
@@ -133,23 +134,32 @@ function StatLegDetail({
         Back to State Legislative Districts
       </button>
 
-      <div className="flex items-center gap-3 mb-6">
-        <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
-          style={{ backgroundColor: `hsl(${chamberColor} / 0.1)` }}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+            style={{ backgroundColor: `hsl(${chamberColor} / 0.1)` }}
+          >
+            {isHouse ? (
+              <Building2 className="h-6 w-6" style={{ color: `hsl(${chamberColor})` }} />
+            ) : (
+              <Landmark className="h-6 w-6" style={{ color: `hsl(${chamberColor})` }} />
+            )}
+          </div>
+          <div>
+            <h2 className="font-display text-xl font-bold text-foreground">
+              {district.state_abbr} {label} District {district.district_number}
+            </h2>
+            <p className="text-sm text-muted-foreground">{district.state}</p>
+          </div>
+        </div>
+        <button
+          onClick={() => exportStateLegPDF(district)}
+          className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors shrink-0"
         >
-          {isHouse ? (
-            <Building2 className="h-6 w-6" style={{ color: `hsl(${chamberColor})` }} />
-          ) : (
-            <Landmark className="h-6 w-6" style={{ color: `hsl(${chamberColor})` }} />
-          )}
-        </div>
-        <div>
-          <h2 className="font-display text-xl font-bold text-foreground">
-            {district.state_abbr} {label} District {district.district_number}
-          </h2>
-          <p className="text-sm text-muted-foreground">{district.state}</p>
-        </div>
+          <Download className="h-3.5 w-3.5" />
+          PDF
+        </button>
       </div>
 
       {/* Election History */}
