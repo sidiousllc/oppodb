@@ -157,6 +157,33 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          read_at: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       congressional_election_results: {
         Row: {
           candidate_name: string
@@ -658,6 +685,33 @@ export type Database = {
           id?: number
           last_commit_sha?: string | null
           last_synced_at?: string | null
+        }
+        Relationships: []
+      }
+      user_presence: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          last_seen_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          last_seen_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          last_seen_at?: string
+          status?: string
+          user_id?: string
         }
         Relationships: []
       }
