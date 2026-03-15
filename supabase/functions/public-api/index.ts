@@ -72,9 +72,7 @@ Deno.serve(async (req) => {
     }
 
     const keyId = keyData[0].key_id;
-
-    // Track usage (fire and forget)
-    supabase.rpc("increment_api_key_usage", { p_key_id: keyId }).then(() => {});
+    const userId = keyData[0].user_id;
 
     // Parse endpoint from URL path
     const url = new URL(req.url);
@@ -242,6 +240,14 @@ Deno.serve(async (req) => {
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
     }
+
+    // Log the request (fire and forget)
+    supabase.rpc("log_api_request", {
+      p_key_id: keyId,
+      p_user_id: userId,
+      p_endpoint: endpoint,
+      p_status: 200,
+    }).then(() => {});
 
     return new Response(
       JSON.stringify({

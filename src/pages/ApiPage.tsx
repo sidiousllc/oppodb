@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { createApiKey, listApiKeys, revokeApiKey, deleteApiKey, getApiBaseUrl, type ApiKey } from "@/lib/apiKeys";
+import { ApiAnalytics } from "@/components/ApiAnalytics";
 import {
   ArrowLeft, Key, Plus, Copy, Check, Trash2, Ban, Eye, EyeOff,
   Loader2, Code, ExternalLink, BookOpen,
@@ -180,6 +181,9 @@ export default function ApiPage() {
             </div>
           )}
         </div>
+
+        {/* Usage Analytics */}
+        <ApiAnalytics />
 
         {/* Active keys */}
         <div className="mb-8">
