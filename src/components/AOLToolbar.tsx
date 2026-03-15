@@ -179,7 +179,7 @@ export function AOLToolbar({ onBack, onRefresh, currentSection, currentSlug }: A
           <Mail className="h-4 w-4" />
           <span>Mail</span>
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[7px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center animate-pulse">
+            <span className="absolute -top-1 -right-1 bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] text-[7px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center animate-pulse">
               {unreadCount}
             </span>
           )}
