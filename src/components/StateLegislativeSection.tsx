@@ -275,6 +275,8 @@ export function StateLegislativeSection({
   const [selectedDistrict, setSelectedDistrict] = useState<StateLegislativeProfile | null>(null);
   const [syncingElections, setSyncingElections] = useState(false);
   const [syncProgress, setSyncProgress] = useState("");
+  const [syncReport, setSyncReport] = useState<SyncReport | null>(null);
+  const canResume = hasSyncCheckpoint();
 
   const filtered = useMemo(() => {
     let results = districts;
