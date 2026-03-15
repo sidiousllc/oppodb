@@ -571,6 +571,8 @@ export default function Index() {
           <AOLToolbar
             onBack={selectedSlug ? () => setSelectedSlug(null) : undefined}
             onRefresh={() => window.location.reload()}
+            currentSection={section}
+            currentSlug={selectedSlug}
           />
 
           {/* Content area with sidebar */}
