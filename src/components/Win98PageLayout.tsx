@@ -91,6 +91,13 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
                 <h1 className="text-sm font-bold">{title}</h1>
                 <div className="flex-1" />
                 <button
+                  onClick={() => window.print()}
+                  className="win98-button text-[10px] flex items-center gap-1"
+                  title="Print / Save as PDF"
+                >
+                  🖨️ Print
+                </button>
+                <button
                   onClick={() => navigate("/")}
                   className="win98-button text-[10px] flex items-center gap-1"
                 >

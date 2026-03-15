@@ -810,18 +810,18 @@ export function PollingSection() {
          </button>
          <button
            onClick={() => exportPollingCSV(filtered)}
-           className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shadow-sm"
+           className="win98-button text-[10px] flex items-center gap-1"
            title="Export as CSV"
          >
-           <FileSpreadsheet className="h-3.5 w-3.5" />
+           <FileSpreadsheet className="h-3 w-3" />
            CSV
          </button>
          <button
            onClick={() => exportPollingPDF(filtered)}
-           className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shadow-sm"
+           className="win98-button text-[10px] flex items-center gap-1"
            title="Export as PDF"
          >
-           <FileText className="h-3.5 w-3.5" />
+           <FileText className="h-3 w-3" />
            PDF
          </button>
        </div>
