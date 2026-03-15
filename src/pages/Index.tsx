@@ -6,6 +6,7 @@ import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/d
 import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
 import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
+import { syncCongressionalElections } from "@/data/congressionalElections";
 import { fetchStateLegislativeDistricts, syncStateLegislativeData, type StateLegislativeProfile } from "@/data/stateLegislativeIntel";
 import { getCookRating, getCookRatingColor, COOK_RATING_ORDER, type CookRating } from "@/data/cookRatings";
 import { candidateDistrictMap } from "@/data/candidateDistricts";
