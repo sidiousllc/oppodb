@@ -13,6 +13,7 @@ import { ElectionResultsSection } from "./ElectionResultsSection";
 import { syncElectionResults, hasSyncCheckpoint, clearSyncCheckpoint, type SyncReport } from "@/data/electionResults";
 import { SyncResultsPanel } from "./SyncResultsPanel";
 import { exportStateLegPDF } from "@/lib/stateLegExport";
+import { StatePollingPanel } from "@/components/StatePollingPanel";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
@@ -161,6 +162,9 @@ function StatLegDetail({
           PDF
         </button>
       </div>
+
+      {/* State Polling */}
+      <StatePollingPanel stateAbbr={district.state_abbr} />
 
       {/* Election History */}
       <div className="mb-6">
