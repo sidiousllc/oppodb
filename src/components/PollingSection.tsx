@@ -227,7 +227,7 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   if (approvalBySource.size === 0) return null;
 
   // Date range
-  const allDates = polls
+  const allDates = picker.filteredPolls
     .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval")
     .map((p) => p.date_conducted)
     .sort();
@@ -250,7 +250,7 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
 
-  const visiblePolls = polls.filter(
+  const visiblePolls = picker.filteredPolls.filter(
     (p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval" && p.approve_pct !== null && p.date_conducted >= minDate && !hiddenSources.has(p.source)
   );
   const allVals = visiblePolls.map((p) => p.approve_pct!);
