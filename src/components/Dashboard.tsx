@@ -361,6 +361,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
             { label: "District Intel", emoji: "🧭", section: "district-intel" },
             { label: "State Legislatures", emoji: "⚖️", section: "state-legislative" },
             { label: "Polling Data", emoji: "📊", section: "polling" },
+            { label: "Campaign Finance", emoji: "💰", section: "campaign-finance" },
           ].map((item) => (
             <button
               key={item.section}
