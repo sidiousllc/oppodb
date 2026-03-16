@@ -152,13 +152,17 @@ function UsersTab() {
         loadUsers();
       } catch (e: any) { toast.error(e.message); }
     } else {
-      if (!confirm(`Suspend access for ${u.email}? They will be unable to sign in.`)) return;
-      try {
-        await banUser(u.id);
-        toast.success(`Access suspended for ${u.email}`);
-        loadUsers();
-      } catch (e: any) { toast.error(e.message); }
+      setSuspendUser(u);
     }
+  };
+
+  const handleSuspendWithDuration = async (userId: string, duration: string, label: string) => {
+    try {
+      await banUser(userId, duration);
+      toast.success(`Suspended for ${label}`);
+      setSuspendUser(null);
+      loadUsers();
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const handleCreateUser = async () => {
