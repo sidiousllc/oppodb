@@ -241,8 +241,8 @@ export default function Index() {
     narratives: narrativeReports.length,
     "district-intel": districts.length,
     "state-legislative": stateLegDistricts.length,
-    polling: 0,
-  }), [dataVersion, districts, stateLegDistricts]);
+    polling: pollingCount,
+  }), [dataVersion, districts, stateLegDistricts, pollingCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
