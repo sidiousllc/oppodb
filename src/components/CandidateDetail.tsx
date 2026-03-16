@@ -250,6 +250,9 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
         </div>
       ) : null}
 
+      {/* Campaign Finance */}
+      <CampaignFinancePanel candidateSlug={candidate.slug} />
+
       {/* Version History */}
       {githubPath && (
         <VersionHistory githubPath={githubPath} currentContent={candidate.content} />
