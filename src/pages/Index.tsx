@@ -624,11 +624,6 @@ export default function Index() {
 
               <main className="flex-1 overflow-y-auto bg-white">
                 <div className="max-w-4xl mx-auto px-3 py-3">
-                  {/* Mobile header */}
-                  <div className="lg:hidden flex items-center gap-2 mb-3">
-                    <span className="text-xl">📁</span>
-                    <h1 className="text-sm font-bold">Opposition Research Database</h1>
-                  </div>
 
                   {editorMode ? (
                     <CandidateEditor
@@ -642,23 +637,13 @@ export default function Index() {
                   ) : (
                     <>
                       <div className="mb-1">
-                        <h2 className="text-sm font-bold mb-2 hidden lg:block">
+                        <h2 className="text-sm font-bold mb-2">
                           📂 {sectionLabels[section]}
                         </h2>
                       </div>
-
                       <div className="mb-3">
                         <SearchBar value={search} onChange={setSearch} />
                       </div>
-
-                      <MobileNav
-                        activeFilter={filter}
-                        onFilterChange={setFilter}
-                        counts={counts}
-                        activeSection={section}
-                        onSectionChange={handleSectionChange}
-                      />
-
                       {renderList()}
                     </>
                   )}

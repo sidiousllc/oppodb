@@ -105,7 +105,7 @@ export function AppSidebar({
   }
 
   return (
-    <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-[hsl(var(--win98-face))] border-r-2 border-r-[hsl(var(--win98-shadow))]">
+    <aside className="flex w-[180px] lg:w-[220px] shrink-0 flex-col bg-[hsl(var(--win98-face))] border-r-2 border-r-[hsl(var(--win98-shadow))]">
       {/* Tree view header */}
       <div className="px-2 py-1 border-b border-b-[hsl(var(--win98-shadow))] text-[11px] font-bold flex items-center gap-1">
         <span>📂</span> Databases
