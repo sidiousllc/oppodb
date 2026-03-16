@@ -248,6 +248,7 @@ export default function Index() {
   if (!loaded) return null;
 
   const sectionLabels: Record<Section, string> = {
+    dashboard: "Dashboard",
     candidates: "Candidate Profiles",
     "maga-files": "MAGA Files",
     "local-impact": "Local Impact by State",
