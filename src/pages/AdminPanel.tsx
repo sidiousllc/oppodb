@@ -142,6 +142,24 @@ function UsersTab() {
     } catch (e: any) { toast.error(e.message); }
   };
 
+  const handleToggleBan = async (u: AdminUser) => {
+    const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
+    if (isBanned) {
+      try {
+        await unbanUser(u.id);
+        toast.success(`Access restored for ${u.email}`);
+        loadUsers();
+      } catch (e: any) { toast.error(e.message); }
+    } else {
+      if (!confirm(`Suspend access for ${u.email}? They will be unable to sign in.`)) return;
+      try {
+        await banUser(u.id);
+        toast.success(`Access suspended for ${u.email}`);
+        loadUsers();
+      } catch (e: any) { toast.error(e.message); }
+    }
+  };
+
   const handleCreateUser = async () => {
     const trimmedEmail = newEmail.trim();
     const trimmedPassword = newPassword.trim();
