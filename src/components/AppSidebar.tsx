@@ -4,7 +4,7 @@ import { getLastSyncTime } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
-export type Section = "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel" | "state-legislative" | "polling";
+export type Section = "dashboard" | "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel" | "state-legislative" | "polling";
 
 interface AppSidebarProps {
   activeFilter: FilterCategory;
