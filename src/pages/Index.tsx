@@ -242,7 +242,8 @@ export default function Index() {
     "district-intel": districts.length,
     "state-legislative": stateLegDistricts.length,
     polling: pollingCount,
-  }), [dataVersion, districts, stateLegDistricts, pollingCount]);
+    "campaign-finance": financeCount,
+  }), [dataVersion, districts, stateLegDistricts, pollingCount, financeCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
