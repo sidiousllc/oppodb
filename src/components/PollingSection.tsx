@@ -99,7 +99,86 @@ function ApprovalBar({ approve, disapprove }: { approve: number | null; disappro
   );
 }
 
-// ─── Multi-Source Approval Trend Chart (SVG) ────────────────────────────────
+// ─── Reusable Poll Picker Panel ─────────────────────────────────────────────
+
+function usePollPicker(polls: PollEntry[], filterFn?: (p: PollEntry) => boolean) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showPicker, setShowPicker] = useState(false);
+  const isAll = selectedIds.size === 0;
+
+  const uniquePolls = useMemo(() => {
+    const filtered = filterFn ? polls.filter(filterFn) : polls;
+    const seen = new Map<string, { id: string; source: string; date: string; topic: string }>();
+    filtered.forEach((p) => {
+      const key = `${p.source}|${p.date_conducted}`;
+      if (!seen.has(key)) seen.set(key, { id: key, source: p.source, date: p.date_conducted, topic: p.candidate_or_topic });
+    });
+    return [...seen.values()].sort((a, b) => b.date.localeCompare(a.date));
+  }, [polls, filterFn]);
+
+  const filteredPolls = useMemo(() => {
+    const base = filterFn ? polls.filter(filterFn) : polls;
+    if (isAll) return base;
+    return base.filter((p) => selectedIds.has(`${p.source}|${p.date_conducted}`));
+  }, [polls, selectedIds, isAll, filterFn]);
+
+  const toggle = (id: string) => setSelectedIds((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+
+  return { selectedIds, setSelectedIds, showPicker, setShowPicker, isAll, uniquePolls, filteredPolls, toggle };
+}
+
+function PollPickerButton({ showPicker, setShowPicker, isAll, count }: { showPicker: boolean; setShowPicker: (v: boolean) => void; isAll: boolean; count: number }) {
+  return (
+    <button
+      onClick={() => setShowPicker(!showPicker)}
+      className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors flex items-center gap-1 ${
+        showPicker ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+      }`}
+    >
+      <Filter className="h-3 w-3" />
+      Polls {!isAll && `(${count})`}
+    </button>
+  );
+}
+
+function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, setSelectedIds }: {
+  uniquePolls: { id: string; source: string; date: string; topic: string }[];
+  selectedIds: Set<string>;
+  isAll: boolean;
+  toggle: (id: string) => void;
+  setSelectedIds: (v: Set<string>) => void;
+}) {
+  return (
+    <div className="mb-3 rounded-lg border border-border bg-muted/30 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Polls</span>
+        <div className="flex gap-2">
+          <button onClick={() => setSelectedIds(new Set())} className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors ${isAll ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>All</button>
+          <button onClick={() => setSelectedIds(new Set(uniquePolls.map(p => p.id)))} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Select All</button>
+          <button onClick={() => setSelectedIds(new Set())} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Clear</button>
+        </div>
+      </div>
+      <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 max-h-40 overflow-y-auto">
+        {uniquePolls.map((poll) => {
+          const checked = isAll || selectedIds.has(poll.id);
+          return (
+            <label key={poll.id} className={`flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer transition-colors text-xs ${checked && !isAll ? "bg-primary/10 border border-primary/30" : "bg-card border border-border hover:bg-muted/50"}`}>
+              <input type="checkbox" checked={checked} onChange={() => toggle(poll.id)} className="accent-[hsl(var(--primary))] h-3 w-3 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <span className="font-semibold text-foreground">{getSourceInfo(poll.source).name}</span>
+                <span className="text-muted-foreground ml-1">{formatDate(poll.date)}</span>
+              </div>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
