@@ -101,7 +101,7 @@ function ApprovalBar({ approve, disapprove }: { approve: number | null; disappro
 
 // ─── Reusable Poll Picker Panel ─────────────────────────────────────────────
 
-function usePollPicker(polls: PollEntry[], filterFn?: (p: PollEntry) => boolean) {
+export function usePollPicker(polls: PollEntry[], filterFn?: (p: PollEntry) => boolean) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showPicker, setShowPicker] = useState(false);
   const isAll = selectedIds.size === 0;
