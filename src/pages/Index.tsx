@@ -42,7 +42,7 @@ export default function Index() {
   const [dataVersion, setDataVersion] = useState(0);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterCategory>("all");
-  const [section, setSection] = useState<Section>("candidates");
+  const [section, setSection] = useState<Section>("dashboard");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
   const [stateLegDistricts, setStateLegDistricts] = useState<StateLegislativeProfile[]>([]);
