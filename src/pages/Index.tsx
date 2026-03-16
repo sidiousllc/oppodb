@@ -229,6 +229,7 @@ export default function Index() {
   }), [dataVersion]);
 
   const sectionCounts = useMemo(() => ({
+    dashboard: 0,
     candidates: candidates.length,
     "maga-files": magaFiles.length,
     "local-impact": localImpactReports.length,
