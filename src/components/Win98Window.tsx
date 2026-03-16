@@ -112,12 +112,29 @@ export function Win98Window({
   );
 
   useEffect(() => {
+    const SNAP_THRESHOLD = 15;
+    const TASKBAR_HEIGHT = 28;
+
+    const snap = (val: number, target: number) =>
+      Math.abs(val - target) < SNAP_THRESHOLD ? target : val;
+
     const onMouseMove = (e: MouseEvent) => {
       if (isDragging.current) {
-        setPosition({
-          x: e.clientX - dragOffset.current.x,
-          y: Math.max(0, e.clientY - dragOffset.current.y),
-        });
+        let x = e.clientX - dragOffset.current.x;
+        let y = Math.max(0, e.clientY - dragOffset.current.y);
+        const vw = window.innerWidth;
+        const vh = window.innerHeight - TASKBAR_HEIGHT;
+        const el = windowRef.current;
+        const w = el?.offsetWidth ?? size.width;
+        const h = el?.offsetHeight ?? size.height;
+
+        // Snap to edges
+        x = snap(x, 0); // left
+        x = snap(x, vw - w); // right
+        y = snap(y, 0); // top
+        y = snap(y, vh - h); // bottom
+
+        setPosition({ x, y });
       }
       if (isResizing.current) {
         const dir = isResizing.current;
