@@ -40,6 +40,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendToEmail, setSendToEmail] = useState(false);
   const toInputRef = useRef<HTMLInputElement>(null);
 
   const loadUsers = useCallback(async () => {
