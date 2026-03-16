@@ -55,10 +55,26 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
     };
   }, [approvalPolls]);
 
-  // Latest generic ballot
-  const latestGenericBallot = useMemo(() => {
-    if (genericBallotPolls.length === 0) return null;
-    return genericBallotPolls.sort((a, b) => b.date_conducted.localeCompare(a.date_conducted))[0];
+  // Cross-source generic ballot average (latest per source)
+  const genericBallotAvg = useMemo(() => {
+    const latestBySource = new Map<string, PollEntry>();
+    for (const p of genericBallotPolls) {
+      const existing = latestBySource.get(p.source);
+      if (!existing || p.date_conducted > existing.date_conducted) {
+        latestBySource.set(p.source, p);
+      }
+    }
+    const entries = Array.from(latestBySource.values());
+    if (entries.length === 0) return null;
+    const avgDem = entries.reduce((s, p) => s + (p.favor_pct || 0), 0) / entries.length;
+    const avgRep = entries.reduce((s, p) => s + (p.oppose_pct || 0), 0) / entries.length;
+    const margin = avgDem - avgRep;
+    return {
+      dem: Math.round(avgDem * 10) / 10,
+      rep: Math.round(avgRep * 10) / 10,
+      margin: Math.round(margin * 10) / 10,
+      sourceCount: entries.length,
+    };
   }, [genericBallotPolls]);
 
   // Approval trend by source (latest from each)
@@ -176,33 +192,35 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
 
             {/* Generic Ballot */}
             <div className="candidate-card">
-              <div className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] mb-1">GENERIC BALLOT (LATEST)</div>
-              {latestGenericBallot ? (
+              <div className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] mb-1">GENERIC BALLOT (CROSS-SOURCE AVG)</div>
+              {genericBallotAvg ? (
                 <>
                   <div className="flex items-end gap-3 mb-1">
                     <div>
                       <span className="text-[10px]" style={{ color: "hsl(210, 80%, 45%)" }}>Dem</span>
                       <span className="text-lg font-bold block" style={{ color: "hsl(210, 80%, 45%)" }}>
-                        {latestGenericBallot.favor_pct}%
+                        {genericBallotAvg.dem}%
                       </span>
                     </div>
                     <div>
                       <span className="text-[10px]" style={{ color: "hsl(0, 70%, 50%)" }}>Rep</span>
                       <span className="text-lg font-bold block" style={{ color: "hsl(0, 70%, 50%)" }}>
-                        {latestGenericBallot.oppose_pct}%
+                        {genericBallotAvg.rep}%
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 text-[10px]">
-                    <span className="font-bold" style={{ color: (latestGenericBallot.margin || 0) > 0 ? "hsl(210, 80%, 45%)" : "hsl(0, 70%, 50%)" }}>
-                      {latestGenericBallot.partisan_lean || `${(latestGenericBallot.margin || 0) > 0 ? "D" : "R"}+${Math.abs(latestGenericBallot.margin || 0)}`}
+                    <span className="font-bold" style={{ color: genericBallotAvg.margin > 0 ? "hsl(210, 80%, 45%)" : "hsl(0, 70%, 50%)" }}>
+                      {genericBallotAvg.margin > 0 ? "D" : "R"}+{Math.abs(genericBallotAvg.margin)}
                     </span>
                     <span className="text-[hsl(var(--muted-foreground))]">
-                      • {getSourceInfo(latestGenericBallot.source).name}
+                      • {genericBallotAvg.sourceCount} sources
                     </span>
                   </div>
-                  <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
-                    {new Date(latestGenericBallot.date_conducted + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  <div className="mt-2 h-[6px] w-full bg-[hsl(var(--win98-light))] win98-sunken overflow-hidden flex">
+                    <div style={{ width: `${genericBallotAvg.dem}%`, background: "hsl(210, 80%, 45%)" }} />
+                    <div style={{ width: `${100 - genericBallotAvg.dem - genericBallotAvg.rep}%`, background: "hsl(var(--win98-light))" }} />
+                    <div style={{ width: `${genericBallotAvg.rep}%`, background: "hsl(0, 70%, 50%)" }} />
                   </div>
                 </>
               ) : (
