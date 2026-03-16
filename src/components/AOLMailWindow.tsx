@@ -328,7 +328,16 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
                     placeholder="Write your message here..."
                     maxLength={5000}
                   />
-                  <div className="flex justify-end gap-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="flex items-center gap-1.5 text-[9px] cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={sendToEmail}
+                        onChange={(e) => setSendToEmail(e.target.checked)}
+                        className="accent-[hsl(var(--win98-titlebar))]"
+                      />
+                      📧 Also send to their email
+                    </label>
                     <button
                       onClick={handleSend}
                       disabled={sending || !toUserId || !subject.trim() || !body.trim()}
