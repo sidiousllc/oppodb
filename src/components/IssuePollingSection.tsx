@@ -247,7 +247,7 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
               className="px-4 py-2.5 border-b border-border flex items-center gap-2"
               style={{ backgroundColor: `hsl(${active.group.color} / 0.06)` }}
             >
-              <active.group.icon className="h-4 w-4" style={{ color: `hsl(${active.group.color})` }} />
+              <active.group.icon className="h-4 w-4" />
               <span className="text-sm font-bold text-foreground">{active.label} — Source Breakdown</span>
             </div>
             <div className="overflow-x-auto">
