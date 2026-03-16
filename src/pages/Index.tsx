@@ -205,7 +205,7 @@ export default function Index() {
   }, [districts]);
 
   const filteredCandidates = useMemo(() => {
-    let results = search ? searchCandidates(search) : candidates;
+    let results = search ? searchCandidates(search) : [...candidates];
     if (filter !== "all") results = results.filter(c => c.category === filter);
     return results;
   }, [search, filter, dataVersion]);
