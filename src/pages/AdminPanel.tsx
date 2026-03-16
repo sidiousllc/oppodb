@@ -234,11 +234,24 @@ function UsersTab() {
             </tr>
           </thead>
           <tbody>
-            {users.map(u => (
-              <tr key={u.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))]">
+            {users.map(u => {
+              const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
+              return (
+              <tr key={u.id} className={`border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] ${isBanned ? "opacity-60" : ""}`}>
                 <td className="px-2 py-1.5">
                   <div className="font-bold">{u.email}</div>
                   {u.display_name && <div className="text-[9px] text-[hsl(var(--muted-foreground))]">{u.display_name}</div>}
+                </td>
+                <td className="px-2 py-1.5">
+                  {isBanned ? (
+                    <span className="text-[9px] font-bold px-1 py-0.5 win98-sunken" style={{ color: "hsl(0, 70%, 45%)", backgroundColor: "hsl(0, 70%, 92%)" }}>
+                      🚫 Suspended
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-bold px-1 py-0.5 win98-sunken" style={{ color: "hsl(140, 60%, 30%)", backgroundColor: "hsl(140, 50%, 90%)" }}>
+                      ✓ Active
+                    </span>
+                  )}
                 </td>
                 <td className="px-2 py-1.5 text-[hsl(var(--muted-foreground))]">{new Date(u.created_at).toLocaleDateString()}</td>
                 <td className="px-2 py-1.5 text-[hsl(var(--muted-foreground))]">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "Never"}</td>
@@ -259,13 +272,17 @@ function UsersTab() {
                 </td>
                 <td className="px-2 py-1.5 text-right">
                   <div className="flex items-center justify-end gap-0.5">
+                    <button onClick={() => handleToggleBan(u)} className={`win98-button px-1 py-0 text-[9px]`} title={isBanned ? "Restore Access" : "Suspend Access"}>
+                      {isBanned ? <ShieldCheck className="h-2.5 w-2.5" style={{ color: "hsl(140, 60%, 30%)" }} /> : <Ban className="h-2.5 w-2.5" style={{ color: "hsl(0, 70%, 45%)" }} />}
+                    </button>
                     <button onClick={() => setEditingUser(u)} className="win98-button px-1 py-0 text-[9px]" title="Edit"><Pencil className="h-2.5 w-2.5" /></button>
                     <button onClick={() => setResetPasswordUser(u)} className="win98-button px-1 py-0 text-[9px]" title="Reset Password"><KeyRound className="h-2.5 w-2.5" /></button>
                     <button onClick={() => handleDelete(u.id, u.email || "")} className="win98-button px-1 py-0 text-[9px]" title="Delete"><Trash2 className="h-2.5 w-2.5" /></button>
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
