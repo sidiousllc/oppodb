@@ -8,6 +8,7 @@ export interface AdminUser {
   roles: string[];
   display_name: string | null;
   avatar_url: string | null;
+  banned_until: string | null;
 }
 
 export async function listUsers(): Promise<AdminUser[]> {
