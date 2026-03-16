@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { MailProvider } from "@/contexts/MailContext";
+import { WindowManagerProvider } from "@/contexts/WindowManagerContext";
 import Index from "./pages/Index.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
