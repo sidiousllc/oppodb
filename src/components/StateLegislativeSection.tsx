@@ -14,6 +14,7 @@ import { syncElectionResults, hasSyncCheckpoint, clearSyncCheckpoint, type SyncR
 import { SyncResultsPanel } from "./SyncResultsPanel";
 import { exportStateLegPDF } from "@/lib/stateLegExport";
 import { StatePollingPanel } from "@/components/StatePollingPanel";
+import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
