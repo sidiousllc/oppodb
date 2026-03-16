@@ -553,9 +553,9 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
   if (favPolls.length < 2) return null;
 
   const sorted = [...favPolls].sort((a, b) => a.date_conducted.localeCompare(b.date_conducted));
-  const W = 500;
-  const H = 180;
-  const PAD = { top: 15, right: 15, bottom: 30, left: 40 };
+  const W = 700;
+  const H = 280;
+  const PAD = { top: 20, right: 20, bottom: 40, left: 45 };
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
 
