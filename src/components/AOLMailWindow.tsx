@@ -161,11 +161,28 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
       subject: subject.trim().slice(0, 200),
       body: body.trim().slice(0, 5000),
     });
+
+    // Optionally send email notification to recipient's personal email
+    if (sendToEmail) {
+      try {
+        await supabase.functions.invoke("send-mail-notification", {
+          body: {
+            recipientUserId: toUserId,
+            subject: subject.trim().slice(0, 200),
+            bodyText: body.trim().slice(0, 5000),
+          },
+        });
+      } catch (err) {
+        console.error("Failed to send email notification", err);
+      }
+    }
+
     setSending(false);
     setToUserId("");
     setToSearch("");
     setSubject("");
     setBody("");
+    setSendToEmail(false);
     setFolder("sent");
   };
 
