@@ -125,9 +125,14 @@ async function syncStateFinance(
               ? Math.round((c.candidate_contribution / c.receipts) * 100)
               : null;
 
+          const slug = slugify(c.candidate_name ?? "unknown") + "-" + (c.candidate_id ?? "").toLowerCase();
+          const upsertKey = `${slug}|${stateAbbr}|${cycle}|${officeType}`;
+          if (seenKeys.has(upsertKey)) continue;
+          seenKeys.add(upsertKey);
+
           rows.push({
             candidate_name: c.candidate_name ?? "Unknown",
-            candidate_slug: slugify(c.candidate_name ?? "unknown"),
+            candidate_slug: slug,
             office: officeType,
             state_abbr: stateAbbr,
             district: districtId,
