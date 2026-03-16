@@ -19,6 +19,11 @@ const MODEM_NOISE_FRAMES = [
   "▓░▒▓▒░▒▓░▒▓▒░▓░▒▓▒",
   "▒░▓▒░▒▓▒░▓░▒▓▒░▒▓░",
   "░▓▒░▒▓░▒▓▒░▓▒░▒▓▒░",
+   "▒▓░▒▓▒░▓▒░▒▓░▒▓▒░▓",
+  "░▒▓▒░▓░▒▓▒░▓▒░▒▓▒░",
+  "▓░▒▓▒░▒▓░▒▓▒░▓░▒▓▒",
+  "▒░▓▒░▒▓▒░▓░▒▓▒░▒▓░",
+  "░▓▒░▒▓░▒▓▒░▓▒░▒▓▒░
 ];
 
 export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
@@ -80,7 +85,7 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
           <div className="text-[64px] leading-none">🌐</div>
           <div className="win98-raised bg-[hsl(var(--win98-face))] px-8 py-4 text-center">
             <p className="text-[18px] font-bold font-pixel text-[hsl(var(--primary))]">Welcome!</p>
-            <p className="text-[11px] mt-1 text-[hsl(var(--muted-foreground))]">You've Got Research!</p>
+            <p className="text-[11px] mt-1 text-[hsl(var(--muted-foreground))]">You've Got Opposition Research!</p>
           </div>
         </div>
       ) : (
@@ -94,7 +99,7 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
             <div className="flex items-center gap-3 mb-4">
               <div className="text-[40px] leading-none animate-pulse">🌐</div>
               <div>
-                <h2 className="text-[13px] font-bold">AOL Research Online</h2>
+                <h2 className="text-[13px] font-bold">Opposition Research Online (ORO) </h2>
                 <p className="text-[10px] text-[hsl(var(--muted-foreground))]">Opposition Research Database v4.0</p>
               </div>
             </div>
