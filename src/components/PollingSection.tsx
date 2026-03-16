@@ -433,6 +433,121 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
   );
 }
 
+// ─── Generic Ballot Trend Chart (D vs R over time) ──────────────────────────
+
+function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
+  const [hoveredPoint, setHoveredPoint] = useState<{ label: string; x: number; y: number } | null>(null);
+
+  const getDem = (p: PollEntry) => p.favor_pct ?? p.approve_pct ?? 0;
+  const getRep = (p: PollEntry) => p.oppose_pct ?? p.disapprove_pct ?? 0;
+
+  const monthlyAvg = useMemo(() => {
+    const buckets = new Map<string, { demSum: number; repSum: number; count: number }>();
+    polls.forEach((p) => {
+      const d = new Date(p.date_conducted + "T00:00:00");
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!buckets.has(key)) buckets.set(key, { demSum: 0, repSum: 0, count: 0 });
+      const b = buckets.get(key)!;
+      b.demSum += getDem(p);
+      b.repSum += getRep(p);
+      b.count += 1;
+    });
+    return Array.from(buckets.entries())
+      .map(([month, b]) => ({
+        month,
+        dem: Math.round((b.demSum / b.count) * 10) / 10,
+        rep: Math.round((b.repSum / b.count) * 10) / 10,
+        margin: Math.round(((b.demSum - b.repSum) / b.count) * 10) / 10,
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+  }, [polls]);
+
+  if (monthlyAvg.length < 2) return null;
+
+  const W = 700, H = 280;
+  const PAD = { top: 20, right: 40, bottom: 40, left: 45 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const allVals = monthlyAvg.flatMap((m) => [m.dem, m.rep]);
+  const minVal = Math.floor(Math.min(...allVals) - 3);
+  const maxVal = Math.ceil(Math.max(...allVals) + 3);
+  const valRange = maxVal - minVal || 1;
+
+  const xStep = plotW / (monthlyAvg.length - 1);
+  const toX = (i: number) => PAD.left + i * xStep;
+  const toY = (v: number) => PAD.top + plotH - ((v - minVal) / valRange) * plotH;
+
+  const yTicks: number[] = [];
+  for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) yTicks.push(v);
+
+  const demPath = monthlyAvg.map((m, i) => `${i === 0 ? "M" : "L"}${toX(i)},${toY(m.dem)}`).join(" ");
+  const repPath = monthlyAvg.map((m, i) => `${i === 0 ? "M" : "L"}${toX(i)},${toY(m.rep)}`).join(" ");
+
+  const areaPath = `${monthlyAvg.map((m, i) => `${i === 0 ? "M" : "L"}${toX(i)},${toY(m.dem)}`).join(" ")} ${[...monthlyAvg].reverse().map((m, i) => `L${toX(monthlyAvg.length - 1 - i)},${toY(m.rep)}`).join(" ")} Z`;
+
+  const latest = monthlyAvg[monthlyAvg.length - 1];
+
+  return (
+    <AnimatedCard>
+      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-foreground">Generic Ballot Trend</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Monthly D vs R average across all sources</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-display font-bold" style={{ color: "hsl(210, 80%, 50%)" }}>D {latest.dem}%</span>
+            <span className="text-muted-foreground text-xs">vs</span>
+            <span className="text-sm font-display font-bold" style={{ color: "hsl(0, 75%, 50%)" }}>R {latest.rep}%</span>
+            <MarginBadge margin={latest.margin} />
+          </div>
+        </div>
+        <div className="overflow-x-auto" style={{ minWidth: 500 }}>
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 280 }} onMouseLeave={() => setHoveredPoint(null)}>
+            {yTicks.map((v) => (
+              <g key={v}>
+                <line x1={PAD.left} x2={W - PAD.right} y1={toY(v)} y2={toY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "3,3"} />
+                <text x={PAD.left - 6} y={toY(v) + 3} textAnchor="end" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
+              </g>
+            ))}
+            {monthlyAvg.map((m, i) => (
+              <text key={m.month} x={toX(i)} y={H - PAD.bottom + 20} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">
+                {new Date(m.month + "-01T00:00:00").toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
+              </text>
+            ))}
+            <path d={areaPath} fill="hsl(270, 50%, 60%)" opacity={0.06} />
+            <path d={demPath} fill="none" stroke="hsl(210, 80%, 50%)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: inView ? "0" : "2000", strokeDashoffset: inView ? "0" : "2000", transition: "stroke-dashoffset 1.5s ease" }} />
+            <path d={repPath} fill="none" stroke="hsl(0, 75%, 50%)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: inView ? "0" : "2000", strokeDashoffset: inView ? "0" : "2000", transition: "stroke-dashoffset 1.5s ease 0.3s" }} />
+            {monthlyAvg.map((m, i) => (
+              <g key={m.month}>
+                <rect x={toX(i) - xStep / 2} y={PAD.top} width={xStep} height={plotH} fill="transparent"
+                  onMouseEnter={() => setHoveredPoint({ label: `${new Date(m.month + "-01").toLocaleDateString("en-US", { month: "short", year: "numeric" })}: D ${m.dem}% / R ${m.rep}% (${m.margin > 0 ? "D+" : "R+"}${Math.abs(m.margin)})`, x: toX(i), y: Math.min(toY(m.dem), toY(m.rep)) - 12 })} />
+                <circle cx={toX(i)} cy={toY(m.dem)} r={3} fill="hsl(210, 80%, 50%)" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${i * 60}ms` }} />
+                <circle cx={toX(i)} cy={toY(m.rep)} r={3} fill="hsl(0, 75%, 50%)" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${i * 60 + 300}ms` }} />
+              </g>
+            ))}
+            {hoveredPoint && (
+              <g>
+                <rect x={Math.max(PAD.left, Math.min(hoveredPoint.x - 105, W - PAD.right - 210))} y={hoveredPoint.y - 18} width={210} height={18} rx={4} fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth={0.5} />
+                <text x={Math.max(PAD.left + 105, Math.min(hoveredPoint.x, W - PAD.right - 105))} y={hoveredPoint.y - 6} textAnchor="middle" fontSize={9} fontWeight={600} fill="hsl(var(--popover-foreground))">{hoveredPoint.label}</text>
+              </g>
+            )}
+            <text x={toX(monthlyAvg.length - 1) + 6} y={toY(latest.dem) + 3} fontSize={10} fontWeight={700} fill="hsl(210, 80%, 50%)">D {latest.dem}%</text>
+            <text x={toX(monthlyAvg.length - 1) + 6} y={toY(latest.rep) + 3} fontSize={10} fontWeight={700} fill="hsl(0, 75%, 50%)">R {latest.rep}%</text>
+          </svg>
+        </div>
+        <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(210, 80%, 50%)" }} /> Democrat</span>
+          <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(0, 75%, 50%)" }} /> Republican</span>
+          <span className="ml-auto">{monthlyAvg.length} months tracked</span>
+        </div>
+      </div>
+    </AnimatedCard>
+  );
+}
+
 // ─── Issue Polling Butterfly Chart ──────────────────────────────────────────
 
 function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
@@ -1137,6 +1252,9 @@ export function PollingSection() {
         <SourceDotPlot latestBySource={latestBySource} />
         <GenericBallotChart polls={genericBallotPolls} />
       </div>
+
+      {/* ─── Generic Ballot Trend ─────────────────────────────────────────── */}
+      <GenericBallotTrendChart polls={genericBallotPolls} />
 
       {/* ─── Favorability + Issue Charts ─────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
