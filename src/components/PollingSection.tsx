@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { fetchPollingData, getSourceInfo, POLLING_SOURCES, POLL_TYPES, type PollEntry } from "@/data/pollingData";
+import IssuePollingSection from "@/components/IssuePollingSection";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, ExternalLink, TrendingDown, TrendingUp, Minus, Filter, RefreshCw, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { exportPollingCSV, exportPollingPDF } from "@/lib/pollingExport";
@@ -929,6 +930,9 @@ export function PollingSection() {
         <FavorabilityChart polls={polls} />
         <IssueButterflyChart polls={issuePolls} />
       </div>
+
+      {/* ─── Issue Polling Deep Dive ──────────────────────────────────────── */}
+      <IssuePollingSection polls={polls} />
 
       {/* ─── Source Comparison Table ──────────────────────────────────────── */}
       {latestBySource.length > 0 && (
