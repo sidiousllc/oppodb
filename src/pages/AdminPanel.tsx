@@ -390,6 +390,64 @@ function ResetPasswordModal({ user, onClose, onSaved }: { user: AdminUser; onClo
   );
 }
 
+const SUSPEND_DURATIONS = [
+  { label: "1 Hour", value: "1h" },
+  { label: "24 Hours", value: "24h" },
+  { label: "7 Days", value: "168h" },
+  { label: "30 Days", value: "720h" },
+  { label: "90 Days", value: "2160h" },
+  { label: "Indefinite", value: "876000h" },
+];
+
+function SuspendUserModal({ user, onClose, onSuspend }: { user: AdminUser; onClose: () => void; onSuspend: (userId: string, duration: string, label: string) => void }) {
+  const [selected, setSelected] = useState("24h");
+  const [suspending, setSuspending] = useState(false);
+
+  const handleSuspend = async () => {
+    setSuspending(true);
+    const label = SUSPEND_DURATIONS.find(d => d.value === selected)?.label || selected;
+    await onSuspend(user.id, selected, label);
+    setSuspending(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={onClose}>
+      <div className="win98-raised bg-[hsl(var(--win98-face))] w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+        <div className="win98-titlebar">
+          <span className="text-[11px] flex-1">Suspend User — {user.email}</span>
+          <button className="win98-titlebar-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="p-3 space-y-3">
+          <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
+            User will be unable to sign in for the selected duration.
+          </p>
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Duration:</label>
+            <div className="grid grid-cols-3 gap-1">
+              {SUSPEND_DURATIONS.map(d => (
+                <button
+                  key={d.value}
+                  onClick={() => setSelected(d.value)}
+                  className={`win98-button text-[9px] px-1 py-1 ${selected === d.value ? "font-bold" : ""}`}
+                  style={selected === d.value ? { backgroundColor: "hsl(0, 70%, 92%)", borderStyle: "inset" } : {}}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button onClick={handleSuspend} disabled={suspending} className="win98-button text-[10px] font-bold disabled:opacity-50" style={{ color: "hsl(0, 70%, 45%)" }}>
+              {suspending ? "Suspending..." : "🚫 Suspend"}
+            </button>
+            <button onClick={onClose} className="win98-button text-[10px]">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ============== CandidatesTab ==============
 function CandidatesTab() {
   const [items, setItems] = useState<ContentItem[]>([]);
