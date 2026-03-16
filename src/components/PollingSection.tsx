@@ -749,11 +749,14 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
 
 function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
-  if (polls.length === 0) return null;
+  const issueFilter = useCallback((p: PollEntry) => p.poll_type === "issue", []);
+  const picker = usePollPicker(polls, issueFilter);
+
+  if (picker.filteredPolls.length === 0) return null;
 
   // Deduplicate: latest per topic across sources
   const byTopic = new Map<string, PollEntry[]>();
-  polls.forEach((p) => {
+  picker.filteredPolls.forEach((p) => {
     if (!byTopic.has(p.candidate_or_topic)) byTopic.set(p.candidate_or_topic, []);
     byTopic.get(p.candidate_or_topic)!.push(p);
   });
@@ -766,12 +769,16 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
 
   return (
     <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
-        Issue Polling Overview
-      </h3>
-      <p className="text-xs text-muted-foreground mb-4">
-        Approve vs disapprove on key issues (butterfly chart)
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-display text-sm font-semibold text-foreground">
+          Issue Polling Overview
+        </h3>
+        <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        {picker.isAll ? "Approve vs disapprove on key issues (butterfly chart)" : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
       </p>
+      {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
       <div className="space-y-3">
         {topics.map(([topic, topicPolls], idx) => {
           // Average across sources for the topic
