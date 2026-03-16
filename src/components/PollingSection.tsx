@@ -294,7 +294,7 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
             Approval Rating Trend by Source
           </h3>
           <p className="text-xs text-muted-foreground">
-            Presidential approval tracked across {visibleSources.size} of {approvalBySource.size} sources
+            {picker.isAll ? `Presidential approval tracked across ${visibleSources.size} of ${approvalBySource.size} sources` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
           </p>
         </div>
         <div className="flex items-center gap-1">
