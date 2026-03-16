@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
           roles: roleMap[u.id] || ['user'],
           display_name: profileMap[u.id]?.display_name || null,
           avatar_url: profileMap[u.id]?.avatar_url || null,
+          banned_until: u.banned_until || null,
         }));
 
         return new Response(JSON.stringify({ users: result }), {

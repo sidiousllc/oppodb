@@ -58,3 +58,19 @@ export async function deleteUser(userId: string) {
   if (error) throw error;
   return data;
 }
+
+export async function banUser(userId: string, duration: string = "876000h") {
+  const { data, error } = await supabase.functions.invoke("admin-users", {
+    body: { action: "ban_user", user_id: userId, duration },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function unbanUser(userId: string) {
+  const { data, error } = await supabase.functions.invoke("admin-users", {
+    body: { action: "ban_user", user_id: userId, duration: "none" },
+  });
+  if (error) throw error;
+  return data;
+}
