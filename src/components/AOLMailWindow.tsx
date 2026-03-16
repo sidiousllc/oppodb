@@ -34,9 +34,13 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
 
   // Compose state
   const [toUserId, setToUserId] = useState("");
+  const [toSearch, setToSearch] = useState("");
+  const [toSuggestions, setToSuggestions] = useState<OnlineUser[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const toInputRef = useRef<HTMLInputElement>(null);
 
   const loadUsers = useCallback(async () => {
     if (!user) return;
