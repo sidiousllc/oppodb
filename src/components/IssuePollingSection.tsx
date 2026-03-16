@@ -194,7 +194,7 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
                     className="rounded-md p-1.5"
                     style={{ backgroundColor: `hsl(${group.color} / 0.12)` }}
                   >
-                    <Icon className="h-4 w-4" style={{ color: `hsl(${group.color})` }} />
+                    <Icon className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-bold text-foreground">{label}</span>
                 </div>
