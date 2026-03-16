@@ -111,7 +111,7 @@ serve(async (req) => {
     // 3. Get the full tree
     const treeRes = await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/trees/${BRANCH}?recursive=1`,
-      { headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "lovable-sync" } }
+      { headers: githubHeaders }
     );
     if (!treeRes.ok) throw new Error(`Failed to get tree: ${treeRes.status}`);
     const treeData = await treeRes.json();
