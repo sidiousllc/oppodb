@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { listUsers, setUserRole, deleteUser, createUser, updateUser, resetUserPassword, type AdminUser } from "@/lib/adminApi";
-import { Users, FileText, Globe, AlertTriangle, BookOpen, Shield, Trash2, Plus, Save, X, Edit3, Loader2, KeyRound, Pencil } from "lucide-react";
+import { listUsers, setUserRole, deleteUser, createUser, updateUser, resetUserPassword, banUser, unbanUser, type AdminUser } from "@/lib/adminApi";
+import { Users, FileText, Globe, AlertTriangle, BookOpen, Shield, Trash2, Plus, Save, X, Edit3, Loader2, KeyRound, Pencil, Ban, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
@@ -142,6 +142,24 @@ function UsersTab() {
     } catch (e: any) { toast.error(e.message); }
   };
 
+  const handleToggleBan = async (u: AdminUser) => {
+    const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
+    if (isBanned) {
+      try {
+        await unbanUser(u.id);
+        toast.success(`Access restored for ${u.email}`);
+        loadUsers();
+      } catch (e: any) { toast.error(e.message); }
+    } else {
+      if (!confirm(`Suspend access for ${u.email}? They will be unable to sign in.`)) return;
+      try {
+        await banUser(u.id);
+        toast.success(`Access suspended for ${u.email}`);
+        loadUsers();
+      } catch (e: any) { toast.error(e.message); }
+    }
+  };
+
   const handleCreateUser = async () => {
     const trimmedEmail = newEmail.trim();
     const trimmedPassword = newPassword.trim();
@@ -208,6 +226,7 @@ function UsersTab() {
           <thead>
             <tr className="bg-[hsl(var(--win98-face))] border-b border-[hsl(var(--win98-shadow))]">
               <th className="text-left px-2 py-1 font-bold">User</th>
+              <th className="text-left px-2 py-1 font-bold">Status</th>
               <th className="text-left px-2 py-1 font-bold">Joined</th>
               <th className="text-left px-2 py-1 font-bold">Last Sign In</th>
               <th className="text-left px-2 py-1 font-bold">Roles</th>
@@ -215,11 +234,24 @@ function UsersTab() {
             </tr>
           </thead>
           <tbody>
-            {users.map(u => (
-              <tr key={u.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))]">
+            {users.map(u => {
+              const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
+              return (
+              <tr key={u.id} className={`border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] ${isBanned ? "opacity-60" : ""}`}>
                 <td className="px-2 py-1.5">
                   <div className="font-bold">{u.email}</div>
                   {u.display_name && <div className="text-[9px] text-[hsl(var(--muted-foreground))]">{u.display_name}</div>}
+                </td>
+                <td className="px-2 py-1.5">
+                  {isBanned ? (
+                    <span className="text-[9px] font-bold px-1 py-0.5 win98-sunken" style={{ color: "hsl(0, 70%, 45%)", backgroundColor: "hsl(0, 70%, 92%)" }}>
+                      🚫 Suspended
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-bold px-1 py-0.5 win98-sunken" style={{ color: "hsl(140, 60%, 30%)", backgroundColor: "hsl(140, 50%, 90%)" }}>
+                      ✓ Active
+                    </span>
+                  )}
                 </td>
                 <td className="px-2 py-1.5 text-[hsl(var(--muted-foreground))]">{new Date(u.created_at).toLocaleDateString()}</td>
                 <td className="px-2 py-1.5 text-[hsl(var(--muted-foreground))]">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "Never"}</td>
@@ -240,13 +272,17 @@ function UsersTab() {
                 </td>
                 <td className="px-2 py-1.5 text-right">
                   <div className="flex items-center justify-end gap-0.5">
+                    <button onClick={() => handleToggleBan(u)} className={`win98-button px-1 py-0 text-[9px]`} title={isBanned ? "Restore Access" : "Suspend Access"}>
+                      {isBanned ? <ShieldCheck className="h-2.5 w-2.5" style={{ color: "hsl(140, 60%, 30%)" }} /> : <Ban className="h-2.5 w-2.5" style={{ color: "hsl(0, 70%, 45%)" }} />}
+                    </button>
                     <button onClick={() => setEditingUser(u)} className="win98-button px-1 py-0 text-[9px]" title="Edit"><Pencil className="h-2.5 w-2.5" /></button>
                     <button onClick={() => setResetPasswordUser(u)} className="win98-button px-1 py-0 text-[9px]" title="Reset Password"><KeyRound className="h-2.5 w-2.5" /></button>
                     <button onClick={() => handleDelete(u.id, u.email || "")} className="win98-button px-1 py-0 text-[9px]" title="Delete"><Trash2 className="h-2.5 w-2.5" /></button>
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
           roles: roleMap[u.id] || ['user'],
           display_name: profileMap[u.id]?.display_name || null,
           avatar_url: profileMap[u.id]?.avatar_url || null,
+          banned_until: u.banned_until || null,
         }));
 
         return new Response(JSON.stringify({ users: result }), {
@@ -180,6 +181,23 @@ Deno.serve(async (req) => {
         if (user_id === caller.id) throw new Error('Cannot delete yourself');
 
         const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+        if (error) throw error;
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'ban_user': {
+        const { user_id, duration } = params;
+        if (!user_id) throw new Error('user_id required');
+        if (user_id === caller.id) throw new Error('Cannot ban yourself');
+
+        // duration: e.g. "24h", "7d", "none" to unban
+        const ban_duration = duration === 'none' ? 'none' : (duration || '876000h');
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          ban_duration,
+        });
         if (error) throw error;
 
         return new Response(JSON.stringify({ success: true }), {

@@ -8,6 +8,7 @@ export interface AdminUser {
   roles: string[];
   display_name: string | null;
   avatar_url: string | null;
+  banned_until: string | null;
 }
 
 export async function listUsers(): Promise<AdminUser[]> {
@@ -53,6 +54,22 @@ export async function createUser(email: string, password: string, role: string =
 export async function deleteUser(userId: string) {
   const { data, error } = await supabase.functions.invoke("admin-users", {
     body: { action: "delete_user", user_id: userId },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function banUser(userId: string, duration: string = "876000h") {
+  const { data, error } = await supabase.functions.invoke("admin-users", {
+    body: { action: "ban_user", user_id: userId, duration },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function unbanUser(userId: string) {
+  const { data, error } = await supabase.functions.invoke("admin-users", {
+    body: { action: "ban_user", user_id: userId, duration: "none" },
   });
   if (error) throw error;
   return data;
