@@ -931,6 +931,9 @@ export function PollingSection() {
         <IssueButterflyChart polls={issuePolls} />
       </div>
 
+      {/* ─── Issue Polling Deep Dive ──────────────────────────────────────── */}
+      <IssuePollingSection polls={polls} />
+
       {/* ─── Source Comparison Table ──────────────────────────────────────── */}
       {latestBySource.length > 0 && (
         <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
