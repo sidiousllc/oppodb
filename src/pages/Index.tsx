@@ -262,6 +262,7 @@ export default function Index() {
     "district-intel": "District Intelligence",
     "state-legislative": "State Legislative Districts",
     polling: "Polling Data",
+    "campaign-finance": "Campaign Finance",
   };
 
   function renderDetail() {
