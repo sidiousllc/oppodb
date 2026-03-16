@@ -691,6 +691,152 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
   );
 }
 
+// ─── Demographic Breakdown Chart ────────────────────────────────────────────
+
+const DEMO_GROUPS = [
+  { id: "party", label: "Party ID", colors: { Republican: "hsl(0, 75%, 50%)", Independent: "hsl(45, 80%, 50%)", Democrat: "hsl(210, 80%, 50%)" } },
+  { id: "age", label: "Age", colors: {} },
+  { id: "gender", label: "Gender", colors: {} },
+  { id: "race", label: "Race/Ethnicity", colors: {} },
+  { id: "education", label: "Education", colors: {} },
+  { id: "region", label: "Region", colors: {} },
+] as const;
+
+type DemoEntry = { demographic: string; approve: number; disapprove: number; margin: number; count: number };
+
+function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
+  const [activeGroup, setActiveGroup] = useState<string>("party");
+
+  // Extract polls that have demographic raw_data
+  const demoData = useMemo(() => {
+    const map = new Map<string, Map<string, { totalApprove: number; totalDisapprove: number; count: number }>>();
+    polls.forEach((p) => {
+      const rd = p.raw_data as any;
+      if (!rd || !rd.demographic || !rd.group_type) return;
+      if (!map.has(rd.group_type)) map.set(rd.group_type, new Map());
+      const group = map.get(rd.group_type)!;
+      if (!group.has(rd.demographic)) group.set(rd.demographic, { totalApprove: 0, totalDisapprove: 0, count: 0 });
+      const entry = group.get(rd.demographic)!;
+      entry.totalApprove += p.approve_pct ?? 0;
+      entry.totalDisapprove += p.disapprove_pct ?? 0;
+      entry.count += 1;
+    });
+    const result = new Map<string, DemoEntry[]>();
+    map.forEach((demos, groupType) => {
+      const entries: DemoEntry[] = [];
+      demos.forEach((val, demo) => {
+        const approve = Math.round(val.totalApprove / val.count);
+        const disapprove = Math.round(val.totalDisapprove / val.count);
+        entries.push({ demographic: demo, approve, disapprove, margin: approve - disapprove, count: val.count });
+      });
+      // Sort by margin descending
+      entries.sort((a, b) => b.margin - a.margin);
+      result.set(groupType, entries);
+    });
+    return result;
+  }, [polls]);
+
+  const entries = demoData.get(activeGroup) ?? [];
+  if (demoData.size === 0) return null;
+
+  const maxVal = Math.max(...entries.flatMap((e) => [e.approve, e.disapprove]), 100);
+  const barW = 320;
+  const barH = 22;
+  const groupConfig = DEMO_GROUPS.find((g) => g.id === activeGroup);
+
+  return (
+    <AnimatedCard>
+      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              Demographic Breakdown — Approval
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Cross-source average by demographic group
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {DEMO_GROUPS.filter((g) => demoData.has(g.id)).map((g) => (
+              <button
+                key={g.id}
+                onClick={() => setActiveGroup(g.id)}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                  activeGroup === g.id
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {entries.map((entry, i) => {
+            const partyColors = (groupConfig as any)?.colors ?? {};
+            const barColor = partyColors[entry.demographic] ?? `hsl(${210 + i * 40}, 60%, 50%)`;
+            const approveW = (entry.approve / maxVal) * 100;
+            const disapproveW = (entry.disapprove / maxVal) * 100;
+
+            return (
+              <div
+                key={entry.demographic}
+                className="transition-all duration-500"
+                style={{
+                  opacity: inView ? 1 : 0,
+                  transform: inView ? "translateX(0)" : "translateX(-20px)",
+                  transitionDelay: `${i * 60}ms`,
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-foreground w-28 shrink-0 text-right">
+                    {entry.demographic}
+                  </span>
+                  <div className="flex-1 flex items-center gap-1">
+                    <div className="flex h-5 flex-1 overflow-hidden rounded bg-muted/40">
+                      <div
+                        className="h-full rounded-l transition-all duration-700 flex items-center justify-end pr-1"
+                        style={{ width: `${approveW}%`, backgroundColor: "hsl(150, 55%, 45%)" }}
+                      >
+                        {approveW > 12 && <span className="text-[9px] font-bold text-white">{entry.approve}%</span>}
+                      </div>
+                      <div
+                        className="h-full rounded-r transition-all duration-700 flex items-center pl-1"
+                        style={{ width: `${disapproveW}%`, backgroundColor: "hsl(0, 65%, 50%)" }}
+                      >
+                        {disapproveW > 12 && <span className="text-[9px] font-bold text-white">{entry.disapprove}%</span>}
+                      </div>
+                    </div>
+                    <MarginBadge margin={entry.margin} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-4 mt-4 text-[10px] text-muted-foreground border-t border-border pt-3">
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Approve
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Disapprove
+          </span>
+          <span className="ml-auto">
+            Averaged across {new Set(polls.filter((p) => {
+              const rd = p.raw_data as any;
+              return rd?.group_type === activeGroup;
+            }).map((p) => p.source)).size} sources
+          </span>
+        </div>
+      </div>
+    </AnimatedCard>
+  );
+}
+
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 export function PollingSection() {
@@ -997,6 +1143,9 @@ export function PollingSection() {
         <FavorabilityChart polls={polls} />
         <IssueButterflyChart polls={issuePolls} />
       </div>
+
+      {/* ─── Demographic Breakdown ───────────────────────────────────────── */}
+      <DemographicBreakdownChart polls={polls} />
 
       {/* ─── Issue Polling Deep Dive ──────────────────────────────────────── */}
       <IssuePollingSection polls={polls} />
