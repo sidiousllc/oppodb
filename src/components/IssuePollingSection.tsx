@@ -1,5 +1,6 @@
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { getSourceInfo, type PollEntry } from "@/data/pollingData";
+import { usePollPicker, PollPickerButton, PollPickerDropdown } from "@/components/PollingSection";
 import { AlertTriangle, TrendingDown, TrendingUp, Minus, Globe, DollarSign, Compass, Shield, Heart, Users } from "lucide-react";
 
 // ─── useInView ──────────────────────────────────────────────────────────────
@@ -82,9 +83,12 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
   const { ref, inView } = useInView();
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
+  const issueFilter = useCallback((p: PollEntry) => p.poll_type === "issue", []);
+  const picker = usePollPicker(polls, issueFilter);
+
   const issuePolls = useMemo(
-    () => polls.filter((p) => p.poll_type === "issue"),
-    [polls],
+    () => picker.filteredPolls.filter((p) => p.poll_type === "issue"),
+    [picker.filteredPolls],
   );
 
   // Group polls by topic group
@@ -124,16 +128,25 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
     <div ref={ref} className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       {/* Header */}
       <div className="p-5 border-b border-border bg-gradient-to-r from-muted/40 to-transparent">
-        <div className="flex items-center gap-2 mb-1">
-          <AlertTriangle className="h-5 w-5 text-primary" />
-          <h2 className="font-display text-lg font-bold text-foreground">
-            Issue Polling Deep Dive
-          </h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle className="h-5 w-5 text-primary" />
+            <h2 className="font-display text-lg font-bold text-foreground">
+              Issue Polling Deep Dive
+            </h2>
+          </div>
+          <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
         </div>
         <p className="text-xs text-muted-foreground">
-          Public opinion on key policy areas across {new Set(issuePolls.map((p) => p.source)).size} sources
-          · {issuePolls.length} polls tracked
+          {picker.isAll
+            ? `Public opinion on key policy areas across ${new Set(issuePolls.map((p) => p.source)).size} sources · ${issuePolls.length} polls tracked`
+            : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected · ${issuePolls.length} matching polls`}
         </p>
+        {picker.showPicker && (
+          <div className="mt-3">
+            <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />
+          </div>
+        )}
       </div>
 
       {/* Topic selector pills */}

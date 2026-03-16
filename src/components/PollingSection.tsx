@@ -101,7 +101,7 @@ function ApprovalBar({ approve, disapprove }: { approve: number | null; disappro
 
 // ─── Reusable Poll Picker Panel ─────────────────────────────────────────────
 
-function usePollPicker(polls: PollEntry[], filterFn?: (p: PollEntry) => boolean) {
+export function usePollPicker(polls: PollEntry[], filterFn?: (p: PollEntry) => boolean) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showPicker, setShowPicker] = useState(false);
   const isAll = selectedIds.size === 0;
@@ -131,7 +131,7 @@ function usePollPicker(polls: PollEntry[], filterFn?: (p: PollEntry) => boolean)
   return { selectedIds, setSelectedIds, showPicker, setShowPicker, isAll, uniquePolls, filteredPolls, toggle };
 }
 
-function PollPickerButton({ showPicker, setShowPicker, isAll, count }: { showPicker: boolean; setShowPicker: (v: boolean) => void; isAll: boolean; count: number }) {
+export function PollPickerButton({ showPicker, setShowPicker, isAll, count }: { showPicker: boolean; setShowPicker: (v: boolean) => void; isAll: boolean; count: number }) {
   return (
     <button
       onClick={() => setShowPicker(!showPicker)}
@@ -145,7 +145,7 @@ function PollPickerButton({ showPicker, setShowPicker, isAll, count }: { showPic
   );
 }
 
-function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, setSelectedIds }: {
+export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, setSelectedIds }: {
   uniquePolls: { id: string; source: string; date: string; topic: string }[];
   selectedIds: Set<string>;
   isAll: boolean;
@@ -518,11 +518,14 @@ function SourceDotPlot({ latestBySource }: { latestBySource: PollEntry[] }) {
 
 function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
-  if (polls.length === 0) return null;
+  const ballotFilter = useCallback((p: PollEntry) => p.poll_type === "generic_ballot", []);
+  const picker = usePollPicker(polls, ballotFilter);
+
+  if (picker.filteredPolls.length === 0) return null;
 
   // Latest generic ballot per source
   const bySource = new Map<string, PollEntry>();
-  polls.forEach((p) => {
+  picker.filteredPolls.forEach((p) => {
     const ex = bySource.get(p.source);
     if (!ex || p.date_conducted > ex.date_conducted) bySource.set(p.source, p);
   });
@@ -538,12 +541,16 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
 
   return (
     <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
-        Generic Congressional Ballot
-      </h3>
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-display text-sm font-semibold text-foreground">
+          Generic Congressional Ballot
+        </h3>
+        <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
+      </div>
       <p className="text-xs text-muted-foreground mb-3">
-        Cross-source average of {entries.length} polls
+        {picker.isAll ? `Cross-source average of ${entries.length} polls` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
       </p>
+      {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
 
       {/* Average headline bar */}
       <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
@@ -622,12 +629,15 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
   const [hoveredPoint, setHoveredPoint] = useState<{ label: string; x: number; y: number } | null>(null);
 
+  const ballotFilter = useCallback((p: PollEntry) => p.poll_type === "generic_ballot", []);
+  const picker = usePollPicker(polls, ballotFilter);
+
   const getDem = (p: PollEntry) => p.favor_pct ?? p.approve_pct ?? 0;
   const getRep = (p: PollEntry) => p.oppose_pct ?? p.disapprove_pct ?? 0;
 
   const monthlyAvg = useMemo(() => {
     const buckets = new Map<string, { demSum: number; repSum: number; count: number }>();
-    polls.forEach((p) => {
+    picker.filteredPolls.forEach((p) => {
       const d = new Date(p.date_conducted + "T00:00:00");
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       if (!buckets.has(key)) buckets.set(key, { demSum: 0, repSum: 0, count: 0 });
@@ -644,7 +654,7 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
         margin: Math.round(((b.demSum - b.repSum) / b.count) * 10) / 10,
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
-  }, [polls]);
+  }, [picker.filteredPolls]);
 
   if (monthlyAvg.length < 2) return null;
 
@@ -678,15 +688,19 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">Generic Ballot Trend</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Monthly D vs R average across all sources</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {picker.isAll ? "Monthly D vs R average across all sources" : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
+            </p>
           </div>
           <div className="flex items-center gap-2">
+            <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
             <span className="text-sm font-display font-bold" style={{ color: "hsl(210, 80%, 50%)" }}>D {latest.dem}%</span>
             <span className="text-muted-foreground text-xs">vs</span>
             <span className="text-sm font-display font-bold" style={{ color: "hsl(0, 75%, 50%)" }}>R {latest.rep}%</span>
             <MarginBadge margin={latest.margin} />
           </div>
         </div>
+        {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
         <div className="overflow-x-auto" style={{ minWidth: 500 }}>
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 280 }} onMouseLeave={() => setHoveredPoint(null)}>
             {yTicks.map((v) => (
@@ -735,11 +749,14 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
 
 function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
-  if (polls.length === 0) return null;
+  const issueFilter = useCallback((p: PollEntry) => p.poll_type === "issue", []);
+  const picker = usePollPicker(polls, issueFilter);
+
+  if (picker.filteredPolls.length === 0) return null;
 
   // Deduplicate: latest per topic across sources
   const byTopic = new Map<string, PollEntry[]>();
-  polls.forEach((p) => {
+  picker.filteredPolls.forEach((p) => {
     if (!byTopic.has(p.candidate_or_topic)) byTopic.set(p.candidate_or_topic, []);
     byTopic.get(p.candidate_or_topic)!.push(p);
   });
@@ -752,12 +769,16 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
 
   return (
     <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
-        Issue Polling Overview
-      </h3>
-      <p className="text-xs text-muted-foreground mb-4">
-        Approve vs disapprove on key issues (butterfly chart)
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-display text-sm font-semibold text-foreground">
+          Issue Polling Overview
+        </h3>
+        <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        {picker.isAll ? "Approve vs disapprove on key issues (butterfly chart)" : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
       </p>
+      {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
       <div className="space-y-3">
         {topics.map(([topic, topicPolls], idx) => {
           // Average across sources for the topic
