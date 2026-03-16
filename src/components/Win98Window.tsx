@@ -1,4 +1,5 @@
-import { ReactNode, useState, useRef, useCallback, useEffect } from "react";
+import { ReactNode, useState, useRef, useCallback, useEffect, useId } from "react";
+import { useWindowManager } from "@/contexts/WindowManagerContext";
 
 interface Win98WindowProps {
   title: string;
@@ -10,11 +11,8 @@ interface Win98WindowProps {
   toolbar?: ReactNode;
   statusBar?: ReactNode;
   maximized?: boolean;
-  /** Initial position for draggable windows */
   defaultPosition?: { x: number; y: number };
-  /** Initial size for resizable windows */
   defaultSize?: { width: number; height: number };
-  /** Minimum size constraints */
   minSize?: { width: number; height: number };
 }
 
@@ -44,7 +42,26 @@ export function Win98Window({
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0, px: 0, py: 0 });
   const windowRef = useRef<HTMLDivElement>(null);
 
+  // Z-index management
+  const windowId = useId();
+  const { bringToFront } = useWindowManager();
+  const [zIndex, setZIndex] = useState(() => 900);
+
   const isPositioned = !!defaultPosition || !!defaultSize;
+
+  const handleFocus = useCallback(() => {
+    if (isPositioned) {
+      const z = bringToFront(windowId);
+      setZIndex(z);
+    }
+  }, [bringToFront, windowId, isPositioned]);
+
+  // Bring to front on mount
+  useEffect(() => {
+    if (isPositioned) {
+      handleFocus();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMinimize = () => {
     if (onMinimize) {
@@ -60,23 +77,21 @@ export function Win98Window({
     }
   };
 
-  // --- Drag handlers ---
   const onDragStart = useCallback(
     (e: React.MouseEvent) => {
       if (isMaximized || maximized) return;
-      // Don't drag if clicking buttons
       if ((e.target as HTMLElement).closest("button")) return;
       isDragging.current = true;
       dragOffset.current = {
         x: e.clientX - position.x,
         y: e.clientY - position.y,
       };
+      handleFocus();
       e.preventDefault();
     },
-    [position, isMaximized, maximized]
+    [position, isMaximized, maximized, handleFocus]
   );
 
-  // --- Resize handlers ---
   const onResizeStart = useCallback(
     (e: React.MouseEvent, direction: string) => {
       if (isMaximized || maximized) return;
@@ -89,10 +104,11 @@ export function Win98Window({
         px: position.x,
         py: position.y,
       };
+      handleFocus();
       e.preventDefault();
       e.stopPropagation();
     },
-    [size, position, isMaximized, maximized]
+    [size, position, isMaximized, maximized, handleFocus]
   );
 
   useEffect(() => {
@@ -149,15 +165,12 @@ export function Win98Window({
 
   const isFullWindow = isMaximized || maximized;
 
-  // Resize handles (only for positioned, non-maximized windows)
   const resizeHandles = isPositioned && !isFullWindow ? (
     <>
-      {/* Edges */}
       <div className="absolute top-0 left-1 right-1 h-[3px] cursor-n-resize" onMouseDown={(e) => onResizeStart(e, "n")} />
       <div className="absolute bottom-0 left-1 right-1 h-[3px] cursor-s-resize" onMouseDown={(e) => onResizeStart(e, "s")} />
       <div className="absolute left-0 top-1 bottom-1 w-[3px] cursor-w-resize" onMouseDown={(e) => onResizeStart(e, "w")} />
       <div className="absolute right-0 top-1 bottom-1 w-[3px] cursor-e-resize" onMouseDown={(e) => onResizeStart(e, "e")} />
-      {/* Corners */}
       <div className="absolute top-0 left-0 w-[6px] h-[6px] cursor-nw-resize" onMouseDown={(e) => onResizeStart(e, "nw")} />
       <div className="absolute top-0 right-0 w-[6px] h-[6px] cursor-ne-resize" onMouseDown={(e) => onResizeStart(e, "ne")} />
       <div className="absolute bottom-0 left-0 w-[6px] h-[6px] cursor-sw-resize" onMouseDown={(e) => onResizeStart(e, "sw")} />
@@ -172,6 +185,7 @@ export function Win98Window({
         top: position.y,
         width: size.width,
         height: size.height,
+        zIndex,
       }
     : {};
 
@@ -180,6 +194,7 @@ export function Win98Window({
       ref={windowRef}
       className={`flex flex-col bg-[hsl(var(--win98-face))] win98-raised ${isFullWindow ? "w-full h-full" : ""} ${isPositioned ? "relative" : ""} ${className}`}
       style={style}
+      onMouseDown={isPositioned ? handleFocus : undefined}
     >
       {/* Title bar */}
       <div
@@ -201,21 +216,18 @@ export function Win98Window({
         </div>
       </div>
 
-      {/* Menu bar */}
       {toolbar && !isMinimized && (
         <div className="flex items-center gap-0 border-b border-b-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))] px-1 py-[2px]">
           {toolbar}
         </div>
       )}
 
-      {/* Content */}
       {!isMinimized && (
         <div className="flex-1 overflow-auto">
           {children}
         </div>
       )}
 
-      {/* Status bar */}
       {statusBar && !isMinimized && (
         <div className="win98-sunken bg-[hsl(var(--win98-face))] px-2 py-[2px] text-[10px] flex items-center">
           {statusBar}
