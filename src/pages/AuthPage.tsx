@@ -18,7 +18,14 @@ export default function AuthPage() {
     setLoading(true);
     setMessage(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setMessage({ type: "error", text: error.message });
+    if (error) {
+      const msg = error.message || "";
+      if (msg.toLowerCase().includes("banned") || msg.toLowerCase().includes("user is banned")) {
+        setMessage({ type: "error", text: "🚫 Your account has been suspended. Contact an administrator for assistance." });
+      } else {
+        setMessage({ type: "error", text: msg });
+      }
+    }
     setLoading(false);
   };
 
