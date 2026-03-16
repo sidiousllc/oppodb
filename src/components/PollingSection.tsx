@@ -184,12 +184,15 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
   const [hoveredPoint, setHoveredPoint] = useState<{ source: string; date: string; value: number; x: number; y: number } | null>(null);
   const [hiddenSources, setHiddenSources] = useState<Set<string>>(new Set());
-  const [zoomMonths, setZoomMonths] = useState<number>(0); // 0 = all, otherwise last N months
+  const [zoomMonths, setZoomMonths] = useState<number>(0);
   const [showFilters, setShowFilters] = useState(false);
+
+  const approvalFilter = useCallback((p: PollEntry) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval", []);
+  const picker = usePollPicker(polls, approvalFilter);
 
   const approvalBySource = useMemo(() => {
     const map = new Map<string, PollEntry[]>();
-    polls
+    picker.filteredPolls
       .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval")
       .forEach((p) => {
         if (!map.has(p.source)) map.set(p.source, []);
@@ -197,7 +200,7 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
       });
     map.forEach((v) => v.sort((a, b) => a.date_conducted.localeCompare(b.date_conducted)));
     return map;
-  }, [polls]);
+  }, [picker.filteredPolls]);
 
   const allSourceIds = useMemo(() => Array.from(approvalBySource.keys()).sort(), [approvalBySource]);
 
