@@ -26,7 +26,8 @@ export type Section =
   | "narratives"
   | "district-intel"
   | "state-legislative"
-  | "polling";
+  | "polling"
+  | "campaign-finance";
 
 interface AppSidebarProps {
   activeFilter: FilterCategory;
