@@ -88,6 +88,9 @@ export default function Index() {
     supabase.from("polling_data").select("id", { count: "exact", head: true }).then(({ count }) => {
       setPollingCount(count ?? 0);
     });
+    supabase.from("campaign_finance").select("id", { count: "exact", head: true }).then(({ count }) => {
+      setFinanceCount(count ?? 0);
+    });
   }, []);
 
   const handleCensusSync = useCallback(async () => {
