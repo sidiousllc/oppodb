@@ -172,7 +172,9 @@ serve(async (req) => {
       const batch = mainPages.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(
         batch.map(async (page) => {
-          const rawUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/${page.path}`;
+          const rawUrl = githubToken
+            ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${page.path}?ref=${BRANCH}`
+            : `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/${page.path}`;
           const res = await fetch(rawUrl);
           if (!res.ok) throw new Error(`Failed to fetch ${page.path}: ${res.status}`);
           const raw = await res.text();
