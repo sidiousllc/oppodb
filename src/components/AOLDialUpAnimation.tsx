@@ -6,9 +6,9 @@ interface AOLDialUpAnimationProps {
 }
 
 const CONNECTION_STEPS = [
-  { text: "Dialing...", detail: "📞 Dialing 1-800-AOL-ORDB", duration: 2200 },
+  { text: "Dialing...", detail: "📞 Dialing 1-800-SID-IOUS", duration: 2200 },
   { text: "Handshaking...", detail: "🔊 kshhhhhhh... beeee brrrrr kshhh", duration: 2800 },
-  { text: "Verifying username and password...", detail: "🔐 Authenticating with AOL network", duration: 1800 },
+  { text: "Verifying username and password...", detail: "🔐 Authenticating with ORDB network", duration: 1800 },
   { text: "Checking your mail...", detail: "✉️ Scanning mailbox...", duration: 1400 },
   { text: "Connected!", detail: "🌐 Welcome to the Opposition Research Database!", duration: 1600 },
 ];
