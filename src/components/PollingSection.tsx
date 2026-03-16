@@ -145,7 +145,7 @@ export function PollPickerButton({ showPicker, setShowPicker, isAll, count }: { 
   );
 }
 
-function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, setSelectedIds }: {
+export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, setSelectedIds }: {
   uniquePolls: { id: string; source: string; date: string; topic: string }[];
   selectedIds: Set<string>;
   isAll: boolean;
