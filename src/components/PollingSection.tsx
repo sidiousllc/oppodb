@@ -131,7 +131,7 @@ export function usePollPicker(polls: PollEntry[], filterFn?: (p: PollEntry) => b
   return { selectedIds, setSelectedIds, showPicker, setShowPicker, isAll, uniquePolls, filteredPolls, toggle };
 }
 
-function PollPickerButton({ showPicker, setShowPicker, isAll, count }: { showPicker: boolean; setShowPicker: (v: boolean) => void; isAll: boolean; count: number }) {
+export function PollPickerButton({ showPicker, setShowPicker, isAll, count }: { showPicker: boolean; setShowPicker: (v: boolean) => void; isAll: boolean; count: number }) {
   return (
     <button
       onClick={() => setShowPicker(!showPicker)}
