@@ -1,0 +1,275 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const FEC_BASE = "https://api.open.fec.gov/v1";
+// FEC provides a demo key; for production use apply at api.data.gov
+const FEC_API_KEY = "DEMO_KEY";
+
+const OFFICE_MAP: Record<string, string> = { H: "house", S: "senate", P: "president" };
+
+interface FECCandidate {
+  name: string;
+  candidate_id: string;
+  office: string;
+  office_full: string;
+  state: string;
+  district: string;
+  party: string;
+  party_full: string;
+  incumbent_challenge: string;
+  cycles: number[];
+  has_raised_funds: boolean;
+}
+
+interface FECTotals {
+  candidate_id: string;
+  candidate_name: string;
+  receipts: number;
+  disbursements: number;
+  cash_on_hand_end_period: number;
+  debts_owed_by_committee: number;
+  individual_contributions: number;
+  other_political_committee_contributions: number;
+  candidate_contribution: number;
+  coverage_end_date: string;
+  party: string;
+  office: string;
+  state: string;
+  district: string;
+}
+
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function partyLetter(party: string | null): string | null {
+  if (!party) return null;
+  const p = party.toUpperCase();
+  if (p === "DEM" || p === "DEMOCRAT" || p === "DEMOCRATIC") return "D";
+  if (p === "REP" || p === "REPUBLICAN") return "R";
+  if (p === "LIB" || p === "LIBERTARIAN") return "L";
+  if (p === "GRE" || p === "GREEN") return "G";
+  return p.slice(0, 3);
+}
+
+async function fetchFECPage(endpoint: string, params: Record<string, string>): Promise<any> {
+  const url = new URL(`${FEC_BASE}${endpoint}`);
+  url.searchParams.set("api_key", FEC_API_KEY);
+  url.searchParams.set("per_page", "100");
+  for (const [k, v] of Object.entries(params)) {
+    url.searchParams.set(k, v);
+  }
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`FEC API ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return res.json();
+}
+
+async function syncStateFinance(
+  supabase: ReturnType<typeof createClient>,
+  stateAbbr: string,
+  cycle: number,
+): Promise<{ upserted: number; errors: string[] }> {
+  const errors: string[] = [];
+  const rows: any[] = [];
+
+  // Fetch candidates with financial totals for this state & cycle
+  for (const office of ["H", "S"]) {
+    let page = 1;
+    let totalPages = 1;
+
+    while (page <= totalPages && page <= 5) {
+      try {
+        const data = await fetchFECPage("/candidates/totals/", {
+          state: stateAbbr,
+          office: office,
+          cycle: String(cycle),
+          election_year: String(cycle),
+          is_active_candidate: "true",
+          sort: "-receipts",
+          page: String(page),
+        });
+
+        totalPages = data.pagination?.pages ?? 1;
+        const results: FECTotals[] = data.results ?? [];
+
+        for (const c of results) {
+          if (!c.receipts && !c.disbursements && !c.cash_on_hand_end_period) continue;
+
+          const officeType = OFFICE_MAP[office] ?? "house";
+          const districtId =
+            office === "H" && c.district
+              ? `${stateAbbr}-${String(c.district).padStart(2, "0")}`
+              : null;
+
+          const individualPct =
+            c.receipts > 0 && c.individual_contributions
+              ? Math.round((c.individual_contributions / c.receipts) * 100)
+              : null;
+          const pacPct =
+            c.receipts > 0 && c.other_political_committee_contributions
+              ? Math.round((c.other_political_committee_contributions / c.receipts) * 100)
+              : null;
+          const selfPct =
+            c.receipts > 0 && c.candidate_contribution
+              ? Math.round((c.candidate_contribution / c.receipts) * 100)
+              : null;
+
+          rows.push({
+            candidate_name: c.candidate_name ?? "Unknown",
+            candidate_slug: slugify(c.candidate_name ?? "unknown"),
+            office: officeType,
+            state_abbr: stateAbbr,
+            district: districtId,
+            party: partyLetter(c.party),
+            cycle,
+            source: "FEC",
+            total_raised: c.receipts ?? null,
+            total_spent: c.disbursements ?? null,
+            cash_on_hand: c.cash_on_hand_end_period ?? null,
+            total_debt: c.debts_owed_by_committee ?? null,
+            individual_contributions: c.individual_contributions ?? null,
+            pac_contributions: c.other_political_committee_contributions ?? null,
+            self_funding: c.candidate_contribution ?? null,
+            small_dollar_pct: null, // FEC totals endpoint doesn't break this out
+            large_donor_pct: individualPct != null && pacPct != null ? Math.max(0, 100 - (individualPct ?? 0) - (pacPct ?? 0) - (selfPct ?? 0)) : null,
+            out_of_state_pct: null,
+            filing_date: c.coverage_end_date ?? null,
+            source_url: `https://www.fec.gov/data/candidate/${c.candidate_id}/`,
+            updated_at: new Date().toISOString(),
+          });
+        }
+
+        page++;
+        // Brief delay to respect rate limits
+        if (page <= totalPages) {
+          await new Promise((r) => setTimeout(r, 300));
+        }
+      } catch (e) {
+        errors.push(`${stateAbbr} ${office} page ${page}: ${e instanceof Error ? e.message : String(e)}`);
+        break;
+      }
+    }
+  }
+
+  // Also fetch governor races from the /candidates/totals endpoint with office=P won't work
+  // FEC doesn't track governor races — they're state-level. We skip governor here.
+
+  if (rows.length === 0) {
+    return { upserted: 0, errors };
+  }
+
+  // Build a state aggregate row
+  const totalRaised = rows.reduce((s, r) => s + (r.total_raised ?? 0), 0);
+  const totalSpent = rows.reduce((s, r) => s + (r.total_spent ?? 0), 0);
+  const totalCOH = rows.reduce((s, r) => s + (r.cash_on_hand ?? 0), 0);
+  const totalPAC = rows.reduce((s, r) => s + (r.pac_contributions ?? 0), 0);
+
+  rows.push({
+    candidate_name: `${stateAbbr} Aggregate`,
+    candidate_slug: `${stateAbbr.toLowerCase()}-aggregate`,
+    office: "all",
+    state_abbr: stateAbbr,
+    district: null,
+    party: null,
+    cycle,
+    source: "FEC",
+    total_raised: totalRaised,
+    total_spent: totalSpent,
+    cash_on_hand: totalCOH,
+    total_debt: null,
+    individual_contributions: null,
+    pac_contributions: totalPAC,
+    self_funding: null,
+    small_dollar_pct: null,
+    large_donor_pct: null,
+    out_of_state_pct: null,
+    filing_date: null,
+    source_url: null,
+    updated_at: new Date().toISOString(),
+  });
+
+  // Upsert in batches of 50
+  let upserted = 0;
+  for (let i = 0; i < rows.length; i += 50) {
+    const batch = rows.slice(i, i + 50);
+    const { error } = await supabase
+      .from("campaign_finance")
+      .upsert(batch, { onConflict: "candidate_slug,state_abbr,cycle,office" });
+
+    if (error) {
+      errors.push(`Upsert batch ${i}: ${error.message}`);
+      // Fall back to individual inserts
+      for (const row of batch) {
+        const { error: singleErr } = await supabase
+          .from("campaign_finance")
+          .upsert(row, { onConflict: "candidate_slug,state_abbr,cycle,office" });
+        if (!singleErr) upserted++;
+      }
+    } else {
+      upserted += batch.length;
+    }
+  }
+
+  return { upserted, errors };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const url = new URL(req.url);
+    const stateParam = url.searchParams.get("state");
+    const cycle = parseInt(url.searchParams.get("cycle") ?? "2026") || 2026;
+
+    if (!stateParam) {
+      return new Response(
+        JSON.stringify({ success: false, error: "state parameter required (e.g. ?state=NC)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const state = stateParam.toUpperCase();
+    console.log(`Starting FEC finance sync for ${state}, cycle ${cycle}`);
+
+    const result = await syncStateFinance(supabase, state, cycle);
+
+    console.log(`FEC sync ${state}: ${result.upserted} upserted, ${result.errors.length} errors`);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        state,
+        cycle,
+        upserted: result.upserted,
+        errors: result.errors,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (error) {
+    console.error("Campaign finance sync error:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : "Internal error",
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+});
