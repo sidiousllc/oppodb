@@ -584,6 +584,10 @@ export default function Index() {
     if (section === "polling") {
       return <PollingSection />;
     }
+
+    if (section === "campaign-finance") {
+      return <CampaignFinanceSection onNavigateSlug={navigateBySlug} />;
+    }
   }
 
   const detail = renderDetail();
