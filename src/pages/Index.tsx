@@ -322,6 +322,19 @@ export default function Index() {
   }
 
   function renderList() {
+    if (section === "dashboard") {
+      return (
+        <Dashboard
+          onNavigateSection={(s, slug) => {
+            setSection(s as Section);
+            setSelectedSlug(slug || null);
+          }}
+          candidateCount={candidates.length}
+          districtCount={districts.length}
+        />
+      );
+    }
+
     if (section === "candidates") {
       return (
         <>
