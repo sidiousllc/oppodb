@@ -245,18 +245,48 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
               {folder === "compose" ? (
                 /* Compose view */
                 <div className="flex-1 flex flex-col p-2 gap-1">
-                  <div className="flex items-center gap-2 text-[10px]">
+                  <div className="flex items-center gap-2 text-[10px] relative">
                     <span className="font-bold w-10">To:</span>
-                    <select
-                      value={toUserId}
-                      onChange={(e) => setToUserId(e.target.value)}
-                      className="win98-input flex-1 text-[10px]"
-                    >
-                      <option value="">-- Select recipient --</option>
-                      {users.map(u => (
-                        <option key={u.user_id} value={u.user_id}>{u.display_name}</option>
-                      ))}
-                    </select>
+                    <div className="flex-1 relative">
+                      <input
+                        ref={toInputRef}
+                        value={toSearch}
+                        onChange={(e) => {
+                          setToSearch(e.target.value);
+                          setToUserId("");
+                          setShowSuggestions(true);
+                        }}
+                        onFocus={() => toSearch.length > 0 && setShowSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                        className="win98-input w-full text-[10px]"
+                        placeholder="Type a screen name..."
+                        maxLength={100}
+                        autoComplete="off"
+                      />
+                      {showSuggestions && toSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-[hsl(var(--win98-shadow))] shadow max-h-[120px] overflow-y-auto">
+                          {toSuggestions.map(u => (
+                            <button
+                              key={u.user_id}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setToUserId(u.user_id);
+                                setToSearch(u.display_name);
+                                setShowSuggestions(false);
+                              }}
+                              className="block w-full text-left px-2 py-1 text-[10px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
+                            >
+                              {u.display_name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {toSearch.length > 0 && toSuggestions.length === 0 && showSuggestions && !toUserId && (
+                        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-[hsl(var(--win98-shadow))] px-2 py-1 text-[9px] text-[hsl(var(--muted-foreground))]">
+                          No users found
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 text-[10px]">
                     <span className="font-bold w-10">Subj:</span>
