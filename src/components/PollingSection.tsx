@@ -888,7 +888,11 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
   const [hovered, setHovered] = useState<{ label: string; x: number; y: number } | null>(null);
   const [zoomMonths, setZoomMonths] = useState<number>(0);
-  const favPolls = polls.filter((p) => p.poll_type === "favorability");
+
+  const favFilter = useCallback((p: PollEntry) => p.poll_type === "favorability", []);
+  const picker = usePollPicker(polls, favFilter);
+
+  const favPolls = picker.filteredPolls.filter((p) => p.poll_type === "favorability");
   if (favPolls.length < 2) return null;
 
   const allSorted = [...favPolls].sort((a, b) => a.date_conducted.localeCompare(b.date_conducted));
