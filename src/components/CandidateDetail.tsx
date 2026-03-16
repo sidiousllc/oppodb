@@ -251,6 +251,9 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
         </div>
       ) : null}
 
+      {/* Candidate Polling */}
+      <CandidatePollingPanel candidateName={candidate.name} candidateSlug={candidate.slug} />
+
       {/* Campaign Finance */}
       <CampaignFinancePanel candidateSlug={candidate.slug} />
 
