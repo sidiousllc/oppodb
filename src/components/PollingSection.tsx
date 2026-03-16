@@ -104,6 +104,9 @@ function ApprovalBar({ approve, disapprove }: { approve: number | null; disappro
 function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
   const [hoveredPoint, setHoveredPoint] = useState<{ source: string; date: string; value: number; x: number; y: number } | null>(null);
+  const [hiddenSources, setHiddenSources] = useState<Set<string>>(new Set());
+  const [zoomMonths, setZoomMonths] = useState<number>(0); // 0 = all, otherwise last N months
+  const [showFilters, setShowFilters] = useState(false);
 
   const approvalBySource = useMemo(() => {
     const map = new Map<string, PollEntry[]>();
@@ -113,19 +116,50 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
         if (!map.has(p.source)) map.set(p.source, []);
         map.get(p.source)!.push(p);
       });
-    // Sort each source's polls by date
     map.forEach((v) => v.sort((a, b) => a.date_conducted.localeCompare(b.date_conducted)));
     return map;
   }, [polls]);
 
+  const allSourceIds = useMemo(() => Array.from(approvalBySource.keys()).sort(), [approvalBySource]);
+
+  const toggleSource = useCallback((id: string) => {
+    setHiddenSources(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => setHiddenSources(new Set()), []);
+  const deselectAll = useCallback(() => setHiddenSources(new Set(allSourceIds)), [allSourceIds]);
+
+  // Visible sources
+  const visibleSources = useMemo(() => {
+    const map = new Map<string, PollEntry[]>();
+    approvalBySource.forEach((v, k) => {
+      if (!hiddenSources.has(k)) map.set(k, v);
+    });
+    return map;
+  }, [approvalBySource, hiddenSources]);
+
   if (approvalBySource.size === 0) return null;
 
+  // Date range
   const allDates = polls
     .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval")
     .map((p) => p.date_conducted)
     .sort();
-  const minDate = allDates[0];
-  const maxDate = allDates[allDates.length - 1];
+  const absoluteMin = allDates[0];
+  const absoluteMax = allDates[allDates.length - 1];
+
+  let minDate = absoluteMin;
+  const maxDate = absoluteMax;
+  if (zoomMonths > 0) {
+    const cutoff = new Date(maxDate);
+    cutoff.setMonth(cutoff.getMonth() - zoomMonths);
+    const cutoffStr = cutoff.toISOString().split("T")[0];
+    if (cutoffStr > absoluteMin) minDate = cutoffStr;
+  }
   const dateRange = new Date(maxDate).getTime() - new Date(minDate).getTime() || 1;
 
   const W = 700;
@@ -134,10 +168,14 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
 
-  // Y-axis: approval values
-  const allVals = polls
-    .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval" && p.approve_pct !== null)
-    .map((p) => p.approve_pct!);
+  const visiblePolls = polls.filter(
+    (p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval" && p.approve_pct !== null && p.date_conducted >= minDate && !hiddenSources.has(p.source)
+  );
+  const allVals = visiblePolls.map((p) => p.approve_pct!);
+  if (allVals.length === 0) {
+    // fallback
+    allVals.push(30, 60);
+  }
   const minVal = Math.floor(Math.min(...allVals) - 3);
   const maxVal = Math.ceil(Math.max(...allVals) + 3);
   const valRange = maxVal - minVal || 1;
@@ -145,52 +183,112 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   const dateToX = (d: string) => PAD.left + ((new Date(d).getTime() - new Date(minDate).getTime()) / dateRange) * plotW;
   const valToY = (v: number) => PAD.top + plotH - ((v - minVal) / valRange) * plotH;
 
-  // Y-axis ticks
   const yTicks: number[] = [];
   for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) yTicks.push(v);
 
-  // X-axis: monthly ticks
   const xTicks: { date: string; label: string }[] = [];
   const start = new Date(minDate);
   const end = new Date(maxDate);
   const cur = new Date(start.getFullYear(), start.getMonth(), 1);
   while (cur <= end) {
     const d = cur.toISOString().split("T")[0];
-    xTicks.push({ date: d, label: cur.toLocaleDateString("en-US", { month: "short" }) });
+    if (d >= minDate) xTicks.push({ date: d, label: cur.toLocaleDateString("en-US", { month: "short" }) });
     cur.setMonth(cur.getMonth() + 1);
   }
 
+  const zoomOptions = [
+    { label: "All", value: 0 },
+    { label: "3M", value: 3 },
+    { label: "6M", value: 6 },
+    { label: "1Y", value: 12 },
+    { label: "2Y", value: 24 },
+  ];
+
   return (
     <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
-        Approval Rating Trend by Source
-      </h3>
-      <p className="text-xs text-muted-foreground mb-3">
-        Presidential approval tracked across {approvalBySource.size} polling sources
-      </p>
+      <div className="flex items-start justify-between mb-1">
+        <div>
+          <h3 className="font-display text-sm font-semibold text-foreground">
+            Approval Rating Trend by Source
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Presidential approval tracked across {visibleSources.size} of {approvalBySource.size} sources
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          {/* Zoom buttons */}
+          {zoomOptions.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setZoomMonths(opt.value)}
+              className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
+                zoomMonths === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`ml-1 p-1 rounded transition-colors ${showFilters ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
+            title="Filter sources"
+          >
+            <Filter className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Source filter panel */}
+      {showFilters && (
+        <div className="mb-3 p-2 rounded-lg border border-border bg-muted/30">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] font-bold text-muted-foreground">FILTER SOURCES</span>
+            <button onClick={selectAll} className="text-[9px] text-primary hover:underline">Select All</button>
+            <button onClick={deselectAll} className="text-[9px] text-primary hover:underline">Deselect All</button>
+            <span className="text-[9px] text-muted-foreground ml-auto">{visibleSources.size}/{allSourceIds.length} visible</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {allSourceIds.map(id => {
+              const src = getSourceInfo(id);
+              const active = !hiddenSources.has(id);
+              return (
+                <button
+                  key={id}
+                  onClick={() => toggleSource(id)}
+                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all ${
+                    active ? "bg-card border border-border shadow-sm" : "opacity-40 bg-transparent border border-transparent"
+                  }`}
+                >
+                  <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
+                  {src.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 320 }}>
-          {/* Grid lines */}
           {yTicks.map((v) => (
             <g key={v}>
               <line x1={PAD.left} y1={valToY(v)} x2={W - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} />
               <text x={PAD.left - 6} y={valToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
             </g>
           ))}
-          {/* 50% reference line */}
           {minVal < 50 && maxVal > 50 && (
             <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.5} />
           )}
-          {/* X-axis ticks */}
           {xTicks.map((t) => (
             <text key={t.date} x={dateToX(t.date)} y={H - 8} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">{t.label}</text>
           ))}
-          {/* Source lines */}
-          {Array.from(approvalBySource.entries()).map(([sourceId, sourcePolls]) => {
+          {Array.from(visibleSources.entries()).map(([sourceId, sourcePolls]) => {
             const src = getSourceInfo(sourceId);
             const color = `hsl(${src.color})`;
             const points = sourcePolls
-              .filter((p) => p.approve_pct !== null)
+              .filter((p) => p.approve_pct !== null && p.date_conducted >= minDate)
               .map((p) => ({ x: dateToX(p.date_conducted), y: valToY(p.approve_pct!), date: p.date_conducted, val: p.approve_pct! }));
             if (points.length < 2) return null;
             const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
@@ -220,7 +318,6 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
               </g>
             );
           })}
-          {/* Tooltip */}
           {hoveredPoint && (
             <g>
               <rect
@@ -245,7 +342,7 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
       </div>
       {/* Legend */}
       <div className="flex flex-wrap gap-3 mt-3">
-        {Array.from(approvalBySource.keys()).map((sourceId) => {
+        {Array.from(visibleSources.keys()).map((sourceId) => {
           const src = getSourceInfo(sourceId);
           return (
             <div key={sourceId} className="flex items-center gap-1.5">
