@@ -254,15 +254,15 @@ export function AOLBuddyList() {
 
       {/* Buddy List Window */}
       {isOpen && (
-        <div
-          className="fixed bottom-[56px] right-4 z-[997] w-[200px]"
-          style={{ height: "380px" }}
-        >
+        <div className="fixed inset-0 z-[997] pointer-events-none">
+          <div className="pointer-events-auto">
           <Win98Window
             title="AOL Buddy List™"
             icon={<span className="text-[10px]">👥</span>}
             onClose={() => setIsOpen(false)}
-            className="h-full"
+            defaultPosition={{ x: window.innerWidth - 220, y: window.innerHeight - 440 }}
+            defaultSize={{ width: 200, height: 380 }}
+            minSize={{ width: 160, height: 200 }}
             statusBar={
               <span className="text-[9px]">{totalOnline} buddies online</span>
             }
