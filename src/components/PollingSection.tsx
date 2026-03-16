@@ -702,19 +702,24 @@ function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disap
 // ─── Favorability Trend Chart ───────────────────────────────────────────────
 
 function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
+  const [hovered, setHovered] = useState<{ label: string; x: number; y: number } | null>(null);
   const favPolls = polls.filter((p) => p.poll_type === "favorability");
   if (favPolls.length < 2) return null;
 
   const sorted = [...favPolls].sort((a, b) => a.date_conducted.localeCompare(b.date_conducted));
-  const W = 700;
-  const H = 280;
-  const PAD = { top: 20, right: 20, bottom: 40, left: 45 };
+  const W = 740;
+  const H = 380;
+  const PAD = { top: 24, right: 50, bottom: 44, left: 50 };
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
 
+  // Tight Y-axis around actual data range
   const allVals = sorted.flatMap((p) => [p.favor_pct ?? 0, p.oppose_pct ?? 0]);
-  const minVal = Math.floor(Math.min(...allVals) - 3);
-  const maxVal = Math.ceil(Math.max(...allVals) + 3);
+  const dataMin = Math.min(...allVals);
+  const dataMax = Math.max(...allVals);
+  const minVal = Math.floor(dataMin / 5) * 5 - 5;
+  const maxVal = Math.ceil(dataMax / 5) * 5 + 5;
   const valRange = maxVal - minVal || 1;
 
   const dateRange = new Date(sorted[sorted.length - 1].date_conducted).getTime() - new Date(sorted[0].date_conducted).getTime() || 1;
@@ -724,20 +729,30 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
   const favPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.favor_pct ?? 0)}`).join(" ");
   const unfavPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.oppose_pct ?? 0)}`).join(" ");
 
-  // Area fill
-  const favAreaPath = favPath + ` L ${dateToX(sorted[sorted.length - 1].date_conducted)} ${PAD.top + plotH} L ${dateToX(sorted[0].date_conducted)} ${PAD.top + plotH} Z`;
-  const unfavAreaPath = unfavPath + ` L ${dateToX(sorted[sorted.length - 1].date_conducted)} ${PAD.top + plotH} L ${dateToX(sorted[0].date_conducted)} ${PAD.top + plotH} Z`;
+  // Area between the two lines
+  const areaPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.favor_pct ?? 0)}`).join(" ")
+    + [...sorted].reverse().map((p) => ` L ${dateToX(p.date_conducted)} ${valToY(p.oppose_pct ?? 0)}`).join("") + " Z";
+
+  const latest = sorted[sorted.length - 1];
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
-        Favorability Tracking
-      </h3>
-      <p className="text-xs text-muted-foreground mb-3">
-        Favorable vs unfavorable over time ({sorted.length} data points from {new Set(sorted.map((p) => p.source)).size} sources)
-      </p>
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div>
+          <h3 className="font-display text-sm font-semibold text-foreground">Favorability Tracking</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {sorted.length} data points from {new Set(sorted.map((p) => p.source)).size} sources
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="font-display font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>{latest.favor_pct}% Fav</span>
+          <span className="text-muted-foreground">/</span>
+          <span className="font-display font-bold" style={{ color: "hsl(0, 65%, 50%)" }}>{latest.oppose_pct}% Unfav</span>
+          <MarginBadge margin={(latest.favor_pct ?? 0) - (latest.oppose_pct ?? 0)} />
+        </div>
+      </div>
       <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 320 }}>
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[520px]" style={{ maxHeight: 400 }} onMouseLeave={() => setHovered(null)}>
           {/* Y gridlines */}
           {(() => {
             const ticks: number[] = [];
@@ -745,8 +760,8 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
             return ticks;
           })().map((v) => (
             <g key={v}>
-              <line x1={PAD.left} y1={valToY(v)} x2={W - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} />
-              <text x={PAD.left - 6} y={valToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
+              <line x1={PAD.left} y1={valToY(v)} x2={W - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "3,3"} />
+              <text x={PAD.left - 8} y={valToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
             </g>
           ))}
           {/* 50% reference */}
@@ -769,38 +784,45 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
           })().map((t) => (
             <text key={t.date} x={dateToX(t.date)} y={H - 8} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">{t.label}</text>
           ))}
-          {/* Area fills */}
-          <path d={unfavAreaPath} fill="hsl(0, 65%, 50%)" opacity={0.06} />
-          <path d={favAreaPath} fill="hsl(150, 55%, 45%)" opacity={0.06} />
+          {/* Shaded area between lines */}
+          <path d={areaPath} fill="hsl(0, 65%, 50%)" opacity={0.08} />
           {/* Lines */}
           <path d={unfavPath} fill="none" stroke="hsl(0, 65%, 50%)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
           <path d={favPath} fill="none" stroke="hsl(150, 55%, 45%)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-          {/* Dots */}
-          {sorted.map((p, i) => (
-            <g key={i}>
-              <circle cx={dateToX(p.date_conducted)} cy={valToY(p.favor_pct ?? 0)} r={3.5} fill="hsl(150, 55%, 45%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
-              <circle cx={dateToX(p.date_conducted)} cy={valToY(p.oppose_pct ?? 0)} r={3.5} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
+          {/* Hover regions + dots */}
+          {sorted.map((p, i) => {
+            const x = dateToX(p.date_conducted);
+            const regionW = i === 0 || i === sorted.length - 1 ? plotW / sorted.length : plotW / sorted.length;
+            return (
+              <g key={i}>
+                <rect
+                  x={x - regionW / 2} y={PAD.top} width={regionW} height={plotH} fill="transparent"
+                  onMouseEnter={() => setHovered({
+                    label: `${formatDate(p.date_conducted)} · ${getSourceInfo(p.source).name}: ${p.favor_pct}% fav / ${p.oppose_pct}% unfav`,
+                    x, y: Math.min(valToY(p.favor_pct ?? 0), valToY(p.oppose_pct ?? 0)) - 14,
+                  })}
+                />
+                <circle cx={x} cy={valToY(p.favor_pct ?? 0)} r={4} fill="hsl(150, 55%, 45%)" stroke="hsl(var(--card))" strokeWidth={2} />
+                <circle cx={x} cy={valToY(p.oppose_pct ?? 0)} r={4} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={2} />
+              </g>
+            );
+          })}
+          {/* Tooltip */}
+          {hovered && (
+            <g>
+              <rect x={Math.max(PAD.left, Math.min(hovered.x - 120, W - PAD.right - 240))} y={hovered.y - 18} width={240} height={18} rx={4} fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth={0.5} />
+              <text x={Math.max(PAD.left + 120, Math.min(hovered.x, W - PAD.right - 120))} y={hovered.y - 6} textAnchor="middle" fontSize={9} fontWeight={600} fill="hsl(var(--popover-foreground))">{hovered.label}</text>
             </g>
-          ))}
-          {/* Start/end value labels */}
-          {sorted.length > 0 && (
-            <>
-              <text x={dateToX(sorted[0].date_conducted) + 8} y={valToY(sorted[0].favor_pct ?? 0) - 6} fontSize={9} fontWeight={600} fill="hsl(150, 55%, 45%)">{sorted[0].favor_pct}%</text>
-              <text x={dateToX(sorted[sorted.length - 1].date_conducted) - 8} y={valToY(sorted[sorted.length - 1].favor_pct ?? 0) - 6} textAnchor="end" fontSize={9} fontWeight={600} fill="hsl(150, 55%, 45%)">{sorted[sorted.length - 1].favor_pct}%</text>
-              <text x={dateToX(sorted[0].date_conducted) + 8} y={valToY(sorted[0].oppose_pct ?? 0) + 12} fontSize={9} fontWeight={600} fill="hsl(0, 65%, 50%)">{sorted[0].oppose_pct}%</text>
-              <text x={dateToX(sorted[sorted.length - 1].date_conducted) - 8} y={valToY(sorted[sorted.length - 1].oppose_pct ?? 0) + 12} textAnchor="end" fontSize={9} fontWeight={600} fill="hsl(0, 65%, 50%)">{sorted[sorted.length - 1].oppose_pct}%</text>
-            </>
           )}
+          {/* End labels */}
+          <text x={W - PAD.right + 6} y={valToY(latest.favor_pct ?? 0) + 4} fontSize={11} fontWeight={700} fill="hsl(150, 55%, 45%)">{latest.favor_pct}%</text>
+          <text x={W - PAD.right + 6} y={valToY(latest.oppose_pct ?? 0) + 4} fontSize={11} fontWeight={700} fill="hsl(0, 65%, 50%)">{latest.oppose_pct}%</text>
         </svg>
       </div>
       <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Favorable</span>
         <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Unfavorable</span>
-        {sorted.length > 0 && (
-          <span className="ml-auto">
-            Latest: {sorted[sorted.length - 1].favor_pct}% fav / {sorted[sorted.length - 1].oppose_pct}% unfav · {getSourceInfo(sorted[sorted.length - 1].source).name}
-          </span>
-        )}
+        <span className="ml-auto">Latest: {getSourceInfo(latest.source).name} · {formatDate(latest.date_conducted)}</span>
       </div>
     </div>
   );
