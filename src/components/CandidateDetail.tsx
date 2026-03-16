@@ -9,6 +9,7 @@ import { extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver"
 import { VersionHistory } from "@/components/VersionHistory";
 import { exportContentPDF } from "@/lib/contentExport";
 import { CampaignFinancePanel } from "@/components/CampaignFinancePanel";
+import { CandidatePollingPanel } from "@/components/CandidatePollingPanel";
 
 interface CandidateDetailProps {
   candidate: Candidate;
@@ -249,6 +250,9 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
           </div>
         </div>
       ) : null}
+
+      {/* Candidate Polling */}
+      <CandidatePollingPanel candidateName={candidate.name} candidateSlug={candidate.slug} />
 
       {/* Campaign Finance */}
       <CampaignFinancePanel candidateSlug={candidate.slug} />
