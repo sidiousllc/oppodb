@@ -1,10 +1,32 @@
-import { BookOpen, Users, Landmark, Building2, MapPin, LayoutGrid, FileText, Globe, AlertTriangle, RefreshCw, Compass, Scale, BarChart3 } from "lucide-react";
+import {
+  BookOpen,
+  Users,
+  Landmark,
+  Building2,
+  MapPin,
+  LayoutGrid,
+  FileText,
+  Globe,
+  AlertTriangle,
+  RefreshCw,
+  Compass,
+  Scale,
+  BarChart3,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { getLastSyncTime } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
-export type Section = "dashboard" | "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel" | "state-legislative" | "polling";
+export type Section =
+  | "dashboard"
+  | "candidates"
+  | "maga-files"
+  | "local-impact"
+  | "narratives"
+  | "district-intel"
+  | "state-legislative"
+  | "polling";
 
 interface AppSidebarProps {
   activeFilter: FilterCategory;
@@ -16,7 +38,7 @@ interface AppSidebarProps {
   onSyncComplete?: () => void;
 }
 
-const filters: Array<{id: FilterCategory; label: string; emoji: string}> = [
+const filters: Array<{ id: FilterCategory; label: string; emoji: string }> = [
   { id: "all", label: "All Profiles", emoji: "📋" },
   { id: "house", label: "House Races", emoji: "🏛️" },
   { id: "senate", label: "Senate Races", emoji: "🏛️" },
@@ -24,7 +46,7 @@ const filters: Array<{id: FilterCategory; label: string; emoji: string}> = [
   { id: "state", label: "State Races", emoji: "📍" },
 ];
 
-const sections: Array<{id: Section; label: string; emoji: string}> = [
+const sections: Array<{ id: Section; label: string; emoji: string }> = [
   { id: "dashboard", label: "Dashboard", emoji: "🏠" },
   { id: "candidates", label: "Candidate Profiles", emoji: "👥" },
   { id: "maga-files", label: "MAGA Files", emoji: "⚠️" },
@@ -35,7 +57,15 @@ const sections: Array<{id: Section; label: string; emoji: string}> = [
   { id: "polling", label: "Polling Data", emoji: "📊" },
 ];
 
-export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection, onSectionChange, sectionCounts, onSyncComplete }: AppSidebarProps) {
+export function AppSidebar({
+  activeFilter,
+  onFilterChange,
+  counts,
+  activeSection,
+  onSectionChange,
+  sectionCounts,
+  onSyncComplete,
+}: AppSidebarProps) {
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
 
@@ -59,7 +89,10 @@ export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke("sync-github");
-      if (error) { console.error("Sync error:", error); return; }
+      if (error) {
+        console.error("Sync error:", error);
+        return;
+      }
       console.log("Sync result:", data);
       const t = await getLastSyncTime();
       setLastSync(t);
@@ -75,7 +108,7 @@ export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection
     <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-[hsl(var(--win98-face))] border-r-2 border-r-[hsl(var(--win98-shadow))]">
       {/* Tree view header */}
       <div className="px-2 py-1 border-b border-b-[hsl(var(--win98-shadow))] text-[11px] font-bold flex items-center gap-1">
-        <span>📂</span> Folders
+        <span>📂</span> Databases
       </div>
 
       {/* Tree view */}
@@ -98,9 +131,7 @@ export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection
                       : "hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
                   }`}
                 >
-                  <span className="mr-[2px]">
-                    {activeSection === s.id ? "📂" : "📁"}
-                  </span>
+                  <span className="mr-[2px]">{activeSection === s.id ? "📂" : "📁"}</span>
                   <span className="flex-1">{s.label}</span>
                   <span className="text-[9px] opacity-60">{sectionCounts[s.id]}</span>
                 </button>
@@ -108,7 +139,7 @@ export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection
                 {/* Sub-tree for race type filters */}
                 {activeSection === "candidates" && s.id === "candidates" && (
                   <div className="ml-4 border-l border-l-[hsl(var(--win98-shadow))]">
-                    {filters.map(f => (
+                    {filters.map((f) => (
                       <button
                         key={f.id}
                         onClick={() => onFilterChange(f.id)}
@@ -147,9 +178,7 @@ export function AppSidebar({ activeFilter, onFilterChange, counts, activeSection
             Sync
           </button>
         </div>
-        <div className="text-[9px] text-center text-[hsl(var(--muted-foreground))]">
-          // FOR INTERNAL USE ONLY //
-        </div>
+        <div className="text-[9px] text-center text-[hsl(var(--muted-foreground))]">// FOR INTERNAL USE ONLY //</div>
       </div>
     </aside>
   );
