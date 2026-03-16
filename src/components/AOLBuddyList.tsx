@@ -366,6 +366,7 @@ export function AOLBuddyList() {
               </div>
             </div>
           </Win98Window>
+          </div>
         </div>
       )}
 
