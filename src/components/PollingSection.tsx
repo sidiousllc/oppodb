@@ -801,17 +801,29 @@ function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disap
 function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
   const [hovered, setHovered] = useState<{ label: string; x: number; y: number } | null>(null);
+  const [zoomMonths, setZoomMonths] = useState<number>(0);
   const favPolls = polls.filter((p) => p.poll_type === "favorability");
   if (favPolls.length < 2) return null;
 
-  const sorted = [...favPolls].sort((a, b) => a.date_conducted.localeCompare(b.date_conducted));
-  const W = 740;
-  const H = 380;
-  const PAD = { top: 24, right: 50, bottom: 44, left: 50 };
+  const allSorted = [...favPolls].sort((a, b) => a.date_conducted.localeCompare(b.date_conducted));
+  const absoluteMax = allSorted[allSorted.length - 1].date_conducted;
+
+  let minDateStr = allSorted[0].date_conducted;
+  if (zoomMonths > 0) {
+    const cutoff = new Date(absoluteMax);
+    cutoff.setMonth(cutoff.getMonth() - zoomMonths);
+    const cutoffStr = cutoff.toISOString().split("T")[0];
+    if (cutoffStr > allSorted[0].date_conducted) minDateStr = cutoffStr;
+  }
+  const sorted = allSorted.filter(p => p.date_conducted >= minDateStr);
+  if (sorted.length < 2) return null;
+
+  const W = 700;
+  const H = 300;
+  const PAD = { top: 20, right: 50, bottom: 40, left: 45 };
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
 
-  // Tight Y-axis around actual data range
   const allVals = sorted.flatMap((p) => [p.favor_pct ?? 0, p.oppose_pct ?? 0]);
   const dataMin = Math.min(...allVals);
   const dataMax = Math.max(...allVals);
@@ -825,71 +837,86 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
 
   const favPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.favor_pct ?? 0)}`).join(" ");
   const unfavPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.oppose_pct ?? 0)}`).join(" ");
-
-  // Area between the two lines
   const areaPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.favor_pct ?? 0)}`).join(" ")
     + [...sorted].reverse().map((p) => ` L ${dateToX(p.date_conducted)} ${valToY(p.oppose_pct ?? 0)}`).join("") + " Z";
 
   const latest = sorted[sorted.length - 1];
 
+  const yTicks: number[] = [];
+  for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) yTicks.push(v);
+
+  const xTicks: { date: string; label: string }[] = [];
+  const s = new Date(sorted[0].date_conducted);
+  const e = new Date(sorted[sorted.length - 1].date_conducted);
+  const c = new Date(s.getFullYear(), s.getMonth(), 1);
+  while (c <= e) {
+    const d = c.toISOString().split("T")[0];
+    if (d >= sorted[0].date_conducted) {
+      const showYear = c.getMonth() === 0 || xTicks.length === 0;
+      xTicks.push({ date: d, label: c.toLocaleDateString("en-US", { month: "short", ...(showYear ? { year: "2-digit" } : {}) }) });
+    }
+    c.setMonth(c.getMonth() + 1);
+  }
+
+  const zoomOptions = [
+    { label: "All", value: 0 },
+    { label: "3M", value: 3 },
+    { label: "6M", value: 6 },
+    { label: "1Y", value: 12 },
+    { label: "2Y", value: 24 },
+  ];
+
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-start justify-between mb-1">
         <div>
           <h3 className="font-display text-sm font-semibold text-foreground">Favorability Tracking</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-muted-foreground">
             {sorted.length} data points from {new Set(sorted.map((p) => p.source)).size} sources
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="font-display font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>{latest.favor_pct}% Fav</span>
-          <span className="text-muted-foreground">/</span>
-          <span className="font-display font-bold" style={{ color: "hsl(0, 65%, 50%)" }}>{latest.oppose_pct}% Unfav</span>
-          <MarginBadge margin={(latest.favor_pct ?? 0) - (latest.oppose_pct ?? 0)} />
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2 text-sm mr-2">
+            <span className="font-display font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>{latest.favor_pct}% Fav</span>
+            <span className="text-muted-foreground">/</span>
+            <span className="font-display font-bold" style={{ color: "hsl(0, 65%, 50%)" }}>{latest.oppose_pct}% Unfav</span>
+            <MarginBadge margin={(latest.favor_pct ?? 0) - (latest.oppose_pct ?? 0)} />
+          </div>
+          {zoomOptions.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setZoomMonths(opt.value)}
+              className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
+                zoomMonths === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </div>
       <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[520px]" style={{ maxHeight: 400 }} onMouseLeave={() => setHovered(null)}>
-          {/* Y gridlines */}
-          {(() => {
-            const ticks: number[] = [];
-            for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) ticks.push(v);
-            return ticks;
-          })().map((v) => (
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 320 }} onMouseLeave={() => setHovered(null)}>
+          {yTicks.map((v) => (
             <g key={v}>
               <line x1={PAD.left} y1={valToY(v)} x2={W - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "3,3"} />
               <text x={PAD.left - 8} y={valToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
             </g>
           ))}
-          {/* 50% reference */}
           {minVal < 50 && maxVal > 50 && (
             <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
           )}
-          {/* X-axis monthly ticks */}
-          {(() => {
-            const ticks: { date: string; label: string }[] = [];
-            const s = new Date(sorted[0].date_conducted);
-            const e = new Date(sorted[sorted.length - 1].date_conducted);
-            const c = new Date(s.getFullYear(), s.getMonth(), 1);
-            while (c <= e) {
-              const d = c.toISOString().split("T")[0];
-              const showYear = c.getMonth() === 0 || ticks.length === 0;
-              ticks.push({ date: d, label: c.toLocaleDateString("en-US", { month: "short", ...(showYear ? { year: "2-digit" } : {}) }) });
-              c.setMonth(c.getMonth() + 1);
-            }
-            return ticks;
-          })().map((t) => (
+          {xTicks.map((t) => (
             <text key={t.date} x={dateToX(t.date)} y={H - 8} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">{t.label}</text>
           ))}
-          {/* Shaded area between lines */}
           <path d={areaPath} fill="hsl(0, 65%, 50%)" opacity={0.08} />
-          {/* Lines */}
           <path d={unfavPath} fill="none" stroke="hsl(0, 65%, 50%)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
           <path d={favPath} fill="none" stroke="hsl(150, 55%, 45%)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-          {/* Hover regions + dots */}
           {sorted.map((p, i) => {
             const x = dateToX(p.date_conducted);
-            const regionW = i === 0 || i === sorted.length - 1 ? plotW / sorted.length : plotW / sorted.length;
+            const regionW = plotW / sorted.length;
             return (
               <g key={i}>
                 <rect
@@ -899,19 +926,17 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
                     x, y: Math.min(valToY(p.favor_pct ?? 0), valToY(p.oppose_pct ?? 0)) - 14,
                   })}
                 />
-                <circle cx={x} cy={valToY(p.favor_pct ?? 0)} r={4} fill="hsl(150, 55%, 45%)" stroke="hsl(var(--card))" strokeWidth={2} />
-                <circle cx={x} cy={valToY(p.oppose_pct ?? 0)} r={4} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={2} />
+                <circle cx={x} cy={valToY(p.favor_pct ?? 0)} r={3} fill="hsl(150, 55%, 45%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
+                <circle cx={x} cy={valToY(p.oppose_pct ?? 0)} r={3} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
               </g>
             );
           })}
-          {/* Tooltip */}
           {hovered && (
             <g>
               <rect x={Math.max(PAD.left, Math.min(hovered.x - 120, W - PAD.right - 240))} y={hovered.y - 18} width={240} height={18} rx={4} fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth={0.5} />
               <text x={Math.max(PAD.left + 120, Math.min(hovered.x, W - PAD.right - 120))} y={hovered.y - 6} textAnchor="middle" fontSize={9} fontWeight={600} fill="hsl(var(--popover-foreground))">{hovered.label}</text>
             </g>
           )}
-          {/* End labels */}
           <text x={W - PAD.right + 6} y={valToY(latest.favor_pct ?? 0) + 4} fontSize={11} fontWeight={700} fill="hsl(150, 55%, 45%)">{latest.favor_pct}%</text>
           <text x={W - PAD.right + 6} y={valToY(latest.oppose_pct ?? 0) + 4} fontSize={11} fontWeight={700} fill="hsl(0, 65%, 50%)">{latest.oppose_pct}%</text>
         </svg>
