@@ -40,6 +40,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendToEmail, setSendToEmail] = useState(false);
   const toInputRef = useRef<HTMLInputElement>(null);
 
   const loadUsers = useCallback(async () => {
@@ -160,11 +161,28 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
       subject: subject.trim().slice(0, 200),
       body: body.trim().slice(0, 5000),
     });
+
+    // Optionally send email notification to recipient's personal email
+    if (sendToEmail) {
+      try {
+        await supabase.functions.invoke("send-mail-notification", {
+          body: {
+            recipientUserId: toUserId,
+            subject: subject.trim().slice(0, 200),
+            bodyText: body.trim().slice(0, 5000),
+          },
+        });
+      } catch (err) {
+        console.error("Failed to send email notification", err);
+      }
+    }
+
     setSending(false);
     setToUserId("");
     setToSearch("");
     setSubject("");
     setBody("");
+    setSendToEmail(false);
     setFolder("sent");
   };
 
@@ -310,7 +328,16 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
                     placeholder="Write your message here..."
                     maxLength={5000}
                   />
-                  <div className="flex justify-end gap-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="flex items-center gap-1.5 text-[9px] cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={sendToEmail}
+                        onChange={(e) => setSendToEmail(e.target.checked)}
+                        className="accent-[hsl(var(--win98-titlebar))]"
+                      />
+                      📧 Also send to their email
+                    </label>
                     <button
                       onClick={handleSend}
                       disabled={sending || !toUserId || !subject.trim() || !body.trim()}
