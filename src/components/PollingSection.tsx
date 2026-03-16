@@ -629,12 +629,15 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
   const [hoveredPoint, setHoveredPoint] = useState<{ label: string; x: number; y: number } | null>(null);
 
+  const ballotFilter = useCallback((p: PollEntry) => p.poll_type === "generic_ballot", []);
+  const picker = usePollPicker(polls, ballotFilter);
+
   const getDem = (p: PollEntry) => p.favor_pct ?? p.approve_pct ?? 0;
   const getRep = (p: PollEntry) => p.oppose_pct ?? p.disapprove_pct ?? 0;
 
   const monthlyAvg = useMemo(() => {
     const buckets = new Map<string, { demSum: number; repSum: number; count: number }>();
-    polls.forEach((p) => {
+    picker.filteredPolls.forEach((p) => {
       const d = new Date(p.date_conducted + "T00:00:00");
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       if (!buckets.has(key)) buckets.set(key, { demSum: 0, repSum: 0, count: 0 });
@@ -651,7 +654,7 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
         margin: Math.round(((b.demSum - b.repSum) / b.count) * 10) / 10,
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
-  }, [polls]);
+  }, [picker.filteredPolls]);
 
   if (monthlyAvg.length < 2) return null;
 
@@ -685,15 +688,19 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">Generic Ballot Trend</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Monthly D vs R average across all sources</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {picker.isAll ? "Monthly D vs R average across all sources" : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
+            </p>
           </div>
           <div className="flex items-center gap-2">
+            <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
             <span className="text-sm font-display font-bold" style={{ color: "hsl(210, 80%, 50%)" }}>D {latest.dem}%</span>
             <span className="text-muted-foreground text-xs">vs</span>
             <span className="text-sm font-display font-bold" style={{ color: "hsl(0, 75%, 50%)" }}>R {latest.rep}%</span>
             <MarginBadge margin={latest.margin} />
           </div>
         </div>
+        {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
         <div className="overflow-x-auto" style={{ minWidth: 500 }}>
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 280 }} onMouseLeave={() => setHoveredPoint(null)}>
             {yTicks.map((v) => (
