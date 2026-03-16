@@ -13,6 +13,7 @@ import { ElectionResultsSection } from "./ElectionResultsSection";
 import { syncElectionResults, hasSyncCheckpoint, clearSyncCheckpoint, type SyncReport } from "@/data/electionResults";
 import { SyncResultsPanel } from "./SyncResultsPanel";
 import { exportStateLegPDF } from "@/lib/stateLegExport";
+import { StatePollingPanel } from "@/components/StatePollingPanel";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
