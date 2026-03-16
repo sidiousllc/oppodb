@@ -5,6 +5,7 @@ import { CookPVIChart } from "@/components/CookPVIChart";
 import { CongressionalElectionsSection } from "@/components/CongressionalElectionsSection";
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
+import { DistrictPollingPanel } from "@/components/DistrictPollingPanel";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
 import {
   ArrowLeft,
