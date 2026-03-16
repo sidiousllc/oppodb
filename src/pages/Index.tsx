@@ -34,6 +34,7 @@ import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-r
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
 import { StateLegislativeSection } from "@/components/StateLegislativeSection";
+import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { Dashboard } from "@/components/Dashboard";
 
 export default function Index() {
@@ -49,6 +50,7 @@ export default function Index() {
   const [stateLegDistricts, setStateLegDistricts] = useState<StateLegislativeProfile[]>([]);
   const [stateLegLoading, setStateLegLoading] = useState(true);
   const [pollingCount, setPollingCount] = useState(0);
+  const [financeCount, setFinanceCount] = useState(0);
   const [stateLegSyncing, setStateLegSyncing] = useState(false);
   const [censusSyncing, setCensusSyncing] = useState(false);
   const [electionSyncing, setElectionSyncing] = useState(false);
@@ -86,6 +88,9 @@ export default function Index() {
     }).catch(() => setStateLegLoading(false));
     supabase.from("polling_data").select("id", { count: "exact", head: true }).then(({ count }) => {
       setPollingCount(count ?? 0);
+    });
+    supabase.from("campaign_finance").select("id", { count: "exact", head: true }).then(({ count }) => {
+      setFinanceCount(count ?? 0);
     });
   }, []);
 
@@ -242,7 +247,8 @@ export default function Index() {
     "district-intel": districts.length,
     "state-legislative": stateLegDistricts.length,
     polling: pollingCount,
-  }), [dataVersion, districts, stateLegDistricts, pollingCount]);
+    "campaign-finance": financeCount,
+  }), [dataVersion, districts, stateLegDistricts, pollingCount, financeCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
@@ -261,6 +267,7 @@ export default function Index() {
     "district-intel": "District Intelligence",
     "state-legislative": "State Legislative Districts",
     polling: "Polling Data",
+    "campaign-finance": "Campaign Finance",
   };
 
   function renderDetail() {
@@ -576,6 +583,10 @@ export default function Index() {
 
     if (section === "polling") {
       return <PollingSection />;
+    }
+
+    if (section === "campaign-finance") {
+      return <CampaignFinanceSection onNavigateSlug={navigateBySlug} />;
     }
   }
 

@@ -8,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 import { extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver";
 import { VersionHistory } from "@/components/VersionHistory";
 import { exportContentPDF } from "@/lib/contentExport";
+import { CampaignFinancePanel } from "@/components/CampaignFinancePanel";
 
 interface CandidateDetailProps {
   candidate: Candidate;
@@ -248,6 +249,9 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
           </div>
         </div>
       ) : null}
+
+      {/* Campaign Finance */}
+      <CampaignFinancePanel candidateSlug={candidate.slug} />
 
       {/* Version History */}
       {githubPath && (
