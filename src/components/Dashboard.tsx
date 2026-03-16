@@ -55,10 +55,26 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
     };
   }, [approvalPolls]);
 
-  // Latest generic ballot
-  const latestGenericBallot = useMemo(() => {
-    if (genericBallotPolls.length === 0) return null;
-    return genericBallotPolls.sort((a, b) => b.date_conducted.localeCompare(a.date_conducted))[0];
+  // Cross-source generic ballot average (latest per source)
+  const genericBallotAvg = useMemo(() => {
+    const latestBySource = new Map<string, PollEntry>();
+    for (const p of genericBallotPolls) {
+      const existing = latestBySource.get(p.source);
+      if (!existing || p.date_conducted > existing.date_conducted) {
+        latestBySource.set(p.source, p);
+      }
+    }
+    const entries = Array.from(latestBySource.values());
+    if (entries.length === 0) return null;
+    const avgDem = entries.reduce((s, p) => s + (p.favor_pct || 0), 0) / entries.length;
+    const avgRep = entries.reduce((s, p) => s + (p.oppose_pct || 0), 0) / entries.length;
+    const margin = avgDem - avgRep;
+    return {
+      dem: Math.round(avgDem * 10) / 10,
+      rep: Math.round(avgRep * 10) / 10,
+      margin: Math.round(margin * 10) / 10,
+      sourceCount: entries.length,
+    };
   }, [genericBallotPolls]);
 
   // Approval trend by source (latest from each)
