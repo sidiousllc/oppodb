@@ -77,9 +77,18 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // 1. Get latest commit SHA
+    const githubToken = Deno.env.get("GITHUB_TOKEN");
+    const githubHeaders: Record<string, string> = {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "lovable-sync",
+    };
+    if (githubToken) {
+      githubHeaders["Authorization"] = `token ${githubToken}`;
+    }
+
     const commitRes = await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/commits/${BRANCH}`,
-      { headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "lovable-sync" } }
+      { headers: githubHeaders }
     );
     if (!commitRes.ok) throw new Error(`Failed to get commit: ${commitRes.status}`);
     const commitData = await commitRes.json();
@@ -102,7 +111,7 @@ serve(async (req) => {
     // 3. Get the full tree
     const treeRes = await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/trees/${BRANCH}?recursive=1`,
-      { headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "lovable-sync" } }
+      { headers: githubHeaders }
     );
     if (!treeRes.ok) throw new Error(`Failed to get tree: ${treeRes.status}`);
     const treeData = await treeRes.json();
@@ -164,7 +173,9 @@ serve(async (req) => {
       const results = await Promise.allSettled(
         batch.map(async (page) => {
           const rawUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/${page.path}`;
-          const res = await fetch(rawUrl);
+          const fetchHeaders: Record<string, string> = { "User-Agent": "lovable-sync" };
+          if (githubToken) fetchHeaders["Authorization"] = `token ${githubToken}`;
+          const res = await fetch(rawUrl, { headers: fetchHeaders });
           if (!res.ok) throw new Error(`Failed to fetch ${page.path}: ${res.status}`);
           const raw = await res.text();
           const content = stripFrontmatter(raw);
@@ -215,7 +226,9 @@ serve(async (req) => {
       const results = await Promise.allSettled(
         batch.map(async (page) => {
           const rawUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/${page.path}`;
-          const res = await fetch(rawUrl);
+          const fetchHeaders: Record<string, string> = { "User-Agent": "lovable-sync" };
+          if (githubToken) fetchHeaders["Authorization"] = `token ${githubToken}`;
+          const res = await fetch(rawUrl, { headers: fetchHeaders });
           if (!res.ok) throw new Error(`Failed to fetch ${page.path}: ${res.status}`);
           const raw = await res.text();
           const content = stripFrontmatter(raw);
