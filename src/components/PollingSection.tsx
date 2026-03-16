@@ -518,11 +518,14 @@ function SourceDotPlot({ latestBySource }: { latestBySource: PollEntry[] }) {
 
 function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
-  if (polls.length === 0) return null;
+  const ballotFilter = useCallback((p: PollEntry) => p.poll_type === "generic_ballot", []);
+  const picker = usePollPicker(polls, ballotFilter);
+
+  if (picker.filteredPolls.length === 0) return null;
 
   // Latest generic ballot per source
   const bySource = new Map<string, PollEntry>();
-  polls.forEach((p) => {
+  picker.filteredPolls.forEach((p) => {
     const ex = bySource.get(p.source);
     if (!ex || p.date_conducted > ex.date_conducted) bySource.set(p.source, p);
   });
@@ -538,12 +541,16 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
 
   return (
     <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <h3 className="font-display text-sm font-semibold text-foreground mb-1">
-        Generic Congressional Ballot
-      </h3>
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-display text-sm font-semibold text-foreground">
+          Generic Congressional Ballot
+        </h3>
+        <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
+      </div>
       <p className="text-xs text-muted-foreground mb-3">
-        Cross-source average of {entries.length} polls
+        {picker.isAll ? `Cross-source average of ${entries.length} polls` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
       </p>
+      {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
 
       {/* Average headline bar */}
       <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
