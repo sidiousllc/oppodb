@@ -12,7 +12,7 @@ interface PollRow {
   disapprove_pct: number | null;
   margin: number | null;
   sample_size: number | null;
-  raw_data: Record<string, unknown>;
+  raw_data: any;
 }
 
 function MarginBadge({ margin }: { margin: number | null }) {
