@@ -162,6 +162,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
     });
     setSending(false);
     setToUserId("");
+    setToSearch("");
     setSubject("");
     setBody("");
     setFolder("sent");
@@ -170,6 +171,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const handleReply = (msg: MailMessage) => {
     setFolder("compose");
     setToUserId(msg.sender_id);
+    setToSearch(msg.sender_name || "");
     setSubject(msg.subject.startsWith("Re: ") ? msg.subject : `Re: ${msg.subject}`);
     setBody(`\n\n--- Original Message ---\nFrom: ${msg.sender_name}\nDate: ${new Date(msg.created_at).toLocaleString()}\n\n${msg.body}`);
     setSelectedMsg(null);
@@ -178,6 +180,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const handleForward = (msg: MailMessage) => {
     setFolder("compose");
     setToUserId("");
+    setToSearch("");
     setSubject(msg.subject.startsWith("Fwd: ") ? msg.subject : `Fwd: ${msg.subject}`);
     setBody(`\n\n--- Forwarded Message ---\nFrom: ${msg.sender_name}\nDate: ${new Date(msg.created_at).toLocaleString()}\nSubject: ${msg.subject}\n\n${msg.body}`);
     setSelectedMsg(null);
