@@ -163,6 +163,9 @@ function StatLegDetail({
         </button>
       </div>
 
+      {/* State Polling */}
+      <StatePollingPanel stateAbbr={district.state_abbr} />
+
       {/* Election History */}
       <div className="mb-6">
         <ElectionResultsSection
