@@ -91,30 +91,23 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
 
   useEffect(() => { loadMessages(); loadUsers(); }, [loadMessages, loadUsers]);
 
-  // Search users by display name for compose (searches both profiles and presence)
+  // Search users by display name or email for compose
   useEffect(() => {
     if (!user || toSearch.length < 1) {
       setToSuggestions([]);
       return;
     }
     const timer = setTimeout(async () => {
-      const searchTerm = `%${toSearch}%`;
-      // Query both profiles and user_presence for broader coverage
-      const [profilesRes, presenceRes] = await Promise.all([
-        supabase.from("profiles").select("id, display_name").neq("id", user.id).ilike("display_name", searchTerm).limit(8),
-        supabase.from("user_presence").select("user_id, display_name").neq("user_id", user.id).ilike("display_name", searchTerm).limit(8),
-      ]);
-
-      const seen = new Map<string, string>();
-      profilesRes.data?.forEach(p => {
-        if (p.display_name) seen.set(p.id, p.display_name);
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "search_users", query: toSearch },
       });
-      presenceRes.data?.forEach(p => {
-        if (!seen.has(p.user_id) && p.display_name) seen.set(p.user_id, p.display_name);
-      });
-
-      setToSuggestions(Array.from(seen.entries()).map(([user_id, display_name]) => ({ user_id, display_name })));
-    }, 200);
+      if (!error && data?.users) {
+        setToSuggestions(data.users.map((u: any) => ({
+          user_id: u.user_id,
+          display_name: u.email ? `${u.display_name} (${u.email})` : u.display_name,
+        })));
+      }
+    }, 250);
     return () => clearTimeout(timer);
   }, [toSearch, user]);
 
