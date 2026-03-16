@@ -966,11 +966,46 @@ type DemoEntry = { demographic: string; approve: number; disapprove: number; mar
 function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
   const [activeGroup, setActiveGroup] = useState<string>("party");
+  const [selectedPollIds, setSelectedPollIds] = useState<Set<string>>(new Set()); // empty = all
+  const [showPollPicker, setShowPollPicker] = useState(false);
+
+  // Get all polls that have demographic data
+  const demoPollsList = useMemo(() => {
+    const seen = new Map<string, { id: string; source: string; date: string; topic: string }>();
+    polls.forEach((p) => {
+      const rd = p.raw_data as any;
+      if (!rd || !rd.demographic || !rd.group_type) return;
+      const key = `${p.source}|${p.date_conducted}`;
+      if (!seen.has(key)) {
+        seen.set(key, { id: key, source: p.source, date: p.date_conducted, topic: p.candidate_or_topic });
+      }
+    });
+    return [...seen.values()].sort((a, b) => b.date.localeCompare(a.date));
+  }, [polls]);
+
+  const isAllSelected = selectedPollIds.size === 0;
+
+  const filteredPolls = useMemo(() => {
+    if (isAllSelected) return polls;
+    return polls.filter((p) => {
+      const key = `${p.source}|${p.date_conducted}`;
+      return selectedPollIds.has(key);
+    });
+  }, [polls, selectedPollIds, isAllSelected]);
+
+  const togglePoll = (id: string) => {
+    setSelectedPollIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Extract polls that have demographic raw_data
   const demoData = useMemo(() => {
     const map = new Map<string, Map<string, { totalApprove: number; totalDisapprove: number; count: number }>>();
-    polls.forEach((p) => {
+    filteredPolls.forEach((p) => {
       const rd = p.raw_data as any;
       if (!rd || !rd.demographic || !rd.group_type) return;
       if (!map.has(rd.group_type)) map.set(rd.group_type, new Map());
@@ -989,20 +1024,22 @@ function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
         const disapprove = Math.round(val.totalDisapprove / val.count);
         entries.push({ demographic: demo, approve, disapprove, margin: approve - disapprove, count: val.count });
       });
-      // Sort by margin descending
       entries.sort((a, b) => b.margin - a.margin);
       result.set(groupType, entries);
     });
     return result;
-  }, [polls]);
+  }, [filteredPolls]);
 
   const entries = demoData.get(activeGroup) ?? [];
-  if (demoData.size === 0) return null;
+  if (demoPollsList.length === 0) return null;
 
   const maxVal = Math.max(...entries.flatMap((e) => [e.approve, e.disapprove]), 100);
-  const barW = 320;
-  const barH = 22;
   const groupConfig = DEMO_GROUPS.find((g) => g.id === activeGroup);
+
+  const activeSourceCount = new Set(filteredPolls.filter((p) => {
+    const rd = p.raw_data as any;
+    return rd?.group_type === activeGroup;
+  }).map((p) => p.source)).size;
 
   return (
     <AnimatedCard>
@@ -1013,69 +1050,141 @@ function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
               Demographic Breakdown — Approval
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Cross-source average by demographic group
+              {isAllSelected ? "Cross-source average" : `${selectedPollIds.size} poll${selectedPollIds.size !== 1 ? "s" : ""} selected`} by demographic group
             </p>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {DEMO_GROUPS.filter((g) => demoData.has(g.id)).map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setActiveGroup(g.id)}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
-                  activeGroup === g.id
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-                }`}
-              >
-                {g.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShowPollPicker(!showPollPicker)}
+              className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors flex items-center gap-1 ${
+                showPollPicker
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+              }`}
+            >
+              <Filter className="h-3 w-3" />
+              Polls {!isAllSelected && `(${selectedPollIds.size})`}
+            </button>
+            <div className="flex flex-wrap gap-1">
+              {DEMO_GROUPS.filter((g) => demoData.has(g.id)).map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => setActiveGroup(g.id)}
+                  className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                    activeGroup === g.id
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="space-y-2">
-          {entries.map((entry, i) => {
-            const partyColors = (groupConfig as any)?.colors ?? {};
-            const barColor = partyColors[entry.demographic] ?? `hsl(${210 + i * 40}, 60%, 50%)`;
-            const approveW = (entry.approve / maxVal) * 100;
-            const disapproveW = (entry.disapprove / maxVal) * 100;
-
-            return (
-              <div
-                key={entry.demographic}
-                className="transition-all duration-500"
-                style={{
-                  opacity: inView ? 1 : 0,
-                  transform: inView ? "translateX(0)" : "translateX(-20px)",
-                  transitionDelay: `${i * 60}ms`,
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-foreground w-28 shrink-0 text-right">
-                    {entry.demographic}
-                  </span>
-                  <div className="flex-1 flex items-center gap-1">
-                    <div className="flex h-5 flex-1 overflow-hidden rounded bg-muted/40">
-                      <div
-                        className="h-full rounded-l transition-all duration-700 flex items-center justify-end pr-1"
-                        style={{ width: `${approveW}%`, backgroundColor: "hsl(150, 55%, 45%)" }}
-                      >
-                        {approveW > 12 && <span className="text-[9px] font-bold text-white">{entry.approve}%</span>}
-                      </div>
-                      <div
-                        className="h-full rounded-r transition-all duration-700 flex items-center pl-1"
-                        style={{ width: `${disapproveW}%`, backgroundColor: "hsl(0, 65%, 50%)" }}
-                      >
-                        {disapproveW > 12 && <span className="text-[9px] font-bold text-white">{entry.disapprove}%</span>}
-                      </div>
+        {/* Poll picker */}
+        {showPollPicker && (
+          <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Polls</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedPollIds(new Set())}
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors ${
+                    isAllSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setSelectedPollIds(new Set(demoPollsList.map((p) => p.id)))}
+                  className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors"
+                >
+                  Select All
+                </button>
+                <button
+                  onClick={() => setSelectedPollIds(new Set())}
+                  className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+            <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 max-h-40 overflow-y-auto">
+              {demoPollsList.map((poll) => {
+                const checked = isAllSelected || selectedPollIds.has(poll.id);
+                return (
+                  <label
+                    key={poll.id}
+                    className={`flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer transition-colors text-xs ${
+                      checked && !isAllSelected ? "bg-primary/10 border border-primary/30" : "bg-card border border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => togglePoll(poll.id)}
+                      className="accent-[hsl(var(--primary))] h-3 w-3 shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <span className="font-semibold text-foreground">{getSourceInfo(poll.source).name}</span>
+                      <span className="text-muted-foreground ml-1">{formatDate(poll.date)}</span>
                     </div>
-                    <MarginBadge margin={entry.margin} />
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {entries.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-6">No demographic data for selected polls in this group.</p>
+        ) : (
+          <div className="space-y-2">
+            {entries.map((entry, i) => {
+              const partyColors = (groupConfig as any)?.colors ?? {};
+              const barColor = partyColors[entry.demographic] ?? `hsl(${210 + i * 40}, 60%, 50%)`;
+              const approveW = (entry.approve / maxVal) * 100;
+              const disapproveW = (entry.disapprove / maxVal) * 100;
+
+              return (
+                <div
+                  key={entry.demographic}
+                  className="transition-all duration-500"
+                  style={{
+                    opacity: inView ? 1 : 0,
+                    transform: inView ? "translateX(0)" : "translateX(-20px)",
+                    transitionDelay: `${i * 60}ms`,
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-foreground w-28 shrink-0 text-right">
+                      {entry.demographic}
+                    </span>
+                    <div className="flex-1 flex items-center gap-1">
+                      <div className="flex h-5 flex-1 overflow-hidden rounded bg-muted/40">
+                        <div
+                          className="h-full rounded-l transition-all duration-700 flex items-center justify-end pr-1"
+                          style={{ width: `${approveW}%`, backgroundColor: "hsl(150, 55%, 45%)" }}
+                        >
+                          {approveW > 12 && <span className="text-[9px] font-bold text-white">{entry.approve}%</span>}
+                        </div>
+                        <div
+                          className="h-full rounded-r transition-all duration-700 flex items-center pl-1"
+                          style={{ width: `${disapproveW}%`, backgroundColor: "hsl(0, 65%, 50%)" }}
+                        >
+                          {disapproveW > 12 && <span className="text-[9px] font-bold text-white">{entry.disapprove}%</span>}
+                        </div>
+                      </div>
+                      <MarginBadge margin={entry.margin} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex items-center gap-4 mt-4 text-[10px] text-muted-foreground border-t border-border pt-3">
           <span className="flex items-center gap-1">
@@ -1085,10 +1194,7 @@ function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
             <span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Disapprove
           </span>
           <span className="ml-auto">
-            Averaged across {new Set(polls.filter((p) => {
-              const rd = p.raw_data as any;
-              return rd?.group_type === activeGroup;
-            }).map((p) => p.source)).size} sources
+            {isAllSelected ? `Averaged across ${activeSourceCount} sources` : `From ${selectedPollIds.size} selected poll${selectedPollIds.size !== 1 ? "s" : ""}`}
           </span>
         </div>
       </div>
