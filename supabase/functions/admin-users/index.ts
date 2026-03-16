@@ -187,6 +187,23 @@ Deno.serve(async (req) => {
         });
       }
 
+      case 'ban_user': {
+        const { user_id, duration } = params;
+        if (!user_id) throw new Error('user_id required');
+        if (user_id === caller.id) throw new Error('Cannot ban yourself');
+
+        // duration: e.g. "24h", "7d", "none" to unban
+        const ban_duration = duration === 'none' ? 'none' : (duration || '876000h');
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          ban_duration,
+        });
+        if (error) throw error;
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: 'Unknown action' }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
