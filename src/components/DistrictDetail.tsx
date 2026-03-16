@@ -192,6 +192,12 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
       {/* District Polling */}
       <DistrictPollingPanel districtId={district.district_id} />
 
+      {/* Campaign Finance */}
+      <AreaFinancePanel
+        stateAbbr={district.district_id.split("-")[0]}
+        districtId={district.district_id}
+      />
+
       {/* Election History */}
       <CongressionalElectionsSection districtId={district.district_id} />
 

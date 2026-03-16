@@ -167,6 +167,9 @@ function StatLegDetail({
       {/* State Polling */}
       <StatePollingPanel stateAbbr={district.state_abbr} />
 
+      {/* Campaign Finance */}
+      <AreaFinancePanel stateAbbr={district.state_abbr} title={`Campaign Finance — ${district.state}`} />
+
       {/* Election History */}
       <div className="mb-6">
         <ElectionResultsSection
