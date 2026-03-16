@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Win98Notepad } from "./Win98Notepad";
+import { Win98Window } from "./Win98Window";
 
 interface DesktopIcon {
   label: string;
