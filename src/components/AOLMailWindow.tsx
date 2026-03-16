@@ -91,6 +91,26 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
 
   useEffect(() => { loadMessages(); loadUsers(); }, [loadMessages, loadUsers]);
 
+  // Search users by display name for compose
+  useEffect(() => {
+    if (!user || toSearch.length < 1) {
+      setToSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name")
+        .neq("id", user.id)
+        .ilike("display_name", `%${toSearch}%`)
+        .limit(8);
+      if (data) {
+        setToSuggestions(data.map(p => ({ user_id: p.id, display_name: p.display_name || p.id })));
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [toSearch, user]);
+
   // Realtime subscription for new mail
   useEffect(() => {
     if (!user) return;
