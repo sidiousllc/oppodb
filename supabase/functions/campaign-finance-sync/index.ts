@@ -82,6 +82,7 @@ async function syncStateFinance(
 ): Promise<{ upserted: number; errors: string[] }> {
   const errors: string[] = [];
   const rows: any[] = [];
+  const seenKeys = new Set<string>();
 
   // Fetch candidates with financial totals for this state & cycle
   for (const office of ["H", "S"]) {
