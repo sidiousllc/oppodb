@@ -226,6 +226,7 @@ function UsersTab() {
           <thead>
             <tr className="bg-[hsl(var(--win98-face))] border-b border-[hsl(var(--win98-shadow))]">
               <th className="text-left px-2 py-1 font-bold">User</th>
+              <th className="text-left px-2 py-1 font-bold">Status</th>
               <th className="text-left px-2 py-1 font-bold">Joined</th>
               <th className="text-left px-2 py-1 font-bold">Last Sign In</th>
               <th className="text-left px-2 py-1 font-bold">Roles</th>
