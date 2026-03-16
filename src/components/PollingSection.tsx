@@ -998,6 +998,9 @@ export function PollingSection() {
         <IssueButterflyChart polls={issuePolls} />
       </div>
 
+      {/* ─── Demographic Breakdown ───────────────────────────────────────── */}
+      <DemographicBreakdownChart polls={polls} />
+
       {/* ─── Issue Polling Deep Dive ──────────────────────────────────────── */}
       <IssuePollingSection polls={polls} />
 
