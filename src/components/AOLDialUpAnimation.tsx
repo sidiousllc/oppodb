@@ -71,7 +71,7 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[hsl(180,50%,50%)]">
       {/* Decorative AOL triangles / branding */}
       <div className="absolute top-4 left-4 text-white text-[11px] font-bold opacity-60">
-        AOL Research Online
+        Opposition Research Online
       </div>
 
       {showWelcome ? (
@@ -79,17 +79,13 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
         <div className="flex flex-col items-center gap-4 animate-fade-in">
           <div className="text-[64px] leading-none">🌐</div>
           <div className="win98-raised bg-[hsl(var(--win98-face))] px-8 py-4 text-center">
-            <p className="text-[18px] font-bold font-pixel text-[hsl(var(--primary))]">
-              Welcome!
-            </p>
-            <p className="text-[11px] mt-1 text-[hsl(var(--muted-foreground))]">
-              You've Got Research!
-            </p>
+            <p className="text-[18px] font-bold font-pixel text-[hsl(var(--primary))]">Welcome!</p>
+            <p className="text-[11px] mt-1 text-[hsl(var(--muted-foreground))]">You've Got Research!</p>
           </div>
         </div>
       ) : (
         <Win98Window
-          title="AOL Research Online — Connecting"
+          title="Opposition Research Online — Connecting"
           icon={<span className="text-[12px]">📡</span>}
           className="w-full max-w-[420px]"
         >
@@ -99,9 +95,7 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
               <div className="text-[40px] leading-none animate-pulse">🌐</div>
               <div>
                 <h2 className="text-[13px] font-bold">AOL Research Online</h2>
-                <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
-                  Opposition Research Database v4.0
-                </p>
+                <p className="text-[10px] text-[hsl(var(--muted-foreground))]">Opposition Research Database v4.0</p>
               </div>
             </div>
 
@@ -116,9 +110,7 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
                       i > currentStep ? "opacity-30" : i === currentStep ? "font-bold" : "opacity-70"
                     }`}
                   >
-                    <span className="w-3 text-center">
-                      {i < currentStep ? "✅" : i === currentStep ? "⏳" : "⬜"}
-                    </span>
+                    <span className="w-3 text-center">{i < currentStep ? "✅" : i === currentStep ? "⏳" : "⬜"}</span>
                     <span>{step.text}</span>
                   </div>
                 ))}
@@ -127,11 +119,7 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
               {/* Detail / modem noise */}
               <div className="win98-sunken bg-black text-[hsl(120,100%,50%)] p-2 font-pixel text-[12px] min-h-[48px]">
                 <p>{CONNECTION_STEPS[currentStep]?.detail}</p>
-                {currentStep < 2 && (
-                  <p className="mt-1 opacity-60 select-none">
-                    {MODEM_NOISE_FRAMES[noiseFrame]}
-                  </p>
-                )}
+                {currentStep < 2 && <p className="mt-1 opacity-60 select-none">{MODEM_NOISE_FRAMES[noiseFrame]}</p>}
               </div>
             </div>
 
@@ -150,10 +138,7 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
 
             {/* Skip / Cancel */}
             <div className="flex justify-end">
-              <button
-                onClick={skipAnimation}
-                className="win98-button text-[11px] px-4"
-              >
+              <button onClick={skipAnimation} className="win98-button text-[11px] px-4">
                 Skip
               </button>
             </div>
