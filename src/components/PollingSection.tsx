@@ -957,22 +957,24 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
   ];
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-start justify-between mb-1 flex-wrap gap-2">
-        <div>
-          <h3 className="font-display text-sm font-semibold text-foreground">Favorability Tracking</h3>
-          <p className="text-xs text-muted-foreground">
-            {picker.isAll ? `${sorted.length} data points from ${new Set(sorted.map((p) => p.source)).size} sources` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
-          </p>
-        </div>
-        <div className="flex items-center gap-1 flex-wrap">
-          <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
-          <div className="flex items-center gap-2 text-sm mr-2">
-            <span className="font-display font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>{latest.favor_pct}% Fav</span>
-            <span className="text-muted-foreground">/</span>
-            <span className="font-display font-bold" style={{ color: "hsl(0, 65%, 50%)" }}>{latest.oppose_pct}% Unfav</span>
+    <AnimatedCard>
+      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-foreground">Favorability Tracking</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {picker.isAll ? `${sorted.length} data points from ${new Set(sorted.map((p) => p.source)).size} sources` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-display font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>Fav {latest.favor_pct}%</span>
+            <span className="text-muted-foreground text-xs">vs</span>
+            <span className="text-sm font-display font-bold" style={{ color: "hsl(0, 65%, 50%)" }}>Unfav {latest.oppose_pct}%</span>
             <MarginBadge margin={(latest.favor_pct ?? 0) - (latest.oppose_pct ?? 0)} />
           </div>
+        </div>
+        <div className="flex items-center gap-1 flex-wrap mb-3">
+          <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
           {zoomOptions.map(opt => (
             <button
               key={opt.value}
@@ -987,58 +989,58 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
             </button>
           ))}
         </div>
-      </div>
-      {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
-      <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 320 }} onMouseLeave={() => setHovered(null)}>
-          {yTicks.map((v) => (
-            <g key={v}>
-              <line x1={PAD.left} y1={valToY(v)} x2={W - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "3,3"} />
-              <text x={PAD.left - 8} y={valToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
-            </g>
-          ))}
-          {minVal < 50 && maxVal > 50 && (
-            <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
-          )}
-          {xTicks.map((t) => (
-            <text key={t.date} x={dateToX(t.date)} y={H - 8} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">{t.label}</text>
-          ))}
-          <path d={areaPath} fill="hsl(0, 65%, 50%)" opacity={0.08} />
-          <path d={unfavPath} fill="none" stroke="hsl(0, 65%, 50%)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-          <path d={favPath} fill="none" stroke="hsl(150, 55%, 45%)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-          {sorted.map((p, i) => {
-            const x = dateToX(p.date_conducted);
-            const regionW = plotW / sorted.length;
-            return (
-              <g key={i}>
-                <rect
-                  x={x - regionW / 2} y={PAD.top} width={regionW} height={plotH} fill="transparent"
-                  onMouseEnter={() => setHovered({
-                    label: `${formatDate(p.date_conducted)} · ${getSourceInfo(p.source).name}: ${p.favor_pct}% fav / ${p.oppose_pct}% unfav`,
-                    x, y: Math.min(valToY(p.favor_pct ?? 0), valToY(p.oppose_pct ?? 0)) - 14,
-                  })}
-                />
-                <circle cx={x} cy={valToY(p.favor_pct ?? 0)} r={3} fill="hsl(150, 55%, 45%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
-                <circle cx={x} cy={valToY(p.oppose_pct ?? 0)} r={3} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
+        {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
+        <div className="overflow-x-auto" style={{ minWidth: 500 }}>
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 280 }} onMouseLeave={() => setHovered(null)}>
+            {yTicks.map((v) => (
+              <g key={v}>
+                <line x1={PAD.left} x2={W - PAD.right} y1={valToY(v)} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "3,3"} />
+                <text x={PAD.left - 6} y={valToY(v) + 3} textAnchor="end" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
               </g>
-            );
-          })}
-          {hovered && (
-            <g>
-              <rect x={Math.max(PAD.left, Math.min(hovered.x - 120, W - PAD.right - 240))} y={hovered.y - 18} width={240} height={18} rx={4} fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth={0.5} />
-              <text x={Math.max(PAD.left + 120, Math.min(hovered.x, W - PAD.right - 120))} y={hovered.y - 6} textAnchor="middle" fontSize={9} fontWeight={600} fill="hsl(var(--popover-foreground))">{hovered.label}</text>
-            </g>
-          )}
-          <text x={W - PAD.right + 6} y={valToY(latest.favor_pct ?? 0) + 4} fontSize={11} fontWeight={700} fill="hsl(150, 55%, 45%)">{latest.favor_pct}%</text>
-          <text x={W - PAD.right + 6} y={valToY(latest.oppose_pct ?? 0) + 4} fontSize={11} fontWeight={700} fill="hsl(0, 65%, 50%)">{latest.oppose_pct}%</text>
-        </svg>
+            ))}
+            {minVal < 50 && maxVal > 50 && (
+              <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
+            )}
+            {xTicks.map((t) => (
+              <text key={t.date} x={dateToX(t.date)} y={H - PAD.bottom + 20} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{t.label}</text>
+            ))}
+            <path d={areaPath} fill="hsl(270, 50%, 60%)" opacity={0.06} />
+            <path d={unfavPath} fill="none" stroke="hsl(0, 65%, 50%)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: inView ? "0" : "2000", strokeDashoffset: inView ? "0" : "2000", transition: "stroke-dashoffset 1.5s ease 0.3s" }} />
+            <path d={favPath} fill="none" stroke="hsl(150, 55%, 45%)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: inView ? "0" : "2000", strokeDashoffset: inView ? "0" : "2000", transition: "stroke-dashoffset 1.5s ease" }} />
+            {sorted.map((p, i) => {
+              const x = dateToX(p.date_conducted);
+              const regionW = plotW / sorted.length;
+              return (
+                <g key={i}>
+                  <rect
+                    x={x - regionW / 2} y={PAD.top} width={regionW} height={plotH} fill="transparent"
+                    onMouseEnter={() => setHovered({
+                      label: `${formatDate(p.date_conducted)} · ${getSourceInfo(p.source).name}: ${p.favor_pct}% fav / ${p.oppose_pct}% unfav`,
+                      x, y: Math.min(valToY(p.favor_pct ?? 0), valToY(p.oppose_pct ?? 0)) - 12,
+                    })}
+                  />
+                  <circle cx={x} cy={valToY(p.favor_pct ?? 0)} r={3} fill="hsl(150, 55%, 45%)" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${i * 60}ms` }} />
+                  <circle cx={x} cy={valToY(p.oppose_pct ?? 0)} r={3} fill="hsl(0, 65%, 50%)" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${i * 60 + 300}ms` }} />
+                </g>
+              );
+            })}
+            {hovered && (
+              <g>
+                <rect x={Math.max(PAD.left, Math.min(hovered.x - 120, W - PAD.right - 240))} y={hovered.y - 18} width={240} height={18} rx={4} fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth={0.5} />
+                <text x={Math.max(PAD.left + 120, Math.min(hovered.x, W - PAD.right - 120))} y={hovered.y - 6} textAnchor="middle" fontSize={9} fontWeight={600} fill="hsl(var(--popover-foreground))">{hovered.label}</text>
+              </g>
+            )}
+            <text x={W - PAD.right + 6} y={valToY(latest.favor_pct ?? 0) + 3} fontSize={10} fontWeight={700} fill="hsl(150, 55%, 45%)">Fav {latest.favor_pct}%</text>
+            <text x={W - PAD.right + 6} y={valToY(latest.oppose_pct ?? 0) + 3} fontSize={10} fontWeight={700} fill="hsl(0, 65%, 50%)">Unfav {latest.oppose_pct}%</text>
+          </svg>
+        </div>
+        <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Favorable</span>
+          <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Unfavorable</span>
+          <span className="ml-auto">{sorted.length} data points tracked</span>
+        </div>
       </div>
-      <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
-        <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Favorable</span>
-        <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Unfavorable</span>
-        <span className="ml-auto">Latest: {getSourceInfo(latest.source).name} · {formatDate(latest.date_conducted)}</span>
-      </div>
-    </div>
+    </AnimatedCard>
   );
 }
 
