@@ -36,6 +36,49 @@ Deno.serve(async (req) => {
       });
     }
 
+    const { action, ...params } = await req.json();
+
+    // search_users is available to all authenticated users
+    if (action === 'search_users') {
+      const { query: searchQuery } = params;
+      if (!searchQuery || searchQuery.length < 1) {
+        return new Response(JSON.stringify({ users: [] }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 100 });
+      if (error) throw error;
+
+      const { data: profiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id, display_name');
+      const profileMap: Record<string, string> = {};
+      for (const p of profiles || []) {
+        if (p.display_name) profileMap[p.id] = p.display_name;
+      }
+
+      const lowerQ = searchQuery.toLowerCase();
+      const matches = users
+        .filter(u => u.id !== caller.id)
+        .filter(u => {
+          const email = (u.email || '').toLowerCase();
+          const name = (profileMap[u.id] || '').toLowerCase();
+          return email.includes(lowerQ) || name.includes(lowerQ);
+        })
+        .slice(0, 10)
+        .map(u => ({
+          user_id: u.id,
+          display_name: profileMap[u.id] || u.email?.split('@')[0] || u.id,
+          email: u.email,
+        }));
+
+      return new Response(JSON.stringify({ users: matches }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // All other actions require admin
     const { data: callerRoles } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -47,8 +90,6 @@ Deno.serve(async (req) => {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    const { action, ...params } = await req.json();
 
     switch (action) {
       case 'list_users': {
