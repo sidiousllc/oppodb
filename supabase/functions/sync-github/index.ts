@@ -226,7 +226,9 @@ serve(async (req) => {
       const results = await Promise.allSettled(
         batch.map(async (page) => {
           const rawUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/${page.path}`;
-          const res = await fetch(rawUrl);
+          const fetchHeaders: Record<string, string> = { "User-Agent": "lovable-sync" };
+          if (githubToken) fetchHeaders["Authorization"] = `token ${githubToken}`;
+          const res = await fetch(rawUrl, { headers: fetchHeaders });
           if (!res.ok) throw new Error(`Failed to fetch ${page.path}: ${res.status}`);
           const raw = await res.text();
           const content = stripFrontmatter(raw);
