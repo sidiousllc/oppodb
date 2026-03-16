@@ -637,10 +637,11 @@ export default function Index() {
                   ) : (
                     <>
                       <div className="mb-1">
+                        <div className="mb-1">
                         <h2 className="text-sm font-bold mb-2">
                           📂 {sectionLabels[section]}
                         </h2>
-
+                      </div>
                       <div className="mb-3">
                         <SearchBar value={search} onChange={setSearch} />
                       </div>
