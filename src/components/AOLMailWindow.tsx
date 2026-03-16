@@ -91,22 +91,29 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
 
   useEffect(() => { loadMessages(); loadUsers(); }, [loadMessages, loadUsers]);
 
-  // Search users by display name for compose
+  // Search users by display name for compose (searches both profiles and presence)
   useEffect(() => {
     if (!user || toSearch.length < 1) {
       setToSuggestions([]);
       return;
     }
     const timer = setTimeout(async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name")
-        .neq("id", user.id)
-        .ilike("display_name", `%${toSearch}%`)
-        .limit(8);
-      if (data) {
-        setToSuggestions(data.map(p => ({ user_id: p.id, display_name: p.display_name || p.id })));
-      }
+      const searchTerm = `%${toSearch}%`;
+      // Query both profiles and user_presence for broader coverage
+      const [profilesRes, presenceRes] = await Promise.all([
+        supabase.from("profiles").select("id, display_name").neq("id", user.id).ilike("display_name", searchTerm).limit(8),
+        supabase.from("user_presence").select("user_id, display_name").neq("user_id", user.id).ilike("display_name", searchTerm).limit(8),
+      ]);
+
+      const seen = new Map<string, string>();
+      profilesRes.data?.forEach(p => {
+        if (p.display_name) seen.set(p.id, p.display_name);
+      });
+      presenceRes.data?.forEach(p => {
+        if (!seen.has(p.user_id) && p.display_name) seen.set(p.user_id, p.display_name);
+      });
+
+      setToSuggestions(Array.from(seen.entries()).map(([user_id, display_name]) => ({ user_id, display_name })));
     }, 200);
     return () => clearTimeout(timer);
   }, [toSearch, user]);
