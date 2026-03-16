@@ -224,6 +224,7 @@ function UsersTab() {
 
       {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSaved={() => { setEditingUser(null); loadUsers(); }} />}
       {resetPasswordUser && <ResetPasswordModal user={resetPasswordUser} onClose={() => setResetPasswordUser(null)} onSaved={() => setResetPasswordUser(null)} />}
+      {suspendUser && <SuspendUserModal user={suspendUser} onClose={() => setSuspendUser(null)} onSuspend={handleSuspendWithDuration} />}
 
       {/* Users table */}
       <div className="win98-sunken bg-white">
