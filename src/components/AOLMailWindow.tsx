@@ -208,7 +208,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
             {/* Toolbar */}
             <div className="bg-[hsl(var(--win98-face))] border-b border-[hsl(var(--win98-shadow))] px-2 py-1 flex items-center gap-1">
               <button
-                onClick={() => { setFolder("compose"); setSelectedMsg(null); setToUserId(""); setSubject(""); setBody(""); }}
+                onClick={() => { setFolder("compose"); setSelectedMsg(null); setToUserId(""); setToSearch(""); setSubject(""); setBody(""); }}
                 className="win98-button text-[9px] flex items-center gap-1 font-bold"
               >
                 <PenLine className="h-3 w-3" /> Write
