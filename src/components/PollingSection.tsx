@@ -1195,30 +1195,36 @@ export function PollingSection() {
           </div>
           </AnimatedCard>
 
-          {/* Generic ballot summary */}
+          {/* Generic ballot cross-source average */}
           {genericBallotPolls.length > 0 && (() => {
-            const latest = genericBallotPolls[0];
+            const validPolls = genericBallotPolls.filter(p => p.favor_pct != null && p.oppose_pct != null);
+            if (validPolls.length === 0) return null;
+            const avgDem = Math.round(validPolls.reduce((s, p) => s + (p.favor_pct ?? 0), 0) / validPolls.length * 10) / 10;
+            const avgRep = Math.round(validPolls.reduce((s, p) => s + (p.oppose_pct ?? 0), 0) / validPolls.length * 10) / 10;
+            const avgMargin = Math.round((avgDem - avgRep) * 10) / 10;
+            const total = avgDem + avgRep || 100;
+            const sourceCount = new Set(validPolls.map(p => p.source)).size;
             return (
               <AnimatedCard delay={100}>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  Generic Ballot (Latest)
+                  Generic Ballot (Avg of {sourceCount} source{sourceCount !== 1 ? "s" : ""})
                 </p>
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-2xl font-display font-bold" style={{ color: "hsl(210, 80%, 50%)" }}>
-                    D {latest.favor_pct ?? "—"}%
+                    D {avgDem}%
                   </span>
                   <span className="text-muted-foreground">vs</span>
                   <span className="text-2xl font-display font-bold" style={{ color: "hsl(0, 75%, 50%)" }}>
-                    R {latest.oppose_pct ?? "—"}%
+                    R {avgRep}%
                   </span>
                 </div>
                 <div className="flex h-4 w-full overflow-hidden rounded-full bg-muted mb-2">
-                  <div className="transition-all duration-500" style={{ width: `${((latest.favor_pct ?? 0) / ((latest.favor_pct ?? 0) + (latest.oppose_pct ?? 0) || 100)) * 100}%`, backgroundColor: "hsl(210, 80%, 50%)" }} />
-                  <div className="transition-all duration-500" style={{ width: `${((latest.oppose_pct ?? 0) / ((latest.favor_pct ?? 0) + (latest.oppose_pct ?? 0) || 100)) * 100}%`, backgroundColor: "hsl(0, 75%, 50%)" }} />
+                  <div className="transition-all duration-500" style={{ width: `${(avgDem / total) * 100}%`, backgroundColor: "hsl(210, 80%, 50%)" }} />
+                  <div className="transition-all duration-500" style={{ width: `${(avgRep / total) * 100}%`, backgroundColor: "hsl(0, 75%, 50%)" }} />
                 </div>
-                <MarginBadge margin={latest.margin} />
+                <MarginBadge margin={avgMargin} />
                 <p className="text-[10px] text-muted-foreground mt-2">
-                  {getSourceInfo(latest.source).name} · {formatDate(latest.date_conducted)}
+                  Cross-source average · {validPolls.length} poll{validPolls.length !== 1 ? "s" : ""}
                 </p>
               </AnimatedCard>
             );
