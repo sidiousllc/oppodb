@@ -110,6 +110,7 @@ function UsersTab() {
   const [creating, setCreating] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
+  const [suspendUser, setSuspendUser] = useState<AdminUser | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
