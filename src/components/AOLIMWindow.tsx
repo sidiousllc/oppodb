@@ -124,18 +124,19 @@ export function AOLIMWindow({ recipientId, recipientName, onClose, position }: I
     return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   };
 
-  const rightOffset = 210 + position * 260;
+  const xOffset = window.innerWidth - 270 - position * 260;
+  const yOffset = window.innerHeight - 380;
 
   return (
-    <div
-      className="fixed bottom-[56px] z-[996]"
-      style={{ right: `${rightOffset}px`, width: "250px", height: "320px" }}
-    >
+    <div className="fixed inset-0 z-[996] pointer-events-none">
+      <div className="pointer-events-auto">
       <Win98Window
         title={`${recipientName} - Instant Message`}
         icon={<span className="text-[10px]">💬</span>}
         onClose={onClose}
-        className="h-full"
+        defaultPosition={{ x: xOffset, y: yOffset }}
+        defaultSize={{ width: 250, height: 320 }}
+        minSize={{ width: 200, height: 200 }}
       >
         <div className="flex flex-col h-full bg-white">
           {/* Warning banner */}
