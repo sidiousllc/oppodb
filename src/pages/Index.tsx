@@ -84,6 +84,9 @@ export default function Index() {
       setStateLegDistricts(d);
       setStateLegLoading(false);
     }).catch(() => setStateLegLoading(false));
+    supabase.from("polling_data").select("id", { count: "exact", head: true }).then(({ count }) => {
+      setPollingCount(count ?? 0);
+    });
   }, []);
 
   const handleCensusSync = useCallback(async () => {
