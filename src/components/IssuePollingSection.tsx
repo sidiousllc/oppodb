@@ -1,5 +1,6 @@
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { getSourceInfo, type PollEntry } from "@/data/pollingData";
+import { usePollPicker, PollPickerButton, PollPickerDropdown } from "@/components/PollingSection";
 import { AlertTriangle, TrendingDown, TrendingUp, Minus, Globe, DollarSign, Compass, Shield, Heart, Users } from "lucide-react";
 
 // ─── useInView ──────────────────────────────────────────────────────────────
