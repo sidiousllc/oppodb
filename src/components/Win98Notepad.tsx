@@ -51,7 +51,6 @@ export function Win98Notepad({ onClose }: Win98NotepadProps) {
     textareaRef.current?.select();
   }, []);
 
-  const now = new Date();
   const handleTimeDate = useCallback(() => {
     const stamp = new Date().toLocaleString();
     const ta = textareaRef.current;
@@ -63,7 +62,6 @@ export function Win98Notepad({ onClose }: Win98NotepadProps) {
 
   const menuBar = (
     <div className="flex items-center gap-0 text-[11px]">
-      {/* File menu */}
       <div className="group relative">
         <button className="px-2 py-[2px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">File</button>
         <div className="hidden group-hover:block absolute top-full left-0 bg-[hsl(var(--win98-face))] win98-raised min-w-[160px] py-[2px] z-50">
@@ -74,7 +72,6 @@ export function Win98Notepad({ onClose }: Win98NotepadProps) {
           <button onClick={onClose} className="w-full text-left px-4 py-[2px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white text-[11px]">Exit</button>
         </div>
       </div>
-      {/* Edit menu */}
       <div className="group relative">
         <button className="px-2 py-[2px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">Edit</button>
         <div className="hidden group-hover:block absolute top-full left-0 bg-[hsl(var(--win98-face))] win98-raised min-w-[160px] py-[2px] z-50">
@@ -82,7 +79,6 @@ export function Win98Notepad({ onClose }: Win98NotepadProps) {
           <button onClick={handleTimeDate} className="w-full text-left px-4 py-[2px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white text-[11px]">Time/Date</button>
         </div>
       </div>
-      {/* Format menu */}
       <div className="group relative">
         <button className="px-2 py-[2px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">Format</button>
         <div className="hidden group-hover:block absolute top-full left-0 bg-[hsl(var(--win98-face))] win98-raised min-w-[160px] py-[2px] z-50">
@@ -91,7 +87,6 @@ export function Win98Notepad({ onClose }: Win98NotepadProps) {
           </button>
         </div>
       </div>
-      {/* View menu */}
       <div className="group relative">
         <button className="px-2 py-[2px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white">View</button>
         <div className="hidden group-hover:block absolute top-full left-0 bg-[hsl(var(--win98-face))] win98-raised min-w-[160px] py-[2px] z-50">
@@ -104,19 +99,21 @@ export function Win98Notepad({ onClose }: Win98NotepadProps) {
   );
 
   return (
-    <div className="fixed inset-0 z-[900] flex items-center justify-center pointer-events-none">
-      <div className="pointer-events-auto w-[520px] h-[400px] shadow-lg">
+    <div className="fixed inset-0 z-[900] pointer-events-none">
+      <div className="pointer-events-auto">
         <Win98Window
           title={`${fileName} - Notepad`}
           icon={<span className="text-[12px]">📝</span>}
           onClose={onClose}
           toolbar={menuBar}
+          defaultPosition={{ x: Math.round(window.innerWidth / 2 - 260), y: Math.round(window.innerHeight / 2 - 200) }}
+          defaultSize={{ width: 520, height: 400 }}
+          minSize={{ width: 300, height: 200 }}
           statusBar={showStatus ? (
             <span className="text-[10px] text-[hsl(var(--muted-foreground))]">
               Ln {lineCount} | {charCount} characters
             </span>
           ) : undefined}
-          className="w-full h-full"
         >
           <textarea
             ref={textareaRef}
