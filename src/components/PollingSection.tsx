@@ -297,7 +297,8 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
             {picker.isAll ? `Presidential approval tracked across ${visibleSources.size} of ${approvalBySource.size} sources` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
+          <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
           {/* Zoom buttons */}
           {zoomOptions.map(opt => (
             <button
