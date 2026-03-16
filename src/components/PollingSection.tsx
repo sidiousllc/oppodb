@@ -958,14 +958,15 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-start justify-between mb-1">
+      <div className="flex items-start justify-between mb-1 flex-wrap gap-2">
         <div>
           <h3 className="font-display text-sm font-semibold text-foreground">Favorability Tracking</h3>
           <p className="text-xs text-muted-foreground">
-            {sorted.length} data points from {new Set(sorted.map((p) => p.source)).size} sources
+            {picker.isAll ? `${sorted.length} data points from ${new Set(sorted.map((p) => p.source)).size} sources` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
+          <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
           <div className="flex items-center gap-2 text-sm mr-2">
             <span className="font-display font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>{latest.favor_pct}% Fav</span>
             <span className="text-muted-foreground">/</span>
@@ -987,6 +988,7 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
           ))}
         </div>
       </div>
+      {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 320 }} onMouseLeave={() => setHovered(null)}>
           {yTicks.map((v) => (
