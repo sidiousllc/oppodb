@@ -14,6 +14,7 @@ import { syncElectionResults, hasSyncCheckpoint, clearSyncCheckpoint, type SyncR
 import { SyncResultsPanel } from "./SyncResultsPanel";
 import { exportStateLegPDF } from "@/lib/stateLegExport";
 import { StatePollingPanel } from "@/components/StatePollingPanel";
+import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
@@ -165,6 +166,9 @@ function StatLegDetail({
 
       {/* State Polling */}
       <StatePollingPanel stateAbbr={district.state_abbr} />
+
+      {/* Campaign Finance */}
+      <AreaFinancePanel stateAbbr={district.state_abbr} title={`Campaign Finance — ${district.state}`} />
 
       {/* Election History */}
       <div className="mb-6">

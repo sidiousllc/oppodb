@@ -6,6 +6,7 @@ import { CongressionalElectionsSection } from "@/components/CongressionalElectio
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
 import { DistrictPollingPanel } from "@/components/DistrictPollingPanel";
+import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
 import {
   ArrowLeft,
@@ -190,6 +191,12 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
 
       {/* District Polling */}
       <DistrictPollingPanel districtId={district.district_id} />
+
+      {/* Campaign Finance */}
+      <AreaFinancePanel
+        stateAbbr={district.district_id.split("-")[0]}
+        districtId={district.district_id}
+      />
 
       {/* Election History */}
       <CongressionalElectionsSection districtId={district.district_id} />
