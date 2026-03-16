@@ -323,6 +323,9 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
         </div>
       </div>
 
+      {/* Poll picker */}
+      {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
+
       {/* Source filter panel */}
       {showFilters && (
         <div className="mb-3 p-2 rounded-lg border border-border bg-muted/30">
