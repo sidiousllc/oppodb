@@ -108,7 +108,7 @@ export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarP
               : "font-bold border-[hsl(var(--win98-dark-shadow))_hsl(var(--win98-highlight))_hsl(var(--win98-highlight))_hsl(var(--win98-dark-shadow))]"
           }`}
         >
-          📁 Opposition Research Database
+          🌐 {minimizedWindow || "Opposition Research Database"}
         </button>
 
         <div className="flex-1" />
