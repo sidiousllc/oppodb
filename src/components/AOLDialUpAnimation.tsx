@@ -6,25 +6,25 @@ interface AOLDialUpAnimationProps {
 }
 
 const CONNECTION_STEPS = [
-  { text: "Dialing...", detail: "📞 Dialing 1-800-SID-IOUS", duration: 2200 },
-  { text: "Handshaking...", detail: "🔊 kshhhhhhh... beeee brrrrr kshhh", duration: 2800 },
-  { text: "Verifying username and password...", detail: "🔐 Authenticating with ORDB network", duration: 1800 },
-  { text: "Checking your mail...", detail: "✉️ Scanning mailbox...", duration: 1400 },
-  { text: "Connected!", detail: "🌐 Welcome to the Opposition Research Database!", duration: 1600 },
-];
+{ text: "Dialing...", detail: "📞 Dialing 1-800-SID-IOUS", duration: 2200 },
+{ text: "Handshaking...", detail: "🔊 kshhhhhhh... beeee brrrrr kshhh", duration: 2800 },
+{ text: "Verifying username and password...", detail: "🔐 Authenticating with ORDB network", duration: 1800 },
+{ text: "Checking your mail...", detail: "✉️ Scanning mailbox...", duration: 1400 },
+{ text: "Connected!", detail: "🌐 Welcome to the Opposition Research Database!", duration: 1600 }];
+
 
 const MODEM_NOISE_FRAMES = [
-  "▒▓░▒▓▒░▓▒░▒▓░▒▓▒░▓",
-  "░▒▓▒░▓░▒▓▒░▓▒░▒▓▒░",
-  "▓░▒▓▒░▒▓░▒▓▒░▓░▒▓▒",
-  "▒░▓▒░▒▓▒░▓░▒▓▒░▒▓░",
-  "░▓▒░▒▓░▒▓▒░▓▒░▒▓▒░",
-   "▒▓░▒▓▒░▓▒░▒▓░▒▓▒░▓",
-  "░▒▓▒░▓░▒▓▒░▓▒░▒▓▒░",
-  "▓░▒▓▒░▒▓░▒▓▒░▓░▒▓▒",
-  "▒░▓▒░▒▓▒░▓░▒▓▒░▒▓░",
-  "░▓▒░▒▓░▒▓▒░▓▒░▒▓▒░",
-];
+"▒▓░▒▓▒░▓▒░▒▓░▒▓▒░▓",
+"░▒▓▒░▓░▒▓▒░▓▒░▒▓▒░",
+"▓░▒▓▒░▒▓░▒▓▒░▓░▒▓▒",
+"▒░▓▒░▒▓▒░▓░▒▓▒░▒▓░",
+"░▓▒░▒▓░▒▓▒░▓▒░▒▓▒░",
+"▒▓░▒▓▒░▓▒░▒▓░▒▓▒░▓",
+"░▒▓▒░▓░▒▓▒░▓▒░▒▓▒░",
+"▓░▒▓▒░▒▓░▒▓▒░▓░▒▓▒",
+"▒░▓▒░▒▓▒░▓░▒▓▒░▒▓░",
+"░▓▒░▒▓░▒▓▒░▓▒░▒▓▒░"];
+
 
 export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -47,7 +47,7 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
     const totalDuration = CONNECTION_STEPS.reduce((s, step) => s + step.duration, 0);
     let elapsed = 0;
     for (let i = 0; i < currentStep; i++) elapsed += CONNECTION_STEPS[i].duration;
-    const target = Math.min(((elapsed + CONNECTION_STEPS[currentStep]?.duration * 0.8) / totalDuration) * 100, 100);
+    const target = Math.min((elapsed + CONNECTION_STEPS[currentStep]?.duration * 0.8) / totalDuration * 100, 100);
     const timer = setTimeout(() => setProgressPct(target), 100);
     return () => clearTimeout(timer);
   }, [currentStep]);
@@ -76,24 +76,24 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[hsl(180,50%,50%)]">
       {/* Decorative AOL triangles / branding */}
       <div className="absolute top-4 left-4 text-white text-[11px] font-bold opacity-60">
-        Opposition Research Online
+        Opposition Research Online (ORO) 
       </div>
 
       {showWelcome ? (
-        /* Welcome splash */
-        <div className="flex flex-col items-center gap-4 animate-fade-in">
+      /* Welcome splash */
+      <div className="flex flex-col items-center gap-4 animate-fade-in">
           <div className="text-[64px] leading-none">🌐</div>
           <div className="win98-raised bg-[hsl(var(--win98-face))] px-8 py-4 text-center">
             <p className="text-[18px] font-bold font-pixel text-[hsl(var(--primary))]">Welcome!</p>
             <p className="text-[11px] mt-1 text-[hsl(var(--muted-foreground))]">You've Got Opposition Research!</p>
           </div>
-        </div>
-      ) : (
-        <Win98Window
-          title="Opposition Research Online — Connecting"
-          icon={<span className="text-[12px]">📡</span>}
-          className="w-full max-w-[420px]"
-        >
+        </div>) :
+
+      <Win98Window
+        title="Opposition Research Online — Connecting"
+        icon={<span className="text-[12px]">📡</span>}
+        className="w-full max-w-[420px]">
+        
           <div className="p-4 bg-[hsl(var(--win98-face))]">
             {/* AOL logo area */}
             <div className="flex items-center gap-3 mb-4">
@@ -108,17 +108,17 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
             <div className="win98-sunken bg-white p-3 mb-3">
               {/* Steps list */}
               <div className="space-y-1 mb-3">
-                {CONNECTION_STEPS.map((step, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-2 text-[11px] transition-opacity duration-200 ${
-                      i > currentStep ? "opacity-30" : i === currentStep ? "font-bold" : "opacity-70"
-                    }`}
-                  >
+                {CONNECTION_STEPS.map((step, i) =>
+              <div
+                key={i}
+                className={`flex items-center gap-2 text-[11px] transition-opacity duration-200 ${
+                i > currentStep ? "opacity-30" : i === currentStep ? "font-bold" : "opacity-70"}`
+                }>
+                
                     <span className="w-3 text-center">{i < currentStep ? "✅" : i === currentStep ? "⏳" : "⬜"}</span>
                     <span>{step.text}</span>
                   </div>
-                ))}
+              )}
               </div>
 
               {/* Detail / modem noise */}
@@ -132,9 +132,9 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
             <div className="mb-3">
               <div className="win98-sunken h-[18px] bg-white p-[2px]">
                 <div
-                  className="h-full bg-[hsl(var(--primary))] transition-all duration-700 ease-linear"
-                  style={{ width: `${progressPct}%` }}
-                />
+                className="h-full bg-[hsl(var(--primary))] transition-all duration-700 ease-linear"
+                style={{ width: `${progressPct}%` }} />
+              
               </div>
               <p className="text-[9px] text-center mt-1 text-[hsl(var(--muted-foreground))]">
                 {Math.round(progressPct)}% — {CONNECTION_STEPS[currentStep]?.text}
@@ -149,7 +149,7 @@ export function AOLDialUpAnimation({ onComplete }: AOLDialUpAnimationProps) {
             </div>
           </div>
         </Win98Window>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
