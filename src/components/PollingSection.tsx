@@ -345,22 +345,60 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
   });
   const entries = Array.from(bySource.values()).sort((a, b) => (b.margin ?? 0) - (a.margin ?? 0));
 
+  // Cross-source average
+  const getDem = (p: PollEntry) => p.favor_pct ?? p.approve_pct ?? 0;
+  const getRep = (p: PollEntry) => p.oppose_pct ?? p.disapprove_pct ?? 0;
+  const avgDem = Math.round((entries.reduce((s, p) => s + getDem(p), 0) / entries.length) * 10) / 10;
+  const avgRep = Math.round((entries.reduce((s, p) => s + getRep(p), 0) / entries.length) * 10) / 10;
+  const avgMargin = Math.round((avgDem - avgRep) * 10) / 10;
+  const avgTotal = avgDem + avgRep || 100;
+
   return (
     <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <h3 className="font-display text-sm font-semibold text-foreground mb-1">
         Generic Congressional Ballot
       </h3>
-      <p className="text-xs text-muted-foreground mb-4">
-        Democrat vs Republican, by source
+      <p className="text-xs text-muted-foreground mb-3">
+        Cross-source average of {entries.length} polls
       </p>
-      <div className="space-y-3">
+
+      {/* Average headline bar */}
+      <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Polling Average</span>
+          <MarginBadge margin={avgMargin} />
+        </div>
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-2xl font-display font-bold" style={{ color: "hsl(210, 80%, 50%)" }}>D {avgDem}%</span>
+          <span className="text-muted-foreground">–</span>
+          <span className="text-2xl font-display font-bold" style={{ color: "hsl(0, 75%, 50%)" }}>R {avgRep}%</span>
+        </div>
+        <div className="flex h-6 w-full overflow-hidden rounded-md bg-muted">
+          <div
+            className="flex items-center justify-end pr-2 transition-all duration-1000"
+            style={{ width: inView ? `${(avgDem / avgTotal) * 100}%` : "0%", backgroundColor: "hsl(210, 80%, 50%)" }}
+          >
+            <span className="text-[10px] font-bold text-white">{avgDem}%</span>
+          </div>
+          <div
+            className="flex items-center justify-start pl-2 transition-all duration-1000"
+            style={{ width: inView ? `${(avgRep / avgTotal) * 100}%` : "0%", backgroundColor: "hsl(0, 75%, 50%)" }}
+          >
+            <span className="text-[10px] font-bold text-white">{avgRep}%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Per-source breakdown */}
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">By Source</p>
+      <div className="space-y-2.5">
         {entries.map((poll, idx) => {
           const src = getSourceInfo(poll.source);
-          const dem = poll.favor_pct ?? 0;
-          const rep = poll.oppose_pct ?? 0;
+          const dem = getDem(poll);
+          const rep = getRep(poll);
           const total = dem + rep || 100;
           return (
-            <div key={poll.id} style={{ opacity: inView ? 1 : 0, transform: inView ? "translateX(0)" : "translateX(-20px)", transition: `all 0.5s ease ${idx * 100}ms` }}>
+            <div key={poll.id} style={{ opacity: inView ? 1 : 0, transform: inView ? "translateX(0)" : "translateX(-20px)", transition: `all 0.5s ease ${idx * 80}ms` }}>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(${src.color})` }} />
@@ -373,18 +411,18 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
                   <MarginBadge margin={poll.margin} />
                 </div>
               </div>
-              <div className="flex h-5 w-full overflow-hidden rounded-md bg-muted">
+              <div className="flex h-4 w-full overflow-hidden rounded-md bg-muted">
                 <div
-                  className="flex items-center justify-end pr-1.5"
-                  style={{ width: inView ? `${(dem / total) * 100}%` : "0%", backgroundColor: "hsl(210, 80%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 100 + 200}ms` }}
+                  className="flex items-center justify-end pr-1"
+                  style={{ width: inView ? `${(dem / total) * 100}%` : "0%", backgroundColor: "hsl(210, 80%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 200}ms` }}
                 >
-                  <span className="text-[9px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 100 + 600}ms` }}>{dem}%</span>
+                  <span className="text-[8px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 80 + 600}ms` }}>{dem}%</span>
                 </div>
                 <div
-                  className="flex items-center justify-start pl-1.5"
-                  style={{ width: inView ? `${(rep / total) * 100}%` : "0%", backgroundColor: "hsl(0, 75%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 100 + 300}ms` }}
+                  className="flex items-center justify-start pl-1"
+                  style={{ width: inView ? `${(rep / total) * 100}%` : "0%", backgroundColor: "hsl(0, 75%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 300}ms` }}
                 >
-                  <span className="text-[9px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 100 + 600}ms` }}>{rep}%</span>
+                  <span className="text-[8px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 80 + 600}ms` }}>{rep}%</span>
                 </div>
               </div>
             </div>
