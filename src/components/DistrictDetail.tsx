@@ -6,6 +6,7 @@ import { CongressionalElectionsSection } from "@/components/CongressionalElectio
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
 import { DistrictPollingPanel } from "@/components/DistrictPollingPanel";
+import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
 import {
   ArrowLeft,
