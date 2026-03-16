@@ -34,9 +34,13 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
 
   // Compose state
   const [toUserId, setToUserId] = useState("");
+  const [toSearch, setToSearch] = useState("");
+  const [toSuggestions, setToSuggestions] = useState<OnlineUser[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const toInputRef = useRef<HTMLInputElement>(null);
 
   const loadUsers = useCallback(async () => {
     if (!user) return;
@@ -86,6 +90,26 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   }, [user, folder]);
 
   useEffect(() => { loadMessages(); loadUsers(); }, [loadMessages, loadUsers]);
+
+  // Search users by display name for compose
+  useEffect(() => {
+    if (!user || toSearch.length < 1) {
+      setToSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name")
+        .neq("id", user.id)
+        .ilike("display_name", `%${toSearch}%`)
+        .limit(8);
+      if (data) {
+        setToSuggestions(data.map(p => ({ user_id: p.id, display_name: p.display_name || p.id })));
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [toSearch, user]);
 
   // Realtime subscription for new mail
   useEffect(() => {
@@ -138,6 +162,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
     });
     setSending(false);
     setToUserId("");
+    setToSearch("");
     setSubject("");
     setBody("");
     setFolder("sent");
@@ -146,6 +171,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const handleReply = (msg: MailMessage) => {
     setFolder("compose");
     setToUserId(msg.sender_id);
+    setToSearch(msg.sender_name || "");
     setSubject(msg.subject.startsWith("Re: ") ? msg.subject : `Re: ${msg.subject}`);
     setBody(`\n\n--- Original Message ---\nFrom: ${msg.sender_name}\nDate: ${new Date(msg.created_at).toLocaleString()}\n\n${msg.body}`);
     setSelectedMsg(null);
@@ -154,6 +180,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const handleForward = (msg: MailMessage) => {
     setFolder("compose");
     setToUserId("");
+    setToSearch("");
     setSubject(msg.subject.startsWith("Fwd: ") ? msg.subject : `Fwd: ${msg.subject}`);
     setBody(`\n\n--- Forwarded Message ---\nFrom: ${msg.sender_name}\nDate: ${new Date(msg.created_at).toLocaleString()}\nSubject: ${msg.subject}\n\n${msg.body}`);
     setSelectedMsg(null);
@@ -181,7 +208,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
             {/* Toolbar */}
             <div className="bg-[hsl(var(--win98-face))] border-b border-[hsl(var(--win98-shadow))] px-2 py-1 flex items-center gap-1">
               <button
-                onClick={() => { setFolder("compose"); setSelectedMsg(null); setToUserId(""); setSubject(""); setBody(""); }}
+                onClick={() => { setFolder("compose"); setSelectedMsg(null); setToUserId(""); setToSearch(""); setSubject(""); setBody(""); }}
                 className="win98-button text-[9px] flex items-center gap-1 font-bold"
               >
                 <PenLine className="h-3 w-3" /> Write
@@ -221,18 +248,48 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
               {folder === "compose" ? (
                 /* Compose view */
                 <div className="flex-1 flex flex-col p-2 gap-1">
-                  <div className="flex items-center gap-2 text-[10px]">
+                  <div className="flex items-center gap-2 text-[10px] relative">
                     <span className="font-bold w-10">To:</span>
-                    <select
-                      value={toUserId}
-                      onChange={(e) => setToUserId(e.target.value)}
-                      className="win98-input flex-1 text-[10px]"
-                    >
-                      <option value="">-- Select recipient --</option>
-                      {users.map(u => (
-                        <option key={u.user_id} value={u.user_id}>{u.display_name}</option>
-                      ))}
-                    </select>
+                    <div className="flex-1 relative">
+                      <input
+                        ref={toInputRef}
+                        value={toSearch}
+                        onChange={(e) => {
+                          setToSearch(e.target.value);
+                          setToUserId("");
+                          setShowSuggestions(true);
+                        }}
+                        onFocus={() => toSearch.length > 0 && setShowSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                        className="win98-input w-full text-[10px]"
+                        placeholder="Type a screen name..."
+                        maxLength={100}
+                        autoComplete="off"
+                      />
+                      {showSuggestions && toSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-[hsl(var(--win98-shadow))] shadow max-h-[120px] overflow-y-auto">
+                          {toSuggestions.map(u => (
+                            <button
+                              key={u.user_id}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setToUserId(u.user_id);
+                                setToSearch(u.display_name);
+                                setShowSuggestions(false);
+                              }}
+                              className="block w-full text-left px-2 py-1 text-[10px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
+                            >
+                              {u.display_name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {toSearch.length > 0 && toSuggestions.length === 0 && showSuggestions && !toUserId && (
+                        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-[hsl(var(--win98-shadow))] px-2 py-1 text-[9px] text-[hsl(var(--muted-foreground))]">
+                          No users found
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 text-[10px]">
                     <span className="font-bold w-10">Subj:</span>
