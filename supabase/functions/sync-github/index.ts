@@ -77,9 +77,18 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // 1. Get latest commit SHA
+    const githubToken = Deno.env.get("GITHUB_TOKEN");
+    const githubHeaders: Record<string, string> = {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "lovable-sync",
+    };
+    if (githubToken) {
+      githubHeaders["Authorization"] = `token ${githubToken}`;
+    }
+
     const commitRes = await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/commits/${BRANCH}`,
-      { headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "lovable-sync" } }
+      { headers: githubHeaders }
     );
     if (!commitRes.ok) throw new Error(`Failed to get commit: ${commitRes.status}`);
     const commitData = await commitRes.json();
