@@ -1253,6 +1253,9 @@ export function PollingSection() {
         <GenericBallotChart polls={genericBallotPolls} />
       </div>
 
+      {/* ─── Generic Ballot Trend ─────────────────────────────────────────── */}
+      <GenericBallotTrendChart polls={genericBallotPolls} />
+
       {/* ─── Favorability + Issue Charts ─────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
         <FavorabilityChart polls={polls} />
