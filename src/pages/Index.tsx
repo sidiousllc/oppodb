@@ -645,13 +645,6 @@ export default function Index() {
                         <SearchBar value={search} onChange={setSearch} />
                       </div>
 
-                      <MobileNav
-                        activeFilter={filter}
-                        onFilterChange={setFilter}
-                        counts={counts}
-                        activeSection={section}
-                        onSectionChange={handleSectionChange}
-                      />
 
                       {renderList()}
                     </>
