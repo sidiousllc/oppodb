@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { Win98Notepad } from "./Win98Notepad";
 
 interface DesktopIcon {
   label: string;
