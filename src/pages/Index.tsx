@@ -34,6 +34,7 @@ import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-r
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
 import { StateLegislativeSection } from "@/components/StateLegislativeSection";
+import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { Dashboard } from "@/components/Dashboard";
 
 export default function Index() {
