@@ -21,3 +21,5 @@ project_id = "yysbtxpupmwkxovgkama"
     verify_jwt = false
   [functions.sync-github]
     verify_jwt = false
+  [functions.campaign-finance-sync]
+    verify_jwt = false

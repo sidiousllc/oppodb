@@ -142,6 +142,55 @@ Deno.serve(async (req) => {
       last_synced_at: new Date().toISOString(),
     });
 
+    // 4. Campaign finance sync (batch 5 states per run, tracked via sync_metadata id=4)
+    const { data: finMeta } = await supabase
+      .from("sync_metadata")
+      .select("*")
+      .eq("id", 4)
+      .maybeSingle();
+
+    let finOffset = 0;
+    if (finMeta?.last_commit_sha) {
+      finOffset = parseInt(finMeta.last_commit_sha) || 0;
+    }
+    if (finOffset >= ALL_STATES.length) {
+      finOffset = 0;
+    }
+
+    const finBatchStates = ALL_STATES.slice(finOffset, finOffset + STATES_PER_BATCH);
+    const finNextOffset = finOffset + STATES_PER_BATCH;
+
+    console.log(`Finance sync batch: states ${finOffset}-${finOffset + finBatchStates.length - 1} (${finBatchStates.join(", ")})`);
+
+    const financeResults: Array<{ state: string; status: string; upserted?: number }> = [];
+
+    for (const state of finBatchStates) {
+      try {
+        const res = await fetch(
+          `${supabaseUrl}/functions/v1/campaign-finance-sync?state=${state}`,
+          { headers: { "Authorization": `Bearer ${anonKey}` } },
+        );
+        const data = await res.json();
+        financeResults.push({ state, status: res.ok ? "ok" : "error", upserted: data?.upserted ?? 0 });
+        console.log(`Finance ${state}: ${data?.upserted ?? 0} upserted`);
+      } catch (e) {
+        financeResults.push({ state, status: "error" });
+        console.error(`${state} finance sync error:`, e);
+      }
+    }
+
+    results.finance = {
+      batch_offset: finOffset,
+      next_offset: finNextOffset >= ALL_STATES.length ? 0 : finNextOffset,
+      states: financeResults,
+    };
+
+    await supabase.from("sync_metadata").upsert({
+      id: 4,
+      last_commit_sha: String(finNextOffset >= ALL_STATES.length ? 0 : finNextOffset),
+      last_synced_at: new Date().toISOString(),
+    });
+
     return new Response(
       JSON.stringify({ success: true, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
