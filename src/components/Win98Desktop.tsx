@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Win98Notepad } from "./Win98Notepad";
+import { Win98Window } from "./Win98Window";
 
 interface DesktopIcon {
   label: string;
@@ -172,71 +173,73 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
       {propertiesOpen && (
         <>
           <div className="fixed inset-0 z-[900] bg-black/20" onClick={() => setPropertiesOpen(false)} />
-          <div className="fixed inset-0 z-[901] flex items-center justify-center pointer-events-none">
-            <div className="pointer-events-auto w-[340px] bg-[hsl(var(--win98-face))] win98-raised">
-              {/* Title bar */}
-              <div className="win98-titlebar">
-                <span className="text-[11px]">🖥️</span>
-                <span className="flex-1 truncate text-[11px]">Display Properties</span>
-                <button className="win98-titlebar-btn" onClick={() => setPropertiesOpen(false)}>✕</button>
-              </div>
+          <div className="fixed inset-0 z-[901] pointer-events-none">
+            <div className="pointer-events-auto">
+              <Win98Window
+                title="Display Properties"
+                icon={<span className="text-[11px]">🖥️</span>}
+                onClose={() => setPropertiesOpen(false)}
+                defaultPosition={{ x: Math.round(window.innerWidth / 2 - 170), y: Math.round(window.innerHeight / 2 - 180) }}
+                defaultSize={{ width: 340, height: 360 }}
+                minSize={{ width: 280, height: 280 }}
+              >
+                {/* Tabs */}
+                <div className="p-3">
+                  <div className="flex gap-0 mb-[-1px] relative z-10">
+                    {["Background", "Screen Saver", "Appearance", "Settings"].map((tab, i) => (
+                      <div
+                        key={tab}
+                        className={`px-2 py-1 text-[10px] border border-[hsl(var(--win98-shadow))] ${
+                          i === 2
+                            ? "bg-[hsl(var(--win98-face))] border-b-[hsl(var(--win98-face))] font-bold -mb-[1px]"
+                            : "bg-[hsl(var(--win98-light))] cursor-pointer"
+                        }`}
+                      >
+                        {tab}
+                      </div>
+                    ))}
+                  </div>
 
-              {/* Tabs */}
-              <div className="p-3">
-                <div className="flex gap-0 mb-[-1px] relative z-10">
-                  {["Background", "Screen Saver", "Appearance", "Settings"].map((tab, i) => (
-                    <div
-                      key={tab}
-                      className={`px-2 py-1 text-[10px] border border-[hsl(var(--win98-shadow))] ${
-                        i === 2
-                          ? "bg-[hsl(var(--win98-face))] border-b-[hsl(var(--win98-face))] font-bold -mb-[1px]"
-                          : "bg-[hsl(var(--win98-light))] cursor-pointer"
-                      }`}
-                    >
-                      {tab}
+                  {/* Content */}
+                  <div className="border border-[hsl(var(--win98-shadow))] p-3">
+                    <div className="win98-sunken bg-white p-3 mb-3 text-center">
+                      <div className="w-[120px] h-[80px] mx-auto bg-[hsl(180,50%,50%)] border border-[hsl(var(--win98-dark-shadow))] flex items-center justify-center">
+                        <span className="text-[9px] text-white" style={{ textShadow: "1px 1px 1px rgba(0,0,0,0.5)" }}>
+                          ORDB Desktop
+                        </span>
+                      </div>
                     </div>
-                  ))}
-                </div>
 
-                {/* Content */}
-                <div className="border border-[hsl(var(--win98-shadow))] p-3">
-                  <div className="win98-sunken bg-white p-3 mb-3 text-center">
-                    <div className="w-[120px] h-[80px] mx-auto bg-[hsl(180,50%,50%)] border border-[hsl(var(--win98-dark-shadow))] flex items-center justify-center">
-                      <span className="text-[9px] text-white" style={{ textShadow: "1px 1px 1px rgba(0,0,0,0.5)" }}>
-                        ORDB Desktop
-                      </span>
+                    <div className="space-y-2 text-[11px]">
+                      <div className="flex items-center gap-2">
+                        <span className="w-[60px]">Scheme:</span>
+                        <div className="flex-1 win98-sunken bg-white px-1 py-[1px] text-[11px]">
+                          Windows Standard
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-[60px]">Resolution:</span>
+                        <div className="flex-1 win98-sunken bg-white px-1 py-[1px] text-[11px]">
+                          {window.innerWidth} × {window.innerHeight}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-[60px]">Colors:</span>
+                        <div className="flex-1 win98-sunken bg-white px-1 py-[1px] text-[11px]">
+                          True Color (32 bit)
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <span className="w-[60px]">Scheme:</span>
-                      <div className="flex-1 win98-sunken bg-white px-1 py-[1px] text-[11px]">
-                        Windows Standard
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-[60px]">Resolution:</span>
-                      <div className="flex-1 win98-sunken bg-white px-1 py-[1px] text-[11px]">
-                        {window.innerWidth} × {window.innerHeight}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-[60px]">Colors:</span>
-                      <div className="flex-1 win98-sunken bg-white px-1 py-[1px] text-[11px]">
-                        True Color (32 bit)
-                      </div>
-                    </div>
+                  {/* Buttons */}
+                  <div className="flex justify-end gap-1 mt-3">
+                    <button onClick={() => setPropertiesOpen(false)} className="win98-button text-[11px] px-4">OK</button>
+                    <button onClick={() => setPropertiesOpen(false)} className="win98-button text-[11px] px-4">Cancel</button>
+                    <button className="win98-button text-[11px] px-4 opacity-50" disabled>Apply</button>
                   </div>
                 </div>
-
-                {/* Buttons */}
-                <div className="flex justify-end gap-1 mt-3">
-                  <button onClick={() => setPropertiesOpen(false)} className="win98-button text-[11px] px-4">OK</button>
-                  <button onClick={() => setPropertiesOpen(false)} className="win98-button text-[11px] px-4">Cancel</button>
-                  <button className="win98-button text-[11px] px-4 opacity-50" disabled>Apply</button>
-                </div>
-              </div>
+              </Win98Window>
             </div>
           </div>
         </>

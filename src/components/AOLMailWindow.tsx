@@ -189,13 +189,15 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const screenName = user?.email?.split("@")[0] || "User";
 
   return (
-    <div className="fixed inset-0 z-[998] flex items-center justify-center bg-black/30">
-      <div className="w-[700px] h-[500px] max-w-[95vw] max-h-[90vh]">
+    <div className="fixed inset-0 z-[998] bg-black/30 pointer-events-none">
+      <div className="pointer-events-auto">
         <Win98Window
           title={`AOL Mail — ${screenName} ${unreadCount > 0 ? `(${unreadCount} new)` : ""}`}
           icon={<span className="text-[10px]">✉️</span>}
           onClose={onClose}
-          className="h-full"
+          defaultPosition={{ x: Math.round(window.innerWidth / 2 - 350), y: Math.round(window.innerHeight / 2 - 250) }}
+          defaultSize={{ width: 700, height: 500 }}
+          minSize={{ width: 400, height: 300 }}
           statusBar={
             <span className="text-[9px]">
               {folder === "inbox" ? `${messages.length} messages, ${unreadCount} unread` :
