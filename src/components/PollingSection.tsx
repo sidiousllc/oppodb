@@ -581,36 +581,65 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
         Favorability Tracking
       </h3>
       <p className="text-xs text-muted-foreground mb-3">
-        Favorable vs unfavorable over time (area chart)
+        Favorable vs unfavorable over time ({sorted.length} data points from {new Set(sorted.map((p) => p.source)).size} sources)
       </p>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
-        {/* Y gridlines */}
-        {[35, 40, 45, 50, 55, 60].filter((v) => v >= minVal && v <= maxVal).map((v) => (
-          <g key={v}>
-            <line x1={PAD.left} y1={valToY(v)} x2={W - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} />
-            <text x={PAD.left - 5} y={valToY(v) + 3} textAnchor="end" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
-          </g>
-        ))}
-        {/* Area fills */}
-        <path d={unfavAreaPath} fill="hsl(0, 65%, 50%)" opacity={0.08} />
-        <path d={favAreaPath} fill="hsl(150, 55%, 45%)" opacity={0.08} />
-        {/* Lines */}
-        <path d={unfavPath} fill="none" stroke="hsl(0, 65%, 50%)" strokeWidth={2} strokeLinejoin="round" />
-        <path d={favPath} fill="none" stroke="hsl(150, 55%, 45%)" strokeWidth={2} strokeLinejoin="round" />
-        {/* Dots */}
-        {sorted.map((p, i) => (
-          <g key={i}>
-            <circle cx={dateToX(p.date_conducted)} cy={valToY(p.favor_pct ?? 0)} r={3} fill="hsl(150, 55%, 45%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
-            <circle cx={dateToX(p.date_conducted)} cy={valToY(p.oppose_pct ?? 0)} r={3} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
-          </g>
-        ))}
-        {/* X labels */}
-        {sorted.map((p, i) => (
-          <text key={i} x={dateToX(p.date_conducted)} y={H - 5} textAnchor="middle" fontSize={8} fill="hsl(var(--muted-foreground))">
-            {formatDate(p.date_conducted)}
-          </text>
-        ))}
-      </svg>
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 320 }}>
+          {/* Y gridlines */}
+          {(() => {
+            const ticks: number[] = [];
+            for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) ticks.push(v);
+            return ticks;
+          })().map((v) => (
+            <g key={v}>
+              <line x1={PAD.left} y1={valToY(v)} x2={W - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} />
+              <text x={PAD.left - 6} y={valToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
+            </g>
+          ))}
+          {/* 50% reference */}
+          {minVal < 50 && maxVal > 50 && (
+            <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
+          )}
+          {/* X-axis monthly ticks */}
+          {(() => {
+            const ticks: { date: string; label: string }[] = [];
+            const s = new Date(sorted[0].date_conducted);
+            const e = new Date(sorted[sorted.length - 1].date_conducted);
+            const c = new Date(s.getFullYear(), s.getMonth(), 1);
+            while (c <= e) {
+              const d = c.toISOString().split("T")[0];
+              const showYear = c.getMonth() === 0 || ticks.length === 0;
+              ticks.push({ date: d, label: c.toLocaleDateString("en-US", { month: "short", ...(showYear ? { year: "2-digit" } : {}) }) });
+              c.setMonth(c.getMonth() + 1);
+            }
+            return ticks;
+          })().map((t) => (
+            <text key={t.date} x={dateToX(t.date)} y={H - 8} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">{t.label}</text>
+          ))}
+          {/* Area fills */}
+          <path d={unfavAreaPath} fill="hsl(0, 65%, 50%)" opacity={0.06} />
+          <path d={favAreaPath} fill="hsl(150, 55%, 45%)" opacity={0.06} />
+          {/* Lines */}
+          <path d={unfavPath} fill="none" stroke="hsl(0, 65%, 50%)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+          <path d={favPath} fill="none" stroke="hsl(150, 55%, 45%)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+          {/* Dots */}
+          {sorted.map((p, i) => (
+            <g key={i}>
+              <circle cx={dateToX(p.date_conducted)} cy={valToY(p.favor_pct ?? 0)} r={3.5} fill="hsl(150, 55%, 45%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
+              <circle cx={dateToX(p.date_conducted)} cy={valToY(p.oppose_pct ?? 0)} r={3.5} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={1.5} />
+            </g>
+          ))}
+          {/* Start/end value labels */}
+          {sorted.length > 0 && (
+            <>
+              <text x={dateToX(sorted[0].date_conducted) + 8} y={valToY(sorted[0].favor_pct ?? 0) - 6} fontSize={9} fontWeight={600} fill="hsl(150, 55%, 45%)">{sorted[0].favor_pct}%</text>
+              <text x={dateToX(sorted[sorted.length - 1].date_conducted) - 8} y={valToY(sorted[sorted.length - 1].favor_pct ?? 0) - 6} textAnchor="end" fontSize={9} fontWeight={600} fill="hsl(150, 55%, 45%)">{sorted[sorted.length - 1].favor_pct}%</text>
+              <text x={dateToX(sorted[0].date_conducted) + 8} y={valToY(sorted[0].oppose_pct ?? 0) + 12} fontSize={9} fontWeight={600} fill="hsl(0, 65%, 50%)">{sorted[0].oppose_pct}%</text>
+              <text x={dateToX(sorted[sorted.length - 1].date_conducted) - 8} y={valToY(sorted[sorted.length - 1].oppose_pct ?? 0) + 12} textAnchor="end" fontSize={9} fontWeight={600} fill="hsl(0, 65%, 50%)">{sorted[sorted.length - 1].oppose_pct}%</text>
+            </>
+          )}
+        </svg>
+      </div>
       <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Favorable</span>
         <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Unfavorable</span>
