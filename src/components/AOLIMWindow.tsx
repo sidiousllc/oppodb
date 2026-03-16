@@ -211,6 +211,7 @@ export function AOLIMWindow({ recipientId, recipientName, onClose, position }: I
           </div>
         </div>
       </Win98Window>
+      </div>
     </div>
   );
 }
