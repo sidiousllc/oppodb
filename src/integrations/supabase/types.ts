@@ -85,6 +85,96 @@ export type Database = {
           },
         ]
       }
+      campaign_finance: {
+        Row: {
+          candidate_name: string
+          candidate_slug: string | null
+          cash_on_hand: number | null
+          created_at: string
+          cycle: number
+          district: string | null
+          filing_date: string | null
+          id: string
+          individual_contributions: number | null
+          large_donor_pct: number | null
+          office: string
+          out_of_state_pct: number | null
+          pac_contributions: number | null
+          party: string | null
+          quarterly_data: Json | null
+          raw_data: Json | null
+          self_funding: number | null
+          small_dollar_pct: number | null
+          source: string
+          source_url: string | null
+          state_abbr: string
+          top_contributors: Json | null
+          top_industries: Json | null
+          total_debt: number | null
+          total_raised: number | null
+          total_spent: number | null
+          updated_at: string
+        }
+        Insert: {
+          candidate_name: string
+          candidate_slug?: string | null
+          cash_on_hand?: number | null
+          created_at?: string
+          cycle?: number
+          district?: string | null
+          filing_date?: string | null
+          id?: string
+          individual_contributions?: number | null
+          large_donor_pct?: number | null
+          office?: string
+          out_of_state_pct?: number | null
+          pac_contributions?: number | null
+          party?: string | null
+          quarterly_data?: Json | null
+          raw_data?: Json | null
+          self_funding?: number | null
+          small_dollar_pct?: number | null
+          source?: string
+          source_url?: string | null
+          state_abbr: string
+          top_contributors?: Json | null
+          top_industries?: Json | null
+          total_debt?: number | null
+          total_raised?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Update: {
+          candidate_name?: string
+          candidate_slug?: string | null
+          cash_on_hand?: number | null
+          created_at?: string
+          cycle?: number
+          district?: string | null
+          filing_date?: string | null
+          id?: string
+          individual_contributions?: number | null
+          large_donor_pct?: number | null
+          office?: string
+          out_of_state_pct?: number | null
+          pac_contributions?: number | null
+          party?: string | null
+          quarterly_data?: Json | null
+          raw_data?: Json | null
+          self_funding?: number | null
+          small_dollar_pct?: number | null
+          source?: string
+          source_url?: string | null
+          state_abbr?: string
+          top_contributors?: Json | null
+          top_industries?: Json | null
+          total_debt?: number | null
+          total_raised?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       candidate_profiles: {
         Row: {
           content: string
