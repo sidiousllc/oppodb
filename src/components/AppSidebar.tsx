@@ -4,7 +4,7 @@ import { getLastSyncTime } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
-export type Section = "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel" | "state-legislative" | "polling";
+export type Section = "dashboard" | "candidates" | "maga-files" | "local-impact" | "narratives" | "district-intel" | "state-legislative" | "polling";
 
 interface AppSidebarProps {
   activeFilter: FilterCategory;
@@ -25,6 +25,7 @@ const filters: Array<{id: FilterCategory; label: string; emoji: string}> = [
 ];
 
 const sections: Array<{id: Section; label: string; emoji: string}> = [
+  { id: "dashboard", label: "Dashboard", emoji: "🏠" },
   { id: "candidates", label: "Candidate Profiles", emoji: "👥" },
   { id: "maga-files", label: "MAGA Files", emoji: "⚠️" },
   { id: "local-impact", label: "Local Impact", emoji: "🌐" },

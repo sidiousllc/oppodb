@@ -34,6 +34,7 @@ import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-r
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
 import { StateLegislativeSection } from "@/components/StateLegislativeSection";
+import { Dashboard } from "@/components/Dashboard";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
@@ -42,7 +43,7 @@ export default function Index() {
   const [dataVersion, setDataVersion] = useState(0);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterCategory>("all");
-  const [section, setSection] = useState<Section>("candidates");
+  const [section, setSection] = useState<Section>("dashboard");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
   const [stateLegDistricts, setStateLegDistricts] = useState<StateLegislativeProfile[]>([]);
@@ -229,6 +230,7 @@ export default function Index() {
   }), [dataVersion]);
 
   const sectionCounts = useMemo(() => ({
+    dashboard: 0,
     candidates: candidates.length,
     "maga-files": magaFiles.length,
     "local-impact": localImpactReports.length,
@@ -247,6 +249,7 @@ export default function Index() {
   if (!loaded) return null;
 
   const sectionLabels: Record<Section, string> = {
+    dashboard: "Dashboard",
     candidates: "Candidate Profiles",
     "maga-files": "MAGA Files",
     "local-impact": "Local Impact by State",
@@ -319,6 +322,19 @@ export default function Index() {
   }
 
   function renderList() {
+    if (section === "dashboard") {
+      return (
+        <Dashboard
+          onNavigateSection={(s, slug) => {
+            setSection(s as Section);
+            setSelectedSlug(slug || null);
+          }}
+          candidateCount={candidates.length}
+          districtCount={districts.length}
+        />
+      );
+    }
+
     if (section === "candidates") {
       return (
         <>
