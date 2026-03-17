@@ -3,7 +3,7 @@ import {
   Search, FileText, User, Vote, ChevronRight, ArrowLeft, ExternalLink,
   Calendar, Building2, BookOpen, ScrollText, Gavel, Users, Hash, Eye,
   Clock, CheckCircle2, XCircle, MinusCircle, AlertCircle, ListOrdered,
-  Layers, FileCheck, FilePlus2, Bookmark, BookmarkCheck, Trash2, StickyNote, Download
+  Layers, FileCheck, FilePlus2, Bookmark, BookmarkCheck, Trash2, StickyNote, Download, ZoomIn, ZoomOut
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -529,6 +529,7 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState("");
   const [pageCount, setPageCount] = useState(0);
+  const [zoomScale, setZoomScale] = useState(1.5);
 
   // Revoke blob URL on unmount
   useEffect(() => {
@@ -554,7 +555,7 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
         setPageCount(pdf.numPages);
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 1.5 });
+          const viewport = page.getViewport({ scale: zoomScale });
           // Page label
           const label = document.createElement("div");
           label.className = "text-center text-xs text-muted-foreground py-1.5";
@@ -582,7 +583,7 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
     };
     render();
     return () => { cancelled = true; };
-  }, [isPdf, docInfo.pdfDataUrl]);
+  }, [isPdf, docInfo.pdfDataUrl, zoomScale]);
 
   const handleDownload = () => {
     if (!docInfo.pdfDataUrl) return;
@@ -606,13 +607,34 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
           )}
         </div>
         {isPdf && (
-          <button
-            onClick={handleDownload}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Download PDF
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center rounded-lg border border-border bg-muted">
+              <button
+                onClick={() => setZoomScale(s => Math.max(0.5, +(s - 0.25).toFixed(2)))}
+                disabled={zoomScale <= 0.5}
+                className="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+                title="Zoom out"
+              >
+                <ZoomOut className="h-3.5 w-3.5" />
+              </button>
+              <span className="text-xs font-medium text-foreground px-1.5 min-w-[3rem] text-center">{Math.round((zoomScale / 1.5) * 100)}%</span>
+              <button
+                onClick={() => setZoomScale(s => Math.min(3, +(s + 0.25).toFixed(2)))}
+                disabled={zoomScale >= 3}
+                className="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+                title="Zoom in"
+              >
+                <ZoomIn className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <button
+              onClick={handleDownload}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download PDF
+            </button>
+          </div>
         )}
       </div>
       {isPdf ? (
