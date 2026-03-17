@@ -179,6 +179,7 @@ interface CandidateAgg {
   top_vendors: Record<string, number>;
   years_active: Set<string>;
   in_kind_total: number;
+  yearly: Map<string, { contributions: number; expenditures: number; contribution_count: number; expenditure_count: number }>;
 }
 
 function topN(map: Record<string, number>, n: number): Array<{ name: string; amount: number }> {
