@@ -370,9 +370,10 @@ async function searchOpenStates(params: OpenStatesParams): Promise<VoterRecord[]
 
   const chamber = district_type === 'state_senate' ? 'upper' : 'lower';
 
+  const jurisdiction = `ocd-jurisdiction/country:us/state:${state.toLowerCase()}/government`;
   const query = `
     query {
-      people(memberOf: "${state}", first: 20) {
+      people(memberOf: "${jurisdiction}", first: 20) {
         edges {
           node {
             name
