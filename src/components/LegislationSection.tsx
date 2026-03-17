@@ -528,6 +528,7 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState("");
+  const [pageCount, setPageCount] = useState(0);
 
   // Revoke blob URL on unmount
   useEffect(() => {
