@@ -528,6 +528,7 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState("");
+  const [pageCount, setPageCount] = useState(0);
 
   // Revoke blob URL on unmount
   useEffect(() => {
@@ -550,16 +551,23 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
         const container = containerRef.current;
         if (!container) return;
         container.innerHTML = "";
+        setPageCount(pdf.numPages);
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const viewport = page.getViewport({ scale: 1.5 });
+          // Page label
+          const label = document.createElement("div");
+          label.className = "text-center text-xs text-muted-foreground py-1.5";
+          label.textContent = `Page ${i} of ${pdf.numPages}`;
+          if (i > 1) label.style.borderTop = "1px solid hsl(var(--border))";
+          label.style.marginTop = i > 1 ? "12px" : "0";
+          container.appendChild(label);
           const canvas = document.createElement("canvas");
           canvas.width = viewport.width;
           canvas.height = viewport.height;
           canvas.style.width = "100%";
           canvas.style.height = "auto";
           canvas.style.display = "block";
-          if (i > 1) canvas.style.marginTop = "8px";
           container.appendChild(canvas);
           const ctx = canvas.getContext("2d");
           if (ctx) await page.render({ canvasContext: ctx, viewport }).promise;
@@ -593,6 +601,9 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
           <ScrollText className="h-5 w-5 text-primary" />
           <h2 className="font-display text-lg font-bold text-foreground">{docInfo.bill_number} — {docInfo.type}</h2>
           <span className="text-xs text-muted-foreground">{docInfo.date}</span>
+          {isPdf && pageCount > 0 && (
+            <span className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">{pageCount} {pageCount === 1 ? "page" : "pages"}</span>
+          )}
         </div>
         {isPdf && (
           <button
