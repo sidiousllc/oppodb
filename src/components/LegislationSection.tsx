@@ -98,6 +98,15 @@ interface PersonDetail {
   knowwho_pid?: number;
 }
 
+interface PersonResult {
+  people_id: number;
+  name: string;
+  party: string;
+  role: string;
+  state: string;
+  district?: string;
+}
+
 interface SponsoredBill {
   bill_id: number;
   bill_number: string;
