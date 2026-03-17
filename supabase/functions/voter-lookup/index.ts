@@ -390,7 +390,7 @@ async function searchOpenStates(params: OpenStatesParams): Promise<VoterRecord[]
 
   return people
     .map((p: any) => {
-      const partyName = (p.party || [])[0]?.name || '';
+      const partyRaw = typeof p.party === 'string' ? p.party : (p.party || [])[0]?.name || '';
       const email = p.email || '';
       const nameParts = (p.name || '').split(' ');
       const districtLabel = p.current_role?.district || '';
