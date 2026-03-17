@@ -591,6 +591,10 @@ export default function Index() {
     if (section === "campaign-finance") {
       return <CampaignFinanceSection onNavigateSlug={navigateBySlug} />;
     }
+
+    if (section === "voter-data") {
+      return <VoterDataSection />;
+    }
   }
 
   const detail = renderDetail();
