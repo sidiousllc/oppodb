@@ -254,6 +254,7 @@ export default function Index() {
     "voter-data": 0,
     "live-elections": 0,
     legislation: 0,
+    congress: 0,
   }), [dataVersion, districts, stateLegDistricts, pollingCount, financeCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
