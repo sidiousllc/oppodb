@@ -276,6 +276,7 @@ export default function Index() {
     "campaign-finance": "Campaign Finance",
     "voter-data": "Voter Data",
     "live-elections": "Live Elections",
+    legislation: "Legislation",
   };
 
   function renderDetail() {
