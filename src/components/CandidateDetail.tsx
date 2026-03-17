@@ -10,6 +10,7 @@ import { VersionHistory } from "@/components/VersionHistory";
 import { exportContentPDF } from "@/lib/contentExport";
 import { CampaignFinancePanel } from "@/components/CampaignFinancePanel";
 import { CandidatePollingPanel } from "@/components/CandidatePollingPanel";
+import { CandidateVotingRecord } from "@/components/CandidateVotingRecord";
 
 interface CandidateDetailProps {
   candidate: Candidate;
