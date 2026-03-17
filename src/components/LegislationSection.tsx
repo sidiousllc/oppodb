@@ -1352,8 +1352,84 @@ export function LegislationSection() {
         </>
       )}
 
+      {/* Tracked bills tab */}
+      {!loading && tab === "tracked" && (
+        <>
+          {trackedBills.length === 0 ? (
+            <div className="text-center py-16">
+              <Bookmark className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+              <h3 className="font-display text-lg font-semibold text-foreground mb-1">No Tracked Bills</h3>
+              <p className="text-sm text-muted-foreground">Search for bills and click the bookmark icon to start tracking legislation.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {trackedBills.map((tb) => (
+                <div key={tb.id} className="candidate-card animate-fade-in">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1 cursor-pointer" onClick={() => loadBill(tb.bill_id)}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide border bg-primary/10 text-primary border-primary/25">
+                          {tb.bill_number}
+                        </span>
+                        {tb.state && <span className="tag tag-governor">{tb.state}</span>}
+                        {tb.status_desc && (
+                          <span className="text-[9px] font-medium text-muted-foreground border border-border rounded-full px-1.5 py-0.5">{tb.status_desc}</span>
+                        )}
+                      </div>
+                      <h3 className="font-display text-xs font-semibold text-foreground mt-1 line-clamp-2">{tb.title}</h3>
+                      {tb.last_action && (
+                        <p className="text-[10px] text-muted-foreground mt-1 line-clamp-1">
+                          {tb.last_action_date && <span className="font-medium">{tb.last_action_date}: </span>}
+                          {tb.last_action}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => { setEditingNotes(editingNotes === tb.id ? null : tb.id); setNoteText(tb.notes || ""); }}
+                        className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                        title="Add notes"
+                      >
+                        <StickyNote className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => trackBill({ bill_id: tb.bill_id, bill_number: tb.bill_number, title: tb.title, state: tb.state } as any)}
+                        className="p-1 rounded text-destructive/70 hover:text-destructive transition-colors"
+                        title="Untrack bill"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Notes */}
+                  {tb.notes && editingNotes !== tb.id && (
+                    <p className="text-[10px] text-muted-foreground mt-2 italic border-t border-border/50 pt-1.5">📝 {tb.notes}</p>
+                  )}
+                  {editingNotes === tb.id && (
+                    <div className="mt-2 border-t border-border/50 pt-2">
+                      <textarea
+                        value={noteText}
+                        onChange={(e) => setNoteText(e.target.value)}
+                        placeholder="Add notes about this bill…"
+                        className="w-full rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground outline-none resize-none"
+                        rows={2}
+                      />
+                      <div className="flex justify-end gap-2 mt-1">
+                        <button onClick={() => setEditingNotes(null)} className="text-[10px] text-muted-foreground hover:text-foreground">Cancel</button>
+                        <button onClick={() => updateBillNotes(tb.id, noteText)} className="text-[10px] text-primary font-medium hover:underline">Save</button>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-[9px] text-muted-foreground mt-1">Tracked {new Date(tb.created_at).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
       {/* Empty state */}
-      {!loading && !searchPerformed && tab !== "sessions" && (
+      {!loading && !searchPerformed && tab !== "sessions" && tab !== "tracked" && (
         <div className="text-center py-16">
           <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
           <h3 className="font-display text-lg font-semibold text-foreground mb-1">
