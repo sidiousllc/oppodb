@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import {
   DollarSign, Users, Building2, Landmark, ChevronDown, ChevronUp,
   Search, TrendingUp, TrendingDown, ExternalLink, PieChart,
-  ArrowLeft, Receipt, Banknote, RefreshCw, AlertCircle
+  ArrowLeft, Receipt, Banknote, RefreshCw, AlertCircle, BarChart3
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
