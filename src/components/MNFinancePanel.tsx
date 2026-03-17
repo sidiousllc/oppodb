@@ -294,6 +294,9 @@ function CandidateDetailView({ candidate, onBack }: { candidate: CandidateFinanc
         </div>
       </div>
 
+      {/* Year-over-Year Chart */}
+      <YearOverYearChart data={candidate.yearly_breakdown} />
+
       {/* Contributor types */}
       <TopItemsList items={candidate.contributor_types} label="Contributions by Type" />
 
