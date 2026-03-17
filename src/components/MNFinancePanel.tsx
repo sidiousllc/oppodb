@@ -235,6 +235,8 @@ export function MNFinancePanel() {
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateFinance | null>(null);
   const [fetched, setFetched] = useState(false);
 
+  const [syncing, setSyncing] = useState(false);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -243,7 +245,6 @@ export function MNFinancePanel() {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const params = new URLSearchParams();
       if (chamber !== "all") params.set("chamber", chamber);
-      if (year) params.set("year", year);
       if (search) params.set("search", search);
 
       const resp = await fetch(
@@ -261,7 +262,28 @@ export function MNFinancePanel() {
     } finally {
       setLoading(false);
     }
-  }, [chamber, year, search]);
+  }, [chamber, search]);
+
+  const triggerSync = useCallback(async () => {
+    setSyncing(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const resp = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/mn-cfb-finance?action=sync`,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      const data = await resp.json();
+      if (!data.success) throw new Error(data.error || "Sync failed");
+      // Sync runs in background, wait a bit then refetch
+      setTimeout(() => {
+        fetchData();
+        setSyncing(false);
+      }, 5000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sync error");
+      setSyncing(false);
+    }
+  }, [fetchData]);
 
   if (selectedCandidate) {
     return <CandidateDetailView candidate={selectedCandidate} onBack={() => setSelectedCandidate(null)} />;
