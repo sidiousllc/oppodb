@@ -573,7 +573,7 @@ export function VoterDataSection() {
       )}
 
       {/* Empty state before search */}
-      {!hasSearched && (
+      {searchType !== "races" && !hasSearched && (
         <div className="win98-sunken bg-white p-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
           <span className="text-3xl block mb-2">🗳️</span>
           <p className="font-bold mb-1">Voter Data Lookup</p>
@@ -583,6 +583,19 @@ export function VoterDataSection() {
           </p>
           <p className="text-[9px]">
             <b>Optional:</b> Google Civic API, Open States, NationBuilder, VAN
+          </p>
+          <p className="text-[9px] mt-1">
+            <b>New:</b> 🏛️ Live Races tab — real-time election results from civicAPI
+          </p>
+        </div>
+      )}
+      {searchType === "races" && !raceSearched && (
+        <div className="win98-sunken bg-white p-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
+          <span className="text-3xl block mb-2">🏛️</span>
+          <p className="font-bold mb-1">Live Election Races</p>
+          <p>Search real-time election results, candidates, and race calls.</p>
+          <p className="mt-2 text-[9px]">
+            Powered by <a href="https://civicapi.org" target="_blank" rel="noopener noreferrer" className="underline">civicAPI</a> — free, no key required
           </p>
         </div>
       )}
