@@ -3,7 +3,7 @@ import {
   Search, FileText, User, Vote, ChevronRight, ArrowLeft, ExternalLink,
   Calendar, Building2, BookOpen, ScrollText, Gavel, Users, Hash, Eye,
   Clock, CheckCircle2, XCircle, MinusCircle, AlertCircle, ListOrdered,
-  Layers, FileCheck, FilePlus2, Bookmark, BookmarkCheck, Trash2, StickyNote
+  Layers, FileCheck, FilePlus2, Bookmark, BookmarkCheck, Trash2, StickyNote, Download
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -525,13 +525,33 @@ function PersonDetailView({
 
 function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type: string; date: string; bill_number: string; mime?: string; pdfDataUrl?: string }; onBack: () => void }) {
   const isPdf = !!docInfo.pdfDataUrl;
+  const handleDownload = () => {
+    if (!docInfo.pdfDataUrl) return;
+    const a = document.createElement("a");
+    a.href = docInfo.pdfDataUrl;
+    a.download = `${docInfo.bill_number.replace(/\s+/g, "_")}_${docInfo.type.replace(/\s+/g, "_")}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
   return (
     <div className="animate-fade-in">
       <BackButton onClick={onBack} label="Back to bill" />
-      <div className="flex items-center gap-2 mb-3">
-        <ScrollText className="h-5 w-5 text-primary" />
-        <h2 className="font-display text-lg font-bold text-foreground">{docInfo.bill_number} — {docInfo.type}</h2>
-        <span className="text-xs text-muted-foreground">{docInfo.date}</span>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <ScrollText className="h-5 w-5 text-primary" />
+          <h2 className="font-display text-lg font-bold text-foreground">{docInfo.bill_number} — {docInfo.type}</h2>
+          <span className="text-xs text-muted-foreground">{docInfo.date}</span>
+        </div>
+        {isPdf && (
+          <button
+            onClick={handleDownload}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download PDF
+          </button>
+        )}
       </div>
       {isPdf ? (
         <div className="rounded-xl border border-border bg-card overflow-hidden" style={{ height: "75vh" }}>
