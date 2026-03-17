@@ -342,18 +342,7 @@ async function syncPA(supabase: any) {
 
         const filerInfo = filerMap.get(fid);
         if (!candidates.has(fid)) {
-          candidates.set(fid, {
-            name: filerInfo?.name || fid,
-            committee_name: filerInfo?.name || fid,
-            reg_num: fid,
-            chamber: detectPAChamber(filerInfo?.office || ""),
-            office: filerInfo?.office || "",
-            party: filerInfo?.party || "",
-            total_contributions: 0, total_expenditures: 0,
-            contribution_count: 0, expenditure_count: 0,
-            top_contributors: {}, expenditure_types: {},
-            top_vendors: {}, years_active: new Set(), in_kind_total: 0,
-          });
+          candidates.set(fid, newCandidateAgg(filerInfo?.name || fid, fid, detectPAChamber(filerInfo?.office || ""), filerInfo?.office || "", filerInfo?.party || ""));
         }
 
         const c = candidates.get(fid)!;
@@ -361,9 +350,12 @@ async function syncPA(supabase: any) {
         const amt = parseFloat(vals[amtIdx] || "0");
         const vendor = vals[vendorIdx] || "";
         const desc = vals[descIdx] || "";
+        const yd = ensureYearly(c, year);
 
         c.total_expenditures += amt;
         c.expenditure_count++;
+        yd.expenditures += amt;
+        yd.expenditure_count++;
         if (vendor) c.top_vendors[vendor] = (c.top_vendors[vendor] || 0) + amt;
         if (desc) c.expenditure_types[desc] = (c.expenditure_types[desc] || 0) + amt;
       }
