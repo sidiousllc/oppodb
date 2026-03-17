@@ -269,6 +269,7 @@ export default function Index() {
     "state-legislative": "State Legislative Districts",
     polling: "Polling Data",
     "campaign-finance": "Campaign Finance",
+    "voter-data": "Voter Data",
   };
 
   function renderDetail() {
