@@ -1159,9 +1159,14 @@ export function LegislationSection() {
         // mime_id 1 = HTML, 2 = PDF per LegiScan docs
         const isPdf = mimeId === 2 || mime === "application/pdf" || base64Doc.substring(0, 8) === "JVBER" || base64Doc.substring(0, 10) === "JVBERi0x";
         if (isPdf) {
-          const pdfDataUrl = `data:application/pdf;base64,${base64Doc}`;
+          // Convert base64 to Blob URL for reliable iframe rendering
+          const byteChars = atob(base64Doc);
+          const byteNumbers = new Uint8Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+          const blob = new Blob([byteNumbers], { type: "application/pdf" });
+          const blobUrl = URL.createObjectURL(blob);
           setBillText("");
-          setBillTextInfo({ type, date, bill_number: selectedBill?.bill_number || "", mime: "application/pdf", pdfDataUrl });
+          setBillTextInfo({ type, date, bill_number: selectedBill?.bill_number || "", mime: "application/pdf", pdfDataUrl: blobUrl });
         } else {
           const decoded = atob(base64Doc);
           setBillText(decoded);
