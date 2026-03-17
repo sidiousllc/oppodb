@@ -189,6 +189,22 @@ function topN(map: Record<string, number>, n: number): Array<{ name: string; amo
     .map(([name, amount]) => ({ name, amount: Math.round(amount * 100) / 100 }));
 }
 
+function newCandidateAgg(name: string, reg_num: string, chamber: string, office: string, party: string, committee_name?: string): CandidateAgg {
+  return {
+    name, committee_name: committee_name || name, reg_num, chamber, office, party,
+    total_contributions: 0, total_expenditures: 0,
+    contribution_count: 0, expenditure_count: 0,
+    top_contributors: {}, expenditure_types: {},
+    top_vendors: {}, years_active: new Set(), in_kind_total: 0,
+    yearly: new Map(),
+  };
+}
+
+function ensureYearly(c: CandidateAgg, year: string) {
+  if (!c.yearly.has(year)) c.yearly.set(year, { contributions: 0, expenditures: 0, contribution_count: 0, expenditure_count: 0 });
+  return c.yearly.get(year)!;
+}
+
 // ─── ZIP fetch helper ───────────────────────────────────────────────────────
 
 async function fetchAndUnzip(url: string): Promise<Record<string, string>> {
