@@ -303,23 +303,13 @@ async function syncPA(supabase: any) {
 
         const filerInfo = filerMap.get(fid);
         if (!candidates.has(fid)) {
-          candidates.set(fid, {
-            name: filerInfo?.name || fid,
-            committee_name: filerInfo?.name || fid,
-            reg_num: fid,
-            chamber: detectPAChamber(filerInfo?.office || ""),
-            office: filerInfo?.office || "",
-            party: filerInfo?.party || "",
-            total_contributions: 0, total_expenditures: 0,
-            contribution_count: 0, expenditure_count: 0,
-            top_contributors: {}, expenditure_types: {},
-            top_vendors: {}, years_active: new Set(), in_kind_total: 0,
-          });
+          candidates.set(fid, newCandidateAgg(filerInfo?.name || fid, fid, detectPAChamber(filerInfo?.office || ""), filerInfo?.office || "", filerInfo?.party || ""));
         }
 
         const c = candidates.get(fid)!;
         c.years_active.add(year);
         const contributor = vals[contribIdx] || "";
+        const yd = ensureYearly(c, year);
 
         for (const idx of [amt1Idx, amt2Idx, amt3Idx]) {
           if (idx < 0) continue;
@@ -327,6 +317,8 @@ async function syncPA(supabase: any) {
           if (amt === 0) continue;
           c.total_contributions += amt;
           c.contribution_count++;
+          yd.contributions += amt;
+          yd.contribution_count++;
           if (contributor) c.top_contributors[contributor] = (c.top_contributors[contributor] || 0) + amt;
         }
       }
