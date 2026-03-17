@@ -16,6 +16,7 @@ import { exportStateLegPDF } from "@/lib/stateLegExport";
 import { StatePollingPanel } from "@/components/StatePollingPanel";
 import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 import { MNFinancePanel } from "@/components/MNFinancePanel";
+import { StateFinancePanel } from "@/components/StateFinancePanel";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
@@ -498,6 +499,20 @@ export function StateLegislativeSection({
       {selectedState === "MN" && !loading && (
         <div className="mb-6">
           <MNFinancePanel />
+        </div>
+      )}
+
+      {/* PA Campaign Finance data */}
+      {selectedState === "PA" && !loading && (
+        <div className="mb-6">
+          <StateFinancePanel stateAbbr="PA" />
+        </div>
+      )}
+
+      {/* MI Campaign Finance data */}
+      {selectedState === "MI" && !loading && (
+        <div className="mb-6">
+          <StateFinancePanel stateAbbr="MI" />
         </div>
       )}
 
