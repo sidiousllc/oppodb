@@ -1133,10 +1133,20 @@ export function LegislationSection() {
     try {
       const data = await callLegiScan({ op: "getBillText", id: String(docId) });
       if (data?.text) {
-        // Text is base64 encoded
-        const decoded = data.text.doc ? atob(data.text.doc) : "";
-        setBillText(decoded);
-        setBillTextInfo({ type, date, bill_number: selectedBill?.bill_number || "" });
+        const base64Doc = data.text.doc || "";
+        const mimeId = data.text.mime_id ?? 0;
+        const mime = data.text.mime || "";
+        // mime_id 1 = HTML, 2 = PDF per LegiScan docs
+        const isPdf = mimeId === 2 || mime === "application/pdf" || base64Doc.substring(0, 8) === "JVBER" || base64Doc.substring(0, 10) === "JVBERi0x";
+        if (isPdf) {
+          const pdfDataUrl = `data:application/pdf;base64,${base64Doc}`;
+          setBillText("");
+          setBillTextInfo({ type, date, bill_number: selectedBill?.bill_number || "", mime: "application/pdf", pdfDataUrl });
+        } else {
+          const decoded = atob(base64Doc);
+          setBillText(decoded);
+          setBillTextInfo({ type, date, bill_number: selectedBill?.bill_number || "" });
+        }
         setSubView("billtext");
       }
     } catch (e) {
