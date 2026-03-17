@@ -822,6 +822,84 @@ export type Database = {
         }
         Relationships: []
       }
+      state_cfb_candidates: {
+        Row: {
+          candidate_name: string
+          chamber: string
+          committee_name: string
+          contribution_count: number
+          contributor_types: Json
+          created_at: string
+          expenditure_count: number
+          expenditure_types: Json
+          id: string
+          in_kind_total: number
+          last_synced_at: string
+          net_cash: number
+          office: string | null
+          party: string | null
+          reg_num: string
+          state_abbr: string
+          top_contributors: Json
+          top_vendors: Json
+          total_contributions: number
+          total_expenditures: number
+          updated_at: string
+          yearly_breakdown: Json
+          years_active: string[]
+        }
+        Insert: {
+          candidate_name: string
+          chamber?: string
+          committee_name: string
+          contribution_count?: number
+          contributor_types?: Json
+          created_at?: string
+          expenditure_count?: number
+          expenditure_types?: Json
+          id?: string
+          in_kind_total?: number
+          last_synced_at?: string
+          net_cash?: number
+          office?: string | null
+          party?: string | null
+          reg_num: string
+          state_abbr: string
+          top_contributors?: Json
+          top_vendors?: Json
+          total_contributions?: number
+          total_expenditures?: number
+          updated_at?: string
+          yearly_breakdown?: Json
+          years_active?: string[]
+        }
+        Update: {
+          candidate_name?: string
+          chamber?: string
+          committee_name?: string
+          contribution_count?: number
+          contributor_types?: Json
+          created_at?: string
+          expenditure_count?: number
+          expenditure_types?: Json
+          id?: string
+          in_kind_total?: number
+          last_synced_at?: string
+          net_cash?: number
+          office?: string | null
+          party?: string | null
+          reg_num?: string
+          state_abbr?: string
+          top_contributors?: Json
+          top_vendors?: Json
+          total_contributions?: number
+          total_expenditures?: number
+          updated_at?: string
+          yearly_breakdown?: Json
+          years_active?: string[]
+        }
+        Relationships: []
+      }
       state_leg_election_results: {
         Row: {
           candidate_name: string
