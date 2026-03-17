@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
             method: "GET",
             description: endpointDescription(e),
           })),
-          authentication: "Include X-API-Key header or ?apikey= query parameter",
+          authentication: "Include X-API-Key header with your API key",
           query_params: {
             limit: "Max results (default 100, max 1000)",
             offset: "Pagination offset (default 0)",
