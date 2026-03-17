@@ -191,6 +191,40 @@ Deno.serve(async (req) => {
       last_synced_at: new Date().toISOString(),
     });
 
+    // 5. State-level campaign finance board sync (MN, PA, MI)
+    const stateCfbStates = ["MN", "PA", "MI"];
+    const stateCfbResults: Array<{ state: string; status: string }> = [];
+
+    // MN CFB sync
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/functions/v1/mn-cfb-finance?action=sync`,
+        { headers: { "Authorization": `Bearer ${anonKey}` } },
+      );
+      stateCfbResults.push({ state: "MN", status: res.ok ? "ok" : "error" });
+      console.log(`MN CFB sync triggered: ${res.status}`);
+    } catch (e) {
+      stateCfbResults.push({ state: "MN", status: "error" });
+      console.error("MN CFB sync error:", e);
+    }
+
+    // PA and MI via state-cfb-finance
+    for (const state of ["PA", "MI"]) {
+      try {
+        const res = await fetch(
+          `${supabaseUrl}/functions/v1/state-cfb-finance?action=sync&state=${state}`,
+          { headers: { "Authorization": `Bearer ${anonKey}` } },
+        );
+        stateCfbResults.push({ state, status: res.ok ? "ok" : "error" });
+        console.log(`${state} CFB sync triggered: ${res.status}`);
+      } catch (e) {
+        stateCfbResults.push({ state, status: "error" });
+        console.error(`${state} CFB sync error:`, e);
+      }
+    }
+
+    results.state_cfb = { states: stateCfbResults };
+
     return new Response(
       JSON.stringify({ success: true, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
