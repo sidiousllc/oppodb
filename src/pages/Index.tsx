@@ -598,6 +598,10 @@ export default function Index() {
     if (section === "voter-data") {
       return <VoterDataSection />;
     }
+
+    if (section === "live-elections") {
+      return <LiveElectionsSection />;
+    }
   }
 
   const detail = renderDetail();
