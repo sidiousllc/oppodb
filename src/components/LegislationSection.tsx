@@ -601,6 +601,9 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
           <ScrollText className="h-5 w-5 text-primary" />
           <h2 className="font-display text-lg font-bold text-foreground">{docInfo.bill_number} — {docInfo.type}</h2>
           <span className="text-xs text-muted-foreground">{docInfo.date}</span>
+          {isPdf && pageCount > 0 && (
+            <span className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">{pageCount} {pageCount === 1 ? "page" : "pages"}</span>
+          )}
         </div>
         {isPdf && (
           <button
