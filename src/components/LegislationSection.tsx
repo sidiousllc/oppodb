@@ -138,8 +138,22 @@ interface MasterListBill {
   url?: string;
 }
 
-type Tab = "bills" | "legislators" | "sessions";
+type Tab = "bills" | "legislators" | "sessions" | "tracked";
 type SubView = null | "bill" | "rollcall" | "person" | "billtext" | "session-bills";
+
+interface TrackedBill {
+  id: string;
+  bill_id: number;
+  bill_number: string;
+  title: string;
+  state: string;
+  status_desc: string | null;
+  last_action: string | null;
+  last_action_date: string | null;
+  legiscan_url: string | null;
+  notes: string | null;
+  created_at: string;
+}
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
