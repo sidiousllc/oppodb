@@ -9,7 +9,7 @@ const US_STATES = [
   "NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
 ];
 
-type SearchType = "name" | "address" | "district";
+type SearchType = "name" | "address" | "district" | "races";
 
 interface VoterRecord {
   source: string;
