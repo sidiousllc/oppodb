@@ -237,6 +237,24 @@ function YearOverYearChart({ data }: { data: YearlyBreakdown[] }) {
 
 function CandidateDetailView({ candidate, onBack }: { candidate: CandidateFinance; onBack: () => void }) {
   const netPositive = candidate.net_cash >= 0;
+  const [yearlyData, setYearlyData] = useState<YearlyBreakdown[]>(candidate.yearly_breakdown || []);
+  const [yearlyLoading, setYearlyLoading] = useState(false);
+
+  useEffect(() => {
+    if (yearlyData.length > 0) return;
+    let cancelled = false;
+    setYearlyLoading(true);
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    fetch(`https://${projectId}.supabase.co/functions/v1/mn-cfb-finance?action=yearly&reg_num=${encodeURIComponent(candidate.reg_num)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled && data.success) setYearlyData(data.yearly_breakdown || []);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setYearlyLoading(false); });
+    return () => { cancelled = true; };
+  }, [candidate.reg_num, yearlyData.length]);
+
   return (
     <div className="animate-fade-in">
       <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
