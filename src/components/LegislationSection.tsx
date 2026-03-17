@@ -523,7 +523,8 @@ function PersonDetailView({
 
 // ─── Bill Text View ─────────────────────────────────────────────────────────
 
-function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type: string; date: string; bill_number: string }; onBack: () => void }) {
+function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type: string; date: string; bill_number: string; mime?: string; pdfDataUrl?: string }; onBack: () => void }) {
+  const isPdf = !!docInfo.pdfDataUrl;
   return (
     <div className="animate-fade-in">
       <BackButton onClick={onBack} label="Back to bill" />
@@ -532,9 +533,19 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
         <h2 className="font-display text-lg font-bold text-foreground">{docInfo.bill_number} — {docInfo.type}</h2>
         <span className="text-xs text-muted-foreground">{docInfo.date}</span>
       </div>
-      <div className="rounded-xl border border-border bg-card p-4 text-xs font-mono whitespace-pre-wrap max-h-[70vh] overflow-y-auto leading-relaxed text-foreground">
-        {text || "No text available."}
-      </div>
+      {isPdf ? (
+        <div className="rounded-xl border border-border bg-card overflow-hidden" style={{ height: "75vh" }}>
+          <iframe
+            src={docInfo.pdfDataUrl}
+            title={`${docInfo.bill_number} — ${docInfo.type}`}
+            className="w-full h-full border-0"
+          />
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-card p-4 text-xs font-mono whitespace-pre-wrap max-h-[70vh] overflow-y-auto leading-relaxed text-foreground">
+          {text || "No text available."}
+        </div>
+      )}
     </div>
   );
 }
@@ -955,7 +966,7 @@ export function LegislationSection() {
   const [selectedPerson, setSelectedPerson] = useState<PersonDetail | null>(null);
   const [sponsoredBills, setSponsoredBills] = useState<SponsoredBill[]>([]);
   const [billText, setBillText] = useState("");
-  const [billTextInfo, setBillTextInfo] = useState<{ type: string; date: string; bill_number: string }>({ type: "", date: "", bill_number: "" });
+  const [billTextInfo, setBillTextInfo] = useState<{ type: string; date: string; bill_number: string; mime?: string; pdfDataUrl?: string }>({ type: "", date: "", bill_number: "" });
 
   // Tracked bills
   const [trackedBills, setTrackedBills] = useState<TrackedBill[]>([]);
@@ -1122,10 +1133,20 @@ export function LegislationSection() {
     try {
       const data = await callLegiScan({ op: "getBillText", id: String(docId) });
       if (data?.text) {
-        // Text is base64 encoded
-        const decoded = data.text.doc ? atob(data.text.doc) : "";
-        setBillText(decoded);
-        setBillTextInfo({ type, date, bill_number: selectedBill?.bill_number || "" });
+        const base64Doc = data.text.doc || "";
+        const mimeId = data.text.mime_id ?? 0;
+        const mime = data.text.mime || "";
+        // mime_id 1 = HTML, 2 = PDF per LegiScan docs
+        const isPdf = mimeId === 2 || mime === "application/pdf" || base64Doc.substring(0, 8) === "JVBER" || base64Doc.substring(0, 10) === "JVBERi0x";
+        if (isPdf) {
+          const pdfDataUrl = `data:application/pdf;base64,${base64Doc}`;
+          setBillText("");
+          setBillTextInfo({ type, date, bill_number: selectedBill?.bill_number || "", mime: "application/pdf", pdfDataUrl });
+        } else {
+          const decoded = atob(base64Doc);
+          setBillText(decoded);
+          setBillTextInfo({ type, date, bill_number: selectedBill?.bill_number || "" });
+        }
         setSubView("billtext");
       }
     } catch (e) {
