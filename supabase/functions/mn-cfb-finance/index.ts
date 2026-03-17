@@ -249,6 +249,13 @@ async function syncMNCFBData(supabase: any) {
       if (isInKind) c.in_kind_total += amount;
       if (contributor) c.top_contributors[contributor] = (c.top_contributors[contributor] || 0) + amount;
       if (contribType) c.contributor_types[contribType] = (c.contributor_types[contribType] || 0) + amount;
+      // Yearly tracking
+      if (year) {
+        if (!c.yearly.has(year)) c.yearly.set(year, { contributions: 0, expenditures: 0, contribution_count: 0, expenditure_count: 0 });
+        const yd = c.yearly.get(year)!;
+        yd.contributions += amount;
+        yd.contribution_count++;
+      }
     }
 
     // Free contrib text memory
