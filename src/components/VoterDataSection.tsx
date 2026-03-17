@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, MapPin, Building2, ChevronDown, ChevronRight, AlertTriangle, Loader2 } from "lucide-react";
+import { Search, Users, MapPin, Building2, ChevronDown, ChevronRight, AlertTriangle, Loader2, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 
 const US_STATES = [
@@ -35,9 +35,17 @@ interface VoterRecord {
   state_senate_district: string;
   vote_history: Array<{ election: string; voted: boolean; method?: string }>;
   tags: string[];
+  employer?: string;
+  occupation?: string;
+  contributions?: Array<{ amount: number; date: string; committee: string }>;
+  total_contributed?: number;
+  representatives?: Array<{ name: string; office: string; party: string; phones?: string[]; urls?: string[] }>;
 }
 
 interface SearchSources {
+  fec: boolean;
+  google_civic: boolean;
+  open_states: boolean;
   nationbuilder: boolean;
   van: boolean;
 }
@@ -53,6 +61,14 @@ const PARTY_COLORS: Record<string, string> = {
   Independent: "hsl(270, 40%, 50%)",
   NPA: "hsl(0, 0%, 50%)",
   U: "hsl(0, 0%, 50%)",
+};
+
+const SOURCE_COLORS: Record<string, string> = {
+  "FEC": "hsl(45, 80%, 88%)",
+  "Google Civic": "hsl(210, 60%, 90%)",
+  "Open States": "hsl(160, 50%, 88%)",
+  "NationBuilder": "hsl(210, 60%, 90%)",
+  "VAN": "hsl(140, 50%, 90%)",
 };
 
 function getPartyColor(party: string): string {
@@ -145,50 +161,38 @@ export function VoterDataSection() {
     <div>
       {/* Source status */}
       {sources && (
-        <div className="win98-sunken bg-[hsl(var(--win98-light))] px-2 py-1 mb-3 flex items-center gap-3 text-[9px]">
+        <div className="win98-sunken bg-[hsl(var(--win98-light))] px-2 py-1 mb-3 flex items-center gap-3 text-[9px] flex-wrap">
           <span className="font-bold">Data Sources:</span>
-          <span style={{ color: sources.nationbuilder ? "hsl(140, 60%, 30%)" : "hsl(0, 70%, 45%)" }}>
-            {sources.nationbuilder ? "✓" : "✗"} NationBuilder
+          <span style={{ color: "hsl(140, 60%, 30%)" }}>✓ FEC</span>
+          <span style={{ color: sources.google_civic ? "hsl(140, 60%, 30%)" : "hsl(0, 0%, 55%)" }}>
+            {sources.google_civic ? "✓" : "○"} Google Civic
           </span>
-          <span style={{ color: sources.van ? "hsl(140, 60%, 30%)" : "hsl(0, 70%, 45%)" }}>
-            {sources.van ? "✓" : "✗"} VAN
+          <span style={{ color: sources.open_states ? "hsl(140, 60%, 30%)" : "hsl(0, 0%, 55%)" }}>
+            {sources.open_states ? "✓" : "○"} Open States
+          </span>
+          <span style={{ color: sources.nationbuilder ? "hsl(140, 60%, 30%)" : "hsl(0, 0%, 55%)" }}>
+            {sources.nationbuilder ? "✓" : "○"} NationBuilder
+          </span>
+          <span style={{ color: sources.van ? "hsl(140, 60%, 30%)" : "hsl(0, 0%, 55%)" }}>
+            {sources.van ? "✓" : "○"} VAN
           </span>
         </div>
       )}
 
-      {/* API setup notice */}
+      {/* Optional API setup notice */}
       {errors.length > 0 && errors.some(e => e.includes('Not configured')) && (
         <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mb-3">
           <div className="flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "hsl(40, 90%, 45%)" }} />
             <div className="text-[10px]">
-              <p className="font-bold mb-1">API Configuration Required</p>
-              <p className="text-[hsl(var(--muted-foreground))] mb-2">
-                To search voter data, you need to configure API credentials for at least one source:
+              <p className="font-bold mb-1">Optional: Additional Data Sources</p>
+              <p className="text-[hsl(var(--muted-foreground))] mb-1">
+                FEC data is always available. Add API keys for more sources:
               </p>
-              <div className="space-y-2">
-                {errors.some(e => e.includes('NationBuilder')) && (
-                  <div className="win98-sunken bg-white p-2">
-                    <p className="font-bold">🏛️ NationBuilder</p>
-                    <p className="text-[9px] text-[hsl(var(--muted-foreground))]">
-                      Required secrets: <code className="bg-[hsl(var(--win98-light))] px-1">NATIONBUILDER_SLUG</code> and <code className="bg-[hsl(var(--win98-light))] px-1">NATIONBUILDER_API_TOKEN</code>
-                    </p>
-                    <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
-                      Get your slug from your-nation.nationbuilder.com and API token from Settings → Developer → API Tokens.
-                    </p>
-                  </div>
-                )}
-                {errors.some(e => e.includes('VAN')) && (
-                  <div className="win98-sunken bg-white p-2">
-                    <p className="font-bold">🗳️ VAN (EveryAction)</p>
-                    <p className="text-[9px] text-[hsl(var(--muted-foreground))]">
-                      Required secrets: <code className="bg-[hsl(var(--win98-light))] px-1">VAN_API_KEY</code> and <code className="bg-[hsl(var(--win98-light))] px-1">VAN_APP_NAME</code>
-                    </p>
-                    <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
-                      Contact your state party or organization's VAN admin for API access credentials.
-                    </p>
-                  </div>
-                )}
+              <div className="space-y-1 text-[9px] text-[hsl(var(--muted-foreground))]">
+                <p>🔑 <code className="bg-[hsl(var(--win98-light))] px-1">GOOGLE_CIVIC_API_KEY</code> — Free from Google Cloud Console (address → district/rep lookup)</p>
+                <p>🔑 <code className="bg-[hsl(var(--win98-light))] px-1">OPENSTATES_API_KEY</code> — Free from openstates.org (state legislator data)</p>
+                <p>🔑 <code className="bg-[hsl(var(--win98-light))] px-1">FEC_API_KEY</code> — Free from api.open.fec.gov (higher rate limits)</p>
               </div>
             </div>
           </div>
@@ -290,7 +294,7 @@ export function VoterDataSection() {
             {loading ? "Searching..." : "Search Voters"}
           </button>
           <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
-            Searches NationBuilder & VAN simultaneously
+            Searches FEC contributions{sources?.google_civic ? ", Google Civic" : ""}{sources?.open_states ? ", Open States" : ""}{sources?.nationbuilder ? ", NationBuilder" : ""}{sources?.van ? ", VAN" : ""} simultaneously
           </span>
         </div>
       </div>
@@ -300,13 +304,13 @@ export function VoterDataSection() {
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] text-[hsl(var(--muted-foreground))]">
-              {results.length} voter{results.length !== 1 ? "s" : ""} found
+              {results.length} result{results.length !== 1 ? "s" : ""} found
             </span>
             {results.length > 0 && (
               <div className="flex gap-1 text-[9px]">
                 {Array.from(new Set(results.map(r => r.source))).map(src => (
                   <span key={src} className="win98-raised px-1 py-0 text-[8px] font-bold" style={{
-                    backgroundColor: src === "NationBuilder" ? "hsl(210, 60%, 90%)" : "hsl(140, 50%, 90%)",
+                    backgroundColor: SOURCE_COLORS[src] || "hsl(var(--win98-light))",
                   }}>
                     {src}
                   </span>
@@ -331,7 +335,7 @@ export function VoterDataSection() {
                 </thead>
                 <tbody>
                   {results.map((v, i) => {
-                    const key = `${v.source}-${v.voter_id}-${i}`;
+                    const key = `${v.source}-${v.voter_id || v.full_name}-${i}`;
                     const isExpanded = expandedVoter === key;
                     return (
                       <>
@@ -346,6 +350,9 @@ export function VoterDataSection() {
                           <td className="px-2 py-1">
                             <span className="font-bold">{v.full_name}</span>
                             {v.age && <span className="text-[9px] text-[hsl(var(--muted-foreground))] ml-1">({v.age})</span>}
+                            {v.employer && (
+                              <span className="text-[8px] text-[hsl(var(--muted-foreground))] block">{v.occupation} @ {v.employer}</span>
+                            )}
                           </td>
                           <td className="px-2 py-1">
                             <span className="font-bold" style={{ color: getPartyColor(v.party) }}>
@@ -358,11 +365,24 @@ export function VoterDataSection() {
                           </td>
                           <td className="px-2 py-1">
                             <span className="text-[9px] font-bold px-1 py-0 win98-sunken" style={{
-                              color: v.registration_status === "Active" ? "hsl(140, 60%, 30%)" : "hsl(0, 70%, 45%)",
-                              backgroundColor: v.registration_status === "Active" ? "hsl(140, 50%, 90%)" : "hsl(0, 70%, 92%)",
+                              color: v.registration_status === "Active" ? "hsl(140, 60%, 30%)"
+                                : v.registration_status === "Donor" ? "hsl(45, 80%, 35%)"
+                                : v.registration_status === "Legislator" ? "hsl(270, 50%, 40%)"
+                                : v.registration_status === "Address Info" ? "hsl(210, 50%, 40%)"
+                                : "hsl(0, 70%, 45%)",
+                              backgroundColor: v.registration_status === "Active" ? "hsl(140, 50%, 90%)"
+                                : v.registration_status === "Donor" ? "hsl(45, 80%, 92%)"
+                                : v.registration_status === "Legislator" ? "hsl(270, 40%, 92%)"
+                                : v.registration_status === "Address Info" ? "hsl(210, 50%, 92%)"
+                                : "hsl(0, 70%, 92%)",
                             }}>
                               {v.registration_status}
                             </span>
+                            {v.total_contributed != null && v.total_contributed > 0 && (
+                              <span className="text-[8px] text-[hsl(var(--muted-foreground))] ml-1">
+                                ${v.total_contributed.toLocaleString()}
+                              </span>
+                            )}
                           </td>
                           <td className="px-2 py-1 text-[9px]">
                             {v.congressional_district && <span className="mr-1">CD-{v.congressional_district}</span>}
@@ -372,7 +392,7 @@ export function VoterDataSection() {
                           </td>
                           <td className="px-2 py-1">
                             <span className="text-[8px] font-bold px-1 py-0 win98-raised" style={{
-                              backgroundColor: v.source === "NationBuilder" ? "hsl(210, 60%, 90%)" : "hsl(140, 50%, 90%)",
+                              backgroundColor: SOURCE_COLORS[v.source] || "hsl(var(--win98-light))",
                             }}>
                               {v.source}
                             </span>
@@ -394,7 +414,7 @@ export function VoterDataSection() {
           ) : (
             <div className="win98-sunken bg-white p-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
               <Users className="h-6 w-6 mx-auto mb-2 opacity-40" />
-              No voters found matching your search criteria.
+              No results found matching your search criteria.
             </div>
           )}
         </div>
@@ -405,8 +425,13 @@ export function VoterDataSection() {
         <div className="win98-sunken bg-white p-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
           <span className="text-3xl block mb-2">🗳️</span>
           <p className="font-bold mb-1">Voter Data Lookup</p>
-          <p>Search for registered voters by name, address, or district.</p>
-          <p className="mt-1">Data sourced from NationBuilder and VAN (EveryAction).</p>
+          <p>Search for voters, donors, and representatives by name, address, or district.</p>
+          <p className="mt-2 text-[9px]">
+            <b>Free sources:</b> FEC Individual Contributions (always available)
+          </p>
+          <p className="text-[9px]">
+            <b>Optional:</b> Google Civic API, Open States, NationBuilder, VAN
+          </p>
         </div>
       )}
     </div>
@@ -425,10 +450,12 @@ function VoterDetailPanel({ voter: v }: { voter: VoterRecord }) {
           {v.gender && <div><b>Gender:</b> {v.gender}</div>}
           {v.race_ethnicity && <div><b>Race/Ethnicity:</b> {v.race_ethnicity}</div>}
           {v.voter_id && <div><b>Voter ID:</b> {v.voter_id}</div>}
+          {v.employer && <div><b>Employer:</b> {v.employer}</div>}
+          {v.occupation && <div><b>Occupation:</b> {v.occupation}</div>}
         </div>
       </div>
 
-      {/* Registration & Contact */}
+      {/* Registration, Contact & Finance */}
       <div className="win98-sunken bg-white p-2">
         <p className="font-bold mb-1 text-[9px] border-b border-[hsl(var(--win98-shadow))] pb-0.5">Registration & Contact</p>
         <div className="space-y-0.5">
@@ -440,16 +467,60 @@ function VoterDetailPanel({ voter: v }: { voter: VoterRecord }) {
           {v.county && <div><b>County:</b> {v.county}</div>}
           {v.phone && <div><b>Phone:</b> {v.phone}</div>}
           {v.email && <div><b>Email:</b> {v.email}</div>}
+          {v.total_contributed != null && v.total_contributed > 0 && (
+            <div className="mt-1 pt-1 border-t border-[hsl(var(--win98-shadow))]">
+              <b>💰 Total Contributed:</b> <span className="font-bold" style={{ color: "hsl(140, 50%, 35%)" }}>${v.total_contributed.toLocaleString()}</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Districts & Vote History */}
+      {/* Districts, Contributions & Representatives */}
       <div className="win98-sunken bg-white p-2">
-        <p className="font-bold mb-1 text-[9px] border-b border-[hsl(var(--win98-shadow))] pb-0.5">Districts & Voting</p>
+        <p className="font-bold mb-1 text-[9px] border-b border-[hsl(var(--win98-shadow))] pb-0.5">Districts & Details</p>
         <div className="space-y-0.5">
           {v.congressional_district && <div><b>Congressional:</b> CD-{v.congressional_district}</div>}
           {v.state_house_district && <div><b>State House:</b> HD-{v.state_house_district}</div>}
           {v.state_senate_district && <div><b>State Senate:</b> SD-{v.state_senate_district}</div>}
+
+          {/* FEC Contributions */}
+          {v.contributions && v.contributions.length > 0 && (
+            <div className="mt-1">
+              <b>Recent Contributions:</b>
+              <div className="max-h-[100px] overflow-y-auto mt-0.5">
+                {v.contributions.slice(0, 10).map((c, i) => (
+                  <div key={i} className="text-[9px] flex items-center gap-1">
+                    <DollarSign className="h-2.5 w-2.5" style={{ color: "hsl(140, 50%, 40%)" }} />
+                    <span className="font-bold">${c.amount.toLocaleString()}</span>
+                    <span className="text-[hsl(var(--muted-foreground))]">→ {c.committee}</span>
+                    {c.date && <span className="text-[hsl(var(--muted-foreground))]">({c.date})</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Representatives (from Civic API) */}
+          {v.representatives && v.representatives.length > 0 && (
+            <div className="mt-1">
+              <b>Your Representatives:</b>
+              <div className="max-h-[120px] overflow-y-auto mt-0.5">
+                {v.representatives.map((rep, i) => (
+                  <div key={i} className="text-[9px] mb-1">
+                    <span className="font-bold">{rep.name}</span>
+                    <span className="text-[hsl(var(--muted-foreground))]"> — {rep.office}</span>
+                    {rep.party && (
+                      <span className="ml-1 font-bold" style={{ color: getPartyColor(rep.party) }}>
+                        ({rep.party})
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Vote History */}
           {v.vote_history.length > 0 && (
             <div className="mt-1">
               <b>Vote History:</b>
@@ -464,6 +535,7 @@ function VoterDetailPanel({ voter: v }: { voter: VoterRecord }) {
               </div>
             </div>
           )}
+
           {v.tags.length > 0 && (
             <div className="mt-1">
               <b>Tags:</b>
