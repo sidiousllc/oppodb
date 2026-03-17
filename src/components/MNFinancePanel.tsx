@@ -346,6 +346,19 @@ export function MNFinancePanel() {
             </>
           ) : "Fetch Data"}
         </button>
+
+        <button
+          onClick={triggerSync}
+          disabled={syncing || loading}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
+        >
+          {syncing ? (
+            <>
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+              Syncing…
+            </>
+          ) : "↻ Sync from CFB"}
+        </button>
       </div>
 
       {/* Loading */}
