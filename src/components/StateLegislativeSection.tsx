@@ -16,6 +16,7 @@ import { exportStateLegPDF } from "@/lib/stateLegExport";
 import { StatePollingPanel } from "@/components/StatePollingPanel";
 import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 import { MNFinancePanel } from "@/components/MNFinancePanel";
+import { StateFinancePanel } from "@/components/StateFinancePanel";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
