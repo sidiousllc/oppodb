@@ -182,6 +182,8 @@ export type Database = {
           github_path: string
           id: string
           is_subpage: boolean
+          legiscan_people_id: number | null
+          legiscan_state: string | null
           name: string
           parent_slug: string | null
           slug: string
@@ -194,6 +196,8 @@ export type Database = {
           github_path: string
           id?: string
           is_subpage?: boolean
+          legiscan_people_id?: number | null
+          legiscan_state?: string | null
           name: string
           parent_slug?: string | null
           slug: string
@@ -206,6 +210,8 @@ export type Database = {
           github_path?: string
           id?: string
           is_subpage?: boolean
+          legiscan_people_id?: number | null
+          legiscan_state?: string | null
           name?: string
           parent_slug?: string | null
           slug?: string
