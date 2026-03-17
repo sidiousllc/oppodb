@@ -12,6 +12,14 @@ interface TopItem {
   amount: number;
 }
 
+interface YearlyBreakdown {
+  year: string;
+  contributions: number;
+  expenditures: number;
+  contribution_count: number;
+  expenditure_count: number;
+}
+
 interface CandidateFinance {
   committee_name: string;
   candidate_name: string;
@@ -24,6 +32,7 @@ interface CandidateFinance {
   expenditure_count: number;
   in_kind_total: number;
   years_active: string[];
+  yearly_breakdown: YearlyBreakdown[];
   top_contributors: TopItem[];
   contributor_types: TopItem[];
   expenditure_types: TopItem[];
