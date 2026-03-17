@@ -328,6 +328,15 @@ async function syncMNCFBData(supabase: any) {
         expenditure_count: c.expenditure_count,
         in_kind_total: Math.round(c.in_kind_total * 100) / 100,
         years_active: Array.from(c.years_active).sort().reverse(),
+        yearly_breakdown: Array.from(c.yearly.entries())
+          .map(([year, yd]) => ({
+            year,
+            contributions: Math.round(yd.contributions * 100) / 100,
+            expenditures: Math.round(yd.expenditures * 100) / 100,
+            contribution_count: yd.contribution_count,
+            expenditure_count: yd.expenditure_count,
+          }))
+          .sort((a, b) => a.year.localeCompare(b.year)),
         top_contributors: topN(c.top_contributors, 15),
         contributor_types: topN(c.contributor_types, 10),
         expenditure_types: topN(c.expenditure_types, 10),
