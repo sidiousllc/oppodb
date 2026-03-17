@@ -249,6 +249,7 @@ export default function Index() {
     "state-legislative": stateLegDistricts.length,
     polling: pollingCount,
     "campaign-finance": financeCount,
+    "voter-data": 0,
   }), [dataVersion, districts, stateLegDistricts, pollingCount, financeCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
