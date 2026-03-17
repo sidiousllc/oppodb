@@ -246,6 +246,91 @@ Deno.serve(async (req) => {
         });
       }
 
+      case 'add_group_member': {
+        const { group_id, user_id } = params;
+        if (!group_id || !user_id) throw new Error('group_id and user_id required');
+
+        // Get the group's roles
+        const { data: group, error: groupErr } = await supabaseAdmin
+          .from('role_groups')
+          .select('roles')
+          .eq('id', group_id)
+          .single();
+        if (groupErr) throw groupErr;
+
+        // Insert membership
+        const { error: memberErr } = await supabaseAdmin
+          .from('role_group_members')
+          .insert({ group_id, user_id });
+        if (memberErr) {
+          if (memberErr.message.includes('duplicate')) throw new Error('User already in this group');
+          throw memberErr;
+        }
+
+        // Sync all group roles to user_roles
+        for (const role of (group.roles || [])) {
+          await supabaseAdmin
+            .from('user_roles')
+            .upsert({ user_id, role }, { onConflict: 'user_id,role' });
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'remove_group_member': {
+        const { member_id, user_id, group_id } = params;
+        if (!member_id || !user_id || !group_id) throw new Error('member_id, user_id, and group_id required');
+
+        // Get the roles of the group being removed from
+        const { data: removedGroup } = await supabaseAdmin
+          .from('role_groups')
+          .select('roles')
+          .eq('id', group_id)
+          .single();
+
+        // Delete the membership
+        const { error: delErr } = await supabaseAdmin
+          .from('role_group_members')
+          .delete()
+          .eq('id', member_id);
+        if (delErr) throw delErr;
+
+        // Get all OTHER groups the user still belongs to
+        const { data: remainingMemberships } = await supabaseAdmin
+          .from('role_group_members')
+          .select('group_id')
+          .eq('user_id', user_id);
+
+        // Collect all roles the user should still have from other groups
+        const protectedRoles = new Set<string>();
+        if (remainingMemberships && remainingMemberships.length > 0) {
+          const otherGroupIds = remainingMemberships.map(m => m.group_id);
+          const { data: otherGroups } = await supabaseAdmin
+            .from('role_groups')
+            .select('roles')
+            .in('id', otherGroupIds);
+          for (const g of otherGroups || []) {
+            for (const r of g.roles || []) protectedRoles.add(r);
+          }
+        }
+
+        // Revoke roles from the removed group that aren't protected by other groups
+        const rolesToRevoke = (removedGroup?.roles || []).filter((r: string) => !protectedRoles.has(r));
+        for (const role of rolesToRevoke) {
+          await supabaseAdmin
+            .from('user_roles')
+            .delete()
+            .eq('user_id', user_id)
+            .eq('role', role);
+        }
+
+        return new Response(JSON.stringify({ success: true, revoked_roles: rolesToRevoke }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: 'Unknown action' }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
