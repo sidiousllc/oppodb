@@ -271,7 +271,7 @@ function StatRow({ label, value, suffix = "" }: { label: string; value: string |
 
 // ─── Bill Card ──────────────────────────────────────────────────────────────
 
-function BillCard({ bill, onClick }: { bill: BillResult | MasterListBill; onClick: () => void }) {
+function BillCard({ bill, onClick, isTracked, onToggleTrack }: { bill: BillResult | MasterListBill; onClick: () => void; isTracked?: boolean; onToggleTrack?: (e: React.MouseEvent) => void }) {
   const status = 'status' in bill ? bill.status : undefined;
   return (
     <div className="candidate-card animate-fade-in cursor-pointer" onClick={onClick}>
@@ -304,7 +304,18 @@ function BillCard({ bill, onClick }: { bill: BillResult | MasterListBill; onClic
             </div>
           )}
         </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-2" />
+        <div className="flex items-center gap-1 shrink-0 mt-2">
+          {onToggleTrack && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleTrack(e); }}
+              className={`p-1 rounded transition-colors ${isTracked ? "text-primary hover:text-primary/70" : "text-muted-foreground hover:text-foreground"}`}
+              title={isTracked ? "Untrack bill" : "Track bill"}
+            >
+              {isTracked ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+            </button>
+          )}
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </div>
       </div>
     </div>
   );
