@@ -238,6 +238,7 @@ async function syncMNCFBData(supabase: any) {
           top_contributors: {}, contributor_types: {},
           expenditure_types: {}, top_vendors: {},
           years_active: new Set(), in_kind_total: 0,
+          yearly: new Map(),
         });
       }
 
