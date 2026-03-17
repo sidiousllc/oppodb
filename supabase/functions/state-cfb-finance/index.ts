@@ -495,6 +495,15 @@ async function upsertCandidates(supabase: any, state: string, candidates: Map<st
       expenditure_count: c.expenditure_count,
       in_kind_total: Math.round(c.in_kind_total * 100) / 100,
       years_active: Array.from(c.years_active).sort().reverse(),
+      yearly_breakdown: Array.from(c.yearly.entries())
+        .map(([year, d]) => ({
+          year,
+          contributions: Math.round(d.contributions * 100) / 100,
+          expenditures: Math.round(d.expenditures * 100) / 100,
+          contribution_count: d.contribution_count,
+          expenditure_count: d.expenditure_count,
+        }))
+        .sort((a, b) => a.year.localeCompare(b.year)),
       top_contributors: topN(c.top_contributors, 15),
       expenditure_types: topN(c.expenditure_types, 10),
       top_vendors: topN(c.top_vendors, 15),
