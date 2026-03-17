@@ -92,6 +92,40 @@ export function VoterDataSection() {
   const [hasSearched, setHasSearched] = useState(false);
   const [expandedVoter, setExpandedVoter] = useState<string | null>(null);
 
+  // Live Races state
+  const [raceState, setRaceState] = useState("");
+  const [raceType, setRaceType] = useState("");
+  const [raceDate, setRaceDate] = useState("");
+  const [raceResults, setRaceResults] = useState<any[]>([]);
+  const [raceLoading, setRaceLoading] = useState(false);
+  const [raceSearched, setRaceSearched] = useState(false);
+  const [expandedRace, setExpandedRace] = useState<number | null>(null);
+
+  const handleRaceSearch = useCallback(async () => {
+    setRaceLoading(true);
+    setRaceSearched(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("country", "US");
+      params.set("limit", "20");
+      if (raceState) params.set("province", raceState);
+      if (raceType) params.set("type", raceType);
+      if (raceDate) params.set("election_date", raceDate);
+      if (!raceState && !raceType && !raceDate) params.set("election_date", "2026-11-03");
+
+      const response = await fetch(`https://civicapi.org/api/v2/race/search?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch races");
+      const data = await response.json();
+      setRaceResults(data.races || []);
+      if ((data.races || []).length === 0) toast.info("No races found");
+    } catch (e: any) {
+      toast.error(e.message);
+      setRaceResults([]);
+    } finally {
+      setRaceLoading(false);
+    }
+  }, [raceState, raceType, raceDate]);
+
   const handleSearch = useCallback(async () => {
     if (searchType === "name" && !lastName.trim()) {
       toast.error("Last name is required"); return;
