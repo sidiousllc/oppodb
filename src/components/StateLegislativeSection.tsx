@@ -502,6 +502,20 @@ export function StateLegislativeSection({
         </div>
       )}
 
+      {/* PA Campaign Finance data */}
+      {selectedState === "PA" && !loading && (
+        <div className="mb-6">
+          <StateFinancePanel stateAbbr="PA" />
+        </div>
+      )}
+
+      {/* MI Campaign Finance data */}
+      {selectedState === "MI" && !loading && (
+        <div className="mb-6">
+          <StateFinancePanel stateAbbr="MI" />
+        </div>
+      )}
+
       {loading && (
         <div className="flex items-center justify-center py-16">
           <div className="flex items-center gap-3 text-muted-foreground">
