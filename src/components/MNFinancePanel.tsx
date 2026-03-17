@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   DollarSign, Users, Building2, Landmark, ChevronDown, ChevronUp,
   Search, TrendingUp, TrendingDown, ExternalLink, Gavel, PieChart,
@@ -10,6 +10,14 @@ import {
 interface TopItem {
   name: string;
   amount: number;
+}
+
+interface YearlyBreakdown {
+  year: string;
+  contributions: number;
+  expenditures: number;
+  contribution_count: number;
+  expenditure_count: number;
 }
 
 interface CandidateFinance {
@@ -24,6 +32,7 @@ interface CandidateFinance {
   expenditure_count: number;
   in_kind_total: number;
   years_active: string[];
+  yearly_breakdown: YearlyBreakdown[];
   top_contributors: TopItem[];
   contributor_types: TopItem[];
   expenditure_types: TopItem[];
@@ -142,8 +151,110 @@ function CandidateCard({ candidate, onClick }: { candidate: CandidateFinance; on
   );
 }
 
+function YearOverYearChart({ data }: { data: YearlyBreakdown[] }) {
+  if (!data || data.length < 2) return null;
+  const maxVal = Math.max(...data.map(d => Math.max(d.contributions, d.expenditures)), 1);
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 mb-4">
+      <h4 className="font-display text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+        <TrendingUp className="h-4 w-4 text-primary" />
+        Year-over-Year Fundraising
+      </h4>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 mb-3 text-[10px]">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: "hsl(150, 60%, 45%)" }} />
+          Contributions
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: "hsl(0, 55%, 55%)" }} />
+          Expenditures
+        </span>
+      </div>
+
+      {/* Bar chart */}
+      <div className="space-y-2">
+        {data.map((d) => {
+          const contribPct = (d.contributions / maxVal) * 100;
+          const expendPct = (d.expenditures / maxVal) * 100;
+          const net = d.contributions - d.expenditures;
+          const netPositive = net >= 0;
+
+          return (
+            <div key={d.year} className="group">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[11px] font-bold text-foreground w-10 shrink-0">{d.year}</span>
+                <div className="flex-1 space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3.5 rounded-sm transition-all duration-300" style={{
+                      width: `${Math.max(contribPct, 1)}%`,
+                      backgroundColor: "hsl(150, 60%, 45%)",
+                    }} />
+                    <span className="text-[10px] font-medium text-foreground shrink-0">{fmt(d.contributions)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3.5 rounded-sm transition-all duration-300" style={{
+                      width: `${Math.max(expendPct, 1)}%`,
+                      backgroundColor: "hsl(0, 55%, 55%)",
+                    }} />
+                    <span className="text-[10px] font-medium text-foreground shrink-0">{fmt(d.expenditures)}</span>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-bold shrink-0 w-14 text-right ${netPositive ? "text-primary" : "text-destructive"}`}>
+                  {netPositive ? "+" : ""}{fmt(net)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* YoY change summary */}
+      {data.length >= 2 && (() => {
+        const latest = data[data.length - 1];
+        const prev = data[data.length - 2];
+        const changePct = prev.contributions > 0
+          ? ((latest.contributions - prev.contributions) / prev.contributions * 100)
+          : 0;
+        const isUp = changePct >= 0;
+        return (
+          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">
+              {prev.year} → {latest.year} change
+            </span>
+            <span className={`text-xs font-bold flex items-center gap-1 ${isUp ? "text-primary" : "text-destructive"}`}>
+              {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              {isUp ? "+" : ""}{changePct.toFixed(1)}%
+            </span>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
 function CandidateDetailView({ candidate, onBack }: { candidate: CandidateFinance; onBack: () => void }) {
   const netPositive = candidate.net_cash >= 0;
+  const [yearlyData, setYearlyData] = useState<YearlyBreakdown[]>(candidate.yearly_breakdown || []);
+  const [yearlyLoading, setYearlyLoading] = useState(false);
+
+  useEffect(() => {
+    if (yearlyData.length > 0) return;
+    let cancelled = false;
+    setYearlyLoading(true);
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    fetch(`https://${projectId}.supabase.co/functions/v1/mn-cfb-finance?action=yearly&reg_num=${encodeURIComponent(candidate.reg_num)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled && data.success) setYearlyData(data.yearly_breakdown || []);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setYearlyLoading(false); });
+    return () => { cancelled = true; };
+  }, [candidate.reg_num, yearlyData.length]);
+
   return (
     <div className="animate-fade-in">
       <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
@@ -200,6 +311,16 @@ function CandidateDetailView({ candidate, onBack }: { candidate: CandidateFinanc
           <p className="text-[10px] text-muted-foreground">Itemized Expenditures</p>
         </div>
       </div>
+
+      {/* Year-over-Year Chart */}
+      {yearlyLoading ? (
+        <div className="rounded-xl border border-border bg-card p-4 mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+          Loading yearly breakdown…
+        </div>
+      ) : (
+        <YearOverYearChart data={yearlyData} />
+      )}
 
       {/* Contributor types */}
       <TopItemsList items={candidate.contributor_types} label="Contributions by Type" />

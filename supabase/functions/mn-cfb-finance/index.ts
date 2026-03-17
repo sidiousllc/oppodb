@@ -21,12 +21,22 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // If action=sync, trigger background sync
+    // Sync: trigger background data import
     if (action === "sync") {
-      // Start background processing
       EdgeRuntime.waitUntil(syncMNCFBData(supabase));
       return new Response(
         JSON.stringify({ success: true, message: "Sync started in background" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Yearly breakdown for a single candidate (lightweight)
+    if (action === "yearly") {
+      const regNum = url.searchParams.get("reg_num") || "";
+      if (!regNum) throw new Error("reg_num required");
+      const yearly = await fetchYearlyForCandidate(regNum);
+      return new Response(
+        JSON.stringify({ success: true, yearly_breakdown: yearly }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -41,18 +51,10 @@ Deno.serve(async (req) => {
       .order("total_contributions", { ascending: false })
       .limit(500);
 
-    if (chamber !== "all") {
-      query = query.eq("chamber", chamber);
-    }
-
-    if (search) {
-      query = query.or(
-        `candidate_name.ilike.%${search}%,committee_name.ilike.%${search}%`
-      );
-    }
+    if (chamber !== "all") query = query.eq("chamber", chamber);
+    if (search) query = query.or(`candidate_name.ilike.%${search}%,committee_name.ilike.%${search}%`);
 
     const { data: candidates, error: dbError } = await query;
-
     if (dbError) throw new Error(dbError.message);
 
     const results = (candidates || []).map((c: any) => ({
@@ -67,6 +69,7 @@ Deno.serve(async (req) => {
       expenditure_count: c.expenditure_count,
       in_kind_total: Number(c.in_kind_total),
       years_active: c.years_active || [],
+      yearly_breakdown: c.yearly_breakdown || [],
       top_contributors: c.top_contributors || [],
       contributor_types: c.contributor_types || [],
       expenditure_types: c.expenditure_types || [],
@@ -96,21 +99,102 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("MN CFB finance error:", error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : "Internal error",
-      }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
 
-// ─── Background sync logic ──────────────────────────────────────────────────
+// ─── Yearly breakdown on-demand (lightweight: fetches CSVs, filters to single candidate) ───
 
 const CONTRIB_CANDIDATES_URL =
   "https://cfb.mn.gov/reports-and-data/self-help/data-downloads/campaign-finance/?download=-2026985457";
 const EXPEND_CANDIDATES_URL =
   "https://cfb.mn.gov/reports-and-data/self-help/data-downloads/campaign-finance/?download=-1315784544";
+
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') { current += '"'; i++; } else { inQuotes = false; }
+      } else { current += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ",") { fields.push(current.trim()); current = ""; }
+      else { current += ch; }
+    }
+  }
+  fields.push(current.trim());
+  return fields;
+}
+
+async function fetchYearlyForCandidate(regNum: string): Promise<Array<{ year: string; contributions: number; expenditures: number; contribution_count: number; expenditure_count: number }>> {
+  const yearly = new Map<string, { contributions: number; expenditures: number; contribution_count: number; expenditure_count: number }>();
+
+  // Fetch contributions CSV and filter to this candidate only
+  const contribResp = await fetch(CONTRIB_CANDIDATES_URL);
+  if (contribResp.ok) {
+    const text = await contribResp.text();
+    const lines = text.split("\n");
+    const headers = parseCSVLine(lines[0]);
+    const regIdx = headers.indexOf("Recipient reg num");
+    const amtIdx = headers.indexOf("Amount");
+    const yearIdx = headers.indexOf("Year");
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const values = parseCSVLine(line);
+      if (values[regIdx] !== regNum) continue;
+      const year = values[yearIdx] || "";
+      const amount = parseFloat(values[amtIdx] || "0");
+      if (!yearly.has(year)) yearly.set(year, { contributions: 0, expenditures: 0, contribution_count: 0, expenditure_count: 0 });
+      const yd = yearly.get(year)!;
+      yd.contributions += amount;
+      yd.contribution_count++;
+    }
+  }
+
+  // Fetch expenditures CSV
+  const expendResp = await fetch(EXPEND_CANDIDATES_URL);
+  if (expendResp.ok) {
+    const text = await expendResp.text();
+    const lines = text.split("\n");
+    const headers = parseCSVLine(lines[0]);
+    const regIdx = headers.indexOf("Committee reg num");
+    const amtIdx = headers.indexOf("Amount");
+    const yearIdx = headers.indexOf("Year");
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const values = parseCSVLine(line);
+      if (values[regIdx] !== regNum) continue;
+      const year = values[yearIdx] || "";
+      const amount = parseFloat(values[amtIdx] || "0");
+      if (!yearly.has(year)) yearly.set(year, { contributions: 0, expenditures: 0, contribution_count: 0, expenditure_count: 0 });
+      const yd = yearly.get(year)!;
+      yd.expenditures += amount;
+      yd.expenditure_count++;
+    }
+  }
+
+  return Array.from(yearly.entries())
+    .map(([year, d]) => ({
+      year,
+      contributions: Math.round(d.contributions * 100) / 100,
+      expenditures: Math.round(d.expenditures * 100) / 100,
+      contribution_count: d.contribution_count,
+      expenditure_count: d.expenditure_count,
+    }))
+    .sort((a, b) => a.year.localeCompare(b.year));
+}
+
+// ─── Background sync logic (no yearly - too CPU intensive) ──────────────────
 
 interface CandidateAgg {
   name: string;
@@ -125,38 +209,6 @@ interface CandidateAgg {
   top_vendors: Record<string, number>;
   years_active: Set<string>;
   in_kind_total: number;
-}
-
-function parseCSVLine(line: string): string[] {
-  const fields: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (inQuotes) {
-      if (ch === '"') {
-        if (i + 1 < line.length && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        current += ch;
-      }
-    } else {
-      if (ch === '"') {
-        inQuotes = true;
-      } else if (ch === ",") {
-        fields.push(current.trim());
-        current = "";
-      } else {
-        current += ch;
-      }
-    }
-  }
-  fields.push(current.trim());
-  return fields;
 }
 
 function topN(map: Record<string, number>, n: number): Array<{ name: string; amount: number }> {
@@ -186,7 +238,6 @@ function extractCandidateName(committeeName: string): string {
 async function syncMNCFBData(supabase: any) {
   console.log("MN CFB sync: starting background sync");
   try {
-    // Fetch CSVs - stream as text line by line to reduce peak memory
     const [contribResp, expendResp] = await Promise.all([
       fetch(CONTRIB_CANDIDATES_URL),
       fetch(EXPEND_CANDIDATES_URL),
@@ -199,19 +250,16 @@ async function syncMNCFBData(supabase: any) {
 
     const candidates = new Map<string, CandidateAgg>();
 
-    // Process contributions
     const contribText = await contribResp.text();
     const contribLines = contribText.split("\n");
     const contribHeaders = parseCSVLine(contribLines[0]);
-    
+
     for (let i = 1; i < contribLines.length; i++) {
       const line = contribLines[i].trim();
       if (!line) continue;
       const values = parseCSVLine(line);
       const row: Record<string, string> = {};
-      for (let j = 0; j < contribHeaders.length; j++) {
-        row[contribHeaders[j]] = values[j] || "";
-      }
+      for (let j = 0; j < contribHeaders.length; j++) row[contribHeaders[j]] = values[j] || "";
 
       const regNum = row["Recipient reg num"] || "";
       const name = row["Recipient"] || "";
@@ -241,25 +289,20 @@ async function syncMNCFBData(supabase: any) {
       if (contribType) c.contributor_types[contribType] = (c.contributor_types[contribType] || 0) + amount;
     }
 
-    // Free contrib text memory
-    // @ts-ignore
+    // @ts-ignore - free memory
     contribLines.length = 0;
-
     console.log(`MN CFB sync: processed contributions for ${candidates.size} candidates`);
 
-    // Process expenditures
     const expendText = await expendResp.text();
     const expendLines = expendText.split("\n");
     const expendHeaders = parseCSVLine(expendLines[0]);
-    
+
     for (let i = 1; i < expendLines.length; i++) {
       const line = expendLines[i].trim();
       if (!line) continue;
       const values = parseCSVLine(line);
       const row: Record<string, string> = {};
-      for (let j = 0; j < expendHeaders.length; j++) {
-        row[expendHeaders[j]] = values[j] || "";
-      }
+      for (let j = 0; j < expendHeaders.length; j++) row[expendHeaders[j]] = values[j] || "";
 
       const regNum = row["Committee reg num"] || "";
       const name = row["Committee name"] || "";
@@ -289,7 +332,6 @@ async function syncMNCFBData(supabase: any) {
 
     console.log(`MN CFB sync: processed expenditures, total ${candidates.size} candidates`);
 
-    // Upsert in batches of 50
     const batch: any[] = [];
     for (const c of candidates.values()) {
       batch.push({
@@ -313,19 +355,14 @@ async function syncMNCFBData(supabase: any) {
       });
 
       if (batch.length >= 50) {
-        const { error } = await supabase
-          .from("mn_cfb_candidates")
-          .upsert(batch, { onConflict: "reg_num" });
+        const { error } = await supabase.from("mn_cfb_candidates").upsert(batch, { onConflict: "reg_num" });
         if (error) console.error("MN CFB sync upsert error:", error.message);
         batch.length = 0;
       }
     }
 
-    // Final batch
     if (batch.length > 0) {
-      const { error } = await supabase
-        .from("mn_cfb_candidates")
-        .upsert(batch, { onConflict: "reg_num" });
+      const { error } = await supabase.from("mn_cfb_candidates").upsert(batch, { onConflict: "reg_num" });
       if (error) console.error("MN CFB sync upsert error:", error.message);
     }
 
