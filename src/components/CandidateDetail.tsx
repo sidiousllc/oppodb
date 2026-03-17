@@ -10,6 +10,7 @@ import { VersionHistory } from "@/components/VersionHistory";
 import { exportContentPDF } from "@/lib/contentExport";
 import { CampaignFinancePanel } from "@/components/CampaignFinancePanel";
 import { CandidatePollingPanel } from "@/components/CandidatePollingPanel";
+import { CandidateVotingRecord } from "@/components/CandidateVotingRecord";
 
 interface CandidateDetailProps {
   candidate: Candidate;
@@ -253,6 +254,9 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
 
       {/* Candidate Polling */}
       <CandidatePollingPanel candidateName={candidate.name} candidateSlug={candidate.slug} />
+
+      {/* Legislative Record (LegiScan cross-reference) */}
+      <CandidateVotingRecord candidateSlug={candidate.slug} candidateName={candidate.name} candidateState={candidate.state} />
 
       {/* Campaign Finance */}
       <CampaignFinancePanel candidateSlug={candidate.slug} />
