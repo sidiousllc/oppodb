@@ -525,6 +525,10 @@ function PersonDetailView({
 
 function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type: string; date: string; bill_number: string; mime?: string; pdfDataUrl?: string }; onBack: () => void }) {
   const isPdf = !!docInfo.pdfDataUrl;
+  // Revoke blob URL on unmount
+  useEffect(() => {
+    return () => { if (docInfo.pdfDataUrl?.startsWith("blob:")) URL.revokeObjectURL(docInfo.pdfDataUrl); };
+  }, [docInfo.pdfDataUrl]);
   const handleDownload = () => {
     if (!docInfo.pdfDataUrl) return;
     const a = document.createElement("a");
