@@ -547,12 +547,16 @@ function BillDetailView({
   onViewRollCall,
   onViewPerson,
   onViewText,
+  isTracked,
+  onToggleTrack,
 }: {
   bill: BillDetail;
   onBack: () => void;
   onViewRollCall: (id: number) => void;
   onViewPerson: (id: number) => void;
   onViewText: (docId: number, type: string, date: string) => void;
+  isTracked?: boolean;
+  onToggleTrack?: () => void;
 }) {
   return (
     <div className="animate-fade-in">
@@ -571,6 +575,19 @@ function BillDetailView({
         )}
         {bill.body && (
           <span className="text-[10px] text-muted-foreground border border-border rounded-full px-2 py-0.5">{bill.body}</span>
+        )}
+        {onToggleTrack && (
+          <button
+            onClick={onToggleTrack}
+            className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors ${
+              isTracked
+                ? "bg-primary/10 text-primary border-primary/25 hover:bg-primary/20"
+                : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-foreground/30"
+            }`}
+          >
+            {isTracked ? <BookmarkCheck className="h-3 w-3" /> : <Bookmark className="h-3 w-3" />}
+            {isTracked ? "Tracking" : "Track Bill"}
+          </button>
         )}
       </div>
 
