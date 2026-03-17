@@ -230,7 +230,6 @@ export function MNFinancePanel() {
   const [candidates, setCandidates] = useState<CandidateFinance[]>([]);
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [chamber, setChamber] = useState<ChamberFilter>("all");
-  const [year, setYear] = useState("");
   const [search, setSearch] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateFinance | null>(null);
   const [fetched, setFetched] = useState(false);
