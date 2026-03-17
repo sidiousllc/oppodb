@@ -29,7 +29,8 @@ export type Section =
   | "polling"
   | "campaign-finance"
   | "voter-data"
-  | "live-elections";
+  | "live-elections"
+  | "legislation";
 
 interface AppSidebarProps {
   activeFilter: FilterCategory;
