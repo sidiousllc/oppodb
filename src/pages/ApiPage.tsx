@@ -190,7 +190,7 @@ export default function ApiPage() {
       {/* MCP Server */}
       <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
         <p className="text-[11px] font-bold mb-2 flex items-center gap-1">🔌 MCP Server (AI Agent Access)</p>
-        <p className="text-[10px] text-[hsl(var(--muted-foreground))] mb-2">Connect any MCP-compatible AI agent. No API key required.</p>
+        <p className="text-[10px] text-[hsl(var(--muted-foreground))] mb-2">Connect any MCP-compatible AI agent. Requires your API key.</p>
         <div className="space-y-2 text-[10px]">
           <div>
             <p className="font-bold">MCP URL:</p>
@@ -205,7 +205,10 @@ export default function ApiPage() {
   "mcpServers": {
     "ordb": {
       "type": "streamable-http",
-      "url": "${mcpUrl}"
+      "url": "${mcpUrl}",
+      "headers": {
+        "X-API-Key": "YOUR_API_KEY"
+      }
     }
   }
 }`}</pre>
