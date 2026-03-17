@@ -259,9 +259,11 @@ async function syncMNCFBData(supabase: any) {
       }
     }
 
-    // Free contrib text memory
-    // @ts-ignore
-    contribLines.length = 0;
+    // Free contrib text memory before loading expenditures
+    {
+      // @ts-ignore - help GC
+      const _ = contribLines; _.length = 0;
+    }
 
     console.log(`MN CFB sync: processed contributions for ${candidates.size} candidates`);
 
