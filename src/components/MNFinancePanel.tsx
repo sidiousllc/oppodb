@@ -313,7 +313,14 @@ function CandidateDetailView({ candidate, onBack }: { candidate: CandidateFinanc
       </div>
 
       {/* Year-over-Year Chart */}
-      <YearOverYearChart data={candidate.yearly_breakdown} />
+      {yearlyLoading ? (
+        <div className="rounded-xl border border-border bg-card p-4 mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+          Loading yearly breakdown…
+        </div>
+      ) : (
+        <YearOverYearChart data={yearlyData} />
+      )}
 
       {/* Contributor types */}
       <TopItemsList items={candidate.contributor_types} label="Contributions by Type" />
