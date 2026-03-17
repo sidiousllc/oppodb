@@ -112,6 +112,13 @@ const CONTRIB_CANDIDATES_URL =
 const EXPEND_CANDIDATES_URL =
   "https://cfb.mn.gov/reports-and-data/self-help/data-downloads/campaign-finance/?download=-1315784544";
 
+interface YearlyData {
+  contributions: number;
+  expenditures: number;
+  contribution_count: number;
+  expenditure_count: number;
+}
+
 interface CandidateAgg {
   name: string;
   reg_num: string;
@@ -125,6 +132,7 @@ interface CandidateAgg {
   top_vendors: Record<string, number>;
   years_active: Set<string>;
   in_kind_total: number;
+  yearly: Map<string, YearlyData>;
 }
 
 function parseCSVLine(line: string): string[] {
