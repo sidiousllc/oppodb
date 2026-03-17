@@ -405,7 +405,7 @@ async function searchOpenStates(params: OpenStatesParams): Promise<VoterRecord[]
         zip: '',
         address: '',
         county: '',
-        party: partyName.includes('Democrat') ? 'DEM' : partyName.includes('Republican') ? 'REP' : partyName,
+        party: partyRaw.includes('Democrat') ? 'DEM' : partyRaw.includes('Republican') ? 'REP' : partyRaw,
         registration_date: '',
         registration_status: 'Legislator',
         voter_id: p.id || '',
