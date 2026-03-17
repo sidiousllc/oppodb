@@ -9,7 +9,7 @@ import { RoleGroupsTab } from "@/components/RoleGroupsTab";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "candidates" | "maga" | "local" | "narratives";
+type Tab = "users" | "roles" | "candidates" | "maga" | "local" | "narratives";
 
 interface ContentItem {
   id: string;
