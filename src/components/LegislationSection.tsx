@@ -1206,7 +1206,7 @@ export function LegislationSection() {
         <p className="text-sm text-muted-foreground mb-4">{sessionBills.length} bills in this session</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {sessionBills.slice(0, 200).map((b) => (
-            <BillCard key={b.bill_id} bill={b} onClick={() => loadBill(b.bill_id)} />
+            <BillCard key={b.bill_id} bill={b} onClick={() => loadBill(b.bill_id)} isTracked={trackedBillIds.has(b.bill_id)} onToggleTrack={() => trackBill(b)} />
           ))}
         </div>
         {sessionBills.length > 200 && (
