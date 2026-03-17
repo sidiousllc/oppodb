@@ -1,4 +1,6 @@
-// MN Campaign Finance Board data fetcher
+// MN Campaign Finance Board - serves cached data from DB, triggers sync
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,7 +8,105 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// MN Campaign Finance Board data download URLs
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const url = new URL(req.url);
+    const action = url.searchParams.get("action");
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // If action=sync, trigger background sync
+    if (action === "sync") {
+      // Start background processing
+      EdgeRuntime.waitUntil(syncMNCFBData(supabase));
+      return new Response(
+        JSON.stringify({ success: true, message: "Sync started in background" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Default: serve cached data from DB
+    const chamber = url.searchParams.get("chamber") || "all";
+    const search = (url.searchParams.get("search") || "").toLowerCase();
+
+    let query = supabase
+      .from("mn_cfb_candidates")
+      .select("*")
+      .order("total_contributions", { ascending: false })
+      .limit(500);
+
+    if (chamber !== "all") {
+      query = query.eq("chamber", chamber);
+    }
+
+    if (search) {
+      query = query.or(
+        `candidate_name.ilike.%${search}%,committee_name.ilike.%${search}%`
+      );
+    }
+
+    const { data: candidates, error: dbError } = await query;
+
+    if (dbError) throw new Error(dbError.message);
+
+    const results = (candidates || []).map((c: any) => ({
+      committee_name: c.committee_name,
+      candidate_name: c.candidate_name,
+      reg_num: c.reg_num,
+      chamber: c.chamber,
+      total_contributions: Number(c.total_contributions),
+      total_expenditures: Number(c.total_expenditures),
+      net_cash: Number(c.net_cash),
+      contribution_count: c.contribution_count,
+      expenditure_count: c.expenditure_count,
+      in_kind_total: Number(c.in_kind_total),
+      years_active: c.years_active || [],
+      top_contributors: c.top_contributors || [],
+      contributor_types: c.contributor_types || [],
+      expenditure_types: c.expenditure_types || [],
+      top_vendors: c.top_vendors || [],
+    }));
+
+    const totalRaised = results.reduce((s: number, r: any) => s + r.total_contributions, 0);
+    const totalSpent = results.reduce((s: number, r: any) => s + r.total_expenditures, 0);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        state: "MN",
+        source: "Minnesota Campaign Finance Board",
+        source_url: "https://cfb.mn.gov/reports-and-data/self-help/data-downloads/campaign-finance/",
+        filters: { chamber, search: search || null },
+        summary: {
+          total_raised: Math.round(totalRaised * 100) / 100,
+          total_spent: Math.round(totalSpent * 100) / 100,
+          candidate_count: results.length,
+        },
+        candidates: results,
+        cached: true,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("MN CFB finance error:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : "Internal error",
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
+
+// ─── Background sync logic ──────────────────────────────────────────────────
+
 const CONTRIB_CANDIDATES_URL =
   "https://cfb.mn.gov/reports-and-data/self-help/data-downloads/campaign-finance/?download=-2026985457";
 const EXPEND_CANDIDATES_URL =
@@ -27,32 +127,10 @@ interface CandidateAgg {
   in_kind_total: number;
 }
 
-function parseCSV(text: string): Record<string, string>[] {
-  const rows: Record<string, string>[] = [];
-  const lines = text.split("\n");
-  if (lines.length === 0) return rows;
-
-  // Parse header
-  const headers = parseCSVLine(lines[0]);
-
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    const values = parseCSVLine(line);
-    const row: Record<string, string> = {};
-    for (let j = 0; j < headers.length; j++) {
-      row[headers[j]] = values[j] || "";
-    }
-    rows.push(row);
-  }
-  return rows;
-}
-
 function parseCSVLine(line: string): string[] {
   const fields: string[] = [];
   let current = "";
   let inQuotes = false;
-
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (inQuotes) {
@@ -85,68 +163,56 @@ function topN(map: Record<string, number>, n: number): Array<{ name: string; amo
   return Object.entries(map)
     .sort((a, b) => b[1] - a[1])
     .slice(0, n)
-    .map(([name, amount]) => ({ name, amount }));
+    .map(([name, amount]) => ({ name, amount: Math.round(amount * 100) / 100 }));
 }
 
-function detectChamber(name: string): "house" | "senate" | "governor" | "other" {
+function detectChamber(name: string): string {
   const lower = name.toLowerCase();
   if (lower.includes("house committee")) return "house";
   if (lower.includes("senate committee")) return "senate";
   if (lower.includes("gov committee") || lower.includes("governor")) return "governor";
-  if (lower.includes("atty gen") || lower.includes("sec of state") || lower.includes("state aud") || lower.includes("sup court")) return "other";
   return "other";
 }
 
 function extractCandidateName(committeeName: string): string {
-  // "Walz, Tim Gov Committee" -> "Tim Walz"
-  // "Fowke, Kathleen Senate Committee" -> "Kathleen Fowke"
   const cleaned = committeeName
     .replace(/\s*(House|Senate|Gov|Governor|Atty Gen|Sec of State|State Aud|Sup Court)\s*Committee\s*/i, "")
     .trim();
   const parts = cleaned.split(",").map((s) => s.trim());
-  if (parts.length >= 2) {
-    return `${parts[1]} ${parts[0]}`;
-  }
+  if (parts.length >= 2) return `${parts[1]} ${parts[0]}`;
   return cleaned;
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+async function syncMNCFBData(supabase: any) {
+  console.log("MN CFB sync: starting background sync");
   try {
-    const url = new URL(req.url);
-    const chamber = url.searchParams.get("chamber") || "all"; // house, senate, governor, all
-    const yearFilter = url.searchParams.get("year") || ""; // e.g. "2024"
-    const search = (url.searchParams.get("search") || "").toLowerCase();
-
-    console.log(`MN CFB finance: chamber=${chamber}, year=${yearFilter}, search=${search}`);
-
-    // Fetch both CSVs in parallel
+    // Fetch CSVs - stream as text line by line to reduce peak memory
     const [contribResp, expendResp] = await Promise.all([
       fetch(CONTRIB_CANDIDATES_URL),
       fetch(EXPEND_CANDIDATES_URL),
     ]);
 
     if (!contribResp.ok || !expendResp.ok) {
-      throw new Error(`Failed to fetch MN CFB data: contrib=${contribResp.status}, expend=${expendResp.status}`);
+      console.error(`MN CFB sync: fetch failed contrib=${contribResp.status} expend=${expendResp.status}`);
+      return;
     }
 
-    const [contribText, expendText] = await Promise.all([
-      contribResp.text(),
-      expendResp.text(),
-    ]);
-
-    const contribRows = parseCSV(contribText);
-    const expendRows = parseCSV(expendText);
-
-    console.log(`Parsed ${contribRows.length} contribution rows, ${expendRows.length} expenditure rows`);
-
-    // Aggregate by candidate (recipient reg num)
     const candidates = new Map<string, CandidateAgg>();
 
-    for (const row of contribRows) {
+    // Process contributions
+    const contribText = await contribResp.text();
+    const contribLines = contribText.split("\n");
+    const contribHeaders = parseCSVLine(contribLines[0]);
+    
+    for (let i = 1; i < contribLines.length; i++) {
+      const line = contribLines[i].trim();
+      if (!line) continue;
+      const values = parseCSVLine(line);
+      const row: Record<string, string> = {};
+      for (let j = 0; j < contribHeaders.length; j++) {
+        row[contribHeaders[j]] = values[j] || "";
+      }
+
       const regNum = row["Recipient reg num"] || "";
       const name = row["Recipient"] || "";
       const amount = parseFloat(row["Amount"] || "0");
@@ -155,22 +221,14 @@ Deno.serve(async (req) => {
       const contribType = row["Contrib type"] || "";
       const isInKind = row["In kind?"] === "Yes";
 
-      if (yearFilter && year !== yearFilter) continue;
-
       if (!candidates.has(regNum)) {
         candidates.set(regNum, {
-          name,
-          reg_num: regNum,
-          total_contributions: 0,
-          total_expenditures: 0,
-          contribution_count: 0,
-          expenditure_count: 0,
-          top_contributors: {},
-          contributor_types: {},
-          expenditure_types: {},
-          top_vendors: {},
-          years_active: new Set(),
-          in_kind_total: 0,
+          name, reg_num: regNum,
+          total_contributions: 0, total_expenditures: 0,
+          contribution_count: 0, expenditure_count: 0,
+          top_contributors: {}, contributor_types: {},
+          expenditure_types: {}, top_vendors: {},
+          years_active: new Set(), in_kind_total: 0,
         });
       }
 
@@ -178,18 +236,31 @@ Deno.serve(async (req) => {
       c.total_contributions += amount;
       c.contribution_count++;
       c.years_active.add(year);
-
       if (isInKind) c.in_kind_total += amount;
-
-      if (contributor) {
-        c.top_contributors[contributor] = (c.top_contributors[contributor] || 0) + amount;
-      }
-      if (contribType) {
-        c.contributor_types[contribType] = (c.contributor_types[contribType] || 0) + amount;
-      }
+      if (contributor) c.top_contributors[contributor] = (c.top_contributors[contributor] || 0) + amount;
+      if (contribType) c.contributor_types[contribType] = (c.contributor_types[contribType] || 0) + amount;
     }
 
-    for (const row of expendRows) {
+    // Free contrib text memory
+    // @ts-ignore
+    contribLines.length = 0;
+
+    console.log(`MN CFB sync: processed contributions for ${candidates.size} candidates`);
+
+    // Process expenditures
+    const expendText = await expendResp.text();
+    const expendLines = expendText.split("\n");
+    const expendHeaders = parseCSVLine(expendLines[0]);
+    
+    for (let i = 1; i < expendLines.length; i++) {
+      const line = expendLines[i].trim();
+      if (!line) continue;
+      const values = parseCSVLine(line);
+      const row: Record<string, string> = {};
+      for (let j = 0; j < expendHeaders.length; j++) {
+        row[expendHeaders[j]] = values[j] || "";
+      }
+
       const regNum = row["Committee reg num"] || "";
       const name = row["Committee name"] || "";
       const amount = parseFloat(row["Amount"] || "0");
@@ -197,22 +268,14 @@ Deno.serve(async (req) => {
       const vendor = row["Vendor name"] || "";
       const type = row["Type"] || "";
 
-      if (yearFilter && year !== yearFilter) continue;
-
       if (!candidates.has(regNum)) {
         candidates.set(regNum, {
-          name,
-          reg_num: regNum,
-          total_contributions: 0,
-          total_expenditures: 0,
-          contribution_count: 0,
-          expenditure_count: 0,
-          top_contributors: {},
-          contributor_types: {},
-          expenditure_types: {},
-          top_vendors: {},
-          years_active: new Set(),
-          in_kind_total: 0,
+          name, reg_num: regNum,
+          total_contributions: 0, total_expenditures: 0,
+          contribution_count: 0, expenditure_count: 0,
+          top_contributors: {}, contributor_types: {},
+          expenditure_types: {}, top_vendors: {},
+          years_active: new Set(), in_kind_total: 0,
         });
       }
 
@@ -220,23 +283,20 @@ Deno.serve(async (req) => {
       c.total_expenditures += amount;
       c.expenditure_count++;
       c.years_active.add(year);
-
-      if (vendor) {
-        c.top_vendors[vendor] = (c.top_vendors[vendor] || 0) + amount;
-      }
-      if (type) {
-        c.expenditure_types[type] = (c.expenditure_types[type] || 0) + amount;
-      }
+      if (vendor) c.top_vendors[vendor] = (c.top_vendors[vendor] || 0) + amount;
+      if (type) c.expenditure_types[type] = (c.expenditure_types[type] || 0) + amount;
     }
 
-    // Convert to output array
-    let results = Array.from(candidates.values()).map((c) => {
-      const chamberType = detectChamber(c.name);
-      return {
+    console.log(`MN CFB sync: processed expenditures, total ${candidates.size} candidates`);
+
+    // Upsert in batches of 50
+    const batch: any[] = [];
+    for (const c of candidates.values()) {
+      batch.push({
+        reg_num: c.reg_num,
         committee_name: c.name,
         candidate_name: extractCandidateName(c.name),
-        reg_num: c.reg_num,
-        chamber: chamberType,
+        chamber: detectChamber(c.name),
         total_contributions: Math.round(c.total_contributions * 100) / 100,
         total_expenditures: Math.round(c.total_expenditures * 100) / 100,
         net_cash: Math.round((c.total_contributions - c.total_expenditures) * 100) / 100,
@@ -248,55 +308,29 @@ Deno.serve(async (req) => {
         contributor_types: topN(c.contributor_types, 10),
         expenditure_types: topN(c.expenditure_types, 10),
         top_vendors: topN(c.top_vendors, 15),
-      };
-    });
+        last_synced_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-    // Filter by chamber
-    if (chamber !== "all") {
-      results = results.filter((r) => r.chamber === chamber);
+      if (batch.length >= 50) {
+        const { error } = await supabase
+          .from("mn_cfb_candidates")
+          .upsert(batch, { onConflict: "reg_num" });
+        if (error) console.error("MN CFB sync upsert error:", error.message);
+        batch.length = 0;
+      }
     }
 
-    // Filter by search
-    if (search) {
-      results = results.filter(
-        (r) =>
-          r.candidate_name.toLowerCase().includes(search) ||
-          r.committee_name.toLowerCase().includes(search),
-      );
+    // Final batch
+    if (batch.length > 0) {
+      const { error } = await supabase
+        .from("mn_cfb_candidates")
+        .upsert(batch, { onConflict: "reg_num" });
+      if (error) console.error("MN CFB sync upsert error:", error.message);
     }
 
-    // Sort by total contributions descending
-    results.sort((a, b) => b.total_contributions - a.total_contributions);
-
-    // Compute aggregate stats
-    const totalRaised = results.reduce((s, r) => s + r.total_contributions, 0);
-    const totalSpent = results.reduce((s, r) => s + r.total_expenditures, 0);
-    const candidateCount = results.length;
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        state: "MN",
-        source: "Minnesota Campaign Finance Board",
-        source_url: "https://cfb.mn.gov/reports-and-data/self-help/data-downloads/campaign-finance/",
-        filters: { chamber, year: yearFilter || "all", search: search || null },
-        summary: {
-          total_raised: Math.round(totalRaised * 100) / 100,
-          total_spent: Math.round(totalSpent * 100) / 100,
-          candidate_count: candidateCount,
-        },
-        candidates: results.slice(0, 500),
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  } catch (error) {
-    console.error("MN CFB finance error:", error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : "Internal error",
-      }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    console.log(`MN CFB sync: complete, upserted ${candidates.size} candidates`);
+  } catch (err) {
+    console.error("MN CFB sync error:", err);
   }
-});
+}

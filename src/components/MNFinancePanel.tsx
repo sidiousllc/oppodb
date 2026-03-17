@@ -230,10 +230,11 @@ export function MNFinancePanel() {
   const [candidates, setCandidates] = useState<CandidateFinance[]>([]);
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [chamber, setChamber] = useState<ChamberFilter>("all");
-  const [year, setYear] = useState("");
   const [search, setSearch] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateFinance | null>(null);
   const [fetched, setFetched] = useState(false);
+
+  const [syncing, setSyncing] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -243,7 +244,6 @@ export function MNFinancePanel() {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const params = new URLSearchParams();
       if (chamber !== "all") params.set("chamber", chamber);
-      if (year) params.set("year", year);
       if (search) params.set("search", search);
 
       const resp = await fetch(
@@ -261,7 +261,28 @@ export function MNFinancePanel() {
     } finally {
       setLoading(false);
     }
-  }, [chamber, year, search]);
+  }, [chamber, search]);
+
+  const triggerSync = useCallback(async () => {
+    setSyncing(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const resp = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/mn-cfb-finance?action=sync`,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      const data = await resp.json();
+      if (!data.success) throw new Error(data.error || "Sync failed");
+      // Sync runs in background, wait a bit then refetch
+      setTimeout(() => {
+        fetchData();
+        setSyncing(false);
+      }, 5000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sync error");
+      setSyncing(false);
+    }
+  }, [fetchData]);
 
   if (selectedCandidate) {
     return <CandidateDetailView candidate={selectedCandidate} onBack={() => setSelectedCandidate(null)} />;
@@ -300,16 +321,6 @@ export function MNFinancePanel() {
           ))}
         </div>
 
-        <select
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground"
-        >
-          <option value="">All Years</option>
-          {["2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015"].map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
 
         <div className="flex items-center gap-2 flex-1 min-w-[160px] rounded-lg border border-border bg-card px-3 py-1.5">
           <Search className="h-3.5 w-3.5 text-muted-foreground" />
@@ -334,6 +345,19 @@ export function MNFinancePanel() {
               Loading…
             </>
           ) : "Fetch Data"}
+        </button>
+
+        <button
+          onClick={triggerSync}
+          disabled={syncing || loading}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
+        >
+          {syncing ? (
+            <>
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+              Syncing…
+            </>
+          ) : "↻ Sync from CFB"}
         </button>
       </div>
 
