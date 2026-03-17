@@ -36,6 +36,7 @@ import { PollingSection } from "@/components/PollingSection";
 import { StateLegislativeSection } from "@/components/StateLegislativeSection";
 import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { Dashboard } from "@/components/Dashboard";
+import { VoterDataSection } from "@/components/VoterDataSection";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
