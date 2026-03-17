@@ -605,6 +605,10 @@ export default function Index() {
     if (section === "live-elections") {
       return <LiveElectionsSection />;
     }
+
+    if (section === "legislation") {
+      return <LegislationSection />;
+    }
   }
 
   const detail = renderDetail();
