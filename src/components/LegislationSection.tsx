@@ -1224,10 +1224,10 @@ export function LegislationSection() {
     <div>
       {/* Tab toggle */}
       <div className="inline-flex rounded-lg border border-border overflow-hidden mb-4">
-        {(["bills", "legislators", "sessions"] as Tab[]).map((t, i) => (
+        {(["bills", "legislators", "sessions", "tracked"] as Tab[]).map((t, i) => (
           <button
             key={t}
-            onClick={() => { setTab(t); setSearchPerformed(false); setSubView(null); }}
+            onClick={() => { setTab(t); setSearchPerformed(false); setSubView(null); if (t === "tracked") loadTrackedBills(); }}
             className={`px-4 py-1.5 text-xs font-medium transition-colors ${
               i > 0 ? "border-l border-border" : ""
             } ${
@@ -1237,6 +1237,7 @@ export function LegislationSection() {
             {t === "bills" && <span className="flex items-center gap-1.5"><FileText className="h-3 w-3" /> Bills</span>}
             {t === "legislators" && <span className="flex items-center gap-1.5"><Users className="h-3 w-3" /> Legislators</span>}
             {t === "sessions" && <span className="flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> Sessions</span>}
+            {t === "tracked" && <span className="flex items-center gap-1.5"><BookmarkCheck className="h-3 w-3" /> Tracked{trackedBills.length > 0 ? ` (${trackedBills.length})` : ""}</span>}
           </button>
         ))}
       </div>
