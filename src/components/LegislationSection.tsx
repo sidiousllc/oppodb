@@ -523,7 +523,8 @@ function PersonDetailView({
 
 // ─── Bill Text View ─────────────────────────────────────────────────────────
 
-function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type: string; date: string; bill_number: string }; onBack: () => void }) {
+function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type: string; date: string; bill_number: string; mime?: string; pdfDataUrl?: string }; onBack: () => void }) {
+  const isPdf = !!docInfo.pdfDataUrl;
   return (
     <div className="animate-fade-in">
       <BackButton onClick={onBack} label="Back to bill" />
@@ -532,9 +533,19 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
         <h2 className="font-display text-lg font-bold text-foreground">{docInfo.bill_number} — {docInfo.type}</h2>
         <span className="text-xs text-muted-foreground">{docInfo.date}</span>
       </div>
-      <div className="rounded-xl border border-border bg-card p-4 text-xs font-mono whitespace-pre-wrap max-h-[70vh] overflow-y-auto leading-relaxed text-foreground">
-        {text || "No text available."}
-      </div>
+      {isPdf ? (
+        <div className="rounded-xl border border-border bg-card overflow-hidden" style={{ height: "75vh" }}>
+          <iframe
+            src={docInfo.pdfDataUrl}
+            title={`${docInfo.bill_number} — ${docInfo.type}`}
+            className="w-full h-full border-0"
+          />
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-card p-4 text-xs font-mono whitespace-pre-wrap max-h-[70vh] overflow-y-auto leading-relaxed text-foreground">
+          {text || "No text available."}
+        </div>
+      )}
     </div>
   );
 }
