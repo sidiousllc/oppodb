@@ -265,26 +265,21 @@ function GroupMembersPanel({ group, onBack }: { group: RoleGroup; onBack: () => 
 
   const handleAddMember = async () => {
     if (!selectedUserId) { toast.error("Select a user"); return; }
-    const { error } = await supabase.from("role_group_members").insert({ group_id: group.id, user_id: selectedUserId });
-    if (error) {
-      if (error.message.includes("duplicate")) toast.error("User already in this group");
-      else toast.error(error.message);
-      return;
-    }
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "add_group_member", group_id: group.id, user_id: selectedUserId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-    // Also assign the group's roles to the user
-    for (const role of group.roles) {
-      try {
-        await supabase.functions.invoke("admin-users", {
-          body: { action: "set_role", user_id: selectedUserId, role, remove: false },
-        });
-      } catch { /* ignore if already has role */ }
+      toast.success("Member added — roles synced automatically");
+      setSelectedUserId("");
+      setAddingUser(false);
+      loadMembers();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add member");
     }
-
-    toast.success("Member added");
-    setSelectedUserId("");
-    setAddingUser(false);
-    loadMembers();
   };
 
   const handleRemoveMember = async (memberId: string, userId: string) => {
