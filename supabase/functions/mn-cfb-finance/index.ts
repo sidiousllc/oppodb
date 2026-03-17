@@ -293,6 +293,7 @@ async function syncMNCFBData(supabase: any) {
           top_contributors: {}, contributor_types: {},
           expenditure_types: {}, top_vendors: {},
           years_active: new Set(), in_kind_total: 0,
+          yearly: new Map(),
         });
       }
 
@@ -302,6 +303,12 @@ async function syncMNCFBData(supabase: any) {
       c.years_active.add(year);
       if (vendor) c.top_vendors[vendor] = (c.top_vendors[vendor] || 0) + amount;
       if (type) c.expenditure_types[type] = (c.expenditure_types[type] || 0) + amount;
+      if (year) {
+        if (!c.yearly.has(year)) c.yearly.set(year, { contributions: 0, expenditures: 0, contribution_count: 0, expenditure_count: 0 });
+        const yd = c.yearly.get(year)!;
+        yd.expenditures += amount;
+        yd.expenditure_count++;
+      }
     }
 
     console.log(`MN CFB sync: processed expenditures, total ${candidates.size} candidates`);
