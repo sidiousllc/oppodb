@@ -37,6 +37,7 @@ import { StateLegislativeSection } from "@/components/StateLegislativeSection";
 import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
+import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
@@ -250,6 +251,7 @@ export default function Index() {
     polling: pollingCount,
     "campaign-finance": financeCount,
     "voter-data": 0,
+    "live-elections": 0,
   }), [dataVersion, districts, stateLegDistricts, pollingCount, financeCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
@@ -271,6 +273,7 @@ export default function Index() {
     polling: "Polling Data",
     "campaign-finance": "Campaign Finance",
     "voter-data": "Voter Data",
+    "live-elections": "Live Elections",
   };
 
   function renderDetail() {
@@ -594,6 +597,10 @@ export default function Index() {
 
     if (section === "voter-data") {
       return <VoterDataSection />;
+    }
+
+    if (section === "live-elections") {
+      return <LiveElectionsSection />;
     }
   }
 

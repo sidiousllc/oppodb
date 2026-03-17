@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, MapPin, Building2, ChevronDown, ChevronRight, AlertTriangle, Loader2, DollarSign } from "lucide-react";
+import { Search, Users, MapPin, Building2, ChevronDown, ChevronRight, AlertTriangle, Loader2, DollarSign, Trophy, Calendar, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 const US_STATES = [
@@ -9,7 +9,7 @@ const US_STATES = [
   "NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
 ];
 
-type SearchType = "name" | "address" | "district";
+type SearchType = "name" | "address" | "district" | "races";
 
 interface VoterRecord {
   source: string;
@@ -92,6 +92,40 @@ export function VoterDataSection() {
   const [hasSearched, setHasSearched] = useState(false);
   const [expandedVoter, setExpandedVoter] = useState<string | null>(null);
 
+  // Live Races state
+  const [raceState, setRaceState] = useState("");
+  const [raceType, setRaceType] = useState("");
+  const [raceDate, setRaceDate] = useState("");
+  const [raceResults, setRaceResults] = useState<any[]>([]);
+  const [raceLoading, setRaceLoading] = useState(false);
+  const [raceSearched, setRaceSearched] = useState(false);
+  const [expandedRace, setExpandedRace] = useState<number | null>(null);
+
+  const handleRaceSearch = useCallback(async () => {
+    setRaceLoading(true);
+    setRaceSearched(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("country", "US");
+      params.set("limit", "20");
+      if (raceState) params.set("province", raceState);
+      if (raceType) params.set("type", raceType);
+      if (raceDate) params.set("election_date", raceDate);
+      if (!raceState && !raceType && !raceDate) params.set("election_date", "2026-11-03");
+
+      const response = await fetch(`https://civicapi.org/api/v2/race/search?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch races");
+      const data = await response.json();
+      setRaceResults(data.races || []);
+      if ((data.races || []).length === 0) toast.info("No races found");
+    } catch (e: any) {
+      toast.error(e.message);
+      setRaceResults([]);
+    } finally {
+      setRaceLoading(false);
+    }
+  }, [raceState, raceType, raceDate]);
+
   const handleSearch = useCallback(async () => {
     if (searchType === "name" && !lastName.trim()) {
       toast.error("Last name is required"); return;
@@ -155,6 +189,7 @@ export function VoterDataSection() {
     { id: "name", label: "Name + State", icon: Users },
     { id: "address", label: "Address", icon: MapPin },
     { id: "district", label: "District", icon: Building2 },
+    { id: "races", label: "Live Races", icon: Trophy },
   ];
 
   return (
@@ -288,19 +323,136 @@ export function VoterDataSection() {
           </div>
         )}
 
+        {searchType === "races" && (
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="block text-[10px] font-bold mb-1">State:</label>
+              <select value={raceState} onChange={e => setRaceState(e.target.value)} className="win98-input w-full">
+                <option value="">All states</option>
+                {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold mb-1">Race Type:</label>
+              <select value={raceType} onChange={e => setRaceType(e.target.value)} className="win98-input w-full">
+                <option value="">All types</option>
+                {["Governor","US Senate","US House","State Senate","State House","Attorney General","Mayor","Ballot Measure"].map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold mb-1">Election Date:</label>
+              <input type="date" value={raceDate} onChange={e => setRaceDate(e.target.value)} className="win98-input w-full" />
+            </div>
+          </div>
+        )}
+
         <div className="mt-2 flex items-center gap-2">
-          <button onClick={handleSearch} disabled={loading} className="win98-button text-[10px] font-bold flex items-center gap-1 disabled:opacity-50">
-            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
-            {loading ? "Searching..." : "Search Voters"}
-          </button>
-          <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
-            Searches FEC contributions{sources?.google_civic ? ", Google Civic" : ""}{sources?.open_states ? ", Open States" : ""}{sources?.nationbuilder ? ", NationBuilder" : ""}{sources?.van ? ", VAN" : ""} simultaneously
-          </span>
+          {searchType === "races" ? (
+            <>
+              <button onClick={handleRaceSearch} disabled={raceLoading} className="win98-button text-[10px] font-bold flex items-center gap-1 disabled:opacity-50">
+                {raceLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+                {raceLoading ? "Loading..." : "Search Races"}
+              </button>
+              <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
+                Powered by <a href="https://civicapi.org" target="_blank" rel="noopener noreferrer" className="underline">civicAPI</a> — free, no key required
+              </span>
+            </>
+          ) : (
+            <>
+              <button onClick={handleSearch} disabled={loading} className="win98-button text-[10px] font-bold flex items-center gap-1 disabled:opacity-50">
+                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+                {loading ? "Searching..." : "Search Voters"}
+              </button>
+              <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
+                Searches FEC contributions{sources?.google_civic ? ", Google Civic" : ""}{sources?.open_states ? ", Open States" : ""}{sources?.nationbuilder ? ", NationBuilder" : ""}{sources?.van ? ", VAN" : ""} simultaneously
+              </span>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Results */}
-      {hasSearched && !loading && (
+      {/* Races Results */}
+      {searchType === "races" && raceSearched && !raceLoading && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] text-[hsl(var(--muted-foreground))]">
+              {raceResults.length} race{raceResults.length !== 1 ? "s" : ""} found
+            </span>
+          </div>
+          {raceResults.length > 0 ? (
+            <div className="space-y-1">
+              {raceResults.map((race: any) => {
+                const isExp = expandedRace === race.id;
+                const winner = (race.candidates || []).find((c: any) => c.winner);
+                const dateStr = race.election_date ? new Date(race.election_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+                const topTwo = [...(race.candidates || [])].sort((a: any, b: any) => b.votes - a.votes).slice(0, 2);
+                return (
+                  <div key={race.id} className="win98-raised">
+                    <button
+                      onClick={() => setExpandedRace(isExp ? null : race.id)}
+                      className="w-full text-left px-2 py-1 flex items-center gap-2 hover:bg-[hsl(var(--win98-light))] text-[10px]"
+                    >
+                      {isExp ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
+                      <span className="font-bold flex-1 truncate">{race.election_name}</span>
+                      <span className="win98-sunken px-1 py-0 text-[8px] font-bold shrink-0">{race.type}</span>
+                      {race.province && <span className="text-[9px] font-bold shrink-0">{race.province}</span>}
+                      <span className="text-[9px] text-[hsl(var(--muted-foreground))] shrink-0">{dateStr}</span>
+                      {topTwo.map((c: any, i: number) => (
+                        <span key={i} className="text-[9px] font-bold shrink-0" style={{ color: c.color || "inherit" }}>
+                          {c.name.split(" ").pop()}{c.percent > 0 ? ` ${c.percent}%` : ""}
+                        </span>
+                      ))}
+                      {winner && <Trophy className="h-3 w-3 shrink-0" style={{ color: "hsl(45, 80%, 45%)" }} />}
+                    </button>
+                    {isExp && (
+                      <div className="border-t border-[hsl(var(--win98-shadow))] px-3 py-2 bg-[hsl(var(--win98-light))]">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-[9px] font-bold mb-1 border-b border-[hsl(var(--win98-shadow))] pb-0.5">Candidates</p>
+                            <table className="w-full text-[10px]">
+                              <tbody>
+                                {(race.candidates || []).map((c: any, i: number) => (
+                                  <tr key={i} className={c.winner ? "font-bold" : ""}>
+                                    <td className="py-0.5">{c.winner && <Trophy className="h-3 w-3 inline mr-1" style={{ color: "hsl(45, 80%, 45%)" }} />}{c.name}</td>
+                                    <td className="py-0.5" style={{ color: c.color }}>{c.party}</td>
+                                    <td className="py-0.5 text-right">{c.votes > 0 ? c.votes.toLocaleString() : "—"}</td>
+                                    <td className="py-0.5 text-right">{c.percent > 0 ? `${c.percent}%` : "—"}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div className="text-[10px] space-y-0.5">
+                            <div><b>Type:</b> {race.type} • {race.election_type}</div>
+                            <div><b>Date:</b> {dateStr}</div>
+                            {race.district && <div><b>District:</b> {race.district}</div>}
+                            <div><b>Reporting:</b> {race.percent_reporting}%</div>
+                            {race.has_map && (
+                              <a href={`https://civicapi.org/results/race/${race.id}`} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-0.5 text-[9px] mt-1 hover:underline" style={{ color: "hsl(210, 70%, 50%)" }}>
+                                <ExternalLink className="h-2.5 w-2.5" /> View on civicAPI
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="win98-sunken bg-white p-6 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
+              No races found matching your filters.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Voter Results */}
+      {searchType !== "races" && hasSearched && !loading && (
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] text-[hsl(var(--muted-foreground))]">
@@ -421,7 +573,7 @@ export function VoterDataSection() {
       )}
 
       {/* Empty state before search */}
-      {!hasSearched && (
+      {searchType !== "races" && !hasSearched && (
         <div className="win98-sunken bg-white p-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
           <span className="text-3xl block mb-2">🗳️</span>
           <p className="font-bold mb-1">Voter Data Lookup</p>
@@ -431,6 +583,19 @@ export function VoterDataSection() {
           </p>
           <p className="text-[9px]">
             <b>Optional:</b> Google Civic API, Open States, NationBuilder, VAN
+          </p>
+          <p className="text-[9px] mt-1">
+            <b>New:</b> 🏛️ Live Races tab — real-time election results from civicAPI
+          </p>
+        </div>
+      )}
+      {searchType === "races" && !raceSearched && (
+        <div className="win98-sunken bg-white p-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
+          <span className="text-3xl block mb-2">🏛️</span>
+          <p className="font-bold mb-1">Live Election Races</p>
+          <p>Search real-time election results, candidates, and race calls.</p>
+          <p className="mt-2 text-[9px]">
+            Powered by <a href="https://civicapi.org" target="_blank" rel="noopener noreferrer" className="underline">civicAPI</a> — free, no key required
           </p>
         </div>
       )}
