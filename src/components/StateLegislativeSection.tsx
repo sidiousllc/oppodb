@@ -494,6 +494,13 @@ export function StateLegislativeSection({
         />
       )}
 
+      {/* MN Campaign Finance Board data */}
+      {selectedState === "MN" && !loading && (
+        <div className="mb-6">
+          <MNFinancePanel />
+        </div>
+      )}
+
       {loading && (
         <div className="flex items-center justify-center py-16">
           <div className="flex items-center gap-3 text-muted-foreground">
