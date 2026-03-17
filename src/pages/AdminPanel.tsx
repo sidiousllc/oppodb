@@ -114,6 +114,7 @@ function UsersTab() {
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
   const [suspendUser, setSuspendUser] = useState<AdminUser | null>(null);
+  const [userGroupMap, setUserGroupMap] = useState<Record<string, Array<{ name: string; color: string }>>>({});
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -127,7 +128,25 @@ function UsersTab() {
     }
   }, []);
 
-  useEffect(() => { loadUsers(); }, [loadUsers]);
+  const loadGroupMemberships = useCallback(async () => {
+    const { data: groups } = await supabase.from("role_groups").select("id, name, color");
+    const { data: members } = await supabase.from("role_group_members").select("user_id, group_id");
+    if (!groups || !members) return;
+
+    const groupLookup: Record<string, { name: string; color: string }> = {};
+    for (const g of groups) groupLookup[g.id] = { name: g.name, color: g.color };
+
+    const map: Record<string, Array<{ name: string; color: string }>> = {};
+    for (const m of members) {
+      const g = groupLookup[m.group_id];
+      if (!g) continue;
+      if (!map[m.user_id]) map[m.user_id] = [];
+      map[m.user_id].push(g);
+    }
+    setUserGroupMap(map);
+  }, []);
+
+  useEffect(() => { loadUsers(); loadGroupMemberships(); }, [loadUsers, loadGroupMemberships]);
 
   const handleToggleRole = async (userId: string, role: string, hasRole: boolean) => {
     try {
@@ -250,6 +269,15 @@ function UsersTab() {
                 <td className="px-2 py-1.5">
                   <div className="font-bold">{u.email}</div>
                   {u.display_name && <div className="text-[9px] text-[hsl(var(--muted-foreground))]">{u.display_name}</div>}
+                  {userGroupMap[u.id] && userGroupMap[u.id].length > 0 && (
+                    <div className="flex flex-wrap gap-0.5 mt-0.5">
+                      {userGroupMap[u.id].map(g => (
+                        <span key={g.name} className="text-[8px] font-bold px-1 py-0 win98-raised rounded-sm" style={{ backgroundColor: g.color }}>
+                          🛡️ {g.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="px-2 py-1.5">
                   {isBanned ? (
