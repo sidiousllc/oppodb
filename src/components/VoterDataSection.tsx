@@ -155,6 +155,7 @@ export function VoterDataSection() {
     { id: "name", label: "Name + State", icon: Users },
     { id: "address", label: "Address", icon: MapPin },
     { id: "district", label: "District", icon: Building2 },
+    { id: "races", label: "Live Races", icon: Trophy },
   ];
 
   return (
