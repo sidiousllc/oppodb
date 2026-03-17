@@ -370,33 +370,14 @@ async function searchOpenStates(params: OpenStatesParams): Promise<VoterRecord[]
 
   const chamber = district_type === 'state_senate' ? 'upper' : 'lower';
 
-  const query = `
-    query {
-      people(memberOf: "${state}", first: 20) {
-        edges {
-          node {
-            name
-            party { name }
-            currentMemberships {
-              organization { name classification }
-              post { label }
-            }
-            contactDetails { type value note }
-            links { url note }
-            image
-          }
-        }
-      }
-    }
-  `;
+  let url = `https://v3.openstates.org/people?jurisdiction=${state.toLowerCase()}&per_page=20&apikey=${apiKey}`;
+  if (district) url += `&district=${encodeURIComponent(district)}`;
+  if (district_type) {
+    url += `&org_classification=${chamber}`;
+  }
 
-  const response = await fetch('https://v3.openstates.org/graphql', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-KEY': apiKey,
-    },
-    body: JSON.stringify({ query }),
+  const response = await fetch(url, {
+    headers: { 'Accept': 'application/json' },
   });
 
   if (!response.ok) {
@@ -405,24 +386,15 @@ async function searchOpenStates(params: OpenStatesParams): Promise<VoterRecord[]
   }
 
   const data = await response.json();
-  const people = data.data?.people?.edges || [];
+  const people = data.results || [];
 
   return people
-    .map((edge: any) => {
-      const p = edge.node;
-      const membership = (p.currentMemberships || []).find((m: any) =>
-        m.organization?.classification === chamber || m.organization?.classification === 'legislature'
-      );
-      const districtLabel = membership?.post?.label || '';
-
-      // Filter by district if specified
-      if (district && districtLabel && !districtLabel.includes(district)) return null;
-
-      const partyName = p.party?.[0]?.name || '';
-      const email = (p.contactDetails || []).find((c: any) => c.type === 'email')?.value || '';
-      const phone = (p.contactDetails || []).find((c: any) => c.type === 'voice')?.value || '';
-
+    .map((p: any) => {
+      const partyRaw = typeof p.party === 'string' ? p.party : (p.party || [])[0]?.name || '';
+      const email = p.email || '';
       const nameParts = (p.name || '').split(' ');
+      const districtLabel = p.current_role?.district || '';
+
       return {
         source: 'Open States',
         first_name: nameParts[0] || '',
@@ -433,14 +405,14 @@ async function searchOpenStates(params: OpenStatesParams): Promise<VoterRecord[]
         zip: '',
         address: '',
         county: '',
-        party: partyName.includes('Democrat') ? 'DEM' : partyName.includes('Republican') ? 'REP' : partyName,
+        party: partyRaw.includes('Democrat') ? 'DEM' : partyRaw.includes('Republican') ? 'REP' : partyRaw,
         registration_date: '',
         registration_status: 'Legislator',
-        voter_id: '',
+        voter_id: p.id || '',
         age: null,
         gender: '',
         race_ethnicity: '',
-        phone: phone,
+        phone: '',
         email: email,
         congressional_district: '',
         state_house_district: district_type === 'state_house' ? districtLabel : '',
