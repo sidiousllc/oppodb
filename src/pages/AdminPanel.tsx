@@ -49,6 +49,7 @@ export default function AdminPanel() {
 
   const tabs: Array<{ id: Tab; label: string; emoji: string; adminOnly?: boolean }> = [
     { id: "users", label: "Users", emoji: "👥", adminOnly: true },
+    { id: "roles", label: "Role Groups", emoji: "🛡️", adminOnly: true },
     { id: "candidates", label: "Candidates", emoji: "📋" },
     { id: "maga", label: "MAGA Files", emoji: "⚠️" },
     { id: "local", label: "Local Impact", emoji: "🌐" },
