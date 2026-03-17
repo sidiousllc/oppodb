@@ -571,6 +571,72 @@ export type Database = {
         }
         Relationships: []
       }
+      mn_cfb_candidates: {
+        Row: {
+          candidate_name: string
+          chamber: string
+          committee_name: string
+          contribution_count: number
+          contributor_types: Json
+          created_at: string
+          expenditure_count: number
+          expenditure_types: Json
+          id: string
+          in_kind_total: number
+          last_synced_at: string
+          net_cash: number
+          reg_num: string
+          top_contributors: Json
+          top_vendors: Json
+          total_contributions: number
+          total_expenditures: number
+          updated_at: string
+          years_active: string[]
+        }
+        Insert: {
+          candidate_name: string
+          chamber?: string
+          committee_name: string
+          contribution_count?: number
+          contributor_types?: Json
+          created_at?: string
+          expenditure_count?: number
+          expenditure_types?: Json
+          id?: string
+          in_kind_total?: number
+          last_synced_at?: string
+          net_cash?: number
+          reg_num: string
+          top_contributors?: Json
+          top_vendors?: Json
+          total_contributions?: number
+          total_expenditures?: number
+          updated_at?: string
+          years_active?: string[]
+        }
+        Update: {
+          candidate_name?: string
+          chamber?: string
+          committee_name?: string
+          contribution_count?: number
+          contributor_types?: Json
+          created_at?: string
+          expenditure_count?: number
+          expenditure_types?: Json
+          id?: string
+          in_kind_total?: number
+          last_synced_at?: string
+          net_cash?: number
+          reg_num?: string
+          top_contributors?: Json
+          top_vendors?: Json
+          total_contributions?: number
+          total_expenditures?: number
+          updated_at?: string
+          years_active?: string[]
+        }
+        Relationships: []
+      }
       narrative_reports: {
         Row: {
           content: string
@@ -1133,6 +1199,8 @@ export type Database = {
           read_ct: number
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       validate_api_key: {
         Args: { p_key_hash: string }
         Returns: {
