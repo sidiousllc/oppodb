@@ -36,6 +36,7 @@ import { PollingSection } from "@/components/PollingSection";
 import { StateLegislativeSection } from "@/components/StateLegislativeSection";
 import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { Dashboard } from "@/components/Dashboard";
+import { VoterDataSection } from "@/components/VoterDataSection";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
@@ -248,6 +249,7 @@ export default function Index() {
     "state-legislative": stateLegDistricts.length,
     polling: pollingCount,
     "campaign-finance": financeCount,
+    "voter-data": 0,
   }), [dataVersion, districts, stateLegDistricts, pollingCount, financeCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
@@ -268,6 +270,7 @@ export default function Index() {
     "state-legislative": "State Legislative Districts",
     polling: "Polling Data",
     "campaign-finance": "Campaign Finance",
+    "voter-data": "Voter Data",
   };
 
   function renderDetail() {
@@ -587,6 +590,10 @@ export default function Index() {
 
     if (section === "campaign-finance") {
       return <CampaignFinanceSection onNavigateSlug={navigateBySlug} />;
+    }
+
+    if (section === "voter-data") {
+      return <VoterDataSection />;
     }
   }
 

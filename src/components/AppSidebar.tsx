@@ -27,7 +27,8 @@ export type Section =
   | "district-intel"
   | "state-legislative"
   | "polling"
-  | "campaign-finance";
+  | "campaign-finance"
+  | "voter-data";
 
 interface AppSidebarProps {
   activeFilter: FilterCategory;
@@ -57,6 +58,7 @@ const sections: Array<{ id: Section; label: string; emoji: string }> = [
   { id: "state-legislative", label: "State Legislatures", emoji: "⚖️" },
   { id: "polling", label: "Polling Data", emoji: "📊" },
   { id: "campaign-finance", label: "Campaign Finance", emoji: "💰" },
+  { id: "voter-data", label: "Voter Data", emoji: "🗳️" },
 ];
 
 export function AppSidebar({
