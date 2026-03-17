@@ -3,8 +3,10 @@ import {
   Search, FileText, User, Vote, ChevronRight, ArrowLeft, ExternalLink,
   Calendar, Building2, BookOpen, ScrollText, Gavel, Users, Hash, Eye,
   Clock, CheckCircle2, XCircle, MinusCircle, AlertCircle, ListOrdered,
-  Layers, FileCheck, FilePlus2
+  Layers, FileCheck, FilePlus2, Bookmark, BookmarkCheck, Trash2, StickyNote
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -136,8 +138,22 @@ interface MasterListBill {
   url?: string;
 }
 
-type Tab = "bills" | "legislators" | "sessions";
+type Tab = "bills" | "legislators" | "sessions" | "tracked";
 type SubView = null | "bill" | "rollcall" | "person" | "billtext" | "session-bills";
+
+interface TrackedBill {
+  id: string;
+  bill_id: number;
+  bill_number: string;
+  title: string;
+  state: string;
+  status_desc: string | null;
+  last_action: string | null;
+  last_action_date: string | null;
+  legiscan_url: string | null;
+  notes: string | null;
+  created_at: string;
+}
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -255,7 +271,7 @@ function StatRow({ label, value, suffix = "" }: { label: string; value: string |
 
 // ─── Bill Card ──────────────────────────────────────────────────────────────
 
-function BillCard({ bill, onClick }: { bill: BillResult | MasterListBill; onClick: () => void }) {
+function BillCard({ bill, onClick, isTracked, onToggleTrack }: { bill: BillResult | MasterListBill; onClick: () => void; isTracked?: boolean; onToggleTrack?: (e: React.MouseEvent) => void }) {
   const status = 'status' in bill ? bill.status : undefined;
   return (
     <div className="candidate-card animate-fade-in cursor-pointer" onClick={onClick}>
@@ -288,7 +304,18 @@ function BillCard({ bill, onClick }: { bill: BillResult | MasterListBill; onClic
             </div>
           )}
         </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-2" />
+        <div className="flex items-center gap-1 shrink-0 mt-2">
+          {onToggleTrack && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleTrack(e); }}
+              className={`p-1 rounded transition-colors ${isTracked ? "text-primary hover:text-primary/70" : "text-muted-foreground hover:text-foreground"}`}
+              title={isTracked ? "Untrack bill" : "Track bill"}
+            >
+              {isTracked ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+            </button>
+          )}
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </div>
       </div>
     </div>
   );
@@ -520,12 +547,16 @@ function BillDetailView({
   onViewRollCall,
   onViewPerson,
   onViewText,
+  isTracked,
+  onToggleTrack,
 }: {
   bill: BillDetail;
   onBack: () => void;
   onViewRollCall: (id: number) => void;
   onViewPerson: (id: number) => void;
   onViewText: (docId: number, type: string, date: string) => void;
+  isTracked?: boolean;
+  onToggleTrack?: () => void;
 }) {
   return (
     <div className="animate-fade-in">
@@ -544,6 +575,19 @@ function BillDetailView({
         )}
         {bill.body && (
           <span className="text-[10px] text-muted-foreground border border-border rounded-full px-2 py-0.5">{bill.body}</span>
+        )}
+        {onToggleTrack && (
+          <button
+            onClick={onToggleTrack}
+            className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors ${
+              isTracked
+                ? "bg-primary/10 text-primary border-primary/25 hover:bg-primary/20"
+                : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-foreground/30"
+            }`}
+          >
+            {isTracked ? <BookmarkCheck className="h-3 w-3" /> : <Bookmark className="h-3 w-3" />}
+            {isTracked ? "Tracking" : "Track Bill"}
+          </button>
         )}
       </div>
 
@@ -892,6 +936,7 @@ function SessionCard({ session, onClick }: { session: SessionInfo; onClick: () =
 // ─── Main Section ───────────────────────────────────────────────────────────
 
 export function LegislationSection() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("bills");
   const [searchQuery, setSearchQuery] = useState("");
   const [stateFilter, setStateFilter] = useState("US");
@@ -911,6 +956,63 @@ export function LegislationSection() {
   const [sponsoredBills, setSponsoredBills] = useState<SponsoredBill[]>([]);
   const [billText, setBillText] = useState("");
   const [billTextInfo, setBillTextInfo] = useState<{ type: string; date: string; bill_number: string }>({ type: "", date: "", bill_number: "" });
+
+  // Tracked bills
+  const [trackedBills, setTrackedBills] = useState<TrackedBill[]>([]);
+  const [trackedBillIds, setTrackedBillIds] = useState<Set<number>>(new Set());
+  const [editingNotes, setEditingNotes] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState("");
+
+  // Load tracked bills
+  const loadTrackedBills = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("tracked_bills")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) {
+      setTrackedBills(data as TrackedBill[]);
+      setTrackedBillIds(new Set(data.map((b: any) => b.bill_id)));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadTrackedBills();
+  }, [loadTrackedBills]);
+
+  const trackBill = useCallback(async (bill: BillResult | BillDetail | MasterListBill) => {
+    if (!user) return;
+    const billId = bill.bill_id;
+    if (trackedBillIds.has(billId)) {
+      // Untrack
+      await supabase.from("tracked_bills").delete().eq("user_id", user.id).eq("bill_id", billId);
+      setTrackedBillIds((prev) => { const s = new Set(prev); s.delete(billId); return s; });
+      setTrackedBills((prev) => prev.filter((b) => b.bill_id !== billId));
+    } else {
+      // Track
+      const { data } = await supabase.from("tracked_bills").insert({
+        user_id: user.id,
+        bill_id: billId,
+        bill_number: bill.bill_number,
+        title: bill.title,
+        state: 'state' in bill ? bill.state : '',
+        status_desc: 'status_desc' in bill ? bill.status_desc || null : null,
+        last_action: bill.last_action || null,
+        last_action_date: bill.last_action_date || null,
+        legiscan_url: 'url' in bill ? bill.url || null : null,
+      }).select().single();
+      if (data) {
+        setTrackedBillIds((prev) => new Set(prev).add(billId));
+        setTrackedBills((prev) => [data as TrackedBill, ...prev]);
+      }
+    }
+  }, [user, trackedBillIds]);
+
+  const updateBillNotes = useCallback(async (trackedId: string, notes: string) => {
+    await supabase.from("tracked_bills").update({ notes }).eq("id", trackedId);
+    setTrackedBills((prev) => prev.map((b) => b.id === trackedId ? { ...b, notes } : b));
+    setEditingNotes(null);
+  }, []);
 
   // Load sessions when switching to sessions tab
   useEffect(() => {
@@ -1090,6 +1192,8 @@ export function LegislationSection() {
         onViewRollCall={loadRollCall}
         onViewPerson={loadPerson}
         onViewText={loadBillText}
+        isTracked={trackedBillIds.has(selectedBill.bill_id)}
+        onToggleTrack={() => trackBill(selectedBill)}
       />
     );
   }
@@ -1102,7 +1206,7 @@ export function LegislationSection() {
         <p className="text-sm text-muted-foreground mb-4">{sessionBills.length} bills in this session</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {sessionBills.slice(0, 200).map((b) => (
-            <BillCard key={b.bill_id} bill={b} onClick={() => loadBill(b.bill_id)} />
+            <BillCard key={b.bill_id} bill={b} onClick={() => loadBill(b.bill_id)} isTracked={trackedBillIds.has(b.bill_id)} onToggleTrack={() => trackBill(b)} />
           ))}
         </div>
         {sessionBills.length > 200 && (
@@ -1120,10 +1224,10 @@ export function LegislationSection() {
     <div>
       {/* Tab toggle */}
       <div className="inline-flex rounded-lg border border-border overflow-hidden mb-4">
-        {(["bills", "legislators", "sessions"] as Tab[]).map((t, i) => (
+        {(["bills", "legislators", "sessions", "tracked"] as Tab[]).map((t, i) => (
           <button
             key={t}
-            onClick={() => { setTab(t); setSearchPerformed(false); setSubView(null); }}
+            onClick={() => { setTab(t); setSearchPerformed(false); setSubView(null); if (t === "tracked") loadTrackedBills(); }}
             className={`px-4 py-1.5 text-xs font-medium transition-colors ${
               i > 0 ? "border-l border-border" : ""
             } ${
@@ -1133,6 +1237,7 @@ export function LegislationSection() {
             {t === "bills" && <span className="flex items-center gap-1.5"><FileText className="h-3 w-3" /> Bills</span>}
             {t === "legislators" && <span className="flex items-center gap-1.5"><Users className="h-3 w-3" /> Legislators</span>}
             {t === "sessions" && <span className="flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> Sessions</span>}
+            {t === "tracked" && <span className="flex items-center gap-1.5"><BookmarkCheck className="h-3 w-3" /> Tracked{trackedBills.length > 0 ? ` (${trackedBills.length})` : ""}</span>}
           </button>
         ))}
       </div>
@@ -1215,7 +1320,7 @@ export function LegislationSection() {
           <p className="text-sm text-muted-foreground mb-3">{bills.length} bills found</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {bills.slice(0, 100).map((b) => (
-              <BillCard key={b.bill_id} bill={b} onClick={() => loadBill(b.bill_id)} />
+              <BillCard key={b.bill_id} bill={b} onClick={() => loadBill(b.bill_id)} isTracked={trackedBillIds.has(b.bill_id)} onToggleTrack={() => trackBill(b)} />
             ))}
           </div>
           {bills.length > 100 && <p className="text-center text-xs text-muted-foreground mt-4">Showing 100 of {bills.length} bills. Refine your search for more specific results.</p>}
@@ -1247,8 +1352,84 @@ export function LegislationSection() {
         </>
       )}
 
+      {/* Tracked bills tab */}
+      {!loading && tab === "tracked" && (
+        <>
+          {trackedBills.length === 0 ? (
+            <div className="text-center py-16">
+              <Bookmark className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+              <h3 className="font-display text-lg font-semibold text-foreground mb-1">No Tracked Bills</h3>
+              <p className="text-sm text-muted-foreground">Search for bills and click the bookmark icon to start tracking legislation.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {trackedBills.map((tb) => (
+                <div key={tb.id} className="candidate-card animate-fade-in">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1 cursor-pointer" onClick={() => loadBill(tb.bill_id)}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide border bg-primary/10 text-primary border-primary/25">
+                          {tb.bill_number}
+                        </span>
+                        {tb.state && <span className="tag tag-governor">{tb.state}</span>}
+                        {tb.status_desc && (
+                          <span className="text-[9px] font-medium text-muted-foreground border border-border rounded-full px-1.5 py-0.5">{tb.status_desc}</span>
+                        )}
+                      </div>
+                      <h3 className="font-display text-xs font-semibold text-foreground mt-1 line-clamp-2">{tb.title}</h3>
+                      {tb.last_action && (
+                        <p className="text-[10px] text-muted-foreground mt-1 line-clamp-1">
+                          {tb.last_action_date && <span className="font-medium">{tb.last_action_date}: </span>}
+                          {tb.last_action}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => { setEditingNotes(editingNotes === tb.id ? null : tb.id); setNoteText(tb.notes || ""); }}
+                        className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                        title="Add notes"
+                      >
+                        <StickyNote className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => trackBill({ bill_id: tb.bill_id, bill_number: tb.bill_number, title: tb.title, state: tb.state } as any)}
+                        className="p-1 rounded text-destructive/70 hover:text-destructive transition-colors"
+                        title="Untrack bill"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Notes */}
+                  {tb.notes && editingNotes !== tb.id && (
+                    <p className="text-[10px] text-muted-foreground mt-2 italic border-t border-border/50 pt-1.5">📝 {tb.notes}</p>
+                  )}
+                  {editingNotes === tb.id && (
+                    <div className="mt-2 border-t border-border/50 pt-2">
+                      <textarea
+                        value={noteText}
+                        onChange={(e) => setNoteText(e.target.value)}
+                        placeholder="Add notes about this bill…"
+                        className="w-full rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground outline-none resize-none"
+                        rows={2}
+                      />
+                      <div className="flex justify-end gap-2 mt-1">
+                        <button onClick={() => setEditingNotes(null)} className="text-[10px] text-muted-foreground hover:text-foreground">Cancel</button>
+                        <button onClick={() => updateBillNotes(tb.id, noteText)} className="text-[10px] text-primary font-medium hover:underline">Save</button>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-[9px] text-muted-foreground mt-1">Tracked {new Date(tb.created_at).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
       {/* Empty state */}
-      {!loading && !searchPerformed && tab !== "sessions" && (
+      {!loading && !searchPerformed && tab !== "sessions" && tab !== "tracked" && (
         <div className="text-center py-16">
           <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
           <h3 className="font-display text-lg font-semibold text-foreground mb-1">

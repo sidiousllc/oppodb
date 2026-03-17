@@ -948,6 +948,54 @@ export type Database = {
         }
         Relationships: []
       }
+      tracked_bills: {
+        Row: {
+          bill_id: number
+          bill_number: string
+          created_at: string
+          id: string
+          last_action: string | null
+          last_action_date: string | null
+          legiscan_url: string | null
+          notes: string | null
+          state: string
+          status_desc: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bill_id: number
+          bill_number: string
+          created_at?: string
+          id?: string
+          last_action?: string | null
+          last_action_date?: string | null
+          legiscan_url?: string | null
+          notes?: string | null
+          state?: string
+          status_desc?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bill_id?: number
+          bill_number?: string
+          created_at?: string
+          id?: string
+          last_action?: string | null
+          last_action_date?: string | null
+          legiscan_url?: string | null
+          notes?: string | null
+          state?: string
+          status_desc?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_mail: {
         Row: {
           body: string
