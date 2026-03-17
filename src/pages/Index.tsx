@@ -250,6 +250,7 @@ export default function Index() {
     polling: pollingCount,
     "campaign-finance": financeCount,
     "voter-data": 0,
+    "live-elections": 0,
   }), [dataVersion, districts, stateLegDistricts, pollingCount, financeCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
