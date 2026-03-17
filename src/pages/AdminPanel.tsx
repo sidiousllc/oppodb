@@ -269,6 +269,15 @@ function UsersTab() {
                 <td className="px-2 py-1.5">
                   <div className="font-bold">{u.email}</div>
                   {u.display_name && <div className="text-[9px] text-[hsl(var(--muted-foreground))]">{u.display_name}</div>}
+                  {userGroupMap[u.id] && userGroupMap[u.id].length > 0 && (
+                    <div className="flex flex-wrap gap-0.5 mt-0.5">
+                      {userGroupMap[u.id].map(g => (
+                        <span key={g.name} className="text-[8px] font-bold px-1 py-0 win98-raised rounded-sm" style={{ backgroundColor: g.color }}>
+                          🛡️ {g.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="px-2 py-1.5">
                   {isBanned ? (
