@@ -38,6 +38,7 @@ import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
+import { LegislationSection } from "@/components/LegislationSection";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
