@@ -283,11 +283,21 @@ function GroupMembersPanel({ group, onBack }: { group: RoleGroup; onBack: () => 
   };
 
   const handleRemoveMember = async (memberId: string, userId: string) => {
-    if (!confirm("Remove this member from the group?")) return;
-    const { error } = await supabase.from("role_group_members").delete().eq("id", memberId);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Member removed");
-    loadMembers();
+    if (!confirm("Remove this member from the group? Their roles from this group will be revoked (unless granted by another group).")) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "remove_group_member", member_id: memberId, user_id: userId, group_id: group.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const revoked = data?.revoked_roles?.length ? ` (revoked: ${data.revoked_roles.join(", ")})` : "";
+      toast.success(`Member removed${revoked}`);
+      loadMembers();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove member");
+    }
   };
 
   const nonMembers = allUsers.filter(u => !members.some(m => m.user_id === u.id));
