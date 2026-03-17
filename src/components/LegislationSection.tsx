@@ -1320,7 +1320,7 @@ export function LegislationSection() {
           <p className="text-sm text-muted-foreground mb-3">{bills.length} bills found</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {bills.slice(0, 100).map((b) => (
-              <BillCard key={b.bill_id} bill={b} onClick={() => loadBill(b.bill_id)} />
+              <BillCard key={b.bill_id} bill={b} onClick={() => loadBill(b.bill_id)} isTracked={trackedBillIds.has(b.bill_id)} onToggleTrack={() => trackBill(b)} />
             ))}
           </div>
           {bills.length > 100 && <p className="text-center text-xs text-muted-foreground mt-4">Showing 100 of {bills.length} bills. Refine your search for more specific results.</p>}
