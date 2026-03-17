@@ -936,6 +936,7 @@ function SessionCard({ session, onClick }: { session: SessionInfo; onClick: () =
 // ─── Main Section ───────────────────────────────────────────────────────────
 
 export function LegislationSection() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("bills");
   const [searchQuery, setSearchQuery] = useState("");
   const [stateFilter, setStateFilter] = useState("US");
@@ -955,6 +956,63 @@ export function LegislationSection() {
   const [sponsoredBills, setSponsoredBills] = useState<SponsoredBill[]>([]);
   const [billText, setBillText] = useState("");
   const [billTextInfo, setBillTextInfo] = useState<{ type: string; date: string; bill_number: string }>({ type: "", date: "", bill_number: "" });
+
+  // Tracked bills
+  const [trackedBills, setTrackedBills] = useState<TrackedBill[]>([]);
+  const [trackedBillIds, setTrackedBillIds] = useState<Set<number>>(new Set());
+  const [editingNotes, setEditingNotes] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState("");
+
+  // Load tracked bills
+  const loadTrackedBills = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("tracked_bills")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) {
+      setTrackedBills(data as TrackedBill[]);
+      setTrackedBillIds(new Set(data.map((b: any) => b.bill_id)));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadTrackedBills();
+  }, [loadTrackedBills]);
+
+  const trackBill = useCallback(async (bill: BillResult | BillDetail | MasterListBill) => {
+    if (!user) return;
+    const billId = bill.bill_id;
+    if (trackedBillIds.has(billId)) {
+      // Untrack
+      await supabase.from("tracked_bills").delete().eq("user_id", user.id).eq("bill_id", billId);
+      setTrackedBillIds((prev) => { const s = new Set(prev); s.delete(billId); return s; });
+      setTrackedBills((prev) => prev.filter((b) => b.bill_id !== billId));
+    } else {
+      // Track
+      const { data } = await supabase.from("tracked_bills").insert({
+        user_id: user.id,
+        bill_id: billId,
+        bill_number: bill.bill_number,
+        title: bill.title,
+        state: 'state' in bill ? bill.state : '',
+        status_desc: 'status_desc' in bill ? bill.status_desc || null : null,
+        last_action: bill.last_action || null,
+        last_action_date: bill.last_action_date || null,
+        legiscan_url: 'url' in bill ? bill.url || null : null,
+      }).select().single();
+      if (data) {
+        setTrackedBillIds((prev) => new Set(prev).add(billId));
+        setTrackedBills((prev) => [data as TrackedBill, ...prev]);
+      }
+    }
+  }, [user, trackedBillIds]);
+
+  const updateBillNotes = useCallback(async (trackedId: string, notes: string) => {
+    await supabase.from("tracked_bills").update({ notes }).eq("id", trackedId);
+    setTrackedBills((prev) => prev.map((b) => b.id === trackedId ? { ...b, notes } : b));
+    setEditingNotes(null);
+  }, []);
 
   // Load sessions when switching to sessions tab
   useEffect(() => {
