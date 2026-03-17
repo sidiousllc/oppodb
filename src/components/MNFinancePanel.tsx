@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   DollarSign, Users, Building2, Landmark, ChevronDown, ChevronUp,
   Search, TrendingUp, TrendingDown, ExternalLink, Gavel, PieChart,
