@@ -92,6 +92,7 @@ export default function AdminPanel() {
 
       <div className="win98-sunken bg-white p-3">
         {tab === "users" && isAdmin && <UsersTab />}
+        {tab === "roles" && isAdmin && <RoleGroupsTab />}
         {tab === "candidates" && <CandidatesTab />}
         {tab === "maga" && <ContentTab table="maga_files" nameField="name" />}
         {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
