@@ -1192,6 +1192,8 @@ export function LegislationSection() {
         onViewRollCall={loadRollCall}
         onViewPerson={loadPerson}
         onViewText={loadBillText}
+        isTracked={trackedBillIds.has(selectedBill.bill_id)}
+        onToggleTrack={() => trackBill(selectedBill)}
       />
     );
   }
