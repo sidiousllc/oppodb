@@ -8,6 +8,61 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const app = new Hono();
 
+// --- Authentication: require a valid API key (same as public-api) ---
+async function hashKey(key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+app.use("/*", async (c, next) => {
+  // Allow CORS preflight
+  if (c.req.method === "OPTIONS") {
+    return c.newResponse(null, 204);
+  }
+
+  const apiKey = c.req.header("X-API-Key") || c.req.header("Authorization")?.replace("Bearer ", "");
+  if (!apiKey) {
+    return c.json({ error: "Missing API key. Provide via X-API-Key header." }, 401);
+  }
+
+  const keyHash = await hashKey(apiKey);
+  const { data: keyData, error: keyError } = await supabase.rpc("validate_api_key", {
+    p_key_hash: keyHash,
+  });
+
+  if (keyError || !keyData || keyData.length === 0) {
+    return c.json({ error: "Invalid or revoked API key" }, 403);
+  }
+
+  // Verify user has premium or admin role
+  const userId = keyData[0].user_id;
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+
+  const hasPremiumAccess = roles?.some(
+    (r: { role: string }) => r.role === "premium" || r.role === "admin"
+  );
+  if (!hasPremiumAccess) {
+    return c.json({ error: "Premium or admin role required for MCP access" }, 403);
+  }
+
+  // Log the request
+  supabase.rpc("log_api_request", {
+    p_key_id: keyData[0].key_id,
+    p_user_id: userId,
+    p_endpoint: "mcp-server",
+    p_status: 200,
+  }).then(() => {});
+
+  await next();
+});
+
 const mcpServer = new McpServer({
   name: "ordb-mcp-server",
   version: "1.0.0",

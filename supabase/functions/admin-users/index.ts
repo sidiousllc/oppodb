@@ -38,17 +38,14 @@ Deno.serve(async (req) => {
 
     const { action, ...params } = await req.json();
 
-    // search_users is available to all authenticated users
+    // search_users is available to all authenticated users (for chat/mail recipient lookup)
     if (action === 'search_users') {
       const { query: searchQuery } = params;
-      if (!searchQuery || searchQuery.length < 1) {
+      if (!searchQuery || searchQuery.length < 3) {
         return new Response(JSON.stringify({ users: [] }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-
-      const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 100 });
-      if (error) throw error;
 
       const { data: profiles } = await supabaseAdmin
         .from('profiles')
@@ -59,18 +56,13 @@ Deno.serve(async (req) => {
       }
 
       const lowerQ = searchQuery.toLowerCase();
-      const matches = users
-        .filter(u => u.id !== caller.id)
-        .filter(u => {
-          const email = (u.email || '').toLowerCase();
-          const name = (profileMap[u.id] || '').toLowerCase();
-          return email.includes(lowerQ) || name.includes(lowerQ);
-        })
+      const matches = Object.entries(profileMap)
+        .filter(([id]) => id !== caller.id)
+        .filter(([, name]) => (name || '').toLowerCase().includes(lowerQ))
         .slice(0, 10)
-        .map(u => ({
-          user_id: u.id,
-          display_name: profileMap[u.id] || u.email?.split('@')[0] || u.id,
-          email: u.email,
+        .map(([id, name]) => ({
+          user_id: id,
+          display_name: name || id,
         }));
 
       return new Response(JSON.stringify({ users: matches }), {

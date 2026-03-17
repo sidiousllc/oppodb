@@ -43,16 +43,15 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Authenticate via X-API-Key header or ?apikey= query param
-    const apiKey =
-      req.headers.get("X-API-Key") ||
-      new URL(req.url).searchParams.get("apikey");
+    // Authenticate via X-API-Key header only
+    const apiKey = req.headers.get("X-API-Key");
 
     if (!apiKey) {
       return new Response(
         JSON.stringify({
-          error: "Missing API key. Provide via X-API-Key header or ?apikey= query parameter.",
+          error: "Missing API key. Provide via X-API-Key header.",
           docs: "Generate an API key from your profile page.",
+          example: 'curl -H "X-API-Key: ordb_xxxx" https://.../public-api/candidates',
         }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
