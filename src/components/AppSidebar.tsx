@@ -62,6 +62,7 @@ const sections: Array<{ id: Section; label: string; emoji: string }> = [
   { id: "campaign-finance", label: "Campaign Finance", emoji: "💰" },
   { id: "voter-data", label: "Voter Data", emoji: "🗳️" },
   { id: "live-elections", label: "Live Elections", emoji: "🏛️" },
+  { id: "legislation", label: "Legislation", emoji: "📜" },
 ];
 
 export function AppSidebar({
