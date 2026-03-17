@@ -688,6 +688,65 @@ export type Database = {
         }
         Relationships: []
       }
+      role_group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "role_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_groups: {
+        Row: {
+          color: string
+          created_at: string
+          description: string
+          id: string
+          name: string
+          roles: string[]
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          roles?: string[]
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          roles?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       state_leg_election_results: {
         Row: {
           candidate_name: string
