@@ -114,6 +114,7 @@ function UsersTab() {
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
   const [suspendUser, setSuspendUser] = useState<AdminUser | null>(null);
+  const [userGroupMap, setUserGroupMap] = useState<Record<string, Array<{ name: string; color: string }>>>({});
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -127,7 +128,25 @@ function UsersTab() {
     }
   }, []);
 
-  useEffect(() => { loadUsers(); }, [loadUsers]);
+  const loadGroupMemberships = useCallback(async () => {
+    const { data: groups } = await supabase.from("role_groups").select("id, name, color");
+    const { data: members } = await supabase.from("role_group_members").select("user_id, group_id");
+    if (!groups || !members) return;
+
+    const groupLookup: Record<string, { name: string; color: string }> = {};
+    for (const g of groups) groupLookup[g.id] = { name: g.name, color: g.color };
+
+    const map: Record<string, Array<{ name: string; color: string }>> = {};
+    for (const m of members) {
+      const g = groupLookup[m.group_id];
+      if (!g) continue;
+      if (!map[m.user_id]) map[m.user_id] = [];
+      map[m.user_id].push(g);
+    }
+    setUserGroupMap(map);
+  }, []);
+
+  useEffect(() => { loadUsers(); loadGroupMemberships(); }, [loadUsers, loadGroupMemberships]);
 
   const handleToggleRole = async (userId: string, role: string, hasRole: boolean) => {
     try {
