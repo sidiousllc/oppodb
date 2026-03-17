@@ -3,7 +3,7 @@ import {
   Search, FileText, User, Vote, ChevronRight, ArrowLeft, ExternalLink,
   Calendar, Building2, BookOpen, ScrollText, Gavel, Users, Hash, Eye,
   Clock, CheckCircle2, XCircle, MinusCircle, AlertCircle, ListOrdered,
-  Layers, FileCheck, FilePlus2, Bookmark, BookmarkCheck, Trash2, StickyNote, Download
+  Layers, FileCheck, FilePlus2, Bookmark, BookmarkCheck, Trash2, StickyNote, Download, ZoomIn, ZoomOut
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
