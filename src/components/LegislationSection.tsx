@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Search, FileText, User, Vote, ChevronRight, ArrowLeft, ExternalLink,
   Calendar, Building2, BookOpen, ScrollText, Gavel, Users, Hash, Eye,
@@ -525,6 +525,57 @@ function PersonDetailView({
 
 function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type: string; date: string; bill_number: string; mime?: string; pdfDataUrl?: string }; onBack: () => void }) {
   const isPdf = !!docInfo.pdfDataUrl;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+
+  // Revoke blob URL on unmount
+  useEffect(() => {
+    return () => { if (docInfo.pdfDataUrl?.startsWith("blob:")) URL.revokeObjectURL(docInfo.pdfDataUrl); };
+  }, [docInfo.pdfDataUrl]);
+
+  // Render PDF pages to canvases using pdf.js
+  useEffect(() => {
+    if (!isPdf || !docInfo.pdfDataUrl || !containerRef.current) return;
+    let cancelled = false;
+    const render = async () => {
+      setPdfLoading(true);
+      setPdfError("");
+      try {
+        const pdfjsLib = await import("pdfjs-dist");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+        const loadingTask = pdfjsLib.getDocument(docInfo.pdfDataUrl!);
+        const pdf = await loadingTask.promise;
+        if (cancelled) return;
+        const container = containerRef.current;
+        if (!container) return;
+        container.innerHTML = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 1.5 });
+          const canvas = document.createElement("canvas");
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          canvas.style.width = "100%";
+          canvas.style.height = "auto";
+          canvas.style.display = "block";
+          if (i > 1) canvas.style.marginTop = "8px";
+          container.appendChild(canvas);
+          const ctx = canvas.getContext("2d");
+          if (ctx) await page.render({ canvasContext: ctx, viewport }).promise;
+          if (cancelled) return;
+        }
+      } catch (e: any) {
+        console.error("PDF render error:", e);
+        if (!cancelled) setPdfError("Failed to render PDF. Use Download to view the file.");
+      } finally {
+        if (!cancelled) setPdfLoading(false);
+      }
+    };
+    render();
+    return () => { cancelled = true; };
+  }, [isPdf, docInfo.pdfDataUrl]);
+
   const handleDownload = () => {
     if (!docInfo.pdfDataUrl) return;
     const a = document.createElement("a");
@@ -554,12 +605,15 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
         )}
       </div>
       {isPdf ? (
-        <div className="rounded-xl border border-border bg-card overflow-hidden" style={{ height: "75vh" }}>
-          <iframe
-            src={docInfo.pdfDataUrl}
-            title={`${docInfo.bill_number} — ${docInfo.type}`}
-            className="w-full h-full border-0"
-          />
+        <div className="rounded-xl border border-border bg-card overflow-hidden max-h-[75vh] overflow-y-auto p-2">
+          {pdfLoading && (
+            <div className="flex items-center justify-center py-16 text-muted-foreground text-sm gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+              Rendering PDF…
+            </div>
+          )}
+          {pdfError && <p className="text-center text-sm text-destructive py-8">{pdfError}</p>}
+          <div ref={containerRef} />
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card p-4 text-xs font-mono whitespace-pre-wrap max-h-[70vh] overflow-y-auto leading-relaxed text-foreground">
@@ -1159,9 +1213,14 @@ export function LegislationSection() {
         // mime_id 1 = HTML, 2 = PDF per LegiScan docs
         const isPdf = mimeId === 2 || mime === "application/pdf" || base64Doc.substring(0, 8) === "JVBER" || base64Doc.substring(0, 10) === "JVBERi0x";
         if (isPdf) {
-          const pdfDataUrl = `data:application/pdf;base64,${base64Doc}`;
+          // Convert base64 to Blob URL for reliable iframe rendering
+          const byteChars = atob(base64Doc);
+          const byteNumbers = new Uint8Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+          const blob = new Blob([byteNumbers], { type: "application/pdf" });
+          const blobUrl = URL.createObjectURL(blob);
           setBillText("");
-          setBillTextInfo({ type, date, bill_number: selectedBill?.bill_number || "", mime: "application/pdf", pdfDataUrl });
+          setBillTextInfo({ type, date, bill_number: selectedBill?.bill_number || "", mime: "application/pdf", pdfDataUrl: blobUrl });
         } else {
           const decoded = atob(base64Doc);
           setBillText(decoded);
