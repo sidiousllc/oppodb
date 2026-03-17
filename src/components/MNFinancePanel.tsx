@@ -321,16 +321,6 @@ export function MNFinancePanel() {
           ))}
         </div>
 
-        <select
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground"
-        >
-          <option value="">All Years</option>
-          {["2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015"].map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
 
         <div className="flex items-center gap-2 flex-1 min-w-[160px] rounded-lg border border-border bg-card px-3 py-1.5">
           <Search className="h-3.5 w-3.5 text-muted-foreground" />
