@@ -407,24 +407,17 @@ async function syncMI(supabase: any) {
           if (!cid) continue;
 
           if (!candidates.has(cid)) {
-            candidates.set(cid, {
-              name: vals[cnameIdx] || cid,
-              committee_name: vals[cnameIdx] || cid,
-              reg_num: cid,
-              chamber: "other",
-              office: "", party: "",
-              total_contributions: 0, total_expenditures: 0,
-              contribution_count: 0, expenditure_count: 0,
-              top_contributors: {}, expenditure_types: {},
-              top_vendors: {}, years_active: new Set(), in_kind_total: 0,
-            });
+            candidates.set(cid, newCandidateAgg(vals[cnameIdx] || cid, cid, "other", "", ""));
           }
 
           const c = candidates.get(cid)!;
           c.years_active.add(year);
           const amt = parseFloat(vals[amtIdx] || "0");
+          const yd = ensureYearly(c, year);
           c.total_contributions += amt;
           c.contribution_count++;
+          yd.contributions += amt;
+          yd.contribution_count++;
           const contribName = [vals[fnameIdx], vals[lnameIdx]].filter(Boolean).join(" ").trim();
           if (contribName) c.top_contributors[contribName] = (c.top_contributors[contribName] || 0) + amt;
         }
