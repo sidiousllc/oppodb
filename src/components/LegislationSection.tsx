@@ -529,6 +529,7 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState("");
   const [pageCount, setPageCount] = useState(0);
+  const [zoomScale, setZoomScale] = useState(1.5);
 
   // Revoke blob URL on unmount
   useEffect(() => {
@@ -554,7 +555,7 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
         setPageCount(pdf.numPages);
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 1.5 });
+          const viewport = page.getViewport({ scale: zoomScale });
           // Page label
           const label = document.createElement("div");
           label.className = "text-center text-xs text-muted-foreground py-1.5";
@@ -582,7 +583,7 @@ function BillTextView({ text, docInfo, onBack }: { text: string; docInfo: { type
     };
     render();
     return () => { cancelled = true; };
-  }, [isPdf, docInfo.pdfDataUrl]);
+  }, [isPdf, docInfo.pdfDataUrl, zoomScale]);
 
   const handleDownload = () => {
     if (!docInfo.pdfDataUrl) return;
