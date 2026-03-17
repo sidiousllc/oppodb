@@ -280,6 +280,261 @@ export type Database = {
         }
         Relationships: []
       }
+      congress_bills: {
+        Row: {
+          actions: Json | null
+          bill_id: string
+          bill_number: number
+          bill_type: string
+          committees: Json | null
+          congress: number
+          congress_url: string | null
+          cosponsor_count: number | null
+          cosponsors: Json | null
+          created_at: string
+          id: string
+          introduced_date: string | null
+          latest_action_date: string | null
+          latest_action_text: string | null
+          origin_chamber: string | null
+          policy_area: string | null
+          raw_data: Json | null
+          short_title: string | null
+          sponsor_bioguide_id: string | null
+          sponsor_name: string | null
+          status: string | null
+          subjects: Json | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json | null
+          bill_id: string
+          bill_number: number
+          bill_type: string
+          committees?: Json | null
+          congress: number
+          congress_url?: string | null
+          cosponsor_count?: number | null
+          cosponsors?: Json | null
+          created_at?: string
+          id?: string
+          introduced_date?: string | null
+          latest_action_date?: string | null
+          latest_action_text?: string | null
+          origin_chamber?: string | null
+          policy_area?: string | null
+          raw_data?: Json | null
+          short_title?: string | null
+          sponsor_bioguide_id?: string | null
+          sponsor_name?: string | null
+          status?: string | null
+          subjects?: Json | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json | null
+          bill_id?: string
+          bill_number?: number
+          bill_type?: string
+          committees?: Json | null
+          congress?: number
+          congress_url?: string | null
+          cosponsor_count?: number | null
+          cosponsors?: Json | null
+          created_at?: string
+          id?: string
+          introduced_date?: string | null
+          latest_action_date?: string | null
+          latest_action_text?: string | null
+          origin_chamber?: string | null
+          policy_area?: string | null
+          raw_data?: Json | null
+          short_title?: string | null
+          sponsor_bioguide_id?: string | null
+          sponsor_name?: string | null
+          status?: string | null
+          subjects?: Json | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      congress_committees: {
+        Row: {
+          chamber: string
+          committee_type: string | null
+          created_at: string
+          id: string
+          members: Json | null
+          name: string
+          parent_system_code: string | null
+          raw_data: Json | null
+          subcommittees: Json | null
+          system_code: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          chamber: string
+          committee_type?: string | null
+          created_at?: string
+          id?: string
+          members?: Json | null
+          name: string
+          parent_system_code?: string | null
+          raw_data?: Json | null
+          subcommittees?: Json | null
+          system_code: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          chamber?: string
+          committee_type?: string | null
+          created_at?: string
+          id?: string
+          members?: Json | null
+          name?: string
+          parent_system_code?: string | null
+          raw_data?: Json | null
+          subcommittees?: Json | null
+          system_code?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      congress_members: {
+        Row: {
+          bioguide_id: string
+          candidate_slug: string | null
+          chamber: string
+          congress: number | null
+          created_at: string
+          depiction_url: string | null
+          district: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          leadership: Json | null
+          name: string
+          official_url: string | null
+          party: string | null
+          raw_data: Json | null
+          state: string | null
+          terms: Json | null
+          updated_at: string
+        }
+        Insert: {
+          bioguide_id: string
+          candidate_slug?: string | null
+          chamber?: string
+          congress?: number | null
+          created_at?: string
+          depiction_url?: string | null
+          district?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          leadership?: Json | null
+          name: string
+          official_url?: string | null
+          party?: string | null
+          raw_data?: Json | null
+          state?: string | null
+          terms?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          bioguide_id?: string
+          candidate_slug?: string | null
+          chamber?: string
+          congress?: number | null
+          created_at?: string
+          depiction_url?: string | null
+          district?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          leadership?: Json | null
+          name?: string
+          official_url?: string | null
+          party?: string | null
+          raw_data?: Json | null
+          state?: string | null
+          terms?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      congress_votes: {
+        Row: {
+          bill_id: string | null
+          chamber: string
+          congress: number
+          created_at: string
+          description: string | null
+          id: string
+          member_votes: Json | null
+          nay_total: number | null
+          not_voting_total: number | null
+          present_total: number | null
+          question: string | null
+          raw_data: Json | null
+          result: string | null
+          roll_number: number
+          session: number
+          updated_at: string
+          vote_date: string | null
+          vote_id: string
+          yea_total: number | null
+        }
+        Insert: {
+          bill_id?: string | null
+          chamber: string
+          congress: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          member_votes?: Json | null
+          nay_total?: number | null
+          not_voting_total?: number | null
+          present_total?: number | null
+          question?: string | null
+          raw_data?: Json | null
+          result?: string | null
+          roll_number: number
+          session: number
+          updated_at?: string
+          vote_date?: string | null
+          vote_id: string
+          yea_total?: number | null
+        }
+        Update: {
+          bill_id?: string | null
+          chamber?: string
+          congress?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          member_votes?: Json | null
+          nay_total?: number | null
+          not_voting_total?: number | null
+          present_total?: number | null
+          question?: string | null
+          raw_data?: Json | null
+          result?: string | null
+          roll_number?: number
+          session?: number
+          updated_at?: string
+          vote_date?: string | null
+          vote_id?: string
+          yea_total?: number | null
+        }
+        Relationships: []
+      }
       congressional_election_results: {
         Row: {
           candidate_name: string

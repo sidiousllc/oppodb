@@ -39,6 +39,7 @@ import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { LegislationSection } from "@/components/LegislationSection";
+import { CongressDataPanel } from "@/components/CongressDataPanel";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
@@ -254,6 +255,7 @@ export default function Index() {
     "voter-data": 0,
     "live-elections": 0,
     legislation: 0,
+    congress: 0,
   }), [dataVersion, districts, stateLegDistricts, pollingCount, financeCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
@@ -277,6 +279,7 @@ export default function Index() {
     "voter-data": "Voter Data",
     "live-elections": "Live Elections",
     legislation: "Legislation",
+    congress: "Congress.gov Data",
   };
 
   function renderDetail() {
@@ -608,6 +611,10 @@ export default function Index() {
 
     if (section === "legislation") {
       return <LegislationSection />;
+    }
+
+    if (section === "congress") {
+      return <CongressDataPanel />;
     }
   }
 
