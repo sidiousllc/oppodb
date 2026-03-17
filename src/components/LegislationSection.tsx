@@ -966,7 +966,7 @@ export function LegislationSection() {
   const [selectedPerson, setSelectedPerson] = useState<PersonDetail | null>(null);
   const [sponsoredBills, setSponsoredBills] = useState<SponsoredBill[]>([]);
   const [billText, setBillText] = useState("");
-  const [billTextInfo, setBillTextInfo] = useState<{ type: string; date: string; bill_number: string }>({ type: "", date: "", bill_number: "" });
+  const [billTextInfo, setBillTextInfo] = useState<{ type: string; date: string; bill_number: string; mime?: string; pdfDataUrl?: string }>({ type: "", date: "", bill_number: "" });
 
   // Tracked bills
   const [trackedBills, setTrackedBills] = useState<TrackedBill[]>([]);
