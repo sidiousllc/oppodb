@@ -620,9 +620,9 @@ export default function Index() {
         {isMinimized ? (
           <Win98Desktop onOpenWindow={() => setIsMinimized(false)} />
         ) : (
-          /* Main AOL browser window */
+          /* Main ORO browser window */
           <Win98Window
-            title="AOL - Opposition Research Database - Sidio.us Group"
+            title="ORO - Opposition Research Database - Sidio.us Group"
             icon={<span className="text-[14px]">🌐</span>}
             maximized
             onMinimize={() => setIsMinimized(true)}
