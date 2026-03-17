@@ -591,6 +591,7 @@ export type Database = {
           total_contributions: number
           total_expenditures: number
           updated_at: string
+          yearly_breakdown: Json
           years_active: string[]
         }
         Insert: {
@@ -612,6 +613,7 @@ export type Database = {
           total_contributions?: number
           total_expenditures?: number
           updated_at?: string
+          yearly_breakdown?: Json
           years_active?: string[]
         }
         Update: {
@@ -633,6 +635,7 @@ export type Database = {
           total_contributions?: number
           total_expenditures?: number
           updated_at?: string
+          yearly_breakdown?: Json
           years_active?: string[]
         }
         Relationships: []
