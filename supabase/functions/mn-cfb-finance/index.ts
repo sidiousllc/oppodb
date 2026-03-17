@@ -67,6 +67,7 @@ Deno.serve(async (req) => {
       expenditure_count: c.expenditure_count,
       in_kind_total: Number(c.in_kind_total),
       years_active: c.years_active || [],
+      yearly_breakdown: c.yearly_breakdown || [],
       top_contributors: c.top_contributors || [],
       contributor_types: c.contributor_types || [],
       expenditure_types: c.expenditure_types || [],
