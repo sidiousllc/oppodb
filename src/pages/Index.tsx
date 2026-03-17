@@ -272,6 +272,7 @@ export default function Index() {
     polling: "Polling Data",
     "campaign-finance": "Campaign Finance",
     "voter-data": "Voter Data",
+    "live-elections": "Live Elections",
   };
 
   function renderDetail() {
