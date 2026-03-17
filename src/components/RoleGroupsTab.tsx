@@ -154,7 +154,24 @@ function RoleGroupEditor({ group, isNew, onSave, onCancel }: {
     } else {
       const { error } = await supabase.from("role_groups").update(record).eq("id", group.id);
       if (error) { toast.error(error.message); setSaving(false); return; }
-      toast.success(`Updated "${name}"`);
+
+      // Sync roles to all existing members when roles change
+      const rolesChanged = JSON.stringify([...roles].sort()) !== JSON.stringify([...group.roles].sort());
+      if (rolesChanged) {
+        try {
+          const { data, error: syncErr } = await supabase.functions.invoke("admin-users", {
+            body: { action: "sync_group_roles", group_id: group.id },
+          });
+          if (syncErr) throw syncErr;
+          if (data?.error) throw new Error(data.error);
+          const synced = data?.synced || 0;
+          toast.success(`Updated "${name}" — synced roles for ${synced} member${synced !== 1 ? "s" : ""}`);
+        } catch (err: any) {
+          toast.warning(`Group saved but role sync failed: ${err.message}`);
+        }
+      } else {
+        toast.success(`Updated "${name}"`);
+      }
     }
     setSaving(false);
     onSave();

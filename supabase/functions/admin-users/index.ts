@@ -331,6 +331,95 @@ Deno.serve(async (req) => {
         });
       }
 
+      case 'sync_group_roles': {
+        const { group_id } = params;
+        if (!group_id) throw new Error('group_id required');
+
+        // Get the group's current roles
+        const { data: grp, error: grpErr } = await supabaseAdmin
+          .from('role_groups')
+          .select('roles')
+          .eq('id', group_id)
+          .single();
+        if (grpErr) throw grpErr;
+        const groupRoles: string[] = grp.roles || [];
+
+        // Get all members of this group
+        const { data: grpMembers } = await supabaseAdmin
+          .from('role_group_members')
+          .select('user_id')
+          .eq('group_id', group_id);
+        const memberUserIds = (grpMembers || []).map((m: any) => m.user_id);
+        if (memberUserIds.length === 0) {
+          return new Response(JSON.stringify({ success: true, synced: 0 }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // For each member, get all their group memberships to compute the full set of roles they should have
+        for (const uid of memberUserIds) {
+          // Get all groups this user belongs to
+          const { data: userMemberships } = await supabaseAdmin
+            .from('role_group_members')
+            .select('group_id')
+            .eq('user_id', uid);
+          const userGroupIds = (userMemberships || []).map((m: any) => m.group_id);
+
+          // Get all roles from all groups
+          const { data: userGroups } = await supabaseAdmin
+            .from('role_groups')
+            .select('roles')
+            .in('id', userGroupIds);
+          const expectedRoles = new Set<string>();
+          for (const g of userGroups || []) {
+            for (const r of g.roles || []) expectedRoles.add(r);
+          }
+
+          // Get current user_roles
+          const { data: currentRoles } = await supabaseAdmin
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', uid);
+          const currentSet = new Set((currentRoles || []).map((r: any) => r.role));
+
+          // Add missing roles
+          for (const role of expectedRoles) {
+            if (!currentSet.has(role)) {
+              await supabaseAdmin
+                .from('user_roles')
+                .upsert({ user_id: uid, role }, { onConflict: 'user_id,role' });
+            }
+          }
+
+          // Remove roles that no group grants (only roles that were part of any group)
+          // We only revoke roles that are NOT in expectedRoles but ARE granted by some group
+          // To be safe, we only remove roles that the OLD version of this group had but no group now grants
+          // Since we don't know the old roles, we simply ensure expectedRoles are present
+          // and remove roles not in expectedRoles that this specific group previously granted
+          // For simplicity: reconcile all group-sourced roles
+          const allPossibleGroupRoles = new Set<string>();
+          const { data: allGroups } = await supabaseAdmin.from('role_groups').select('roles');
+          for (const g of allGroups || []) {
+            for (const r of g.roles || []) allPossibleGroupRoles.add(r);
+          }
+
+          for (const cr of currentSet) {
+            if (allPossibleGroupRoles.has(cr) && !expectedRoles.has(cr)) {
+              // This role is a "group role" but no group grants it to this user anymore
+              await supabaseAdmin
+                .from('user_roles')
+                .delete()
+                .eq('user_id', uid)
+                .eq('role', cr);
+            }
+          }
+        }
+
+        return new Response(JSON.stringify({ success: true, synced: memberUserIds.length }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: 'Unknown action' }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
