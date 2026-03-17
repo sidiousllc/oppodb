@@ -105,7 +105,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
       if (!error && data?.users) {
         setToSuggestions(data.users.map((u: any) => ({
           user_id: u.user_id,
-          display_name: u.email ? `${u.display_name} (${u.email})` : u.display_name,
+          display_name: u.display_name,
         })));
       }
     }, 250);
