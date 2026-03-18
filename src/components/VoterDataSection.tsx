@@ -258,7 +258,7 @@ export function VoterDataSection() {
         ))}
       </div>
 
-      {searchType !== "election_history" && <>
+      {searchType !== "election_history" && searchType !== "ftm" && searchType !== "winred" && <>
       {/* Search form */}
       <div className="win98-sunken bg-white p-3 mb-3">
         {searchType === "name" && (
