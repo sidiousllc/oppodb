@@ -602,6 +602,9 @@ export function VoterDataSection() {
           </p>
         </div>
       )}
+
+      {/* Election History tab */}
+      {searchType === "election_history" && <MITElectionTab />}
     </div>
   );
 }
