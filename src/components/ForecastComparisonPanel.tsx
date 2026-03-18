@@ -208,14 +208,24 @@ export function ForecastComparisonPanel({ districtId }: ForecastComparisonPanelP
           <BarChart3 className="h-4 w-4" /> Forecast Model Comparison
         </h2>
         {isAdmin && (
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="win98-button text-[10px] flex items-center gap-1"
-          >
-            <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
-            {syncing ? "Syncing…" : "Sync Ratings"}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleScrape}
+              disabled={scraping || syncing}
+              className="win98-button text-[10px] flex items-center gap-1"
+            >
+              <Globe className={`h-3 w-3 ${scraping ? "animate-spin" : ""}`} />
+              {scraping ? "Scraping…" : "Scrape Latest"}
+            </button>
+            <button
+              onClick={handleSync}
+              disabled={syncing || scraping}
+              className="win98-button text-[10px] flex items-center gap-1"
+            >
+              <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Syncing…" : "Sync Seeds"}
+            </button>
+          </div>
         )}
       </div>
 
