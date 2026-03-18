@@ -138,7 +138,7 @@ interface MasterListBill {
   url?: string;
 }
 
-type Tab = "bills" | "legislators" | "sessions" | "tracked";
+type Tab = "bills" | "legislators" | "sessions" | "tracked" | "federal";
 type SubView = null | "bill" | "rollcall" | "person" | "billtext" | "session-bills";
 
 interface TrackedBill {
