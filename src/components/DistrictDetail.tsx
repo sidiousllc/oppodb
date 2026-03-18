@@ -206,6 +206,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
       {/* Election History */}
       <CongressionalElectionsSection districtId={district.district_id} />
 
+      {/* MIT Election Lab Historical Data */}
+      <MITElectionHistoryPanel districtId={district.district_id} />
+
       <div className="grid grid-cols-2 gap-3 mb-6">
         {district.population != null && (
           <StatCard
