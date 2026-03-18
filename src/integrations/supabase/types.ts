@@ -682,6 +682,45 @@ export type Database = {
         }
         Relationships: []
       }
+      election_forecast_history: {
+        Row: {
+          changed_at: string
+          cycle: number
+          district: string | null
+          forecast_id: string
+          id: string
+          new_rating: string | null
+          old_rating: string | null
+          race_type: string
+          source: string
+          state_abbr: string
+        }
+        Insert: {
+          changed_at?: string
+          cycle?: number
+          district?: string | null
+          forecast_id: string
+          id?: string
+          new_rating?: string | null
+          old_rating?: string | null
+          race_type?: string
+          source: string
+          state_abbr: string
+        }
+        Update: {
+          changed_at?: string
+          cycle?: number
+          district?: string | null
+          forecast_id?: string
+          id?: string
+          new_rating?: string | null
+          old_rating?: string | null
+          race_type?: string
+          source?: string
+          state_abbr?: string
+        }
+        Relationships: []
+      }
       election_forecasts: {
         Row: {
           created_at: string
