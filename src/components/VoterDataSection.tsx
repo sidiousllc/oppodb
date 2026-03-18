@@ -216,6 +216,30 @@ export function VoterDataSection() {
 
   return (
     <div>
+      {/* Connected integrations status */}
+      {connectedServices.length > 0 && (
+        <div className="win98-sunken bg-[hsl(var(--win98-light))] px-2 py-1 mb-2 flex items-center gap-3 text-[9px] flex-wrap">
+          <span className="font-bold">🔗 Connected:</span>
+          {connectedServices.includes("nationbuilder") && (
+            <span style={{ color: "hsl(140, 60%, 30%)" }}>🏛️ NationBuilder</span>
+          )}
+          {connectedServices.includes("van") && (
+            <span style={{ color: "hsl(140, 60%, 30%)" }}>📋 VAN</span>
+          )}
+          {connectedServices.includes("winred") && (
+            <span style={{ color: "hsl(140, 60%, 30%)" }}>🔴 WinRed</span>
+          )}
+          <a href="/profile" className="text-[8px] underline text-[hsl(var(--muted-foreground))] ml-auto">Manage</a>
+        </div>
+      )}
+      {connectedServices.length === 0 && (
+        <div className="win98-sunken bg-[hsl(var(--win98-light))] px-2 py-1 mb-2 flex items-center gap-2 text-[9px]">
+          <span className="text-[hsl(var(--muted-foreground))]">💡 Connect NationBuilder, VAN, or WinRed in</span>
+          <a href="/profile" className="underline font-bold">Profile → Integrations</a>
+          <span className="text-[hsl(var(--muted-foreground))]">for voter lookup</span>
+        </div>
+      )}
+
       {/* Source status */}
       {sources && (
         <div className="win98-sunken bg-[hsl(var(--win98-light))] px-2 py-1 mb-3 flex items-center gap-3 text-[9px] flex-wrap">
