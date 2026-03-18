@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, MapPin, Building2, ChevronDown, ChevronRight, AlertTriangle, Loader2, DollarSign, Trophy, Calendar, ExternalLink } from "lucide-react";
+import { Search, Users, MapPin, Building2, ChevronDown, ChevronRight, AlertTriangle, Loader2, DollarSign, Trophy, Calendar, ExternalLink, Vote } from "lucide-react";
 import { toast } from "sonner";
 
 const US_STATES = [
