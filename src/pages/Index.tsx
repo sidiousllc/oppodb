@@ -39,7 +39,7 @@ import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { LegislationSection } from "@/components/LegislationSection";
-import { CongressDataPanel } from "@/components/CongressDataPanel";
+
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
