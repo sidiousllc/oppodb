@@ -1581,6 +1581,7 @@ export function LegislationSection() {
           </p>
         </div>
       )}
+      </>}
     </div>
   );
 }
