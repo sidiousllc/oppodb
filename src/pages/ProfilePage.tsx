@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
+import { IntegrationSettings } from "@/components/IntegrationSettings";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -181,6 +182,11 @@ export default function ProfilePage() {
             {ssoMessage.text}
           </div>
         )}
+      </div>
+
+      {/* Voter Data Integrations */}
+      <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mt-3">
+        <IntegrationSettings />
       </div>
     </Win98PageLayout>
   );

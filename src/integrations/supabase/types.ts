@@ -1467,6 +1467,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_integrations: {
+        Row: {
+          api_key_encrypted: string
+          created_at: string
+          display_name: string | null
+          id: string
+          is_active: boolean
+          service: string
+          slug: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key_encrypted: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          service: string
+          slug?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key_encrypted?: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          service?: string
+          slug?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_mail: {
         Row: {
           body: string
