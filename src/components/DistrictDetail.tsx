@@ -3,6 +3,7 @@ import { DistrictBoundaryMap } from "@/components/DistrictBoundaryMap";
 import { CookRatingHistory } from "@/components/CookRatingHistory";
 import { CookPVIChart } from "@/components/CookPVIChart";
 import { CongressionalElectionsSection } from "@/components/CongressionalElectionsSection";
+import { MITElectionHistoryPanel } from "@/components/MITElectionHistoryPanel";
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
 import { DistrictPollingPanel } from "@/components/DistrictPollingPanel";
