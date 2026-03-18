@@ -341,6 +341,24 @@ Format responses with clear headers and bullet points. Be direct, factual, and a
           toolResult = JSON.stringify(discoverData);
         }
 
+        if (fnName === "generate_issue_subpages") {
+          const scraperUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/candidate-scraper`;
+          const subpageResp = await fetch(scraperUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: authHeader,
+            },
+            body: JSON.stringify({
+              action: "generate_subpages",
+              slug: args.slug,
+              issues: args.issues,
+            }),
+          });
+          const subpageData = await subpageResp.json();
+          toolResult = JSON.stringify(subpageData);
+        }
+
         toolCallMessages.push({
           role: "tool",
           tool_call_id: toolCall.id,
