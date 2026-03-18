@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const FTM_BASE = "https://api.followthemoney.org";
@@ -21,15 +21,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Auth check
+    // Auth check using getClaims
     const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader || "" } },
+      global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -42,28 +51,18 @@ Deno.serve(async (req) => {
     let result: any;
 
     if (action === "search") {
-      // Search contributions/candidates via the Ask Anything API
       const params = new URLSearchParams();
       params.set("APIKey", apiKey);
       params.set("mode", "json");
 
-      // State filter
       if (body.state) params.set("s", body.state);
-      // Year filter
       if (body.year) params.set("y", body.year);
-      // Candidate name grouping
       if (body.group_by === "candidate") params.set("c-t-eid", "1");
-      // Contributor grouping
       if (body.group_by === "contributor") params.set("d-eid", "1");
-      // Contributor name search
       if (body.contributor_name) params.set("d-nme", body.contributor_name);
-      // Candidate search
       if (body.candidate_name) params.set("c-t-id", body.candidate_name);
-      // Office type
       if (body.office) params.set("c-r-oc", body.office);
-      // Party
       if (body.party) params.set("c-t-p", body.party);
-      // Page
       if (body.page) params.set("p", String(body.page));
 
       const url = `${FTM_BASE}/?${params.toString()}`;
@@ -74,7 +73,6 @@ Deno.serve(async (req) => {
       result = await resp.json();
 
     } else if (action === "entity") {
-      // Get entity details
       const eid = body.eid;
       if (!eid) throw new Error("Entity ID required");
 
@@ -84,11 +82,10 @@ Deno.serve(async (req) => {
       result = await resp.json();
 
     } else if (action === "candidates") {
-      // Search for candidates in a state/year
       const params = new URLSearchParams();
       params.set("APIKey", apiKey);
       params.set("mode", "json");
-      params.set("c-t-eid", "1"); // Group by candidate career summary
+      params.set("c-t-eid", "1");
       if (body.state) params.set("s", body.state);
       if (body.year) params.set("y", body.year);
       if (body.office) params.set("c-r-oc", body.office);
@@ -101,11 +98,10 @@ Deno.serve(async (req) => {
       result = await resp.json();
 
     } else if (action === "donors") {
-      // Search for donors/contributors
       const params = new URLSearchParams();
       params.set("APIKey", apiKey);
       params.set("mode", "json");
-      params.set("d-eid", "1"); // Group by contributor
+      params.set("d-eid", "1");
       if (body.state) params.set("s", body.state);
       if (body.year) params.set("y", body.year);
       if (body.contributor_name) params.set("d-nme", body.contributor_name);
