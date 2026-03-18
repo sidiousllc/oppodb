@@ -309,22 +309,35 @@ export function ForecastComparisonPanel({ districtId }: ForecastComparisonPanelP
                     const isExpanded = expandedRace === key;
 
                     return (
-                      <tr
-                        key={key}
-                        onClick={() => setExpandedRace(isExpanded ? null : key)}
-                        className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] cursor-pointer"
-                      >
-                        <td className="px-1 py-1">
-                          {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                        </td>
-                        <td className="px-2 py-1 font-bold whitespace-nowrap">{raceLabel(first)}</td>
-                        <td className="px-2 py-1 text-center">{ratingBadge(con)}</td>
-                        {sources.map(s => (
-                          <td key={s} className="px-2 py-1 text-center">
-                            {ratingBadge(ratingsBySource[s] || null)}
+                      <Fragment key={key}>
+                        <tr
+                          onClick={() => setExpandedRace(isExpanded ? null : key)}
+                          className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] cursor-pointer"
+                        >
+                          <td className="px-1 py-1">
+                            {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                           </td>
-                        ))}
-                      </tr>
+                          <td className="px-2 py-1 font-bold whitespace-nowrap">{raceLabel(first)}</td>
+                          <td className="px-2 py-1 text-center">{ratingBadge(con)}</td>
+                          {sources.map(s => (
+                            <td key={s} className="px-2 py-1 text-center">
+                              {ratingBadge(ratingsBySource[s] || null)}
+                            </td>
+                          ))}
+                        </tr>
+                        {isExpanded && (
+                          <tr className="bg-[hsl(var(--win98-light))]">
+                            <td colSpan={3 + sources.length}>
+                              <ForecastHistoryTimeline
+                                raceType={first.race_type}
+                                stateAbbr={first.state_abbr}
+                                district={first.district}
+                                cycle={first.cycle}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     );
                   })}
               </tbody>
