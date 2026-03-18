@@ -210,6 +210,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
       {/* MIT Election Lab Historical Data */}
       <MITElectionHistoryPanel districtId={district.district_id} />
 
+      {/* Presidential County-Level Map */}
+      <PresidentialCountyMap stateAbbr={district.district_id.split("-")[0]} />
+
       <div className="grid grid-cols-2 gap-3 mb-6">
         {district.population != null && (
           <StatCard
