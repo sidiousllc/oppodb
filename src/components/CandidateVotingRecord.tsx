@@ -138,13 +138,54 @@ export function CandidateVotingRecord({ candidateSlug, candidateName, candidateS
     Promise.all([
       callLegiScan({ op: "getPerson", id: String(linkedPeopleId) }),
       callLegiScan({ op: "getSponsoredList", id: String(linkedPeopleId) }),
-    ]).then(([personData, sponsoredData]) => {
+    ]).then(async ([personData, sponsoredData]) => {
       if (personData?.person) setPerson(personData.person);
       const sponsored = sponsoredData?.sponsoredbills?.bills || {};
-      const billArr: SponsoredBill[] = Array.isArray(sponsored)
+      const rawBills: any[] = Array.isArray(sponsored)
         ? sponsored
         : Object.values(sponsored).filter((b: any) => b?.bill_id);
-      setSponsoredBills(billArr as SponsoredBill[]);
+
+      // getSponsoredList only returns bill_id, number, session_id — no title
+      // Fetch bill details in batches to get titles
+      const billsWithTitles: SponsoredBill[] = [];
+      const BATCH_SIZE = 10;
+      const toFetch = rawBills.slice(0, 100); // cap at 100 to avoid API limits
+
+      for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
+        const batch = toFetch.slice(i, i + BATCH_SIZE);
+        const details = await Promise.all(
+          batch.map((b) =>
+            callLegiScan({ op: "getBill", id: String(b.bill_id) }).catch(() => null)
+          )
+        );
+        for (let j = 0; j < batch.length; j++) {
+          const raw = batch[j];
+          const detail = details[j]?.bill;
+          billsWithTitles.push({
+            bill_id: raw.bill_id,
+            bill_number: raw.number || raw.bill_number || "",
+            title: detail?.title || raw.title || raw.number || "Untitled",
+            session: detail?.session
+              ? { session_id: detail.session.session_id, session_name: detail.session.session_name }
+              : raw.session_id
+                ? { session_id: raw.session_id, session_name: "" }
+                : undefined,
+          });
+        }
+      }
+
+      // Add remaining bills without fetched titles
+      for (let i = 100; i < rawBills.length; i++) {
+        const raw = rawBills[i];
+        billsWithTitles.push({
+          bill_id: raw.bill_id,
+          bill_number: raw.number || raw.bill_number || "",
+          title: raw.title || raw.number || "Untitled",
+          session: undefined,
+        });
+      }
+
+      setSponsoredBills(billsWithTitles);
       setLoadingData(false);
     }).catch(() => setLoadingData(false));
   }, [linkedPeopleId]);
