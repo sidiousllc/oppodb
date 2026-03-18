@@ -205,6 +205,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
         districtId={district.district_id}
       />
 
+      {/* Forecast Model Comparison */}
+      <ForecastComparisonPanel />
+
       {/* Election History */}
       <CongressionalElectionsSection districtId={district.district_id} />
 
