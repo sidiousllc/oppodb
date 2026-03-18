@@ -3,6 +3,7 @@ import { DistrictBoundaryMap } from "@/components/DistrictBoundaryMap";
 import { CookRatingHistory } from "@/components/CookRatingHistory";
 import { CookPVIChart } from "@/components/CookPVIChart";
 import { CongressionalElectionsSection } from "@/components/CongressionalElectionsSection";
+import { MITElectionHistoryPanel } from "@/components/MITElectionHistoryPanel";
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
 import { DistrictPollingPanel } from "@/components/DistrictPollingPanel";
@@ -205,6 +206,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
       {/* Election History */}
       <CongressionalElectionsSection districtId={district.district_id} />
 
+      {/* MIT Election Lab Historical Data */}
+      <MITElectionHistoryPanel districtId={district.district_id} />
+
       <div className="grid grid-cols-2 gap-3 mb-6">
         {district.population != null && (
           <StatCard
@@ -405,6 +409,15 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             className="text-primary underline underline-offset-2 hover:text-primary/80"
           >
             OpenElections
+          </a>
+          {" "}and the{" "}
+          <a
+            href="https://electionlab.mit.edu/data"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            MIT Election Data + Science Lab
           </a>
           .
         </p>
