@@ -80,7 +80,11 @@ function consensusRating(ratings: (string | null)[]): string | null {
 
 type RaceType = "house" | "senate" | "governor" | "all";
 
-export function ForecastComparisonPanel() {
+interface ForecastComparisonPanelProps {
+  districtId?: string; // e.g. "PA-07" — filters to that district's race only
+}
+
+export function ForecastComparisonPanel({ districtId }: ForecastComparisonPanelProps = {}) {
   const isAdmin = useIsAdmin();
   const [forecasts, setForecasts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
