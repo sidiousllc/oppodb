@@ -77,6 +77,26 @@ const PROFILE_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "generate_issue_subpages",
+      description: "Generate issue-specific research subpages for an existing candidate profile. Creates detailed sub-reports on topics like Healthcare, Abortion, Economy, Immigration, etc. Use when the user asks to create subpages, issue pages, or deep-dive research pages for a candidate.",
+      parameters: {
+        type: "object",
+        properties: {
+          slug: { type: "string", description: "The candidate's slug identifier (from search results)" },
+          issues: {
+            type: "array",
+            items: { type: "string" },
+            description: "Optional list of specific issues to generate. If omitted, generates all default issues: Healthcare, Economy & Tariffs, Abortion & Reproductive Rights, Social Security & Medicare, Immigration, Gun Policy, Climate & Energy, Education, Campaign Finance & Ethics, January 6th & Democracy",
+          },
+        },
+        required: ["slug"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 serve(async (req) => {
