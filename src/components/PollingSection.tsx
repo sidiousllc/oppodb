@@ -931,7 +931,7 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
 
   const W = 700;
   const H = 300;
-  const PAD = { top: 20, right: 50, bottom: 40, left: 45 };
+  const PAD = { top: 20, right: 80, bottom: 40, left: 45 };
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
 
