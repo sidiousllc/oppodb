@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, UserPlus, Search, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -27,7 +27,30 @@ async function streamChat({
     body: JSON.stringify({ messages }),
   });
 
-  if (!resp.ok || !resp.body) throw new Error("Failed to start stream");
+  if (!resp.ok || !resp.body) {
+    // Try to parse as JSON (non-streaming tool call response)
+    try {
+      const data = await resp.json();
+      if (data.choices?.[0]?.message?.content) {
+        onDelta(data.choices[0].message.content);
+        onDone();
+        return;
+      }
+    } catch {}
+    throw new Error("Failed to start stream");
+  }
+
+  const contentType = resp.headers.get("content-type") || "";
+  
+  // Handle non-streaming JSON response (from tool calls)
+  if (contentType.includes("application/json")) {
+    const data = await resp.json();
+    if (data.choices?.[0]?.message?.content) {
+      onDelta(data.choices[0].message.content);
+    }
+    onDone();
+    return;
+  }
 
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
@@ -60,6 +83,12 @@ async function streamChat({
   onDone();
 }
 
+const QUICK_ACTIONS = [
+  { icon: UserPlus, label: "Create profile", prompt: "Create a new candidate profile for " },
+  { icon: Search, label: "Find candidates", prompt: "Discover candidates who need profiles at the federal level" },
+  { icon: Sparkles, label: "Update profile", prompt: "Search for and update the profile of " },
+];
+
 export function ChatPanel() {
   const { session } = useAuth();
   const [open, setOpen] = useState(false);
@@ -74,10 +103,11 @@ export function ChatPanel() {
     }
   }, [messages]);
 
-  const send = async () => {
-    if (!input.trim() || loading) return;
-    const userMsg: Msg = { role: "user", content: input.trim() };
-    setInput("");
+  const send = async (overrideInput?: string) => {
+    const text = overrideInput || input.trim();
+    if (!text || loading) return;
+    const userMsg: Msg = { role: "user", content: text };
+    if (!overrideInput) setInput("");
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
 
@@ -134,10 +164,24 @@ export function ChatPanel() {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
-          <div className="text-center text-sm text-muted-foreground pt-8">
+          <div className="text-center text-sm text-muted-foreground pt-4">
             <Bot className="h-8 w-8 mx-auto mb-3 text-muted-foreground/50" />
-            <p className="font-medium">Ask me about any candidate</p>
-            <p className="mt-1 text-xs">e.g. "What are Mike Lawler's healthcare vulnerabilities?"</p>
+            <p className="font-medium">Research Assistant</p>
+            <p className="mt-1 text-xs mb-4">Search, create, and manage candidate profiles</p>
+            <div className="flex flex-col gap-2">
+              {QUICK_ACTIONS.map((action) => (
+                <button
+                  key={action.label}
+                  onClick={() => {
+                    setInput(action.prompt);
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/50 hover:bg-muted text-left text-xs transition-colors"
+                >
+                  <action.icon className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span>{action.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {messages.map((m, i) => (
@@ -175,7 +219,10 @@ export function ChatPanel() {
               <Bot className="h-3.5 w-3.5 text-primary animate-pulse" />
             </div>
             <div className="bg-muted rounded-xl px-3.5 py-2.5 text-sm text-muted-foreground">
-              Thinking...
+              <span className="inline-flex items-center gap-1">
+                <Sparkles className="h-3 w-3 animate-spin" />
+                Working on it...
+              </span>
             </div>
           </div>
         )}
@@ -191,7 +238,7 @@ export function ChatPanel() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about a candidate..."
+            placeholder="Create, edit, or search profiles..."
             className="search-input flex-1 text-sm"
             disabled={loading}
           />

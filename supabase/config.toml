@@ -41,3 +41,5 @@ project_id = "yysbtxpupmwkxovgkama"
     verify_jwt = false
   [functions.integration-proxy]
     verify_jwt = false
+  [functions.candidate-scraper]
+    verify_jwt = false
