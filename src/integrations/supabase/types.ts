@@ -1548,6 +1548,84 @@ export type Database = {
         }
         Relationships: []
       }
+      winred_donations: {
+        Row: {
+          amount: number
+          candidate_name: string | null
+          committee_name: string | null
+          created_at: string
+          donor_address: string | null
+          donor_city: string | null
+          donor_email: string | null
+          donor_employer: string | null
+          donor_first_name: string | null
+          donor_last_name: string | null
+          donor_occupation: string | null
+          donor_phone: string | null
+          donor_state: string | null
+          donor_zip: string | null
+          id: string
+          page_name: string | null
+          page_slug: string | null
+          raw_data: Json | null
+          recurring: boolean | null
+          refunded: boolean | null
+          transaction_date: string | null
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          candidate_name?: string | null
+          committee_name?: string | null
+          created_at?: string
+          donor_address?: string | null
+          donor_city?: string | null
+          donor_email?: string | null
+          donor_employer?: string | null
+          donor_first_name?: string | null
+          donor_last_name?: string | null
+          donor_occupation?: string | null
+          donor_phone?: string | null
+          donor_state?: string | null
+          donor_zip?: string | null
+          id?: string
+          page_name?: string | null
+          page_slug?: string | null
+          raw_data?: Json | null
+          recurring?: boolean | null
+          refunded?: boolean | null
+          transaction_date?: string | null
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          candidate_name?: string | null
+          committee_name?: string | null
+          created_at?: string
+          donor_address?: string | null
+          donor_city?: string | null
+          donor_email?: string | null
+          donor_employer?: string | null
+          donor_first_name?: string | null
+          donor_last_name?: string | null
+          donor_occupation?: string | null
+          donor_phone?: string | null
+          donor_state?: string | null
+          donor_zip?: string | null
+          id?: string
+          page_name?: string | null
+          page_slug?: string | null
+          raw_data?: Json | null
+          recurring?: boolean | null
+          refunded?: boolean | null
+          transaction_date?: string | null
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

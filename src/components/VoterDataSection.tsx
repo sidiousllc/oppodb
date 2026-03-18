@@ -11,8 +11,9 @@ const US_STATES = [
 
 import { MITElectionTab } from "@/components/MITElectionTab";
 import { FollowTheMoneyPanel } from "@/components/FollowTheMoneyPanel";
+import { WinRedPanel } from "@/components/WinRedPanel";
 
-type SearchType = "name" | "address" | "district" | "races" | "election_history" | "ftm";
+type SearchType = "name" | "address" | "district" | "races" | "election_history" | "ftm" | "winred";
 
 interface VoterRecord {
   source: string;
@@ -195,6 +196,7 @@ export function VoterDataSection() {
     { id: "races", label: "Live Races", icon: Trophy },
     { id: "election_history", label: "Election History", icon: Vote },
     { id: "ftm", label: "State Finance", icon: DollarSign },
+    { id: "winred", label: "WinRed", icon: DollarSign },
   ];
 
   return (
@@ -256,7 +258,7 @@ export function VoterDataSection() {
         ))}
       </div>
 
-      {searchType !== "election_history" && <>
+      {searchType !== "election_history" && searchType !== "ftm" && searchType !== "winred" && <>
       {/* Search form */}
       <div className="win98-sunken bg-white p-3 mb-3">
         {searchType === "name" && (
@@ -612,6 +614,9 @@ export function VoterDataSection() {
 
       {/* FollowTheMoney tab */}
       {searchType === "ftm" && <FollowTheMoneyPanel embedded />}
+
+      {/* WinRed tab */}
+      {searchType === "winred" && <WinRedPanel embedded />}
     </div>
   );
 }
