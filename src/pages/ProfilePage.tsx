@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
+import { IntegrationSettings } from "@/components/IntegrationSettings";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
