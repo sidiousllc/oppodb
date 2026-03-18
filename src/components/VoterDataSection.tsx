@@ -196,6 +196,7 @@ export function VoterDataSection() {
     { id: "races", label: "Live Races", icon: Trophy },
     { id: "election_history", label: "Election History", icon: Vote },
     { id: "ftm", label: "State Finance", icon: DollarSign },
+    { id: "winred", label: "WinRed", icon: DollarSign },
   ];
 
   return (
