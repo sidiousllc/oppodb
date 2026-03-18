@@ -410,6 +410,15 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
           >
             OpenElections
           </a>
+          {" "}and the{" "}
+          <a
+            href="https://electionlab.mit.edu/data"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            MIT Election Data + Science Lab
+          </a>
           .
         </p>
       </div>
