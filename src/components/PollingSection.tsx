@@ -931,7 +931,7 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
 
   const W = 700;
   const H = 300;
-  const PAD = { top: 20, right: 50, bottom: 40, left: 45 };
+  const PAD = { top: 20, right: 80, bottom: 40, left: 45 };
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
 
@@ -1011,8 +1011,8 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
           ))}
         </div>
         {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
-        <div className="overflow-x-auto" style={{ minWidth: 500 }}>
-          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 280 }} onMouseLeave={() => setHovered(null)}>
+        <div className="w-full">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet" onMouseLeave={() => setHovered(null)}>
             {yTicks.map((v) => (
               <g key={v}>
                 <line x1={PAD.left} x2={W - PAD.right} y1={valToY(v)} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "3,3"} />
