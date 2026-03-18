@@ -77,6 +77,26 @@ const PROFILE_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "generate_issue_subpages",
+      description: "Generate issue-specific research subpages for an existing candidate profile. Creates detailed sub-reports on topics like Healthcare, Abortion, Economy, Immigration, etc. Use when the user asks to create subpages, issue pages, or deep-dive research pages for a candidate.",
+      parameters: {
+        type: "object",
+        properties: {
+          slug: { type: "string", description: "The candidate's slug identifier (from search results)" },
+          issues: {
+            type: "array",
+            items: { type: "string" },
+            description: "Optional list of specific issues to generate. If omitted, generates all default issues: Healthcare, Economy & Tariffs, Abortion & Reproductive Rights, Social Security & Medicare, Immigration, Gun Policy, Climate & Energy, Education, Campaign Finance & Ethics, January 6th & Democracy",
+          },
+        },
+        required: ["slug"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 serve(async (req) => {
@@ -151,11 +171,16 @@ Your capabilities:
 - Create new candidate profiles (auto-generated using AI + available data)
 - Edit and update existing profiles with new information
 - Discover candidates from election data who need profiles
+- Generate issue-specific subpages for candidates (e.g. Healthcare, Abortion, Economy, Immigration, etc.)
 - Answer questions about candidates and political research
 
 ${canEdit ? "This user has EDITOR permissions and can create/edit/delete profiles." : "This user has READ-ONLY access. They can search and view profiles but cannot create or edit them. If they request edits, politely explain they need admin or moderator access."}
 
 When creating or editing profiles, always use the available tools. When asked to create a profile, use the create_candidate_profile tool. When asked to edit, first search for the profile, then use edit_candidate_profile with the complete updated content.
+
+When asked to generate subpages or issue pages for a candidate, first search for the candidate to get their slug, then use generate_issue_subpages. You can specify particular issues or let it generate all default issues (Healthcare, Economy & Tariffs, Abortion & Reproductive Rights, Social Security & Medicare, Immigration, Gun Policy, Climate & Energy, Education, Campaign Finance & Ethics, January 6th & Democracy).
+
+After creating a new candidate profile, proactively suggest generating issue subpages for that candidate.
 
 Format responses with clear headers and bullet points. Be direct, factual, and analytically rigorous.`;
 
@@ -319,6 +344,24 @@ Format responses with clear headers and bullet points. Be direct, factual, and a
           });
           const discoverData = await discoverResp.json();
           toolResult = JSON.stringify(discoverData);
+        }
+
+        if (fnName === "generate_issue_subpages") {
+          const scraperUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/candidate-scraper`;
+          const subpageResp = await fetch(scraperUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: authHeader,
+            },
+            body: JSON.stringify({
+              action: "generate_subpages",
+              slug: args.slug,
+              issues: args.issues,
+            }),
+          });
+          const subpageData = await subpageResp.json();
+          toolResult = JSON.stringify(subpageData);
         }
 
         toolCallMessages.push({

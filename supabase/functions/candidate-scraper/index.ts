@@ -251,6 +251,199 @@ Start the profile with:
       });
     }
 
+    // --- GENERATE ISSUE SUBPAGES for an existing candidate ---
+    if (action === "generate_subpages") {
+      const { slug, issues } = body;
+      if (!slug) {
+        return new Response(JSON.stringify({ error: "slug is required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get the parent profile
+      const { data: parent } = await supabaseAdmin
+        .from("candidate_profiles")
+        .select("*")
+        .eq("slug", slug)
+        .eq("is_subpage", false)
+        .single();
+
+      if (!parent) {
+        return new Response(JSON.stringify({ error: "Parent profile not found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+      // Get existing subpages to avoid duplicates
+      const { data: existingSubs } = await supabaseAdmin
+        .from("candidate_profiles")
+        .select("subpage_title")
+        .eq("parent_slug", slug)
+        .eq("is_subpage", true);
+
+      const existingTitles = new Set((existingSubs || []).map((s: any) => s.subpage_title?.toLowerCase()));
+
+      const DEFAULT_ISSUES = [
+        "Healthcare",
+        "Economy & Tariffs",
+        "Abortion & Reproductive Rights",
+        "Social Security & Medicare",
+        "Immigration",
+        "Gun Policy",
+        "Climate & Energy",
+        "Education",
+        "Campaign Finance & Ethics",
+        "January 6th & Democracy",
+      ];
+
+      const issuesToGenerate = (issues || DEFAULT_ISSUES).filter(
+        (issue: string) => !existingTitles.has(issue.toLowerCase())
+      );
+
+      // Gather context data
+      let contextData = `MAIN PROFILE:\n${parent.content.substring(0, 3000)}`;
+
+      // Get voting record if available
+      const { data: member } = await supabaseAdmin
+        .from("congress_members")
+        .select("bioguide_id, name, party, state, chamber")
+        .or(`candidate_slug.eq.${slug},name.ilike.%${parent.name}%`)
+        .limit(1)
+        .maybeSingle();
+
+      if (member?.bioguide_id) {
+        const { data: votes } = await supabaseAdmin
+          .from("congress_votes")
+          .select("description, question, result, vote_date, member_votes")
+          .order("vote_date", { ascending: false })
+          .limit(50);
+
+        // Filter votes where this member participated
+        const memberVotes = (votes || []).filter((v: any) => {
+          const mv = v.member_votes as any[];
+          return mv?.some((m: any) => m.bioguide_id === member.bioguide_id);
+        }).slice(0, 20);
+
+        if (memberVotes.length > 0) {
+          contextData += `\n\nRECENT VOTES:\n${JSON.stringify(memberVotes.map((v: any) => ({
+            date: v.vote_date,
+            question: v.question,
+            result: v.result,
+            description: v.description,
+          })), null, 2)}`;
+        }
+      }
+
+      // Get campaign finance
+      const { data: finance } = await supabaseAdmin
+        .from("campaign_finance")
+        .select("*")
+        .ilike("candidate_name", `%${parent.name}%`)
+        .limit(1)
+        .maybeSingle();
+
+      if (finance) {
+        contextData += `\n\nCAMPAIGN FINANCE:\n${JSON.stringify(finance, null, 2)}`;
+      }
+
+      const generated: Array<{ issue: string; status: string; slug?: string }> = [];
+
+      for (const issue of issuesToGenerate) {
+        try {
+          const issuePrompt = `Generate a detailed issue-specific research subpage for ${parent.name} on the topic of "${issue}".
+
+${contextData}
+
+Create a thorough markdown document covering:
+1. **${parent.name}'s Position on ${issue}** - Their stated positions, campaign promises
+2. **Voting Record on ${issue}** - Key votes, bill sponsorships/co-sponsorships related to this issue
+3. **Public Statements** - Notable quotes, speeches, debate moments on this topic
+4. **Policy Proposals** - Any specific plans or legislation they've introduced
+5. **Vulnerabilities** - Contradictions, flip-flops, unpopular positions, industry ties
+6. **Comparison to Opponent** - How their position contrasts with likely Democratic challengers
+7. **Messaging Angles** - Potential attack lines and contrast points for this issue
+
+Be thorough, specific, and factual. Use bullet points and clear headers. Start with:
+# ${parent.name}: ${issue}`;
+
+          const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-3-flash-preview",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are an expert political researcher. Generate detailed, factual issue-specific research pages for candidate opposition research. Include specific votes, quotes, and policy positions."
+                },
+                { role: "user", content: issuePrompt }
+              ],
+            }),
+          });
+
+          if (!aiResponse.ok) {
+            generated.push({ issue, status: "error" });
+            const errText = await aiResponse.text();
+            console.error(`Subpage AI error for ${issue}:`, aiResponse.status, errText);
+            continue;
+          }
+
+          const aiData = await aiResponse.json();
+          const content = aiData.choices?.[0]?.message?.content || "";
+
+          if (!content) {
+            generated.push({ issue, status: "empty" });
+            continue;
+          }
+
+          const issueSlug = `${slug}/${issue.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
+
+          const { error: saveErr } = await supabaseAdmin
+            .from("candidate_profiles")
+            .upsert({
+              name: parent.name,
+              slug: issueSlug,
+              content,
+              github_path: `candidates/${issueSlug}.md`,
+              is_subpage: true,
+              parent_slug: slug,
+              subpage_title: issue,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: "slug" });
+
+          if (saveErr) {
+            generated.push({ issue, status: "save_error" });
+            console.error(`Save error for ${issue}:`, saveErr);
+          } else {
+            generated.push({ issue, status: "created", slug: issueSlug });
+            console.log(`Subpage created: ${issueSlug}`);
+          }
+
+          // Rate limit delay
+          await new Promise((r) => setTimeout(r, 1500));
+        } catch (e) {
+          generated.push({ issue, status: "error" });
+          console.error(`Subpage error for ${issue}:`, e);
+        }
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        candidate: parent.name,
+        parent_slug: slug,
+        subpages: generated,
+        skipped: issues ? [] : DEFAULT_ISSUES.filter((i: string) => existingTitles.has(i.toLowerCase())),
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // --- BATCH SCRAPE: Discover and generate profiles for multiple candidates ---
     if (action === "batch_discover") {
       const { level, state: targetState } = body;
