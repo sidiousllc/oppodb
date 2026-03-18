@@ -614,6 +614,9 @@ export function VoterDataSection() {
 
       {/* FollowTheMoney tab */}
       {searchType === "ftm" && <FollowTheMoneyPanel embedded />}
+
+      {/* WinRed tab */}
+      {searchType === "winred" && <WinRedPanel embedded />}
     </div>
   );
 }
