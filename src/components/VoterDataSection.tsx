@@ -10,8 +10,9 @@ const US_STATES = [
 ];
 
 import { MITElectionTab } from "@/components/MITElectionTab";
+import { FollowTheMoneyPanel } from "@/components/FollowTheMoneyPanel";
 
-type SearchType = "name" | "address" | "district" | "races" | "election_history";
+type SearchType = "name" | "address" | "district" | "races" | "election_history" | "ftm";
 
 interface VoterRecord {
   source: string;
@@ -193,6 +194,7 @@ export function VoterDataSection() {
     { id: "district", label: "District", icon: Building2 },
     { id: "races", label: "Live Races", icon: Trophy },
     { id: "election_history", label: "Election History", icon: Vote },
+    { id: "ftm", label: "State Finance", icon: DollarSign },
   ];
 
   return (
@@ -607,6 +609,9 @@ export function VoterDataSection() {
 
       {/* Election History tab */}
       {searchType === "election_history" && <MITElectionTab />}
+
+      {/* FollowTheMoney tab */}
+      {searchType === "ftm" && <FollowTheMoneyPanel embedded />}
     </div>
   );
 }

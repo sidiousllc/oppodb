@@ -12,6 +12,7 @@ import { CampaignFinancePanel } from "@/components/CampaignFinancePanel";
 import { CandidatePollingPanel } from "@/components/CandidatePollingPanel";
 import { CandidateVotingRecord } from "@/components/CandidateVotingRecord";
 import { CandidateCongressPanel } from "@/components/CandidateCongressPanel";
+import { FollowTheMoneyPanel } from "@/components/FollowTheMoneyPanel";
 
 interface CandidateDetailProps {
   candidate: Candidate;
@@ -264,6 +265,9 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
 
       {/* Campaign Finance */}
       <CampaignFinancePanel candidateSlug={candidate.slug} />
+
+      {/* State Finance (FollowTheMoney) */}
+      <FollowTheMoneyPanel embedded={false} />
 
       {/* Version History */}
       {githubPath && (
