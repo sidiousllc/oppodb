@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, MapPin, Building2, ChevronDown, ChevronRight, AlertTriangle, Loader2, DollarSign, Trophy, Calendar, ExternalLink } from "lucide-react";
+import { Search, Users, MapPin, Building2, ChevronDown, ChevronRight, AlertTriangle, Loader2, DollarSign, Trophy, Calendar, ExternalLink, Vote } from "lucide-react";
 import { toast } from "sonner";
 
 const US_STATES = [
@@ -9,7 +9,9 @@ const US_STATES = [
   "NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
 ];
 
-type SearchType = "name" | "address" | "district" | "races";
+import { MITElectionTab } from "@/components/MITElectionTab";
+
+type SearchType = "name" | "address" | "district" | "races" | "election_history";
 
 interface VoterRecord {
   source: string;
@@ -190,6 +192,7 @@ export function VoterDataSection() {
     { id: "address", label: "Address", icon: MapPin },
     { id: "district", label: "District", icon: Building2 },
     { id: "races", label: "Live Races", icon: Trophy },
+    { id: "election_history", label: "Election History", icon: Vote },
   ];
 
   return (
@@ -251,6 +254,7 @@ export function VoterDataSection() {
         ))}
       </div>
 
+      {searchType !== "election_history" && <>
       {/* Search form */}
       <div className="win98-sunken bg-white p-3 mb-3">
         {searchType === "name" && (
@@ -599,6 +603,10 @@ export function VoterDataSection() {
           </p>
         </div>
       )}
+      </>}
+
+      {/* Election History tab */}
+      {searchType === "election_history" && <MITElectionTab />}
     </div>
   );
 }
