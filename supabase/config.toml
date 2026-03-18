@@ -43,3 +43,5 @@ project_id = "yysbtxpupmwkxovgkama"
     verify_jwt = false
   [functions.candidate-scraper]
     verify_jwt = false
+  [functions.forecast-sync]
+    verify_jwt = false

@@ -5,6 +5,7 @@ import { getCurrentPVI, formatPVI, getPVIColor } from "@/data/cookPVI";
 import { candidates } from "@/data/candidates";
 import { magaFiles } from "@/data/magaFiles";
 import { BarChart3, TrendingDown, TrendingUp, Minus, MapPin, Users, AlertTriangle, FileText, Compass, Scale } from "lucide-react";
+import { ForecastComparisonPanel } from "@/components/ForecastComparisonPanel";
 
 interface DashboardProps {
   onNavigateSection: (section: string, slug?: string) => void;
@@ -130,6 +131,9 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
           </button>
         ))}
       </div>
+
+      {/* ═══ FORECAST MODEL COMPARISON ═══ */}
+      <ForecastComparisonPanel />
 
       {/* ═══ POLLING DATA SECTION ═══ */}
       <div>

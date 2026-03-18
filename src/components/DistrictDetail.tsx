@@ -3,6 +3,7 @@ import { DistrictBoundaryMap } from "@/components/DistrictBoundaryMap";
 import { CookRatingHistory } from "@/components/CookRatingHistory";
 import { CookPVIChart } from "@/components/CookPVIChart";
 import { CongressionalElectionsSection } from "@/components/CongressionalElectionsSection";
+import { ForecastComparisonPanel } from "@/components/ForecastComparisonPanel";
 import { MITElectionHistoryPanel } from "@/components/MITElectionHistoryPanel";
 import { PresidentialCountyMap } from "@/components/PresidentialCountyMap";
 import { getCandidatesForDistrict } from "@/data/candidateDistricts";
@@ -203,6 +204,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
         stateAbbr={district.district_id.split("-")[0]}
         districtId={district.district_id}
       />
+
+      {/* Forecast Model Comparison */}
+      <ForecastComparisonPanel />
 
       {/* Election History */}
       <CongressionalElectionsSection districtId={district.district_id} />
