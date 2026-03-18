@@ -979,7 +979,7 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
 
   return (
     <AnimatedCard>
-      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm text-left py-0 px-0">
+      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm text-left h-full">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">Favorability Tracking</h3>
