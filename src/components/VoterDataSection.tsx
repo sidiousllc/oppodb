@@ -9,7 +9,9 @@ const US_STATES = [
   "NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
 ];
 
-type SearchType = "name" | "address" | "district" | "races";
+import { MITElectionTab } from "@/components/MITElectionTab";
+
+type SearchType = "name" | "address" | "district" | "races" | "election_history";
 
 interface VoterRecord {
   source: string;
