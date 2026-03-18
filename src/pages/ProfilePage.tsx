@@ -183,6 +183,11 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Voter Data Integrations */}
+      <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mt-3">
+        <IntegrationSettings />
+      </div>
     </Win98PageLayout>
   );
 }
