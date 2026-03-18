@@ -132,6 +132,9 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
         ))}
       </div>
 
+      {/* ═══ FORECAST MODEL COMPARISON ═══ */}
+      <ForecastComparisonPanel />
+
       {/* ═══ POLLING DATA SECTION ═══ */}
       <div>
         <div className="flex items-center gap-2 mb-2">
