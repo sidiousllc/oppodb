@@ -192,6 +192,7 @@ export function VoterDataSection() {
     { id: "address", label: "Address", icon: MapPin },
     { id: "district", label: "District", icon: Building2 },
     { id: "races", label: "Live Races", icon: Trophy },
+    { id: "election_history", label: "Election History", icon: Vote },
   ];
 
   return (
