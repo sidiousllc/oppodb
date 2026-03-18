@@ -27,7 +27,7 @@ function useInView(options?: IntersectionObserverInit) {
 
 // ─── AnimatedCard wrapper ───────────────────────────────────────────────────
 
-function AnimatedCard({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+function AnimatedCard({ children, className = "", delay = 0 }: {children: React.ReactNode;className?: string;delay?: number;}) {
   const { ref, inView } = useInView();
   return (
     <div
@@ -36,12 +36,12 @@ function AnimatedCard({ children, className = "", delay = 0 }: { children: React
       style={{
         opacity: inView ? 1 : 0,
         transform: inView ? "translateY(0)" : "translateY(20px)",
-        transitionDelay: `${delay}ms`,
-      }}
-    >
+        transitionDelay: `${delay}ms`
+      }}>
+      
       {children}
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ function marginColor(margin: number | null): string {
   return "hsl(0, 70%, 45%)";
 }
 
-function MarginBadge({ margin }: { margin: number | null }) {
+function MarginBadge({ margin }: {margin: number | null;}) {
   if (margin === null) return null;
   const Icon = margin > 0 ? TrendingUp : margin < 0 ? TrendingDown : Minus;
   const label = margin > 0 ? `+${margin.toFixed(1)}` : margin.toFixed(1);
@@ -71,16 +71,16 @@ function MarginBadge({ margin }: { margin: number | null }) {
       className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold"
       style={{
         backgroundColor: `${marginColor(margin)}20`,
-        color: marginColor(margin),
-      }}
-    >
+        color: marginColor(margin)
+      }}>
+      
       <Icon className="h-3 w-3" />
       {label}
-    </span>
-  );
+    </span>);
+
 }
 
-function ApprovalBar({ approve, disapprove }: { approve: number | null; disapprove: number | null }) {
+function ApprovalBar({ approve, disapprove }: {approve: number | null;disapprove: number | null;}) {
   if (approve === null && disapprove === null) return null;
   const a = approve ?? 0;
   const d = disapprove ?? 0;
@@ -89,14 +89,14 @@ function ApprovalBar({ approve, disapprove }: { approve: number | null; disappro
     <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted">
       <div
         className="transition-all duration-300"
-        style={{ width: `${(a / total) * 100}%`, backgroundColor: "hsl(150, 55%, 45%)" }}
-      />
+        style={{ width: `${a / total * 100}%`, backgroundColor: "hsl(150, 55%, 45%)" }} />
+      
       <div
         className="transition-all duration-300"
-        style={{ width: `${(d / total) * 100}%`, backgroundColor: "hsl(0, 65%, 50%)" }}
-      />
-    </div>
-  );
+        style={{ width: `${d / total * 100}%`, backgroundColor: "hsl(0, 65%, 50%)" }} />
+      
+    </div>);
+
 }
 
 // ─── Reusable Poll Picker Panel ─────────────────────────────────────────────
@@ -108,7 +108,7 @@ export function usePollPicker(polls: PollEntry[], filterFn?: (p: PollEntry) => b
 
   const uniquePolls = useMemo(() => {
     const filtered = filterFn ? polls.filter(filterFn) : polls;
-    const seen = new Map<string, { id: string; source: string; date: string; topic: string }>();
+    const seen = new Map<string, {id: string;source: string;date: string;topic: string;}>();
     filtered.forEach((p) => {
       const key = `${p.source}|${p.date_conducted}`;
       if (!seen.has(key)) seen.set(key, { id: key, source: p.source, date: p.date_conducted, topic: p.candidate_or_topic });
@@ -124,41 +124,41 @@ export function usePollPicker(polls: PollEntry[], filterFn?: (p: PollEntry) => b
 
   const toggle = (id: string) => setSelectedIds((prev) => {
     const next = new Set(prev);
-    if (next.has(id)) next.delete(id); else next.add(id);
+    if (next.has(id)) next.delete(id);else next.add(id);
     return next;
   });
 
   return { selectedIds, setSelectedIds, showPicker, setShowPicker, isAll, uniquePolls, filteredPolls, toggle };
 }
 
-export function PollPickerButton({ showPicker, setShowPicker, isAll, count }: { showPicker: boolean; setShowPicker: (v: boolean) => void; isAll: boolean; count: number }) {
+export function PollPickerButton({ showPicker, setShowPicker, isAll, count }: {showPicker: boolean;setShowPicker: (v: boolean) => void;isAll: boolean;count: number;}) {
   return (
     <button
       onClick={() => setShowPicker(!showPicker)}
       className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors flex items-center gap-1 ${
-        showPicker ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-      }`}
-    >
+      showPicker ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+      }>
+      
       <Filter className="h-3 w-3" />
       Polls {!isAll && `(${count})`}
-    </button>
-  );
+    </button>);
+
 }
 
-export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, setSelectedIds }: {
-  uniquePolls: { id: string; source: string; date: string; topic: string }[];
-  selectedIds: Set<string>;
-  isAll: boolean;
-  toggle: (id: string) => void;
-  setSelectedIds: (v: Set<string>) => void;
-}) {
+export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, setSelectedIds
+
+
+
+
+
+}: {uniquePolls: {id: string;source: string;date: string;topic: string;}[];selectedIds: Set<string>;isAll: boolean;toggle: (id: string) => void;setSelectedIds: (v: Set<string>) => void;}) {
   return (
     <div className="mb-3 rounded-lg border border-border bg-muted/30 p-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Polls</span>
         <div className="flex gap-2">
           <button onClick={() => setSelectedIds(new Set())} className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors ${isAll ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>All</button>
-          <button onClick={() => setSelectedIds(new Set(uniquePolls.map(p => p.id)))} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Select All</button>
+          <button onClick={() => setSelectedIds(new Set(uniquePolls.map((p) => p.id)))} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Select All</button>
           <button onClick={() => setSelectedIds(new Set())} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Clear</button>
         </div>
       </div>
@@ -172,17 +172,17 @@ export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, se
                 <span className="font-semibold text-foreground">{getSourceInfo(poll.source).name}</span>
                 <span className="text-muted-foreground ml-1">{formatDate(poll.date)}</span>
               </div>
-            </label>
-          );
+            </label>);
+
         })}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
-function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
+function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
   const { ref, inView } = useInView();
-  const [hoveredPoint, setHoveredPoint] = useState<{ source: string; date: string; value: number; x: number; y: number } | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<{source: string;date: string;value: number;x: number;y: number;} | null>(null);
   const [hiddenSources, setHiddenSources] = useState<Set<string>>(new Set());
   const [zoomMonths, setZoomMonths] = useState<number>(0);
   const [showFilters, setShowFilters] = useState(false);
@@ -192,12 +192,12 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
 
   const approvalBySource = useMemo(() => {
     const map = new Map<string, PollEntry[]>();
-    picker.filteredPolls
-      .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval")
-      .forEach((p) => {
-        if (!map.has(p.source)) map.set(p.source, []);
-        map.get(p.source)!.push(p);
-      });
+    picker.filteredPolls.
+    filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval").
+    forEach((p) => {
+      if (!map.has(p.source)) map.set(p.source, []);
+      map.get(p.source)!.push(p);
+    });
     map.forEach((v) => v.sort((a, b) => a.date_conducted.localeCompare(b.date_conducted)));
     return map;
   }, [picker.filteredPolls]);
@@ -205,9 +205,9 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   const allSourceIds = useMemo(() => Array.from(approvalBySource.keys()).sort(), [approvalBySource]);
 
   const toggleSource = useCallback((id: string) => {
-    setHiddenSources(prev => {
+    setHiddenSources((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);else next.add(id);
       return next;
     });
   }, []);
@@ -227,10 +227,10 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   if (approvalBySource.size === 0) return null;
 
   // Date range
-  const allDates = picker.filteredPolls
-    .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval")
-    .map((p) => p.date_conducted)
-    .sort();
+  const allDates = picker.filteredPolls.
+  filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval").
+  map((p) => p.date_conducted).
+  sort();
   const absoluteMin = allDates[0];
   const absoluteMax = allDates[allDates.length - 1];
 
@@ -262,13 +262,13 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   const maxVal = Math.ceil(Math.max(...allVals) + 3);
   const valRange = maxVal - minVal || 1;
 
-  const dateToX = (d: string) => PAD.left + ((new Date(d).getTime() - new Date(minDate).getTime()) / dateRange) * plotW;
-  const valToY = (v: number) => PAD.top + plotH - ((v - minVal) / valRange) * plotH;
+  const dateToX = (d: string) => PAD.left + (new Date(d).getTime() - new Date(minDate).getTime()) / dateRange * plotW;
+  const valToY = (v: number) => PAD.top + plotH - (v - minVal) / valRange * plotH;
 
   const yTicks: number[] = [];
   for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) yTicks.push(v);
 
-  const xTicks: { date: string; label: string }[] = [];
+  const xTicks: {date: string;label: string;}[] = [];
   const start = new Date(minDate);
   const end = new Date(maxDate);
   const cur = new Date(start.getFullYear(), start.getMonth(), 1);
@@ -279,12 +279,12 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
   }
 
   const zoomOptions = [
-    { label: "All", value: 0 },
-    { label: "3M", value: 3 },
-    { label: "6M", value: 6 },
-    { label: "1Y", value: 12 },
-    { label: "2Y", value: 24 },
-  ];
+  { label: "All", value: 0 },
+  { label: "3M", value: 3 },
+  { label: "6M", value: 6 },
+  { label: "1Y", value: 12 },
+  { label: "2Y", value: 24 }];
+
 
   return (
     <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -300,24 +300,24 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
         <div className="flex items-center gap-1 flex-wrap">
           <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
           {/* Zoom buttons */}
-          {zoomOptions.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setZoomMonths(opt.value)}
-              className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
-                zoomMonths === opt.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
-              }`}
-            >
+          {zoomOptions.map((opt) =>
+          <button
+            key={opt.value}
+            onClick={() => setZoomMonths(opt.value)}
+            className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
+            zoomMonths === opt.value ?
+            "bg-primary text-primary-foreground" :
+            "bg-muted text-muted-foreground hover:bg-accent"}`
+            }>
+            
               {opt.label}
             </button>
-          ))}
+          )}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`ml-1 p-1 rounded transition-colors ${showFilters ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
-            title="Filter sources"
-          >
+            title="Filter sources">
+            
             <Filter className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -327,8 +327,8 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
       {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
 
       {/* Source filter panel */}
-      {showFilters && (
-        <div className="mb-3 p-2 rounded-lg border border-border bg-muted/30">
+      {showFilters &&
+      <div className="mb-3 p-2 rounded-lg border border-border bg-muted/30">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] font-bold text-muted-foreground">FILTER SOURCES</span>
             <button onClick={selectAll} className="text-[9px] text-primary hover:underline">Select All</button>
@@ -336,86 +336,86 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
             <span className="text-[9px] text-muted-foreground ml-auto">{visibleSources.size}/{allSourceIds.length} visible</span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {allSourceIds.map(id => {
-              const src = getSourceInfo(id);
-              const active = !hiddenSources.has(id);
-              return (
-                <button
-                  key={id}
-                  onClick={() => toggleSource(id)}
-                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all ${
-                    active ? "bg-card border border-border shadow-sm" : "opacity-40 bg-transparent border border-transparent"
-                  }`}
-                >
+            {allSourceIds.map((id) => {
+            const src = getSourceInfo(id);
+            const active = !hiddenSources.has(id);
+            return (
+              <button
+                key={id}
+                onClick={() => toggleSource(id)}
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all ${
+                active ? "bg-card border border-border shadow-sm" : "opacity-40 bg-transparent border border-transparent"}`
+                }>
+                
                   <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
                   {src.name}
-                </button>
-              );
-            })}
+                </button>);
+
+          })}
           </div>
         </div>
-      )}
+      }
 
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 320 }}>
-          {yTicks.map((v) => (
-            <g key={v}>
+          {yTicks.map((v) =>
+          <g key={v}>
               <line x1={PAD.left} y1={valToY(v)} x2={W - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} />
               <text x={PAD.left - 6} y={valToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
             </g>
-          ))}
-          {minVal < 50 && maxVal > 50 && (
-            <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.5} />
           )}
-          {xTicks.map((t) => (
-            <text key={t.date} x={dateToX(t.date)} y={H - 8} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">{t.label}</text>
-          ))}
+          {minVal < 50 && maxVal > 50 &&
+          <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.5} />
+          }
+          {xTicks.map((t) =>
+          <text key={t.date} x={dateToX(t.date)} y={H - 8} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">{t.label}</text>
+          )}
           {Array.from(visibleSources.entries()).map(([sourceId, sourcePolls]) => {
             const src = getSourceInfo(sourceId);
             const color = `hsl(${src.color})`;
-            const points = sourcePolls
-              .filter((p) => p.approve_pct !== null && p.date_conducted >= minDate)
-              .map((p) => ({ x: dateToX(p.date_conducted), y: valToY(p.approve_pct!), date: p.date_conducted, val: p.approve_pct! }));
+            const points = sourcePolls.
+            filter((p) => p.approve_pct !== null && p.date_conducted >= minDate).
+            map((p) => ({ x: dateToX(p.date_conducted), y: valToY(p.approve_pct!), date: p.date_conducted, val: p.approve_pct! }));
             if (points.length < 2) return null;
             const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
             return (
               <g key={sourceId}>
                 <path d={pathD} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.8}
-                  style={{
-                    strokeDasharray: inView ? "none" : "2000",
-                    strokeDashoffset: inView ? 0 : 2000,
-                    transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)",
-                  }}
-                />
-                {points.map((p, i) => (
-                  <circle
-                    key={i}
-                    cx={p.x}
-                    cy={p.y}
-                    r={hoveredPoint?.source === sourceId && hoveredPoint?.date === p.date ? 5 : 3}
-                    fill={color}
-                    stroke="hsl(var(--card))"
-                    strokeWidth={1.5}
-                    style={{ cursor: "pointer", opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${1000 + i * 100}ms` }}
-                    onMouseEnter={() => setHoveredPoint({ source: sourceId, date: p.date, value: p.val, x: p.x, y: p.y })}
-                    onMouseLeave={() => setHoveredPoint(null)}
-                  />
-                ))}
-              </g>
-            );
+                style={{
+                  strokeDasharray: inView ? "none" : "2000",
+                  strokeDashoffset: inView ? 0 : 2000,
+                  transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)"
+                }} />
+                
+                {points.map((p, i) =>
+                <circle
+                  key={i}
+                  cx={p.x}
+                  cy={p.y}
+                  r={hoveredPoint?.source === sourceId && hoveredPoint?.date === p.date ? 5 : 3}
+                  fill={color}
+                  stroke="hsl(var(--card))"
+                  strokeWidth={1.5}
+                  style={{ cursor: "pointer", opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${1000 + i * 100}ms` }}
+                  onMouseEnter={() => setHoveredPoint({ source: sourceId, date: p.date, value: p.val, x: p.x, y: p.y })}
+                  onMouseLeave={() => setHoveredPoint(null)} />
+
+                )}
+              </g>);
+
           })}
-          {hoveredPoint && (
-            <g>
+          {hoveredPoint &&
+          <g>
               <rect
-                x={hoveredPoint.x + 10}
-                y={hoveredPoint.y - 28}
-                width={120}
-                height={32}
-                rx={6}
-                fill="hsl(var(--popover))"
-                stroke="hsl(var(--border))"
-                strokeWidth={1}
-              />
+              x={hoveredPoint.x + 10}
+              y={hoveredPoint.y - 28}
+              width={120}
+              height={32}
+              rx={6}
+              fill="hsl(var(--popover))"
+              stroke="hsl(var(--border))"
+              strokeWidth={1} />
+            
               <text x={hoveredPoint.x + 18} y={hoveredPoint.y - 14} fontSize={10} fontWeight="600" fill="hsl(var(--foreground))">
                 {getSourceInfo(hoveredPoint.source).name}
               </text>
@@ -423,7 +423,7 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
                 {hoveredPoint.value}% · {formatDateShort(hoveredPoint.date)}
               </text>
             </g>
-          )}
+          }
         </svg>
       </div>
       {/* Legend */}
@@ -434,17 +434,17 @@ function MultiSourceTrendChart({ polls }: { polls: PollEntry[] }) {
             <div key={sourceId} className="flex items-center gap-1.5">
               <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(${src.color})` }} />
               <span className="text-[10px] font-medium text-muted-foreground">{src.name}</span>
-            </div>
-          );
+            </div>);
+
         })}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Source Comparison Dot Plot ──────────────────────────────────────────────
 
-function SourceDotPlot({ latestBySource }: { latestBySource: PollEntry[] }) {
+function SourceDotPlot({ latestBySource }: {latestBySource: PollEntry[];}) {
   if (latestBySource.length === 0) return null;
 
   const sorted = [...latestBySource].sort((a, b) => (b.approve_pct ?? 0) - (a.approve_pct ?? 0));
@@ -457,7 +457,7 @@ function SourceDotPlot({ latestBySource }: { latestBySource: PollEntry[] }) {
   const minPct = 30;
   const maxPct = 55;
   const range = maxPct - minPct;
-  const pctToX = (v: number) => LEFT + ((v - minPct) / range) * plotW;
+  const pctToX = (v: number) => LEFT + (v - minPct) / range * plotW;
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -470,12 +470,12 @@ function SourceDotPlot({ latestBySource }: { latestBySource: PollEntry[] }) {
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[400px]">
           {/* Grid lines */}
-          {[35, 40, 45, 50].map((v) => (
-            <g key={v}>
+          {[35, 40, 45, 50].map((v) =>
+          <g key={v}>
               <line x1={pctToX(v)} y1={15} x2={pctToX(v)} y2={H - 20} stroke="hsl(var(--border))" strokeWidth={0.5} />
               <text x={pctToX(v)} y={H - 5} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
             </g>
-          ))}
+          )}
           {/* 50% line */}
           <line x1={pctToX(50)} y1={15} x2={pctToX(50)} y2={H - 20} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
           {sorted.map((poll, i) => {
@@ -501,8 +501,8 @@ function SourceDotPlot({ latestBySource }: { latestBySource: PollEntry[] }) {
                 <circle cx={disapproveX} cy={y} r={6} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={2} />
                 {/* Color indicator */}
                 <rect x={4} y={y - 5} width={10} height={10} rx={2} fill={color} />
-              </g>
-            );
+              </g>);
+
           })}
         </svg>
       </div>
@@ -510,13 +510,13 @@ function SourceDotPlot({ latestBySource }: { latestBySource: PollEntry[] }) {
         <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Approve</span>
         <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Disapprove</span>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Generic Ballot Comparison Chart ────────────────────────────────────────
 
-function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
+function GenericBallotChart({ polls }: {polls: PollEntry[];}) {
   const { ref, inView } = useInView();
   const ballotFilter = useCallback((p: PollEntry) => p.poll_type === "generic_ballot", []);
   const picker = usePollPicker(polls, ballotFilter);
@@ -534,8 +534,8 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
   // Cross-source average
   const getDem = (p: PollEntry) => p.favor_pct ?? p.approve_pct ?? 0;
   const getRep = (p: PollEntry) => p.oppose_pct ?? p.disapprove_pct ?? 0;
-  const avgDem = Math.round((entries.reduce((s, p) => s + getDem(p), 0) / entries.length) * 10) / 10;
-  const avgRep = Math.round((entries.reduce((s, p) => s + getRep(p), 0) / entries.length) * 10) / 10;
+  const avgDem = Math.round(entries.reduce((s, p) => s + getDem(p), 0) / entries.length * 10) / 10;
+  const avgRep = Math.round(entries.reduce((s, p) => s + getRep(p), 0) / entries.length * 10) / 10;
   const avgMargin = Math.round((avgDem - avgRep) * 10) / 10;
   const avgTotal = avgDem + avgRep || 100;
 
@@ -566,14 +566,14 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
         <div className="flex h-6 w-full overflow-hidden rounded-md bg-muted">
           <div
             className="flex items-center justify-end pr-2 transition-all duration-1000"
-            style={{ width: inView ? `${(avgDem / avgTotal) * 100}%` : "0%", backgroundColor: "hsl(210, 80%, 50%)" }}
-          >
+            style={{ width: inView ? `${avgDem / avgTotal * 100}%` : "0%", backgroundColor: "hsl(210, 80%, 50%)" }}>
+            
             <span className="text-[10px] font-bold text-white">{avgDem}%</span>
           </div>
           <div
             className="flex items-center justify-start pl-2 transition-all duration-1000"
-            style={{ width: inView ? `${(avgRep / avgTotal) * 100}%` : "0%", backgroundColor: "hsl(0, 75%, 50%)" }}
-          >
+            style={{ width: inView ? `${avgRep / avgTotal * 100}%` : "0%", backgroundColor: "hsl(0, 75%, 50%)" }}>
+            
             <span className="text-[10px] font-bold text-white">{avgRep}%</span>
           </div>
         </div>
@@ -604,30 +604,30 @@ function GenericBallotChart({ polls }: { polls: PollEntry[] }) {
               <div className="flex h-4 w-full overflow-hidden rounded-md bg-muted">
                 <div
                   className="flex items-center justify-end pr-1"
-                  style={{ width: inView ? `${(dem / total) * 100}%` : "0%", backgroundColor: "hsl(210, 80%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 200}ms` }}
-                >
+                  style={{ width: inView ? `${dem / total * 100}%` : "0%", backgroundColor: "hsl(210, 80%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 200}ms` }}>
+                  
                   <span className="text-[8px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 80 + 600}ms` }}>{dem}%</span>
                 </div>
                 <div
                   className="flex items-center justify-start pl-1"
-                  style={{ width: inView ? `${(rep / total) * 100}%` : "0%", backgroundColor: "hsl(0, 75%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 300}ms` }}
-                >
+                  style={{ width: inView ? `${rep / total * 100}%` : "0%", backgroundColor: "hsl(0, 75%, 50%)", transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 300}ms` }}>
+                  
                   <span className="text-[8px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 80 + 600}ms` }}>{rep}%</span>
                 </div>
               </div>
-            </div>
-          );
+            </div>);
+
         })}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Generic Ballot Trend Chart (D vs R over time) ──────────────────────────
 
-function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
+function GenericBallotTrendChart({ polls }: {polls: PollEntry[];}) {
   const { ref, inView } = useInView();
-  const [hoveredPoint, setHoveredPoint] = useState<{ label: string; x: number; y: number } | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<{label: string;x: number;y: number;} | null>(null);
 
   const ballotFilter = useCallback((p: PollEntry) => p.poll_type === "generic_ballot", []);
   const picker = usePollPicker(polls, ballotFilter);
@@ -636,7 +636,7 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
   const getRep = (p: PollEntry) => p.oppose_pct ?? p.disapprove_pct ?? 0;
 
   const monthlyAvg = useMemo(() => {
-    const buckets = new Map<string, { demSum: number; repSum: number; count: number }>();
+    const buckets = new Map<string, {demSum: number;repSum: number;count: number;}>();
     picker.filteredPolls.forEach((p) => {
       const d = new Date(p.date_conducted + "T00:00:00");
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -646,19 +646,19 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
       b.repSum += getRep(p);
       b.count += 1;
     });
-    return Array.from(buckets.entries())
-      .map(([month, b]) => ({
-        month,
-        dem: Math.round((b.demSum / b.count) * 10) / 10,
-        rep: Math.round((b.repSum / b.count) * 10) / 10,
-        margin: Math.round(((b.demSum - b.repSum) / b.count) * 10) / 10,
-      }))
-      .sort((a, b) => a.month.localeCompare(b.month));
+    return Array.from(buckets.entries()).
+    map(([month, b]) => ({
+      month,
+      dem: Math.round(b.demSum / b.count * 10) / 10,
+      rep: Math.round(b.repSum / b.count * 10) / 10,
+      margin: Math.round((b.demSum - b.repSum) / b.count * 10) / 10
+    })).
+    sort((a, b) => a.month.localeCompare(b.month));
   }, [picker.filteredPolls]);
 
   if (monthlyAvg.length < 2) return null;
 
-  const W = 700, H = 280;
+  const W = 700,H = 280;
   const PAD = { top: 20, right: 40, bottom: 40, left: 45 };
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
@@ -670,7 +670,7 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
 
   const xStep = plotW / (monthlyAvg.length - 1);
   const toX = (i: number) => PAD.left + i * xStep;
-  const toY = (v: number) => PAD.top + plotH - ((v - minVal) / valRange) * plotH;
+  const toY = (v: number) => PAD.top + plotH - (v - minVal) / valRange * plotH;
 
   const yTicks: number[] = [];
   for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) yTicks.push(v);
@@ -703,34 +703,34 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
         {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
         <div className="overflow-x-auto" style={{ minWidth: 500 }}>
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 280 }} onMouseLeave={() => setHoveredPoint(null)}>
-            {yTicks.map((v) => (
-              <g key={v}>
+            {yTicks.map((v) =>
+            <g key={v}>
                 <line x1={PAD.left} x2={W - PAD.right} y1={toY(v)} y2={toY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "3,3"} />
                 <text x={PAD.left - 6} y={toY(v) + 3} textAnchor="end" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
               </g>
-            ))}
-            {monthlyAvg.map((m, i) => (
-              <text key={m.month} x={toX(i)} y={H - PAD.bottom + 20} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">
+            )}
+            {monthlyAvg.map((m, i) =>
+            <text key={m.month} x={toX(i)} y={H - PAD.bottom + 20} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">
                 {new Date(m.month + "-01T00:00:00").toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
               </text>
-            ))}
+            )}
             <path d={areaPath} fill="hsl(270, 50%, 60%)" opacity={0.06} />
             <path d={demPath} fill="none" stroke="hsl(210, 80%, 50%)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: inView ? "0" : "2000", strokeDashoffset: inView ? "0" : "2000", transition: "stroke-dashoffset 1.5s ease" }} />
             <path d={repPath} fill="none" stroke="hsl(0, 75%, 50%)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: inView ? "0" : "2000", strokeDashoffset: inView ? "0" : "2000", transition: "stroke-dashoffset 1.5s ease 0.3s" }} />
-            {monthlyAvg.map((m, i) => (
-              <g key={m.month}>
+            {monthlyAvg.map((m, i) =>
+            <g key={m.month}>
                 <rect x={toX(i) - xStep / 2} y={PAD.top} width={xStep} height={plotH} fill="transparent"
-                  onMouseEnter={() => setHoveredPoint({ label: `${new Date(m.month + "-01").toLocaleDateString("en-US", { month: "short", year: "numeric" })}: D ${m.dem}% / R ${m.rep}% (${m.margin > 0 ? "D+" : "R+"}${Math.abs(m.margin)})`, x: toX(i), y: Math.min(toY(m.dem), toY(m.rep)) - 12 })} />
+              onMouseEnter={() => setHoveredPoint({ label: `${new Date(m.month + "-01").toLocaleDateString("en-US", { month: "short", year: "numeric" })}: D ${m.dem}% / R ${m.rep}% (${m.margin > 0 ? "D+" : "R+"}${Math.abs(m.margin)})`, x: toX(i), y: Math.min(toY(m.dem), toY(m.rep)) - 12 })} />
                 <circle cx={toX(i)} cy={toY(m.dem)} r={3} fill="hsl(210, 80%, 50%)" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${i * 60}ms` }} />
                 <circle cx={toX(i)} cy={toY(m.rep)} r={3} fill="hsl(0, 75%, 50%)" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${i * 60 + 300}ms` }} />
               </g>
-            ))}
-            {hoveredPoint && (
-              <g>
+            )}
+            {hoveredPoint &&
+            <g>
                 <rect x={Math.max(PAD.left, Math.min(hoveredPoint.x - 105, W - PAD.right - 210))} y={hoveredPoint.y - 18} width={210} height={18} rx={4} fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth={0.5} />
                 <text x={Math.max(PAD.left + 105, Math.min(hoveredPoint.x, W - PAD.right - 105))} y={hoveredPoint.y - 6} textAnchor="middle" fontSize={9} fontWeight={600} fill="hsl(var(--popover-foreground))">{hoveredPoint.label}</text>
               </g>
-            )}
+            }
             <text x={toX(monthlyAvg.length - 1) + 6} y={toY(latest.dem) + 3} fontSize={10} fontWeight={700} fill="hsl(210, 80%, 50%)">D {latest.dem}%</text>
             <text x={toX(monthlyAvg.length - 1) + 6} y={toY(latest.rep) + 3} fontSize={10} fontWeight={700} fill="hsl(0, 75%, 50%)">R {latest.rep}%</text>
           </svg>
@@ -741,13 +741,13 @@ function GenericBallotTrendChart({ polls }: { polls: PollEntry[] }) {
           <span className="ml-auto">{monthlyAvg.length} months tracked</span>
         </div>
       </div>
-    </AnimatedCard>
-  );
+    </AnimatedCard>);
+
 }
 
 // ─── Issue Polling Butterfly Chart ──────────────────────────────────────────
 
-function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
+function IssueButterflyChart({ polls }: {polls: PollEntry[];}) {
   const { ref, inView } = useInView();
   const issueFilter = useCallback((p: PollEntry) => p.poll_type === "issue", []);
   const picker = usePollPicker(polls, issueFilter);
@@ -786,8 +786,8 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
           const avgDisapprove = topicPolls.reduce((s, p) => s + (p.disapprove_pct ?? p.oppose_pct ?? 0), 0) / topicPolls.length;
           const margin = avgApprove - avgDisapprove;
           const maxBar = 80; // max percentage width
-          const approveW = (avgApprove / maxBar) * 100;
-          const disapproveW = (avgDisapprove / maxBar) * 100;
+          const approveW = avgApprove / maxBar * 100;
+          const disapproveW = avgDisapprove / maxBar * 100;
           const sourceNames = topicPolls.map((p) => getSourceInfo(p.source).name);
 
           return (
@@ -810,9 +810,9 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
                       width: inView ? `${Math.min(approveW, 100)}%` : "0%",
                       backgroundColor: "hsl(150, 55%, 45%)",
                       minWidth: inView ? 30 : 0,
-                      transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 200}ms`,
-                    }}
-                  >
+                      transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 200}ms`
+                    }}>
+                    
                     <span className="text-[10px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 80 + 600}ms` }}>{Math.round(avgApprove)}%</span>
                   </div>
                 </div>
@@ -826,36 +826,36 @@ function IssueButterflyChart({ polls }: { polls: PollEntry[] }) {
                       width: inView ? `${Math.min(disapproveW, 100)}%` : "0%",
                       backgroundColor: "hsl(0, 65%, 50%)",
                       minWidth: inView ? 30 : 0,
-                      transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 300}ms`,
-                    }}
-                  >
+                      transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${idx * 80 + 300}ms`
+                    }}>
+                    
                     <span className="text-[10px] font-bold text-white" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${idx * 80 + 600}ms` }}>{Math.round(avgDisapprove)}%</span>
                   </div>
                 </div>
               </div>
-            </div>
-          );
+            </div>);
+
         })}
       </div>
       <div className="flex items-center justify-center gap-6 mt-3 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1"><span className="inline-block h-2 w-8 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Approve / Favor</span>
         <span className="flex items-center gap-1"><span className="inline-block h-2 w-8 rounded-sm" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Disapprove / Oppose</span>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Approval Gauge ─────────────────────────────────────────────────────────
 
-function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disapprove: number; margin: number }) {
+function ApprovalGauge({ approve, disapprove, margin }: {approve: number;disapprove: number;margin: number;}) {
   const { ref, inView } = useInView();
   const radius = 60;
   const strokeW = 12;
   const cx = 80;
   const cy = 80;
   const circumference = Math.PI * radius; // half circle
-  const approveArc = inView ? (approve / 100) * circumference : 0;
-  const disapproveArc = inView ? (disapprove / 100) * circumference : 0;
+  const approveArc = inView ? approve / 100 * circumference : 0;
+  const disapproveArc = inView ? disapprove / 100 * circumference : 0;
 
   return (
     <div ref={ref} className="flex flex-col items-center">
@@ -866,8 +866,8 @@ function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disap
           fill="none"
           stroke="hsl(var(--muted))"
           strokeWidth={strokeW}
-          strokeLinecap="round"
-        />
+          strokeLinecap="round" />
+        
         {/* Approve arc (from left) */}
         <path
           d={`M ${cx - radius} ${cy} A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`}
@@ -876,8 +876,8 @@ function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disap
           strokeWidth={strokeW}
           strokeLinecap="round"
           strokeDasharray={`${approveArc} ${circumference}`}
-          style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1)" }}
-        />
+          style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1)" }} />
+        
         {/* Disapprove arc (from right) */}
         <path
           d={`M ${cx + radius} ${cy} A ${radius} ${radius} 0 0 0 ${cx - radius} ${cy}`}
@@ -886,28 +886,28 @@ function ApprovalGauge({ approve, disapprove, margin }: { approve: number; disap
           strokeWidth={strokeW}
           strokeLinecap="round"
           strokeDasharray={`${disapproveArc} ${circumference}`}
-          style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s" }}
-        />
+          style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s" }} />
+        
         {/* Center text */}
         <text x={cx} y={cy - 10} textAnchor="middle" fontSize={24} fontWeight="800" fill="hsl(var(--foreground))"
-          style={{ opacity: inView ? 1 : 0, transition: "opacity 0.5s ease 0.8s" }}>
+        style={{ opacity: inView ? 1 : 0, transition: "opacity 0.5s ease 0.8s" }}>
           {approve}%
         </text>
         <text x={cx} y={cy + 6} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))"
-          style={{ opacity: inView ? 1 : 0, transition: "opacity 0.5s ease 1s" }}>
+        style={{ opacity: inView ? 1 : 0, transition: "opacity 0.5s ease 1s" }}>
           approve
         </text>
       </svg>
       <MarginBadge margin={margin} />
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Favorability Trend Chart ───────────────────────────────────────────────
 
-function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
+function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
   const { ref, inView } = useInView();
-  const [hovered, setHovered] = useState<{ label: string; x: number; y: number } | null>(null);
+  const [hovered, setHovered] = useState<{label: string;x: number;y: number;} | null>(null);
   const [zoomMonths, setZoomMonths] = useState<number>(0);
 
   const favFilter = useCallback((p: PollEntry) => p.poll_type === "favorability", []);
@@ -926,7 +926,7 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
     const cutoffStr = cutoff.toISOString().split("T")[0];
     if (cutoffStr > allSorted[0].date_conducted) minDateStr = cutoffStr;
   }
-  const sorted = allSorted.filter(p => p.date_conducted >= minDateStr);
+  const sorted = allSorted.filter((p) => p.date_conducted >= minDateStr);
   if (sorted.length < 2) return null;
 
   const W = 700;
@@ -943,20 +943,20 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
   const valRange = maxVal - minVal || 1;
 
   const dateRange = new Date(sorted[sorted.length - 1].date_conducted).getTime() - new Date(sorted[0].date_conducted).getTime() || 1;
-  const dateToX = (d: string) => PAD.left + ((new Date(d).getTime() - new Date(sorted[0].date_conducted).getTime()) / dateRange) * plotW;
-  const valToY = (v: number) => PAD.top + plotH - ((v - minVal) / valRange) * plotH;
+  const dateToX = (d: string) => PAD.left + (new Date(d).getTime() - new Date(sorted[0].date_conducted).getTime()) / dateRange * plotW;
+  const valToY = (v: number) => PAD.top + plotH - (v - minVal) / valRange * plotH;
 
   const favPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.favor_pct ?? 0)}`).join(" ");
   const unfavPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.oppose_pct ?? 0)}`).join(" ");
-  const areaPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.favor_pct ?? 0)}`).join(" ")
-    + [...sorted].reverse().map((p) => ` L ${dateToX(p.date_conducted)} ${valToY(p.oppose_pct ?? 0)}`).join("") + " Z";
+  const areaPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.favor_pct ?? 0)}`).join(" ") +
+  [...sorted].reverse().map((p) => ` L ${dateToX(p.date_conducted)} ${valToY(p.oppose_pct ?? 0)}`).join("") + " Z";
 
   const latest = sorted[sorted.length - 1];
 
   const yTicks: number[] = [];
   for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) yTicks.push(v);
 
-  const xTicks: { date: string; label: string }[] = [];
+  const xTicks: {date: string;label: string;}[] = [];
   const s = new Date(sorted[0].date_conducted);
   const e = new Date(sorted[sorted.length - 1].date_conducted);
   const c = new Date(s.getFullYear(), s.getMonth(), 1);
@@ -970,16 +970,16 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
   }
 
   const zoomOptions = [
-    { label: "All", value: 0 },
-    { label: "3M", value: 3 },
-    { label: "6M", value: 6 },
-    { label: "1Y", value: 12 },
-    { label: "2Y", value: 24 },
-  ];
+  { label: "All", value: 0 },
+  { label: "3M", value: 3 },
+  { label: "6M", value: 6 },
+  { label: "1Y", value: 12 },
+  { label: "2Y", value: 24 }];
+
 
   return (
     <AnimatedCard>
-      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm text-left py-0 px-0">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">Favorability Tracking</h3>
@@ -996,35 +996,35 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
         </div>
         <div className="flex items-center gap-1 flex-wrap mb-3">
           <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
-          {zoomOptions.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setZoomMonths(opt.value)}
-              className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
-                zoomMonths === opt.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
-              }`}
-            >
+          {zoomOptions.map((opt) =>
+          <button
+            key={opt.value}
+            onClick={() => setZoomMonths(opt.value)}
+            className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
+            zoomMonths === opt.value ?
+            "bg-primary text-primary-foreground" :
+            "bg-muted text-muted-foreground hover:bg-accent"}`
+            }>
+            
               {opt.label}
             </button>
-          ))}
+          )}
         </div>
         {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
         <div className="w-full">
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet" onMouseLeave={() => setHovered(null)}>
-            {yTicks.map((v) => (
-              <g key={v}>
+            {yTicks.map((v) =>
+            <g key={v}>
                 <line x1={PAD.left} x2={W - PAD.right} y1={valToY(v)} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "3,3"} />
                 <text x={PAD.left - 6} y={valToY(v) + 3} textAnchor="end" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
               </g>
-            ))}
-            {minVal < 50 && maxVal > 50 && (
-              <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
             )}
-            {xTicks.map((t) => (
-              <text key={t.date} x={dateToX(t.date)} y={H - PAD.bottom + 20} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{t.label}</text>
-            ))}
+            {minVal < 50 && maxVal > 50 &&
+            <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
+            }
+            {xTicks.map((t) =>
+            <text key={t.date} x={dateToX(t.date)} y={H - PAD.bottom + 20} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{t.label}</text>
+            )}
             <path d={areaPath} fill="hsl(270, 50%, 60%)" opacity={0.06} />
             <path d={unfavPath} fill="none" stroke="hsl(0, 65%, 50%)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: inView ? "0" : "2000", strokeDashoffset: inView ? "0" : "2000", transition: "stroke-dashoffset 1.5s ease 0.3s" }} />
             <path d={favPath} fill="none" stroke="hsl(150, 55%, 45%)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: inView ? "0" : "2000", strokeDashoffset: inView ? "0" : "2000", transition: "stroke-dashoffset 1.5s ease" }} />
@@ -1037,20 +1037,20 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
                     x={x - regionW / 2} y={PAD.top} width={regionW} height={plotH} fill="transparent"
                     onMouseEnter={() => setHovered({
                       label: `${formatDate(p.date_conducted)} · ${getSourceInfo(p.source).name}: ${p.favor_pct}% fav / ${p.oppose_pct}% unfav`,
-                      x, y: Math.min(valToY(p.favor_pct ?? 0), valToY(p.oppose_pct ?? 0)) - 12,
-                    })}
-                  />
+                      x, y: Math.min(valToY(p.favor_pct ?? 0), valToY(p.oppose_pct ?? 0)) - 12
+                    })} />
+                  
                   <circle cx={x} cy={valToY(p.favor_pct ?? 0)} r={3} fill="hsl(150, 55%, 45%)" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${i * 60}ms` }} />
                   <circle cx={x} cy={valToY(p.oppose_pct ?? 0)} r={3} fill="hsl(0, 65%, 50%)" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${i * 60 + 300}ms` }} />
-                </g>
-              );
+                </g>);
+
             })}
-            {hovered && (
-              <g>
+            {hovered &&
+            <g>
                 <rect x={Math.max(PAD.left, Math.min(hovered.x - 120, W - PAD.right - 240))} y={hovered.y - 18} width={240} height={18} rx={4} fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth={0.5} />
                 <text x={Math.max(PAD.left + 120, Math.min(hovered.x, W - PAD.right - 120))} y={hovered.y - 6} textAnchor="middle" fontSize={9} fontWeight={600} fill="hsl(var(--popover-foreground))">{hovered.label}</text>
               </g>
-            )}
+            }
             <text x={W - PAD.right + 6} y={valToY(latest.favor_pct ?? 0) + 3} fontSize={10} fontWeight={700} fill="hsl(150, 55%, 45%)">Fav {latest.favor_pct}%</text>
             <text x={W - PAD.right + 6} y={valToY(latest.oppose_pct ?? 0) + 3} fontSize={10} fontWeight={700} fill="hsl(0, 65%, 50%)">Unfav {latest.oppose_pct}%</text>
           </svg>
@@ -1061,24 +1061,24 @@ function FavorabilityChart({ polls }: { polls: PollEntry[] }) {
           <span className="ml-auto">{sorted.length} data points tracked</span>
         </div>
       </div>
-    </AnimatedCard>
-  );
+    </AnimatedCard>);
+
 }
 
 // ─── Demographic Breakdown Chart ────────────────────────────────────────────
 
 const DEMO_GROUPS = [
-  { id: "party", label: "Party ID", colors: { Republican: "hsl(0, 75%, 50%)", Independent: "hsl(45, 80%, 50%)", Democrat: "hsl(210, 80%, 50%)" } },
-  { id: "age", label: "Age", colors: {} },
-  { id: "gender", label: "Gender", colors: {} },
-  { id: "race", label: "Race/Ethnicity", colors: {} },
-  { id: "education", label: "Education", colors: {} },
-  { id: "region", label: "Region", colors: {} },
-] as const;
+{ id: "party", label: "Party ID", colors: { Republican: "hsl(0, 75%, 50%)", Independent: "hsl(45, 80%, 50%)", Democrat: "hsl(210, 80%, 50%)" } },
+{ id: "age", label: "Age", colors: {} },
+{ id: "gender", label: "Gender", colors: {} },
+{ id: "race", label: "Race/Ethnicity", colors: {} },
+{ id: "education", label: "Education", colors: {} },
+{ id: "region", label: "Region", colors: {} }] as
+const;
 
-type DemoEntry = { demographic: string; approve: number; disapprove: number; margin: number; count: number };
+type DemoEntry = {demographic: string;approve: number;disapprove: number;margin: number;count: number;};
 
-function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
+function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
   const { ref, inView } = useInView();
   const [activeGroup, setActiveGroup] = useState<string>("party");
   const [selectedPollIds, setSelectedPollIds] = useState<Set<string>>(new Set()); // empty = all
@@ -1086,7 +1086,7 @@ function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
 
   // Get all polls that have demographic data
   const demoPollsList = useMemo(() => {
-    const seen = new Map<string, { id: string; source: string; date: string; topic: string }>();
+    const seen = new Map<string, {id: string;source: string;date: string;topic: string;}>();
     polls.forEach((p) => {
       const rd = p.raw_data as any;
       if (!rd || !rd.demographic || !rd.group_type) return;
@@ -1111,15 +1111,15 @@ function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
   const togglePoll = (id: string) => {
     setSelectedPollIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) next.delete(id);else
+      next.add(id);
       return next;
     });
   };
 
   // Extract polls that have demographic raw_data
   const demoData = useMemo(() => {
-    const map = new Map<string, Map<string, { totalApprove: number; totalDisapprove: number; count: number }>>();
+    const map = new Map<string, Map<string, {totalApprove: number;totalDisapprove: number;count: number;}>>();
     filteredPolls.forEach((p) => {
       const rd = p.raw_data as any;
       if (!rd || !rd.demographic || !rd.group_type) return;
@@ -1172,107 +1172,107 @@ function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
             <button
               onClick={() => setShowPollPicker(!showPollPicker)}
               className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors flex items-center gap-1 ${
-                showPollPicker
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-              }`}
-            >
+              showPollPicker ?
+              "bg-primary text-primary-foreground border-primary" :
+              "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+              }>
+              
               <Filter className="h-3 w-3" />
               Polls {!isAllSelected && `(${selectedPollIds.size})`}
             </button>
             <div className="flex flex-wrap gap-1">
-              {DEMO_GROUPS.filter((g) => demoData.has(g.id)).map((g) => (
-                <button
-                  key={g.id}
-                  onClick={() => setActiveGroup(g.id)}
-                  className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
-                    activeGroup === g.id
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-                  }`}
-                >
+              {DEMO_GROUPS.filter((g) => demoData.has(g.id)).map((g) =>
+              <button
+                key={g.id}
+                onClick={() => setActiveGroup(g.id)}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                activeGroup === g.id ?
+                "bg-foreground text-background border-foreground" :
+                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+                }>
+                
                   {g.label}
                 </button>
-              ))}
+              )}
             </div>
           </div>
         </div>
 
         {/* Poll picker */}
-        {showPollPicker && (
-          <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
+        {showPollPicker &&
+        <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Polls</span>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setSelectedPollIds(new Set())}
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors ${
-                    isAllSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
-                  }`}
-                >
+                onClick={() => setSelectedPollIds(new Set())}
+                className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors ${
+                isAllSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`
+                }>
+                
                   All
                 </button>
                 <button
-                  onClick={() => setSelectedPollIds(new Set(demoPollsList.map((p) => p.id)))}
-                  className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors"
-                >
+                onClick={() => setSelectedPollIds(new Set(demoPollsList.map((p) => p.id)))}
+                className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">
+                
                   Select All
                 </button>
                 <button
-                  onClick={() => setSelectedPollIds(new Set())}
-                  className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors"
-                >
+                onClick={() => setSelectedPollIds(new Set())}
+                className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">
+                
                   Clear
                 </button>
               </div>
             </div>
             <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 max-h-40 overflow-y-auto">
               {demoPollsList.map((poll) => {
-                const checked = isAllSelected || selectedPollIds.has(poll.id);
-                return (
-                  <label
-                    key={poll.id}
-                    className={`flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer transition-colors text-xs ${
-                      checked && !isAllSelected ? "bg-primary/10 border border-primary/30" : "bg-card border border-border hover:bg-muted/50"
-                    }`}
-                  >
+              const checked = isAllSelected || selectedPollIds.has(poll.id);
+              return (
+                <label
+                  key={poll.id}
+                  className={`flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer transition-colors text-xs ${
+                  checked && !isAllSelected ? "bg-primary/10 border border-primary/30" : "bg-card border border-border hover:bg-muted/50"}`
+                  }>
+                  
                     <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => togglePoll(poll.id)}
-                      className="accent-[hsl(var(--primary))] h-3 w-3 shrink-0"
-                    />
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => togglePoll(poll.id)}
+                    className="accent-[hsl(var(--primary))] h-3 w-3 shrink-0" />
+                  
                     <div className="min-w-0 flex-1">
                       <span className="font-semibold text-foreground">{getSourceInfo(poll.source).name}</span>
                       <span className="text-muted-foreground ml-1">{formatDate(poll.date)}</span>
                     </div>
-                  </label>
-                );
-              })}
+                  </label>);
+
+            })}
             </div>
           </div>
-        )}
+        }
 
-        {entries.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6">No demographic data for selected polls in this group.</p>
-        ) : (
-          <div className="space-y-2">
+        {entries.length === 0 ?
+        <p className="text-xs text-muted-foreground text-center py-6">No demographic data for selected polls in this group.</p> :
+
+        <div className="space-y-2">
             {entries.map((entry, i) => {
-              const partyColors = (groupConfig as any)?.colors ?? {};
-              const barColor = partyColors[entry.demographic] ?? `hsl(${210 + i * 40}, 60%, 50%)`;
-              const approveW = (entry.approve / maxVal) * 100;
-              const disapproveW = (entry.disapprove / maxVal) * 100;
+            const partyColors = (groupConfig as any)?.colors ?? {};
+            const barColor = partyColors[entry.demographic] ?? `hsl(${210 + i * 40}, 60%, 50%)`;
+            const approveW = entry.approve / maxVal * 100;
+            const disapproveW = entry.disapprove / maxVal * 100;
 
-              return (
-                <div
-                  key={entry.demographic}
-                  className="transition-all duration-500"
-                  style={{
-                    opacity: inView ? 1 : 0,
-                    transform: inView ? "translateX(0)" : "translateX(-20px)",
-                    transitionDelay: `${i * 60}ms`,
-                  }}
-                >
+            return (
+              <div
+                key={entry.demographic}
+                className="transition-all duration-500"
+                style={{
+                  opacity: inView ? 1 : 0,
+                  transform: inView ? "translateX(0)" : "translateX(-20px)",
+                  transitionDelay: `${i * 60}ms`
+                }}>
+                
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-semibold text-foreground w-28 shrink-0 text-right">
                       {entry.demographic}
@@ -1280,26 +1280,26 @@ function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
                     <div className="flex-1 flex items-center gap-1">
                       <div className="flex h-5 flex-1 overflow-hidden rounded bg-muted/40">
                         <div
-                          className="h-full rounded-l transition-all duration-700 flex items-center justify-end pr-1"
-                          style={{ width: `${approveW}%`, backgroundColor: "hsl(150, 55%, 45%)" }}
-                        >
+                        className="h-full rounded-l transition-all duration-700 flex items-center justify-end pr-1"
+                        style={{ width: `${approveW}%`, backgroundColor: "hsl(150, 55%, 45%)" }}>
+                        
                           {approveW > 12 && <span className="text-[9px] font-bold text-white">{entry.approve}%</span>}
                         </div>
                         <div
-                          className="h-full rounded-r transition-all duration-700 flex items-center pl-1"
-                          style={{ width: `${disapproveW}%`, backgroundColor: "hsl(0, 65%, 50%)" }}
-                        >
+                        className="h-full rounded-r transition-all duration-700 flex items-center pl-1"
+                        style={{ width: `${disapproveW}%`, backgroundColor: "hsl(0, 65%, 50%)" }}>
+                        
                           {disapproveW > 12 && <span className="text-[9px] font-bold text-white">{entry.disapprove}%</span>}
                         </div>
                       </div>
                       <MarginBadge margin={entry.margin} />
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                </div>);
+
+          })}
           </div>
-        )}
+        }
 
         <div className="flex items-center gap-4 mt-4 text-[10px] text-muted-foreground border-t border-border pt-3">
           <span className="flex items-center gap-1">
@@ -1313,8 +1313,8 @@ function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
           </span>
         </div>
       </div>
-    </AnimatedCard>
-  );
+    </AnimatedCard>);
+
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────
@@ -1394,8 +1394,8 @@ export function PollingSection() {
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
           <span className="text-sm">Loading polling data…</span>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   if (polls.length === 0) {
@@ -1406,22 +1406,22 @@ export function PollingSection() {
         <button
           onClick={seedData}
           disabled={seeding}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-        >
-          {seeding ? (
-            <>
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
+          
+          {seeding ?
+          <>
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
               Seeding data…
-            </>
-          ) : (
-            <>
+            </> :
+
+          <>
               <RefreshCw className="h-3.5 w-3.5" />
               Load polling data from all sources
             </>
-          )}
+          }
         </button>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -1434,87 +1434,87 @@ export function PollingSection() {
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Source:</span>
           <div className="flex flex-wrap gap-1">
             <button
-              onClick={() => setSourceFilter("all")}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
-                sourceFilter === "all"
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-              }`}
-            >
+                onClick={() => setSourceFilter("all")}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                sourceFilter === "all" ?
+                "bg-foreground text-background border-foreground" :
+                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+                }>
+                
               All
             </button>
             {POLLING_SOURCES.map((s) => {
-              const isActive = sourceFilter === s.id;
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => setSourceFilter(isActive ? "all" : s.id)}
-                  className="rounded-full px-2.5 py-1 text-[10px] font-bold border transition-all"
-                  style={{
-                    backgroundColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.08)`,
-                    color: isActive ? "white" : `hsl(${s.color})`,
-                    borderColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.25)`,
-                  }}
-                >
+                const isActive = sourceFilter === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setSourceFilter(isActive ? "all" : s.id)}
+                    className="rounded-full px-2.5 py-1 text-[10px] font-bold border transition-all"
+                    style={{
+                      backgroundColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.08)`,
+                      color: isActive ? "white" : `hsl(${s.color})`,
+                      borderColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.25)`
+                    }}>
+                    
                   {s.name}
-                </button>
-              );
-            })}
+                </button>);
+
+              })}
           </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type:</span>
           <div className="flex flex-wrap gap-1">
             <button
-              onClick={() => setTypeFilter("all")}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
-                typeFilter === "all"
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-              }`}
-            >
+                onClick={() => setTypeFilter("all")}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                typeFilter === "all" ?
+                "bg-foreground text-background border-foreground" :
+                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+                }>
+                
               All
             </button>
-            {POLL_TYPES.map((t) => (
+            {POLL_TYPES.map((t) =>
               <button
                 key={t.id}
                 onClick={() => setTypeFilter(typeFilter === t.id ? "all" : t.id)}
                 className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
-                  typeFilter === t.id
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-                }`}
-              >
+                typeFilter === t.id ?
+                "bg-foreground text-background border-foreground" :
+                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+                }>
+                
                 {t.label}
               </button>
-            ))}
+              )}
           </div>
         </div>
        </div>
        {/* Update + Export Buttons */}
        <div className="flex items-center gap-1.5 shrink-0">
          <button
-           onClick={seedData}
-           disabled={seeding}
-           className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors shadow-sm disabled:opacity-50"
-           title="Update polling data from all sources"
-         >
+            onClick={seedData}
+            disabled={seeding}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors shadow-sm disabled:opacity-50"
+            title="Update polling data from all sources">
+            
            <RefreshCw className={`h-3.5 w-3.5 ${seeding ? "animate-spin" : ""}`} />
            {seeding ? "Updating…" : "Update Data"}
          </button>
          <button
-           onClick={() => exportPollingCSV(filtered)}
-           className="win98-button text-[10px] flex items-center gap-1"
-           title="Export as CSV"
-         >
+            onClick={() => exportPollingCSV(filtered)}
+            className="win98-button text-[10px] flex items-center gap-1"
+            title="Export as CSV">
+            
            <FileSpreadsheet className="h-3 w-3" />
            CSV
          </button>
          <button
-           onClick={() => exportPollingPDF(filtered)}
-           className="win98-button text-[10px] flex items-center gap-1"
-           title="Export as PDF"
-         >
+            onClick={() => exportPollingPDF(filtered)}
+            className="win98-button text-[10px] flex items-center gap-1"
+            title="Export as PDF">
+            
            <FileText className="h-3 w-3" />
            PDF
          </button>
@@ -1522,8 +1522,8 @@ export function PollingSection() {
       </div>
 
       {/* ─── Summary Cards with Gauge ──────────────────────────────────────── */}
-      {avgApproval && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {avgApproval &&
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Approval Gauge */}
           <AnimatedCard delay={0}>
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col items-center justify-center">
@@ -1540,15 +1540,15 @@ export function PollingSection() {
 
           {/* Generic ballot cross-source average */}
           {genericBallotPolls.length > 0 && (() => {
-            const validPolls = genericBallotPolls.filter(p => p.favor_pct != null && p.oppose_pct != null);
-            if (validPolls.length === 0) return null;
-            const avgDem = Math.round(validPolls.reduce((s, p) => s + (p.favor_pct ?? 0), 0) / validPolls.length * 10) / 10;
-            const avgRep = Math.round(validPolls.reduce((s, p) => s + (p.oppose_pct ?? 0), 0) / validPolls.length * 10) / 10;
-            const avgMargin = Math.round((avgDem - avgRep) * 10) / 10;
-            const total = avgDem + avgRep || 100;
-            const sourceCount = new Set(validPolls.map(p => p.source)).size;
-            return (
-              <AnimatedCard delay={100}>
+          const validPolls = genericBallotPolls.filter((p) => p.favor_pct != null && p.oppose_pct != null);
+          if (validPolls.length === 0) return null;
+          const avgDem = Math.round(validPolls.reduce((s, p) => s + (p.favor_pct ?? 0), 0) / validPolls.length * 10) / 10;
+          const avgRep = Math.round(validPolls.reduce((s, p) => s + (p.oppose_pct ?? 0), 0) / validPolls.length * 10) / 10;
+          const avgMargin = Math.round((avgDem - avgRep) * 10) / 10;
+          const total = avgDem + avgRep || 100;
+          const sourceCount = new Set(validPolls.map((p) => p.source)).size;
+          return (
+            <AnimatedCard delay={100}>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   Generic Ballot (Avg of {sourceCount} source{sourceCount !== 1 ? "s" : ""})
                 </p>
@@ -1562,16 +1562,16 @@ export function PollingSection() {
                   </span>
                 </div>
                 <div className="flex h-4 w-full overflow-hidden rounded-full bg-muted mb-2">
-                  <div className="transition-all duration-500" style={{ width: `${(avgDem / total) * 100}%`, backgroundColor: "hsl(210, 80%, 50%)" }} />
-                  <div className="transition-all duration-500" style={{ width: `${(avgRep / total) * 100}%`, backgroundColor: "hsl(0, 75%, 50%)" }} />
+                  <div className="transition-all duration-500" style={{ width: `${avgDem / total * 100}%`, backgroundColor: "hsl(210, 80%, 50%)" }} />
+                  <div className="transition-all duration-500" style={{ width: `${avgRep / total * 100}%`, backgroundColor: "hsl(0, 75%, 50%)" }} />
                 </div>
                 <MarginBadge margin={avgMargin} />
                 <p className="text-[10px] text-muted-foreground mt-2">
                   Cross-source average · {validPolls.length} poll{validPolls.length !== 1 ? "s" : ""}
                 </p>
-              </AnimatedCard>
-            );
-          })()}
+              </AnimatedCard>);
+
+        })()}
 
           {/* Source count */}
           <AnimatedCard delay={200}>
@@ -1596,7 +1596,7 @@ export function PollingSection() {
               {POLL_TYPES.map((t) => {
                 const count = polls.filter((p) => p.poll_type === t.id).length;
                 if (count === 0) return null;
-                const pct = (count / polls.length) * 100;
+                const pct = count / polls.length * 100;
                 return (
                   <div key={t.id}>
                     <div className="flex justify-between text-xs mb-0.5">
@@ -1606,14 +1606,14 @@ export function PollingSection() {
                     <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                       <div className="h-full rounded-full bg-primary/60 transition-all duration-500" style={{ width: `${pct}%` }} />
                     </div>
-                  </div>
-                );
+                  </div>);
+
               })}
             </div>
           </div>
           </AnimatedCard>
         </div>
-      )}
+      }
 
       {/* ─── Multi-Source Trend Chart ─────────────────────────────────────── */}
       <MultiSourceTrendChart polls={polls} />
@@ -1640,8 +1640,8 @@ export function PollingSection() {
       <IssuePollingSection polls={polls} />
 
       {/* ─── Source Comparison Table ──────────────────────────────────────── */}
-      {latestBySource.length > 0 && (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      {latestBySource.length > 0 &&
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
           <div className="p-4 border-b border-border">
             <h3 className="font-display text-sm font-semibold text-foreground">
               Latest Presidential Approval by Source
@@ -1665,16 +1665,16 @@ export function PollingSection() {
               </thead>
               <tbody>
                 {latestBySource.map((poll) => {
-                  const src = getSourceInfo(poll.source);
-                  return (
-                    <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                const src = getSourceInfo(poll.source);
+                return (
+                  <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
                           <span className="font-medium text-foreground">{src.name}</span>
-                          {poll.partisan_lean && (
-                            <span className="text-[9px] rounded-sm px-1.5 py-0.5 bg-muted text-muted-foreground font-medium">{poll.partisan_lean}</span>
-                          )}
+                          {poll.partisan_lean &&
+                        <span className="text-[9px] rounded-sm px-1.5 py-0.5 bg-muted text-muted-foreground font-medium">{poll.partisan_lean}</span>
+                        }
                         </div>
                       </td>
                       <td className="py-3 px-3 text-center">
@@ -1688,31 +1688,31 @@ export function PollingSection() {
                       </td>
                       <td className="py-3 px-3 text-center text-muted-foreground text-xs">
                         {poll.sample_size ? `n=${poll.sample_size.toLocaleString()}` : "—"}
-                        {poll.sample_type && poll.sample_type !== "Average" && (
-                          <span className="ml-1 text-muted-foreground/60">({poll.sample_type})</span>
-                        )}
+                        {poll.sample_type && poll.sample_type !== "Average" &&
+                      <span className="ml-1 text-muted-foreground/60">({poll.sample_type})</span>
+                      }
                       </td>
                       <td className="py-3 px-3 text-center text-xs text-muted-foreground">
                         {formatDate(poll.date_conducted)}
-                        {poll.end_date && poll.end_date !== poll.date_conducted && (
-                          <span> – {formatDate(poll.end_date)}</span>
-                        )}
+                        {poll.end_date && poll.end_date !== poll.date_conducted &&
+                      <span> – {formatDate(poll.end_date)}</span>
+                      }
                       </td>
                       <td className="py-3 px-3">
-                        {poll.source_url && (
-                          <a href={poll.source_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                        {poll.source_url &&
+                      <a href={poll.source_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
-                        )}
+                      }
                       </td>
-                    </tr>
-                  );
-                })}
+                    </tr>);
+
+              })}
               </tbody>
             </table>
           </div>
         </div>
-      )}
+      }
 
       {/* ─── All Polls Table ─────────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -1728,8 +1728,8 @@ export function PollingSection() {
           <button
             onClick={seedData}
             disabled={seeding}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-50 transition-colors"
-          >
+            className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-50 transition-colors">
+            
             <RefreshCw className={`h-3 w-3 ${seeding ? "animate-spin" : ""}`} />
             Refresh
           </button>
@@ -1776,8 +1776,8 @@ export function PollingSection() {
                     <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
                       {formatDate(poll.date_conducted)}
                     </td>
-                  </tr>
-                );
+                  </tr>);
+
               })}
             </tbody>
           </table>
@@ -1790,21 +1790,21 @@ export function PollingSection() {
           Data Sources
         </h3>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {POLLING_SOURCES.map((s) => (
-            <a
-              key={s.id}
-              href={s.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-lg border border-border p-2.5 hover:bg-muted/50 transition-colors group"
-            >
+          {POLLING_SOURCES.map((s) =>
+          <a
+            key={s.id}
+            href={s.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-lg border border-border p-2.5 hover:bg-muted/50 transition-colors group">
+            
               <span className="inline-block h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: `hsl(${s.color})` }} />
               <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors">{s.name}</span>
               <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
             </a>
-          ))}
+          )}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
