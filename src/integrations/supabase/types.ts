@@ -682,6 +682,63 @@ export type Database = {
         }
         Relationships: []
       }
+      election_forecasts: {
+        Row: {
+          created_at: string
+          cycle: number
+          dem_vote_share: number | null
+          dem_win_prob: number | null
+          district: string | null
+          id: string
+          last_updated: string | null
+          margin: number | null
+          race_type: string
+          rating: string | null
+          raw_data: Json | null
+          rep_vote_share: number | null
+          rep_win_prob: number | null
+          source: string
+          state_abbr: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cycle?: number
+          dem_vote_share?: number | null
+          dem_win_prob?: number | null
+          district?: string | null
+          id?: string
+          last_updated?: string | null
+          margin?: number | null
+          race_type?: string
+          rating?: string | null
+          raw_data?: Json | null
+          rep_vote_share?: number | null
+          rep_win_prob?: number | null
+          source: string
+          state_abbr: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cycle?: number
+          dem_vote_share?: number | null
+          dem_win_prob?: number | null
+          district?: string | null
+          id?: string
+          last_updated?: string | null
+          margin?: number | null
+          race_type?: string
+          rating?: string | null
+          raw_data?: Json | null
+          rep_vote_share?: number | null
+          rep_win_prob?: number | null
+          source?: string
+          state_abbr?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
