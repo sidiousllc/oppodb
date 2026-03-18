@@ -7,6 +7,7 @@ import { getCandidatesForDistrict } from "@/data/candidateDistricts";
 import { getCandidateBySlug } from "@/data/candidates";
 import { DistrictPollingPanel } from "@/components/DistrictPollingPanel";
 import { AreaFinancePanel } from "@/components/AreaFinancePanel";
+import { DistrictCongressPanel } from "@/components/DistrictCongressPanel";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
 import {
   ArrowLeft,
@@ -188,6 +189,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
 
       {/* Cook Partisan Voting Index */}
       <CookPVIChart districtId={district.district_id} />
+
+      {/* Congressional Delegation */}
+      <DistrictCongressPanel districtId={district.district_id} />
 
       {/* District Polling */}
       <DistrictPollingPanel districtId={district.district_id} />
