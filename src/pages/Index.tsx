@@ -278,7 +278,6 @@ export default function Index() {
     "voter-data": "Voter Data",
     "live-elections": "Live Elections",
     legislation: "Legislation",
-    congress: "Congress.gov Data",
   };
 
   function renderDetail() {
