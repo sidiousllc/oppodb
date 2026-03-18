@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { DollarSign, TrendingUp, TrendingDown, Building2, Users, Landmark, ChevronDown, ChevronUp } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, Building2, Users, Landmark, ChevronDown, ChevronUp, User } from "lucide-react";
+import { getCandidatesForDistrict, getCandidatesForState, candidateDistrictMap } from "@/data/candidateDistricts";
 
 interface FinanceRow {
   id: string;
   candidate_name: string;
+  candidate_slug: string | null;
   office: string;
   state_abbr: string;
   district: string | null;
@@ -24,6 +26,14 @@ interface FinanceRow {
   top_industries: any;
   top_contributors: any;
   filing_date: string | null;
+}
+
+interface CandidateInfo {
+  slug: string;
+  name: string;
+  district_id: string | null;
+  type: string;
+  finance?: FinanceRow;
 }
 
 function formatMoney(n: number | null) {
@@ -54,12 +64,16 @@ const partyColor = (p: string | null) => {
   return "hsl(var(--muted-foreground))";
 };
 
+function slugToName(slug: string): string {
+  return slug
+    .split("-")
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 interface AreaFinancePanelProps {
-  /** State abbreviation (e.g. "NC") */
   stateAbbr: string;
-  /** Optional congressional district (e.g. "NC-09") — when set, also shows district-specific races */
   districtId?: string;
-  /** Title override */
   title?: string;
 }
 
@@ -67,20 +81,42 @@ export function AreaFinancePanel({ stateAbbr, districtId, title }: AreaFinancePa
   const [records, setRecords] = useState<FinanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
+  const [candidateProfiles, setCandidateProfiles] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function load() {
       setLoading(true);
+
+      // Load finance data
       const { data } = await supabase
         .from("campaign_finance")
         .select("*")
         .eq("state_abbr", stateAbbr)
         .order("total_raised", { ascending: false, nullsFirst: false });
       setRecords((data as FinanceRow[] | null) ?? []);
+
+      // Load candidate profile names for cross-referencing
+      const districtCandidateSlugs = districtId ? getCandidatesForDistrict(districtId) : [];
+      const stateCandidateSlugs = getCandidatesForState(stateAbbr);
+      const allSlugs = [...new Set([...districtCandidateSlugs, ...stateCandidateSlugs])];
+
+      if (allSlugs.length > 0) {
+        const { data: profiles } = await supabase
+          .from("candidate_profiles")
+          .select("slug, name")
+          .in("slug", allSlugs)
+          .eq("is_subpage", false);
+        const nameMap: Record<string, string> = {};
+        for (const p of profiles || []) {
+          nameMap[p.slug] = p.name;
+        }
+        setCandidateProfiles(nameMap);
+      }
+
       setLoading(false);
     }
     load();
-  }, [stateAbbr]);
+  }, [stateAbbr, districtId]);
 
   if (loading) {
     return (
@@ -90,21 +126,58 @@ export function AreaFinancePanel({ stateAbbr, districtId, title }: AreaFinancePa
       </div>
     );
   }
-  if (records.length === 0) return null;
 
-  // Separate state-wide aggregate from individual races
-  const stateAggregate = records.find(r => r.office === "all");
-  const districtNum = districtId?.split("-")[1]; // e.g. "09"
-  const districtRecords = districtId
+  // Build a merged candidate list for the district
+  const districtNum = districtId?.split("-")[1];
+  const knownDistrictSlugs = districtId ? getCandidatesForDistrict(districtId) : [];
+
+  // Finance records that match the district
+  const districtFinanceRecords = districtId
     ? records.filter(r => r.office !== "all" && r.district === districtId)
     : [];
-  const senateRecords = records.filter(r => r.office === "senate");
-  const houseRecords = records.filter(r => r.office === "house");
-  const governorRecords = records.filter(r => r.office === "governor");
-  const allCandidates = records.filter(r => r.office !== "all");
 
-  // If showing district-specific view, prioritize district candidates
-  const primaryRecords = districtId && districtRecords.length > 0 ? districtRecords : [];
+  // Build merged candidate info for the district
+  const districtCandidates: CandidateInfo[] = [];
+  const seenSlugs = new Set<string>();
+
+  // First: candidates with finance data for this district
+  for (const r of districtFinanceRecords) {
+    const slug = r.candidate_slug || "";
+    seenSlugs.add(slug);
+    districtCandidates.push({
+      slug,
+      name: r.candidate_name,
+      district_id: r.district,
+      type: r.office,
+      finance: r,
+    });
+  }
+
+  // Second: known candidates from candidateDistricts that don't have finance records
+  for (const slug of knownDistrictSlugs) {
+    if (seenSlugs.has(slug)) continue;
+    seenSlugs.add(slug);
+
+    // Try to find finance data by slug across the state
+    const financeBySlug = records.find(r => r.candidate_slug === slug);
+    const info = candidateDistrictMap[slug];
+    districtCandidates.push({
+      slug,
+      name: candidateProfiles[slug] || financeBySlug?.candidate_name || slugToName(slug),
+      district_id: info?.district_id || districtId || null,
+      type: info?.type || "house",
+      finance: financeBySlug || undefined,
+    });
+  }
+
+  // Statewide races
+  const stateAggregate = records.find(r => r.office === "all");
+  const senateRecords = records.filter(r => r.office === "senate");
+  const governorRecords = records.filter(r => r.office === "governor");
+  const houseRecords = records.filter(r => r.office === "house" && (!districtId || r.district !== districtId));
+
+  // If no data at all
+  if (records.length === 0 && districtCandidates.length === 0) return null;
 
   return (
     <div className="rounded-xl border border-border bg-card p-6 mb-6">
@@ -134,12 +207,10 @@ export function AreaFinancePanel({ stateAbbr, districtId, title }: AreaFinancePa
               </div>
             ))}
           </div>
-          {/* Donor breakdown */}
           <div className="mt-3 space-y-1.5">
             <PctBar label="Small Dollar" pct={stateAggregate.small_dollar_pct} color="hsl(150, 55%, 45%)" />
             <PctBar label="Out of State" pct={stateAggregate.out_of_state_pct} color="hsl(280, 60%, 55%)" />
           </div>
-          {/* Top industries */}
           {(() => {
             const industries = (stateAggregate.top_industries as any[] | null) ?? [];
             if (industries.length === 0) return null;
@@ -161,16 +232,28 @@ export function AreaFinancePanel({ stateAbbr, districtId, title }: AreaFinancePa
         </div>
       )}
 
-      {/* District-specific candidates (when in District Intel) */}
-      {primaryRecords.length > 0 && (
+      {/* District candidates — merged view */}
+      {districtCandidates.length > 0 && (
         <div className="mb-4">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-            District Candidates
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+            <User className="h-3 w-3" />
+            {districtId} Candidates
           </p>
           <div className="space-y-2">
-            {primaryRecords.map((r) => (
-              <CandidateFinanceRow key={r.id} record={r} />
-            ))}
+            {districtCandidates.map((c) =>
+              c.finance ? (
+                <CandidateFinanceRow key={c.slug || c.name} record={c.finance} displayName={c.name} />
+              ) : (
+                <div key={c.slug} className="rounded-lg border border-border bg-muted/10 p-3 flex items-center gap-3">
+                  <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground shrink-0" />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-foreground">{c.name}</span>
+                    <span className="ml-2 text-[10px] text-muted-foreground capitalize">({c.type})</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground italic">No FEC data available</span>
+                </div>
+              )
+            )}
           </div>
         </div>
       )}
@@ -211,7 +294,7 @@ export function AreaFinancePanel({ stateAbbr, districtId, title }: AreaFinancePa
             className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 hover:text-foreground transition-colors"
           >
             <Building2 className="h-3 w-3" />
-            House Races ({houseRecords.length})
+            Other House Races ({houseRecords.length})
             {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
           {expanded && (
@@ -224,7 +307,6 @@ export function AreaFinancePanel({ stateAbbr, districtId, title }: AreaFinancePa
         </div>
       )}
 
-      {/* Source footnote */}
       <p className="text-[9px] text-muted-foreground mt-3 border-t border-border pt-2">
         Sources: FEC, OpenSecrets · {stateAggregate?.cycle ?? records[0]?.cycle ?? 2026} cycle
       </p>
@@ -232,10 +314,11 @@ export function AreaFinancePanel({ stateAbbr, districtId, title }: AreaFinancePa
   );
 }
 
-function CandidateFinanceRow({ record: r }: { record: FinanceRow }) {
+function CandidateFinanceRow({ record: r, displayName }: { record: FinanceRow; displayName?: string }) {
   const [open, setOpen] = useState(false);
   const industries = (r.top_industries as any[] | null) ?? [];
   const contributors = (r.top_contributors as any[] | null) ?? [];
+  const name = displayName || r.candidate_name;
 
   return (
     <div className="rounded-lg border border-border bg-muted/10 overflow-hidden">
@@ -248,7 +331,7 @@ function CandidateFinanceRow({ record: r }: { record: FinanceRow }) {
           style={{ backgroundColor: partyColor(r.party) }}
         />
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-foreground">{r.candidate_name}</span>
+          <span className="text-sm font-medium text-foreground">{name}</span>
           {r.district && (
             <span className="ml-2 text-[10px] text-muted-foreground">{r.district}</span>
           )}
@@ -289,7 +372,6 @@ function CandidateFinanceRow({ record: r }: { record: FinanceRow }) {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 mb-2">
-            {/* Funding Sources */}
             <div className="rounded-md border border-border bg-background p-3">
               <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Funding Sources</p>
               <div className="space-y-1.5">
@@ -312,7 +394,6 @@ function CandidateFinanceRow({ record: r }: { record: FinanceRow }) {
               </div>
             </div>
 
-            {/* Donor Profile */}
             <div className="rounded-md border border-border bg-background p-3">
               <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Donor Profile</p>
               <div className="space-y-1.5">
@@ -323,7 +404,6 @@ function CandidateFinanceRow({ record: r }: { record: FinanceRow }) {
             </div>
           </div>
 
-          {/* Top Industries & Contributors */}
           <div className="grid gap-3 sm:grid-cols-2">
             {industries.length > 0 && (
               <div className="rounded-md border border-border bg-background p-3">
