@@ -89,6 +89,7 @@ export function ForecastComparisonPanel({ districtId }: ForecastComparisonPanelP
   const [forecasts, setForecasts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [scraping, setScraping] = useState(false);
   const [raceFilter, setRaceFilter] = useState<RaceType>("all");
   const [stateFilter, setStateFilter] = useState("");
   const [expandedRace, setExpandedRace] = useState<string | null>(null);
