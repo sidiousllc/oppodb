@@ -826,6 +826,69 @@ export type Database = {
         }
         Relationships: []
       }
+      mit_election_results: {
+        Row: {
+          candidate: string
+          candidatevotes: number | null
+          county_fips: string | null
+          county_name: string | null
+          created_at: string
+          district: string | null
+          id: string
+          office: string
+          party: string | null
+          source: string
+          special: boolean
+          stage: string
+          state: string
+          state_po: string
+          totalvotes: number | null
+          updated_at: string
+          writein: boolean
+          year: number
+        }
+        Insert: {
+          candidate: string
+          candidatevotes?: number | null
+          county_fips?: string | null
+          county_name?: string | null
+          created_at?: string
+          district?: string | null
+          id?: string
+          office: string
+          party?: string | null
+          source?: string
+          special?: boolean
+          stage?: string
+          state: string
+          state_po: string
+          totalvotes?: number | null
+          updated_at?: string
+          writein?: boolean
+          year: number
+        }
+        Update: {
+          candidate?: string
+          candidatevotes?: number | null
+          county_fips?: string | null
+          county_name?: string | null
+          created_at?: string
+          district?: string | null
+          id?: string
+          office?: string
+          party?: string | null
+          source?: string
+          special?: boolean
+          stage?: string
+          state?: string
+          state_po?: string
+          totalvotes?: number | null
+          updated_at?: string
+          writein?: boolean
+          year?: number
+        }
+        Relationships: []
+      }
       mn_cfb_candidates: {
         Row: {
           candidate_name: string
