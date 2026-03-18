@@ -95,6 +95,21 @@ export function VoterDataSection() {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [expandedVoter, setExpandedVoter] = useState<string | null>(null);
+  const [connectedServices, setConnectedServices] = useState<string[]>([]);
+
+  // Check which integrations are connected
+  useEffect(() => {
+    async function checkIntegrations() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase
+        .from("user_integrations" as any)
+        .select("service, is_active")
+        .eq("is_active", true);
+      setConnectedServices((data || []).map((d: any) => d.service));
+    }
+    checkIntegrations();
+  }, []);
 
   // Live Races state
   const [raceState, setRaceState] = useState("");
