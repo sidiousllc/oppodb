@@ -80,7 +80,11 @@ function consensusRating(ratings: (string | null)[]): string | null {
 
 type RaceType = "house" | "senate" | "governor" | "all";
 
-export function ForecastComparisonPanel() {
+interface ForecastComparisonPanelProps {
+  districtId?: string; // e.g. "PA-07" — filters to that district's race only
+}
+
+export function ForecastComparisonPanel({ districtId }: ForecastComparisonPanelProps = {}) {
   const isAdmin = useIsAdmin();
   const [forecasts, setForecasts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,19 +93,27 @@ export function ForecastComparisonPanel() {
   const [stateFilter, setStateFilter] = useState("");
   const [expandedRace, setExpandedRace] = useState<string | null>(null);
 
+  // Parse districtId (e.g. "PA-07") into state + district number
+  const parsedState = districtId ? districtId.split("-")[0] : null;
+  const parsedDistrict = districtId ? districtId.split("-")[1] : null;
+
   const loadForecasts = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("election_forecasts")
       .select("*")
-      .eq("cycle", 2026)
-      .order("state_abbr")
-      .order("district");
+      .eq("cycle", 2026);
+
+    if (parsedState && parsedDistrict) {
+      query = query.eq("state_abbr", parsedState).eq("district", parsedDistrict);
+    }
+
+    const { data, error } = await query.order("state_abbr").order("district");
     if (!error && data) setForecasts(data as Forecast[]);
     setLoading(false);
   };
 
-  useEffect(() => { loadForecasts(); }, []);
+  useEffect(() => { loadForecasts(); }, [districtId]);
 
   const handleSync = async () => {
     setSyncing(true);
