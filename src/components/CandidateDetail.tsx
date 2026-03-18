@@ -266,6 +266,9 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
       {/* Campaign Finance */}
       <CampaignFinancePanel candidateSlug={candidate.slug} />
 
+      {/* State Finance (FollowTheMoney) */}
+      <FollowTheMoneyPanel embedded={false} />
+
       {/* Version History */}
       {githubPath && (
         <VersionHistory githubPath={githubPath} currentContent={candidate.content} />

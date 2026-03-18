@@ -609,6 +609,9 @@ export function VoterDataSection() {
 
       {/* Election History tab */}
       {searchType === "election_history" && <MITElectionTab />}
+
+      {/* FollowTheMoney tab */}
+      {searchType === "ftm" && <FollowTheMoneyPanel embedded />}
     </div>
   );
 }
