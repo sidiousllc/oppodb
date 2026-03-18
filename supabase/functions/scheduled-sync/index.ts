@@ -225,6 +225,131 @@ Deno.serve(async (req) => {
 
     results.state_cfb = { states: stateCfbResults };
 
+    // 6. Auto-discover and generate candidate profiles (batch of 5 per run, tracked via sync_metadata id=5)
+    const CANDIDATES_PER_BATCH = 5;
+    try {
+      // Discover candidates without profiles from congress_members
+      const { data: existingProfiles } = await supabase
+        .from("candidate_profiles")
+        .select("name")
+        .eq("is_subpage", false);
+      
+      const existingNames = new Set((existingProfiles || []).map((p: any) => p.name.toLowerCase()));
+
+      // Get batch offset
+      const { data: scraperMeta } = await supabase
+        .from("sync_metadata")
+        .select("*")
+        .eq("id", 5)
+        .maybeSingle();
+
+      let scraperOffset = 0;
+      if (scraperMeta?.last_commit_sha) {
+        scraperOffset = parseInt(scraperMeta.last_commit_sha) || 0;
+      }
+
+      // Pull candidates from congress_members who lack profiles
+      const { data: allMembers } = await supabase
+        .from("congress_members")
+        .select("name, state, party, district, chamber")
+        .order("name");
+
+      const needsProfile = (allMembers || []).filter(
+        (m: any) => !existingNames.has(m.name.toLowerCase())
+      );
+
+      // Also check state election winners
+      const { data: stateWinners } = await supabase
+        .from("state_leg_election_results")
+        .select("candidate_name, state_abbr, chamber, district_number, party")
+        .eq("is_winner", true)
+        .order("election_year", { ascending: false });
+
+      const seenNames = new Set(needsProfile.map((m: any) => m.name.toLowerCase()));
+      const stateNeedsProfile = (stateWinners || []).filter((w: any) => {
+        const key = w.candidate_name.toLowerCase();
+        if (existingNames.has(key) || seenNames.has(key)) return false;
+        seenNames.add(key);
+        return true;
+      });
+
+      // Combine and get batch
+      const allCandidates = [
+        ...needsProfile.map((m: any) => ({
+          candidate_name: m.name,
+          office: m.chamber === "senate" ? "US Senate" : "US House",
+          state: m.state,
+          party: m.party || "Republican",
+          district: m.district,
+        })),
+        ...stateNeedsProfile.map((w: any) => ({
+          candidate_name: w.candidate_name,
+          office: `State ${w.chamber === "upper" ? "Senate" : "House"}`,
+          state: w.state_abbr,
+          party: w.party || "Republican",
+          district: w.district_number,
+        })),
+      ];
+
+      if (scraperOffset >= allCandidates.length) {
+        scraperOffset = 0;
+      }
+
+      const batch = allCandidates.slice(scraperOffset, scraperOffset + CANDIDATES_PER_BATCH);
+      const scraperNextOffset = scraperOffset + CANDIDATES_PER_BATCH;
+
+      console.log(`Candidate scraper batch: ${scraperOffset}-${scraperOffset + batch.length - 1} of ${allCandidates.length} total`);
+
+      const scraperResults: Array<{ name: string; status: string }> = [];
+
+      for (const candidate of batch) {
+        try {
+          const res = await fetch(
+            `${supabaseUrl}/functions/v1/candidate-scraper`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${anonKey}`,
+              },
+              body: JSON.stringify({
+                action: "scrape",
+                ...candidate,
+              }),
+            },
+          );
+          const data = await res.json();
+          scraperResults.push({
+            name: candidate.candidate_name,
+            status: data.success ? "created" : "error",
+          });
+          console.log(`Profile ${candidate.candidate_name}: ${data.success ? "created" : "error"}`);
+
+          // Small delay between AI calls to avoid rate limiting
+          await new Promise((r) => setTimeout(r, 2000));
+        } catch (e) {
+          scraperResults.push({ name: candidate.candidate_name, status: "error" });
+          console.error(`Scraper error for ${candidate.candidate_name}:`, e);
+        }
+      }
+
+      await supabase.from("sync_metadata").upsert({
+        id: 5,
+        last_commit_sha: String(scraperNextOffset >= allCandidates.length ? 0 : scraperNextOffset),
+        last_synced_at: new Date().toISOString(),
+      });
+
+      results.candidate_scraper = {
+        batch_offset: scraperOffset,
+        next_offset: scraperNextOffset >= allCandidates.length ? 0 : scraperNextOffset,
+        total_candidates_needing_profiles: allCandidates.length,
+        generated: scraperResults,
+      };
+    } catch (e) {
+      results.candidate_scraper = { error: e instanceof Error ? e.message : "failed" };
+      console.error("Candidate scraper error:", e);
+    }
+
     return new Response(
       JSON.stringify({ success: true, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
