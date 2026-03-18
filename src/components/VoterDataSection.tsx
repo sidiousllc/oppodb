@@ -10,8 +10,9 @@ const US_STATES = [
 ];
 
 import { MITElectionTab } from "@/components/MITElectionTab";
+import { FollowTheMoneyPanel } from "@/components/FollowTheMoneyPanel";
 
-type SearchType = "name" | "address" | "district" | "races" | "election_history";
+type SearchType = "name" | "address" | "district" | "races" | "election_history" | "ftm";
 
 interface VoterRecord {
   source: string;
