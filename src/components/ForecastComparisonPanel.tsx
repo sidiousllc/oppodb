@@ -142,6 +142,27 @@ export function ForecastComparisonPanel({ districtId }: ForecastComparisonPanelP
     }
   };
 
+  const handleScrape = async () => {
+    setScraping(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("forecast-scrape");
+      if (error) throw error;
+      if (data?.success) {
+        const summary = (data.results || [])
+          .map((r: any) => `${r.label}: ${r.scraped}${r.error ? ` (${r.error})` : ""}`)
+          .join(", ");
+        toast.success(`Scraped ${data.total_upserted} ratings. ${summary}`);
+        loadForecasts();
+      } else {
+        toast.error(data?.error || "Scrape failed");
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setScraping(false);
+    }
+  };
+
   // Group forecasts by race key
   const sources = useMemo(() => [...new Set(forecasts.map(f => f.source))].sort(), [forecasts]);
 
