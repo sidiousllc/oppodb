@@ -1358,7 +1358,7 @@ export function LegislationSection() {
     <div>
       {/* Tab toggle */}
       <div className="inline-flex rounded-lg border border-border overflow-hidden mb-4">
-        {(["bills", "legislators", "sessions", "tracked"] as Tab[]).map((t, i) => (
+        {(["bills", "legislators", "sessions", "tracked", "federal"] as Tab[]).map((t, i) => (
           <button
             key={t}
             onClick={() => { setTab(t); setSearchPerformed(false); setSubView(null); if (t === "tracked") loadTrackedBills(); }}
@@ -1372,10 +1372,15 @@ export function LegislationSection() {
             {t === "legislators" && <span className="flex items-center gap-1.5"><Users className="h-3 w-3" /> Legislators</span>}
             {t === "sessions" && <span className="flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> Sessions</span>}
             {t === "tracked" && <span className="flex items-center gap-1.5"><BookmarkCheck className="h-3 w-3" /> Tracked{trackedBills.length > 0 ? ` (${trackedBills.length})` : ""}</span>}
+            {t === "federal" && <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3" /> Federal (Congress.gov)</span>}
           </button>
         ))}
       </div>
 
+      {/* Federal bills tab */}
+      {tab === "federal" && <FederalBillsTab />}
+
+      {tab !== "federal" && <>
       {/* Search bar */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <select
