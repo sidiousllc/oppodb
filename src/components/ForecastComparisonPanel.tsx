@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart3, Loader2, RefreshCw, ChevronDown, ChevronRight, Filter } from "lucide-react";
+import { BarChart3, Loader2, RefreshCw, ChevronDown, ChevronRight, Filter, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
@@ -89,6 +89,7 @@ export function ForecastComparisonPanel({ districtId }: ForecastComparisonPanelP
   const [forecasts, setForecasts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [scraping, setScraping] = useState(false);
   const [raceFilter, setRaceFilter] = useState<RaceType>("all");
   const [stateFilter, setStateFilter] = useState("");
   const [expandedRace, setExpandedRace] = useState<string | null>(null);
@@ -141,6 +142,27 @@ export function ForecastComparisonPanel({ districtId }: ForecastComparisonPanelP
     }
   };
 
+  const handleScrape = async () => {
+    setScraping(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("forecast-scrape");
+      if (error) throw error;
+      if (data?.success) {
+        const summary = (data.results || [])
+          .map((r: any) => `${r.label}: ${r.scraped}${r.error ? ` (${r.error})` : ""}`)
+          .join(", ");
+        toast.success(`Scraped ${data.total_upserted} ratings. ${summary}`);
+        loadForecasts();
+      } else {
+        toast.error(data?.error || "Scrape failed");
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setScraping(false);
+    }
+  };
+
   // Group forecasts by race key
   const sources = useMemo(() => [...new Set(forecasts.map(f => f.source))].sort(), [forecasts]);
 
@@ -186,14 +208,24 @@ export function ForecastComparisonPanel({ districtId }: ForecastComparisonPanelP
           <BarChart3 className="h-4 w-4" /> Forecast Model Comparison
         </h2>
         {isAdmin && (
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="win98-button text-[10px] flex items-center gap-1"
-          >
-            <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
-            {syncing ? "Syncing…" : "Sync Ratings"}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleScrape}
+              disabled={scraping || syncing}
+              className="win98-button text-[10px] flex items-center gap-1"
+            >
+              <Globe className={`h-3 w-3 ${scraping ? "animate-spin" : ""}`} />
+              {scraping ? "Scraping…" : "Scrape Latest"}
+            </button>
+            <button
+              onClick={handleSync}
+              disabled={syncing || scraping}
+              className="win98-button text-[10px] flex items-center gap-1"
+            >
+              <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Syncing…" : "Sync Seeds"}
+            </button>
+          </div>
         )}
       </div>
 
