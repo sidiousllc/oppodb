@@ -611,9 +611,6 @@ export default function Index() {
       return <LegislationSection />;
     }
 
-    if (section === "congress") {
-      return <CongressDataPanel />;
-    }
   }
 
   const detail = renderDetail();

@@ -190,6 +190,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
       {/* Cook Partisan Voting Index */}
       <CookPVIChart districtId={district.district_id} />
 
+      {/* Congressional Delegation */}
+      <DistrictCongressPanel districtId={district.district_id} />
+
       {/* District Polling */}
       <DistrictPollingPanel districtId={district.district_id} />
 

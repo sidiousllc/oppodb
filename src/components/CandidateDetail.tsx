@@ -259,6 +259,9 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
       {/* Legislative Record (LegiScan cross-reference) */}
       <CandidateVotingRecord candidateSlug={candidate.slug} candidateName={candidate.name} candidateState={candidate.state} />
 
+      {/* Congress.gov Profile */}
+      <CandidateCongressPanel candidateSlug={candidate.slug} candidateName={candidate.name} />
+
       {/* Campaign Finance */}
       <CampaignFinancePanel candidateSlug={candidate.slug} />
 
