@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart3, Loader2, RefreshCw, ChevronDown, ChevronRight, Filter } from "lucide-react";
+import { BarChart3, Loader2, RefreshCw, ChevronDown, ChevronRight, Filter, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
