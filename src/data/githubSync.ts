@@ -29,20 +29,44 @@ function cleanName(name: string): string {
 }
 
 export async function fetchCandidatesFromDB(): Promise<GitHubCandidate[]> {
-  const { data, error } = await supabase
+  // Fetch top-level profiles (non-subpages)
+  const { data: topLevel, error: err1 } = await supabase
     .from("candidate_profiles")
     .select("slug, name, content, github_path, is_subpage, parent_slug, subpage_title")
     .eq("is_subpage", false)
     .order("name");
 
-  if (error) {
-    console.error("Error fetching candidates from DB:", error);
+  if (err1) {
+    console.error("Error fetching candidates from DB:", err1);
     return [];
   }
 
-  return (data || [])
-    .filter((c) => !INDEX_SLUGS.has(c.slug))
-    .map((c) => ({ ...c, name: cleanName(c.name) })) as GitHubCandidate[];
+  // Also fetch candidates nested under index/category pages (governor races, state races)
+  // These are marked as subpages but their parent is an index page, so they're really top-level
+  const indexSlugsArray = Array.from(INDEX_SLUGS);
+  const { data: nestedCandidates, error: err2 } = await supabase
+    .from("candidate_profiles")
+    .select("slug, name, content, github_path, is_subpage, parent_slug, subpage_title")
+    .eq("is_subpage", true)
+    .in("parent_slug", indexSlugsArray)
+    .order("name");
+
+  if (err2) {
+    console.error("Error fetching nested candidates:", err2);
+  }
+
+  // Combine and deduplicate
+  const allCandidates = [...(topLevel || []), ...(nestedCandidates || [])];
+  const seen = new Set<string>();
+
+  return allCandidates
+    .filter((c) => {
+      if (INDEX_SLUGS.has(c.slug)) return false;
+      if (seen.has(c.slug)) return false;
+      seen.add(c.slug);
+      return true;
+    })
+    .map((c) => ({ ...c, is_subpage: false, name: cleanName(c.name) })) as GitHubCandidate[];
 }
 
 export async function fetchSubpages(parentSlug: string): Promise<GitHubCandidate[]> {
