@@ -427,7 +427,7 @@ export function exportPollingPDF(polls: PollEntry[], filename = "polling-report"
 
     // ── Generic Ballot (right half) ──────────────────────────────────────────
 
-    const ballotPolls = polls.filter((p) => p.poll_type === "generic_ballot");
+    const ballotPolls = polls.filter((p) => p.poll_type === "generic-ballot");
     const ballotBySource = new Map<string, PollEntry>();
     ballotPolls.forEach((p) => {
       const ex = ballotBySource.get(p.source);
