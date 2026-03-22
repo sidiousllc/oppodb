@@ -682,7 +682,7 @@ export function exportPollingPDF(polls: PollEntry[], filename = "polling-report"
       6: { halign: "center" },
       7: { halign: "center" },
     },
-    didDrawPage: () => {
+    willDrawPage: () => {
       pageBackground(doc);
     },
   });
