@@ -1337,15 +1337,32 @@ export function PollingSection() {
     setLoading(false);
   }
 
+  const [syncing, setSyncing] = useState(false);
+
   async function seedData() {
     setSeeding(true);
     try {
-      await supabase.functions.invoke("seed-polling");
+      await supabase.functions.invoke("seed-polling", { body: { force: true } });
       await loadPolls();
     } catch (e) {
       console.error("Seed error:", e);
     }
     setSeeding(false);
+  }
+
+  async function syncLiveSources() {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("polling-sync", {
+        body: { maxSources: 8 },
+      });
+      console.log("Polling sync result:", data);
+      if (error) console.error("Sync error:", error);
+      await loadPolls();
+    } catch (e) {
+      console.error("Sync error:", e);
+    }
+    setSyncing(false);
   }
 
   const filtered = useMemo(() => {
