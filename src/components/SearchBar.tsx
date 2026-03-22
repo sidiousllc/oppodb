@@ -152,6 +152,22 @@ export function SearchBar({ value, onChange, placeholder = "Search candidates, i
 
   const showDropdown = isFocused && value.length >= 2;
 
+  // Calculate dropdown position based on input element
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  
+  useEffect(() => {
+    if (showDropdown && inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed' as const,
+        top: rect.bottom + 2,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      });
+    }
+  }, [showDropdown, value]);
+
   return (
     <div ref={wrapperRef} className="relative">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -175,7 +191,7 @@ export function SearchBar({ value, onChange, placeholder = "Search candidates, i
       )}
 
       {showDropdown && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 border border-[hsl(var(--win98-border-dark))] bg-[hsl(var(--win98-bg))] shadow-lg max-h-[320px] overflow-y-auto">
+        <div style={dropdownStyle} className="border border-[hsl(var(--win98-border-dark))] bg-[hsl(var(--win98-bg))] shadow-lg max-h-[320px] overflow-y-auto">
           {results.length === 0 ? (
             <div className="px-3 py-4 text-center text-[11px] text-[hsl(var(--muted-foreground))]">
               No results found for "{value}"
