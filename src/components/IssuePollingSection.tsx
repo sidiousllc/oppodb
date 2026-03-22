@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { getSourceInfo, type PollEntry } from "@/data/pollingData";
 import { usePollPicker, PollPickerButton, PollPickerDropdown } from "@/components/PollingSection";
-import { AlertTriangle, TrendingDown, TrendingUp, Minus, Globe, DollarSign, Compass, Shield, Heart, Users } from "lucide-react";
+import { AlertTriangle, TrendingDown, TrendingUp, Minus, Globe, DollarSign, Compass, Shield, Heart, Users, Leaf, Crosshair, Scale, Landmark, Briefcase, Home, Award, Cpu, Banknote, Vote } from "lucide-react";
 
 // ─── useInView ──────────────────────────────────────────────────────────────
 
@@ -43,10 +43,22 @@ const TOPIC_GROUPS: TopicGroup[] = [
     keywords: ["economy", "economic confidence", "trump economy handling"],
   },
   {
+    label: "Cost of Living",
+    icon: Banknote,
+    color: "30, 80%, 48%",
+    keywords: ["cost of living", "inflation concern", "inflation"],
+  },
+  {
     label: "Iran / Foreign Policy",
     icon: Globe,
     color: "25, 90%, 50%",
-    keywords: ["trump iran handling", "iran"],
+    keywords: ["trump iran handling", "iran", "foreign policy"],
+  },
+  {
+    label: "Ukraine / Foreign Aid",
+    icon: Globe,
+    color: "200, 70%, 48%",
+    keywords: ["ukraine", "foreign aid"],
   },
   {
     label: "Immigration",
@@ -59,6 +71,96 @@ const TOPIC_GROUPS: TopicGroup[] = [
     icon: Heart,
     color: "350, 65%, 50%",
     keywords: ["healthcare"],
+  },
+  {
+    label: "Social Security / Medicare",
+    icon: Landmark,
+    color: "280, 55%, 50%",
+    keywords: ["social security", "medicare"],
+  },
+  {
+    label: "Education",
+    icon: Award,
+    color: "170, 60%, 42%",
+    keywords: ["education"],
+  },
+  {
+    label: "Climate / Environment",
+    icon: Leaf,
+    color: "120, 55%, 40%",
+    keywords: ["climate", "environment"],
+  },
+  {
+    label: "Abortion / Reproductive Rights",
+    icon: Scale,
+    color: "320, 60%, 50%",
+    keywords: ["abortion", "reproductive"],
+  },
+  {
+    label: "Gun Policy",
+    icon: Crosshair,
+    color: "0, 50%, 45%",
+    keywords: ["gun policy", "gun"],
+  },
+  {
+    label: "National Security",
+    icon: Shield,
+    color: "220, 60%, 45%",
+    keywords: ["national security", "defense"],
+  },
+  {
+    label: "Crime / Public Safety",
+    icon: Shield,
+    color: "15, 70%, 48%",
+    keywords: ["crime", "public safety"],
+  },
+  {
+    label: "Tariffs / Trade",
+    icon: DollarSign,
+    color: "40, 80%, 45%",
+    keywords: ["tariffs", "trade"],
+  },
+  {
+    label: "DOGE",
+    icon: Landmark,
+    color: "45, 70%, 48%",
+    keywords: ["doge"],
+  },
+  {
+    label: "Jobs / Employment",
+    icon: Briefcase,
+    color: "180, 55%, 42%",
+    keywords: ["jobs", "employment"],
+  },
+  {
+    label: "Housing",
+    icon: Home,
+    color: "35, 65%, 45%",
+    keywords: ["housing"],
+  },
+  {
+    label: "Government Spending",
+    icon: Landmark,
+    color: "0, 45%, 55%",
+    keywords: ["government spending", "deficit"],
+  },
+  {
+    label: "Democracy / Rule of Law",
+    icon: Vote,
+    color: "240, 55%, 50%",
+    keywords: ["democracy", "rule of law"],
+  },
+  {
+    label: "Veterans Affairs",
+    icon: Award,
+    color: "160, 50%, 45%",
+    keywords: ["veterans"],
+  },
+  {
+    label: "Tech / AI Policy",
+    icon: Cpu,
+    color: "270, 60%, 52%",
+    keywords: ["tech", "ai policy"],
   },
   {
     label: "Cabinet / Personnel",
