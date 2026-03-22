@@ -268,10 +268,11 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       const districtId = toDistrictId(stateAbbr, cdfips);
       if (!districtId) return;
       const tracked = districtLookup.get(districtId);
+      const effective = getEffectivePVI(districtId);
       setTooltip({
         districtId,
         rating: getCookRating(districtId),
-        pvi: getCurrentPVI(districtId),
+        pvi: effective?.score ?? null,
         shift: hasPVIShift(districtId),
         topIssues: tracked?.top_issues || [],
       });
