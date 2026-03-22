@@ -141,7 +141,7 @@ export const cookRatings: Record<string, CookRating> = {
   "VA-01": "Lean R",
 
   // ===== Likely Republican (17) =====
-  "AK-01": "Likely R",
+  "AK-AL": "Likely R",
   "AZ-02": "Likely R",
   "CO-03": "Likely R", "CO-05": "Likely R",
   "FL-07": "Likely R", "FL-13": "Likely R",
