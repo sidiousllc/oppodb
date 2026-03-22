@@ -4,6 +4,16 @@ import IssuePollingSection from "@/components/IssuePollingSection";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, ExternalLink, TrendingDown, TrendingUp, Minus, Filter, RefreshCw, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { exportPollingCSV, exportPollingPDF } from "@/lib/pollingExport";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ReferenceLine,
+} from "recharts";
 
 // ─── useInView Hook ─────────────────────────────────────────────────────────
 
