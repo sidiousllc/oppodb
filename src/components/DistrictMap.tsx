@@ -7,7 +7,7 @@ import {
 } from "react-simple-maps";
 import { Search, X } from "lucide-react";
 import { type DistrictProfile } from "@/data/districtIntel";
-import { getCurrentPVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
+import { getCurrentPVI, getEffectivePVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
 import {
   getCookRating,
   getCookRatingColor,
