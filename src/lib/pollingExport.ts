@@ -162,7 +162,7 @@ export function exportPollingPDF(polls: PollEntry[], filename = "polling-report"
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   setColor(doc, [255, 255, 255]);
-  doc.text("📊 Polling Data Report", margin, 14);
+  doc.text("Polling Data Report", margin, 14);
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.text(
@@ -427,7 +427,7 @@ export function exportPollingPDF(polls: PollEntry[], filename = "polling-report"
 
     // ── Generic Ballot (right half) ──────────────────────────────────────────
 
-    const ballotPolls = polls.filter((p) => p.poll_type === "generic_ballot");
+    const ballotPolls = polls.filter((p) => p.poll_type === "generic-ballot");
     const ballotBySource = new Map<string, PollEntry>();
     ballotPolls.forEach((p) => {
       const ex = ballotBySource.get(p.source);
@@ -682,7 +682,7 @@ export function exportPollingPDF(polls: PollEntry[], filename = "polling-report"
       6: { halign: "center" },
       7: { halign: "center" },
     },
-    didDrawPage: () => {
+    willDrawPage: () => {
       pageBackground(doc);
     },
   });
