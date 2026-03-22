@@ -7,7 +7,7 @@ import {
 } from "react-simple-maps";
 import { Search, X } from "lucide-react";
 import { type DistrictProfile } from "@/data/districtIntel";
-import { getCurrentPVI, getEffectivePVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
+import { getEffectivePVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
 import {
   getCookRating,
   getCookRatingColor,
@@ -32,7 +32,6 @@ function buildCdUrl(offset: number): string {
     returnGeometry: "true",
     resultRecordCount: "250",
     resultOffset: String(offset),
-    maxAllowableOffset: "0.03",
   }).toString()}`;
 }
 
@@ -52,16 +51,29 @@ export const PVI_FILTER_OPTIONS: { id: PVIFilter; label: string; color: string }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+function normalizeDistrictCode(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  const text = String(raw).trim();
+  if (!text) return null;
+  const digits = text.replace(/\D/g, "");
+  if (!digits) return null;
+  return digits.padStart(2, "0").slice(-2);
+}
+
 /** Build district ID from Esri fields (e.g. "AL-01", "WY-AL") */
-function toDistrictId(stateAbbr: string, cdfips: string): string | null {
+function toDistrictId(stateAbbrRaw: unknown, cdfipsRaw: unknown, districtIdRaw?: unknown): string | null {
+  const stateAbbr = String(stateAbbrRaw ?? "").trim().toUpperCase();
   if (!stateAbbr) return null;
-  const atLargeId = `${stateAbbr}-AL`;
-  const numericId = `${stateAbbr}-${cdfips}`;
-  if (cdfips === "00" || cdfips === "98") {
-    // Check both AL and 01 format (some data uses AK-01 for at-large)
-    return atLargeId;
+
+  let code = normalizeDistrictCode(cdfipsRaw);
+  if (!code) {
+    const districtDigits = normalizeDistrictCode(districtIdRaw);
+    if (districtDigits) code = districtDigits;
   }
-  return numericId;
+  if (!code) return null;
+
+  if (code === "00" || code === "98") return `${stateAbbr}-AL`;
+  return `${stateAbbr}-${code}`;
 }
 
 function matchesPVIFilter(districtId: string, filter: PVIFilter): boolean {
@@ -72,7 +84,7 @@ function matchesPVIFilter(districtId: string, filter: PVIFilter): boolean {
   switch (filter) {
     case "strong-d": return pvi <= -8;
     case "lean-d": return pvi >= -7 && pvi <= -1;
-    case "swing": return pvi >= -2 && pvi <= 2; // Widen swing to catch near-even
+    case "swing": return pvi >= -2 && pvi <= 2;
     case "lean-r": return pvi >= 1 && pvi <= 7;
     case "strong-r": return pvi >= 8;
     default: return true;
