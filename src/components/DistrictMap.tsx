@@ -429,7 +429,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                   geographies.map((geo) => {
                     const stateAbbr = geo.properties?.STATE_ABBR;
                     const cdfips = geo.properties?.CDFIPS;
-                    const districtId = toDistrictId(stateAbbr, cdfips);
+                    const districtRaw = geo.properties?.DISTRICTID;
+                    const districtId = toDistrictId(stateAbbr, cdfips, districtRaw);
 
                     return (
                       <Geography
