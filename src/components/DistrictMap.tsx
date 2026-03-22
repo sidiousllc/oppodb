@@ -439,7 +439,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                         fill={getDistrictFill(districtId)}
                         stroke={highlightedDistrict === districtId ? "hsl(45, 100%, 40%)" : "hsl(0, 0%, 100%)"}
                         strokeWidth={highlightedDistrict === districtId ? 2 : 0.3}
-                        onMouseEnter={() => handleDistrictHover(stateAbbr, cdfips)}
+                        onMouseEnter={() => handleDistrictHover(stateAbbr, cdfips, districtRaw)}
                         onMouseLeave={() => setTooltip(null)}
                         onClick={() => {
                           if (districtId) onSelectDistrict(districtId);
