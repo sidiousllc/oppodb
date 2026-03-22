@@ -55,8 +55,13 @@ export const PVI_FILTER_OPTIONS: { id: PVIFilter; label: string; color: string }
 /** Build district ID from Esri fields (e.g. "AL-01", "WY-AL") */
 function toDistrictId(stateAbbr: string, cdfips: string): string | null {
   if (!stateAbbr) return null;
-  if (cdfips === "00" || cdfips === "98") return `${stateAbbr}-AL`;
-  return `${stateAbbr}-${cdfips}`;
+  const atLargeId = `${stateAbbr}-AL`;
+  const numericId = `${stateAbbr}-${cdfips}`;
+  if (cdfips === "00" || cdfips === "98") {
+    // Check both AL and 01 format (some data uses AK-01 for at-large)
+    return atLargeId;
+  }
+  return numericId;
 }
 
 function matchesPVIFilter(districtId: string, filter: PVIFilter): boolean {
