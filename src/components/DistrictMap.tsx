@@ -250,8 +250,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       }
 
       if (colorMode === "pvi") {
-        const pvi = getCurrentPVI(districtId);
-        if (pvi !== null) return `hsl(${getPVIColor(pvi)})`;
+        const effective = getEffectivePVI(districtId);
+        if (effective) return `hsl(${getPVIColor(effective.score)})`;
         return "hsl(220, 15%, 88%)";
       }
 
