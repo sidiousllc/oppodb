@@ -11,6 +11,8 @@
  *   2024 PVI = 2016+2020 avg vs national (current)
  */
 
+import { getCookRating } from "@/data/cookRatings";
+
 export type PVICycle = "2012" | "2016" | "2020" | "2024";
 
 export const PVI_CYCLES: PVICycle[] = ["2012", "2016", "2020", "2024"];
@@ -57,7 +59,7 @@ const pviData: Record<string, Partial<Record<PVICycle, number>>> = {
   "AL-07": { "2012": -23, "2016": -25, "2020": -26, "2024": -27 },
 
   // === Alaska ===
-  "AK-01": { "2012": 12, "2016": 9, "2020": 8, "2024": 9 },
+  "AK-AL": { "2012": 12, "2016": 9, "2020": 8, "2024": 9 },
 
   // === Arizona ===
   "AZ-01": { "2012": 2, "2016": 1, "2020": -1, "2024": 0 },
@@ -201,6 +203,36 @@ export function getCurrentPVI(districtId: string): number | null {
   const data = pviData[districtId];
   if (!data || data["2024"] === undefined) return null;
   return data["2024"];
+}
+
+/**
+ * Estimate PVI from Cook rating when actual PVI data is unavailable.
+ * Returns an approximate PVI score based on the Cook Political Report rating.
+ */
+function estimatePVIFromCookRating(rating: string): number {
+  switch (rating) {
+    case "Solid D": return -20;
+    case "Likely D": return -8;
+    case "Lean D": return -4;
+    case "Toss Up": return 0;
+    case "Lean R": return 4;
+    case "Likely R": return 8;
+    case "Solid R": return 20;
+    default: return 0;
+  }
+}
+
+/**
+ * Get the effective PVI for a district — actual data if available, otherwise
+ * estimated from Cook rating. Returns null only if neither source exists.
+ */
+export function getEffectivePVI(districtId: string): { score: number; estimated: boolean } | null {
+  const actual = getCurrentPVI(districtId);
+  if (actual !== null) return { score: actual, estimated: false };
+
+  const rating = getCookRating(districtId);
+  if (rating) return { score: estimatePVIFromCookRating(rating), estimated: true };
+  return null;
 }
 
 /**

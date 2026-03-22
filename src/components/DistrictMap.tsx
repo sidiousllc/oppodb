@@ -7,7 +7,7 @@ import {
 } from "react-simple-maps";
 import { Search, X } from "lucide-react";
 import { type DistrictProfile } from "@/data/districtIntel";
-import { getCurrentPVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
+import { getCurrentPVI, getEffectivePVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
 import {
   getCookRating,
   getCookRatingColor,
@@ -55,18 +55,24 @@ export const PVI_FILTER_OPTIONS: { id: PVIFilter; label: string; color: string }
 /** Build district ID from Esri fields (e.g. "AL-01", "WY-AL") */
 function toDistrictId(stateAbbr: string, cdfips: string): string | null {
   if (!stateAbbr) return null;
-  if (cdfips === "00" || cdfips === "98") return `${stateAbbr}-AL`;
-  return `${stateAbbr}-${cdfips}`;
+  const atLargeId = `${stateAbbr}-AL`;
+  const numericId = `${stateAbbr}-${cdfips}`;
+  if (cdfips === "00" || cdfips === "98") {
+    // Check both AL and 01 format (some data uses AK-01 for at-large)
+    return atLargeId;
+  }
+  return numericId;
 }
 
 function matchesPVIFilter(districtId: string, filter: PVIFilter): boolean {
   if (filter === "all") return true;
-  const pvi = getCurrentPVI(districtId);
+  const effective = getEffectivePVI(districtId);
+  const pvi = effective?.score ?? null;
   if (pvi === null) return false;
   switch (filter) {
     case "strong-d": return pvi <= -8;
     case "lean-d": return pvi >= -7 && pvi <= -1;
-    case "swing": return pvi === 0;
+    case "swing": return pvi >= -2 && pvi <= 2; // Widen swing to catch near-even
     case "lean-r": return pvi >= 1 && pvi <= 7;
     case "strong-r": return pvi >= 8;
     default: return true;
@@ -244,8 +250,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       }
 
       if (colorMode === "pvi") {
-        const pvi = getCurrentPVI(districtId);
-        if (pvi !== null) return `hsl(${getPVIColor(pvi)})`;
+        const effective = getEffectivePVI(districtId);
+        if (effective) return `hsl(${getPVIColor(effective.score)})`;
         return "hsl(220, 15%, 88%)";
       }
 
@@ -262,10 +268,11 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       const districtId = toDistrictId(stateAbbr, cdfips);
       if (!districtId) return;
       const tracked = districtLookup.get(districtId);
+      const effective = getEffectivePVI(districtId);
       setTooltip({
         districtId,
         rating: getCookRating(districtId),
-        pvi: getCurrentPVI(districtId),
+        pvi: effective?.score ?? null,
         shift: hasPVIShift(districtId),
         topIssues: tracked?.top_issues || [],
       });
@@ -308,7 +315,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     const q = searchQuery.toLowerCase();
     return stateDistricts.filter((id) => {
       const rating = getCookRating(id);
-      const pvi = getCurrentPVI(id);
+      const pvi = getEffectivePVI(id)?.score ?? null;
       const profile = districtLookup.get(id);
       return (
         id.toLowerCase().includes(q) ||
@@ -505,7 +512,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                 ) : (
                   filteredStateDistricts.map((did) => {
                     const rating = getCookRating(did);
-                    const pvi = getCurrentPVI(did);
+                    const effectivePvi = getEffectivePVI(did);
+                    const pvi = effectivePvi?.score ?? null;
                     const isHighlighted = highlightedDistrict === did;
                     return (
                       <button
