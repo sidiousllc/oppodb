@@ -276,10 +276,12 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   );
 
   const handleDistrictHover = useCallback(
-    (stateAbbr: string, cdfips: string) => {
-      const districtId = toDistrictId(stateAbbr, cdfips);
+    (stateAbbr: string, cdfips: string, districtRaw?: string) => {
+      const districtId = toDistrictId(stateAbbr, cdfips, districtRaw);
       if (!districtId) return;
-      const tracked = districtLookup.get(districtId);
+      const tracked =
+        districtLookup.get(districtId) ||
+        districtLookup.get(districtId.replace("-AL", "-00"));
       const effective = getEffectivePVI(districtId);
       setTooltip({
         districtId,
@@ -307,7 +309,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       setSearchQuery("");
       setHighlightedDistrict(null);
     }
-  }, [zoomState, zoomedStateAbbr]);
+  }, [zoomState.zoom, zoomedStateAbbr]);
 
   // Districts in the zoomed state for the search overlay
   const stateDistricts = useMemo(() => {
@@ -315,7 +317,11 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     const ids = new Set<string>();
     geoData.features.forEach((f) => {
       if (f.properties?.STATE_ABBR === zoomedStateAbbr) {
-        const did = toDistrictId(f.properties.STATE_ABBR, f.properties.CDFIPS);
+        const did = toDistrictId(
+          f.properties.STATE_ABBR,
+          f.properties.CDFIPS,
+          f.properties.DISTRICTID
+        );
         if (did) ids.add(did);
       }
     });
