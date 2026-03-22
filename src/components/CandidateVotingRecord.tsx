@@ -115,21 +115,82 @@ export function CandidateVotingRecord({ candidateSlug, candidateName, candidateS
   // Tab
   const [activeTab, setActiveTab] = useState<"sponsored" | "profile">("sponsored");
 
-  // Load linked people_id from DB
+  // Load linked people_id from DB, auto-match if not linked
   useEffect(() => {
-    supabase
-      .from("candidate_profiles")
-      .select("legiscan_people_id")
-      .eq("slug", candidateSlug)
-      .eq("is_subpage", false)
-      .single()
-      .then(({ data }) => {
-        if (data?.legiscan_people_id) {
-          setLinkedPeopleId(data.legiscan_people_id);
-        }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("candidate_profiles")
+        .select("legiscan_people_id")
+        .eq("slug", candidateSlug)
+        .eq("is_subpage", false)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (data?.legiscan_people_id) {
+        setLinkedPeopleId(data.legiscan_people_id);
         setLoading(false);
-      });
-  }, [candidateSlug]);
+        return;
+      }
+
+      // Auto-match: try to find legislator by name in the candidate's state
+      try {
+        const stateAbbr = candidateState || "US";
+        const sessionData = await callLegiScan({ op: "getSessionList", state: stateAbbr });
+        const sessionList = sessionData?.sessions || [];
+        if (cancelled || sessionList.length === 0) { setLoading(false); return; }
+
+        const latestSession = sessionList[sessionList.length - 1];
+        const sessionPeople = await callLegiScan({ op: "getSessionPeople", id: String(latestSession.session_id) });
+        const people: PersonResult[] = sessionPeople?.sessionpeople?.people || [];
+
+        if (cancelled) return;
+
+        // Clean candidate name for matching
+        const cleanName = candidateName
+          .replace(/^\*\*.*?Against\s+/i, "")
+          .replace(/\*\*/g, "")
+          .replace(/\s+(Jr\.?|Sr\.?|III|II|IV)$/i, "")
+          .trim();
+        const nameParts = cleanName.toLowerCase().split(/\s+/);
+        const lastName = nameParts[nameParts.length - 1];
+        const firstName = nameParts[0];
+
+        // Find matches: last name must match, first name should start with same letters
+        const matches = people.filter((p) => {
+          const pName = p.name?.toLowerCase() || "";
+          const pParts = pName.split(/,\s*|\s+/);
+          // LegiScan names can be "Last, First" or "First Last"
+          const pLast = pParts[0]?.replace(/,/g, "");
+          const pFirst = pParts.length > 1 ? pParts[1] : "";
+          return (
+            pLast === lastName &&
+            (pFirst.startsWith(firstName.substring(0, 3)) || firstName.startsWith(pFirst.substring(0, 3)))
+          );
+        });
+
+        if (cancelled) return;
+
+        if (matches.length === 1) {
+          // Confident match — auto-link
+          const match = matches[0];
+          await supabase
+            .from("candidate_profiles")
+            .update({ legiscan_people_id: match.people_id, legiscan_state: stateAbbr })
+            .eq("slug", candidateSlug)
+            .eq("is_subpage", false);
+          if (!cancelled) {
+            setLinkedPeopleId(match.people_id);
+          }
+        }
+      } catch (e) {
+        console.error("Auto-match error:", e);
+      }
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [candidateSlug, candidateName, candidateState]);
 
   // Load legislator data when linked
   useEffect(() => {
