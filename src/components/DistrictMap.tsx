@@ -145,53 +145,42 @@ interface DistrictGeoJSON {
   }>;
 }
 
-let cachedGeoJSON: DistrictGeoJSON | null = null;
-let fetchPromise: Promise<DistrictGeoJSON | null> | null = null;
-
 async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
-  if (cachedGeoJSON) return cachedGeoJSON;
-  if (fetchPromise) return fetchPromise;
+  try {
+    console.log("[DistrictMap] Fetching district boundaries from Esri (paginated)…");
+    const allFeatures: DistrictGeoJSON["features"] = [];
+    let offset = 0;
+    const PAGE_SIZE = 250;
 
-  fetchPromise = (async () => {
-    try {
-      console.log("[DistrictMap] Fetching district boundaries from Esri (paginated)…");
-      const allFeatures: DistrictGeoJSON["features"] = [];
-      let offset = 0;
-      const PAGE_SIZE = 250;
-
-      while (true) {
-        const res = await fetch(buildCdUrl(offset));
-        if (!res.ok) {
-          console.error("[DistrictMap] Fetch failed:", res.status, res.statusText);
-          break;
-        }
-        const data = await res.json();
-        if (data.error) {
-          console.error("[DistrictMap] API error:", data.error);
-          break;
-        }
-        if (!data.features || data.features.length === 0) break;
-        allFeatures.push(...data.features);
-        console.log(`[DistrictMap] Loaded batch: ${data.features.length} features (total: ${allFeatures.length})`);
-        if (data.features.length < PAGE_SIZE) break;
-        offset += data.features.length;
+    while (true) {
+      const res = await fetch(buildCdUrl(offset));
+      if (!res.ok) {
+        console.error("[DistrictMap] Fetch failed:", res.status, res.statusText);
+        break;
       }
-
-      if (allFeatures.length === 0) {
-        console.error("[DistrictMap] No features returned");
-        return null;
+      const data = await res.json();
+      if (data.error) {
+        console.error("[DistrictMap] API error:", data.error);
+        break;
       }
+      if (!data.features || data.features.length === 0) break;
+      allFeatures.push(...data.features);
+      console.log(`[DistrictMap] Loaded batch: ${data.features.length} features (total: ${allFeatures.length})`);
+      if (data.features.length < PAGE_SIZE) break;
+      offset += data.features.length;
+    }
 
-      console.log(`[DistrictMap] Loaded ${allFeatures.length} total district boundaries`);
-      cachedGeoJSON = { type: "FeatureCollection", features: allFeatures };
-      return cachedGeoJSON;
-    } catch (e) {
-      console.error("[DistrictMap] Fetch error:", e);
+    if (allFeatures.length === 0) {
+      console.error("[DistrictMap] No features returned");
       return null;
     }
-  })();
 
-  return fetchPromise;
+    console.log(`[DistrictMap] Loaded ${allFeatures.length} total district boundaries`);
+    return { type: "FeatureCollection", features: allFeatures };
+  } catch (e) {
+    console.error("[DistrictMap] Fetch error:", e);
+    return null;
+  }
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
