@@ -315,7 +315,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     const q = searchQuery.toLowerCase();
     return stateDistricts.filter((id) => {
       const rating = getCookRating(id);
-      const pvi = getCurrentPVI(id);
+      const pvi = getEffectivePVI(id)?.score ?? null;
       const profile = districtLookup.get(id);
       return (
         id.toLowerCase().includes(q) ||
