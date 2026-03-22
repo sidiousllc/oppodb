@@ -509,7 +509,9 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
         </div>
       )}
 
-      {/* Legend */}
+      {/* Demographic Breakdown */}
+      {active && <DemographicBreakdown group={active.group} label={active.label} />}
+
       <div className="px-5 pb-4 flex items-center gap-4 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1">
           <span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Approve / Favor
