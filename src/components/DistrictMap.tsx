@@ -7,7 +7,7 @@ import {
 } from "react-simple-maps";
 import { Search, X } from "lucide-react";
 import { type DistrictProfile } from "@/data/districtIntel";
-import { getCurrentPVI, getEffectivePVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
+import { getEffectivePVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
 import {
   getCookRating,
   getCookRatingColor,
@@ -32,7 +32,6 @@ function buildCdUrl(offset: number): string {
     returnGeometry: "true",
     resultRecordCount: "250",
     resultOffset: String(offset),
-    maxAllowableOffset: "0.03",
   }).toString()}`;
 }
 
@@ -52,16 +51,29 @@ export const PVI_FILTER_OPTIONS: { id: PVIFilter; label: string; color: string }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+function normalizeDistrictCode(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  const text = String(raw).trim();
+  if (!text) return null;
+  const digits = text.replace(/\D/g, "");
+  if (!digits) return null;
+  return digits.padStart(2, "0").slice(-2);
+}
+
 /** Build district ID from Esri fields (e.g. "AL-01", "WY-AL") */
-function toDistrictId(stateAbbr: string, cdfips: string): string | null {
+function toDistrictId(stateAbbrRaw: unknown, cdfipsRaw: unknown, districtIdRaw?: unknown): string | null {
+  const stateAbbr = String(stateAbbrRaw ?? "").trim().toUpperCase();
   if (!stateAbbr) return null;
-  const atLargeId = `${stateAbbr}-AL`;
-  const numericId = `${stateAbbr}-${cdfips}`;
-  if (cdfips === "00" || cdfips === "98") {
-    // Check both AL and 01 format (some data uses AK-01 for at-large)
-    return atLargeId;
+
+  let code = normalizeDistrictCode(cdfipsRaw);
+  if (!code) {
+    const districtDigits = normalizeDistrictCode(districtIdRaw);
+    if (districtDigits) code = districtDigits;
   }
-  return numericId;
+  if (!code) return null;
+
+  if (code === "00" || code === "98") return `${stateAbbr}-AL`;
+  return `${stateAbbr}-${code}`;
 }
 
 function matchesPVIFilter(districtId: string, filter: PVIFilter): boolean {
@@ -72,7 +84,7 @@ function matchesPVIFilter(districtId: string, filter: PVIFilter): boolean {
   switch (filter) {
     case "strong-d": return pvi <= -8;
     case "lean-d": return pvi >= -7 && pvi <= -1;
-    case "swing": return pvi >= -2 && pvi <= 2; // Widen swing to catch near-even
+    case "swing": return pvi >= -2 && pvi <= 2;
     case "lean-r": return pvi >= 1 && pvi <= 7;
     case "strong-r": return pvi >= 8;
     default: return true;
@@ -133,53 +145,42 @@ interface DistrictGeoJSON {
   }>;
 }
 
-let cachedGeoJSON: DistrictGeoJSON | null = null;
-let fetchPromise: Promise<DistrictGeoJSON | null> | null = null;
-
 async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
-  if (cachedGeoJSON) return cachedGeoJSON;
-  if (fetchPromise) return fetchPromise;
+  try {
+    console.log("[DistrictMap] Fetching district boundaries from Esri (paginated)…");
+    const allFeatures: DistrictGeoJSON["features"] = [];
+    let offset = 0;
+    const PAGE_SIZE = 250;
 
-  fetchPromise = (async () => {
-    try {
-      console.log("[DistrictMap] Fetching district boundaries from Esri (paginated)…");
-      const allFeatures: DistrictGeoJSON["features"] = [];
-      let offset = 0;
-      const PAGE_SIZE = 250;
-
-      while (true) {
-        const res = await fetch(buildCdUrl(offset));
-        if (!res.ok) {
-          console.error("[DistrictMap] Fetch failed:", res.status, res.statusText);
-          break;
-        }
-        const data = await res.json();
-        if (data.error) {
-          console.error("[DistrictMap] API error:", data.error);
-          break;
-        }
-        if (!data.features || data.features.length === 0) break;
-        allFeatures.push(...data.features);
-        console.log(`[DistrictMap] Loaded batch: ${data.features.length} features (total: ${allFeatures.length})`);
-        if (data.features.length < PAGE_SIZE) break;
-        offset += data.features.length;
+    while (true) {
+      const res = await fetch(buildCdUrl(offset));
+      if (!res.ok) {
+        console.error("[DistrictMap] Fetch failed:", res.status, res.statusText);
+        break;
       }
-
-      if (allFeatures.length === 0) {
-        console.error("[DistrictMap] No features returned");
-        return null;
+      const data = await res.json();
+      if (data.error) {
+        console.error("[DistrictMap] API error:", data.error);
+        break;
       }
+      if (!data.features || data.features.length === 0) break;
+      allFeatures.push(...data.features);
+      console.log(`[DistrictMap] Loaded batch: ${data.features.length} features (total: ${allFeatures.length})`);
+      if (data.features.length < PAGE_SIZE) break;
+      offset += data.features.length;
+    }
 
-      console.log(`[DistrictMap] Loaded ${allFeatures.length} total district boundaries`);
-      cachedGeoJSON = { type: "FeatureCollection", features: allFeatures };
-      return cachedGeoJSON;
-    } catch (e) {
-      console.error("[DistrictMap] Fetch error:", e);
+    if (allFeatures.length === 0) {
+      console.error("[DistrictMap] No features returned");
       return null;
     }
-  })();
 
-  return fetchPromise;
+    console.log(`[DistrictMap] Loaded ${allFeatures.length} total district boundaries`);
+    return { type: "FeatureCollection", features: allFeatures };
+  } catch (e) {
+    console.error("[DistrictMap] Fetch error:", e);
+    return null;
+  }
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -201,8 +202,8 @@ interface TooltipData {
 const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: DistrictMapProps) => {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-  const [geoData, setGeoData] = useState<DistrictGeoJSON | null>(cachedGeoJSON);
-  const [loading, setLoading] = useState(!cachedGeoJSON);
+  const [geoData, setGeoData] = useState<DistrictGeoJSON | null>(null);
+  const [loading, setLoading] = useState(true);
   const [colorMode, setColorMode] = useState<ColorMode>("cook");
   const [zoomState, setZoomState] = useState<{ center: [number, number]; zoom: number }>({
     center: [-96, 38],
@@ -214,15 +215,15 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (cachedGeoJSON) {
-      setGeoData(cachedGeoJSON);
-      setLoading(false);
-      return;
-    }
+    let isMounted = true;
     fetchDistrictGeo().then((data) => {
+      if (!isMounted) return;
       setGeoData(data);
       setLoading(false);
     });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const districtLookup = useMemo(() => {
@@ -264,10 +265,12 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   );
 
   const handleDistrictHover = useCallback(
-    (stateAbbr: string, cdfips: string) => {
-      const districtId = toDistrictId(stateAbbr, cdfips);
+    (stateAbbr: string, cdfips: string, districtRaw?: string) => {
+      const districtId = toDistrictId(stateAbbr, cdfips, districtRaw);
       if (!districtId) return;
-      const tracked = districtLookup.get(districtId);
+      const tracked =
+        districtLookup.get(districtId) ||
+        districtLookup.get(districtId.replace("-AL", "-00"));
       const effective = getEffectivePVI(districtId);
       setTooltip({
         districtId,
@@ -295,7 +298,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       setSearchQuery("");
       setHighlightedDistrict(null);
     }
-  }, [zoomState, zoomedStateAbbr]);
+  }, [zoomState.zoom, zoomedStateAbbr]);
 
   // Districts in the zoomed state for the search overlay
   const stateDistricts = useMemo(() => {
@@ -303,7 +306,11 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     const ids = new Set<string>();
     geoData.features.forEach((f) => {
       if (f.properties?.STATE_ABBR === zoomedStateAbbr) {
-        const did = toDistrictId(f.properties.STATE_ABBR, f.properties.CDFIPS);
+        const did = toDistrictId(
+          f.properties.STATE_ABBR,
+          f.properties.CDFIPS,
+          f.properties.DISTRICTID
+        );
         if (did) ids.add(did);
       }
     });
@@ -411,7 +418,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                   geographies.map((geo) => {
                     const stateAbbr = geo.properties?.STATE_ABBR;
                     const cdfips = geo.properties?.CDFIPS;
-                    const districtId = toDistrictId(stateAbbr, cdfips);
+                    const districtRaw = geo.properties?.DISTRICTID;
+                    const districtId = toDistrictId(stateAbbr, cdfips, districtRaw);
 
                     return (
                       <Geography
@@ -420,7 +428,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                         fill={getDistrictFill(districtId)}
                         stroke={highlightedDistrict === districtId ? "hsl(45, 100%, 40%)" : "hsl(0, 0%, 100%)"}
                         strokeWidth={highlightedDistrict === districtId ? 2 : 0.3}
-                        onMouseEnter={() => handleDistrictHover(stateAbbr, cdfips)}
+                        onMouseEnter={() => handleDistrictHover(stateAbbr, cdfips, districtRaw)}
                         onMouseLeave={() => setTooltip(null)}
                         onClick={() => {
                           if (districtId) onSelectDistrict(districtId);
