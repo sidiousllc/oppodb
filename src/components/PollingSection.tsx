@@ -1337,15 +1337,32 @@ export function PollingSection() {
     setLoading(false);
   }
 
+  const [syncing, setSyncing] = useState(false);
+
   async function seedData() {
     setSeeding(true);
     try {
-      await supabase.functions.invoke("seed-polling");
+      await supabase.functions.invoke("seed-polling", { body: { force: true } });
       await loadPolls();
     } catch (e) {
       console.error("Seed error:", e);
     }
     setSeeding(false);
+  }
+
+  async function syncLiveSources() {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("polling-sync", {
+        body: { maxSources: 8 },
+      });
+      console.log("Polling sync result:", data);
+      if (error) console.error("Sync error:", error);
+      await loadPolls();
+    } catch (e) {
+      console.error("Sync error:", e);
+    }
+    setSyncing(false);
   }
 
   const filtered = useMemo(() => {
@@ -1494,8 +1511,17 @@ export function PollingSection() {
        {/* Update + Export Buttons */}
        <div className="flex items-center gap-1.5 shrink-0">
          <button
+            onClick={syncLiveSources}
+            disabled={syncing || seeding}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent/10 transition-colors shadow-sm disabled:opacity-50"
+            title="Scrape live polling data from 20+ sources">
+            
+           <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+           {syncing ? "Syncing…" : "Sync Live"}
+         </button>
+         <button
             onClick={seedData}
-            disabled={seeding}
+            disabled={seeding || syncing}
             className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors shadow-sm disabled:opacity-50"
             title="Update polling data from all sources">
             
