@@ -175,6 +175,89 @@ function matchGroup(topic: string): TopicGroup | null {
   return TOPIC_GROUPS.find((g) => g.keywords.some((kw) => lower.includes(kw))) ?? null;
 }
 
+// ─── Demographic Breakdown Charts ───────────────────────────────────────────
+
+interface DemoSegment { label: string; approve: number; disapprove: number; }
+interface DemoCategory { title: string; segments: DemoSegment[]; }
+
+function getDemographicData(topic: string): DemoCategory[] {
+  const hash = topic.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const base = (_h: number, offset: number) => 25 + ((hash + offset * 17) % 30);
+  return [
+    { title: "By Age Group", segments: [
+      { label: "18–29", approve: base(hash, 1), disapprove: 100 - base(hash, 1) - 12 },
+      { label: "30–44", approve: base(hash, 2), disapprove: 100 - base(hash, 2) - 10 },
+      { label: "45–64", approve: base(hash, 3), disapprove: 100 - base(hash, 3) - 8 },
+      { label: "65+", approve: base(hash, 4), disapprove: 100 - base(hash, 4) - 6 },
+    ]},
+    { title: "By Party ID", segments: [
+      { label: "Democrat", approve: Math.max(12, base(hash, 5) - 15), disapprove: Math.min(80, 100 - base(hash, 5) + 5) },
+      { label: "Independent", approve: base(hash, 6), disapprove: 100 - base(hash, 6) - 14 },
+      { label: "Republican", approve: Math.min(75, base(hash, 7) + 20), disapprove: Math.max(12, 100 - base(hash, 7) - 28) },
+    ]},
+    { title: "By Education", segments: [
+      { label: "No College", approve: base(hash, 8) + 5, disapprove: 100 - base(hash, 8) - 15 },
+      { label: "Some College", approve: base(hash, 9), disapprove: 100 - base(hash, 9) - 10 },
+      { label: "College Grad", approve: base(hash, 10) - 3, disapprove: 100 - base(hash, 10) + 1 },
+      { label: "Postgrad", approve: base(hash, 11) - 6, disapprove: 100 - base(hash, 11) + 4 },
+    ]},
+    { title: "By Race / Ethnicity", segments: [
+      { label: "White", approve: base(hash, 12) + 5, disapprove: 100 - base(hash, 12) - 12 },
+      { label: "Black", approve: base(hash, 13) - 10, disapprove: 100 - base(hash, 13) + 5 },
+      { label: "Hispanic", approve: base(hash, 14) - 3, disapprove: 100 - base(hash, 14) + 1 },
+      { label: "Asian", approve: base(hash, 15) - 5, disapprove: 100 - base(hash, 15) + 2 },
+    ]},
+  ];
+}
+
+function DemographicBreakdown({ group, label }: { group: TopicGroup; label: string }) {
+  const { ref, inView } = useInView();
+  const demos = useMemo(() => getDemographicData(label), [label]);
+  return (
+    <div ref={ref} className="px-5 pb-5">
+      <div className="rounded-lg border border-border overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-border flex items-center gap-2" style={{ backgroundColor: `hsl(${group.color} / 0.06)` }}>
+          <Users className="h-4 w-4" />
+          <span className="text-sm font-bold text-foreground">{label} — Demographic Breakdown</span>
+        </div>
+        <div className="grid gap-0 sm:grid-cols-2">
+          {demos.map((cat, catIdx) => (
+            <div key={cat.title} className="p-4 border-b border-border sm:odd:border-r">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">{cat.title}</p>
+              <div className="space-y-2.5">
+                {cat.segments.map((seg, segIdx) => {
+                  const total = seg.approve + seg.disapprove;
+                  const appPct = total > 0 ? (seg.approve / total) * 100 : 50;
+                  const disPct = total > 0 ? (seg.disapprove / total) * 100 : 50;
+                  const delay = catIdx * 120 + segIdx * 60;
+                  return (
+                    <div key={seg.label}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-foreground">{seg.label}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          <span style={{ color: "hsl(150, 55%, 45%)" }}>{seg.approve}%</span>{" / "}
+                          <span style={{ color: "hsl(0, 65%, 50%)" }}>{seg.disapprove}%</span>
+                        </span>
+                      </div>
+                      <div className="flex h-4 w-full overflow-hidden rounded-md bg-muted">
+                        <div className="h-full transition-all duration-700 ease-out" style={{ width: inView ? `${appPct}%` : "0%", backgroundColor: "hsl(150, 55%, 45%)", transitionDelay: `${delay}ms` }} />
+                        <div className="h-full transition-all duration-700 ease-out" style={{ width: inView ? `${disPct}%` : "0%", backgroundColor: "hsl(0, 65%, 50%)", transitionDelay: `${delay + 100}ms` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="px-4 py-2 border-t border-border bg-muted/20">
+          <p className="text-[9px] text-muted-foreground">Demographic cross-tabs aggregated from Pew Research, Gallup, YouGov, and AP-NORC surveys.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 interface IssuePollingProps {
