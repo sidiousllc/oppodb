@@ -512,7 +512,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                 ) : (
                   filteredStateDistricts.map((did) => {
                     const rating = getCookRating(did);
-                    const pvi = getCurrentPVI(did);
+                    const effectivePvi = getEffectivePVI(did);
+                    const pvi = effectivePvi?.score ?? null;
                     const isHighlighted = highlightedDistrict === did;
                     return (
                       <button
