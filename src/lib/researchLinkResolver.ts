@@ -44,8 +44,20 @@ export function extractInternalSlug(href: string | undefined): string | null {
     }
 
     pathname = parsed.pathname;
+  } else if (!raw.startsWith("/")) {
+    // Relative path without leading slash — treat as internal if it looks like a slug path
+    // e.g. "health-care-backup" or "andy-ogles/health-care-backup"
+    if (/^[a-zA-Z0-9][\w-]*(?:\/[\w-]+)*$/.test(raw.split("#")[0]?.split("?")[0] ?? "")) {
+      const segments = raw.split("#")[0]?.split("?")[0]?.split("/").filter(Boolean) ?? [];
+      if (segments.length > 0) {
+        return normalizeSlug(segments[segments.length - 1]);
+      }
+    }
+    return null;
   }
 
+  // Handle absolute paths starting with "/" — these are internal wiki-style links
+  // e.g. /andy-ogles/health-care-backup or /en/some-page
   const pathOnly = pathname.split("#")[0]?.split("?")[0] ?? "";
   const normalizedPath = pathOnly.replace(/^\/+/, "").replace(/^en\//i, "");
   const segments = normalizedPath.split("/").filter(Boolean);
