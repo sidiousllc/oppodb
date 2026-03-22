@@ -193,14 +193,16 @@ export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, se
 function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
   const { ref, inView } = useInView();
   const [hoveredBar, setHoveredBar] = useState<{source: string; approve: number; disapprove: number; margin: number; x: number; y: number;} | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<{source: string; date: string; value: number; x: number; y: number;} | null>(null);
   const [hiddenSources, setHiddenSources] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"approve" | "disapprove" | "margin" | "name">("approve");
+  const [viewMode, setViewMode] = useState<"bars" | "trend">("bars");
+  const [zoomMonths, setZoomMonths] = useState<number>(0);
 
   const approvalFilter = useCallback((p: PollEntry) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval", []);
   const picker = usePollPicker(polls, approvalFilter);
 
-  // Get latest poll per source
   const latestBySource = useMemo(() => {
     const map = new Map<string, PollEntry>();
     picker.filteredPolls
@@ -209,6 +211,18 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
         const ex = map.get(p.source);
         if (!ex || p.date_conducted > ex.date_conducted) map.set(p.source, p);
       });
+    return map;
+  }, [picker.filteredPolls]);
+
+  const approvalBySource = useMemo(() => {
+    const map = new Map<string, PollEntry[]>();
+    picker.filteredPolls
+      .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval")
+      .forEach((p) => {
+        if (!map.has(p.source)) map.set(p.source, []);
+        map.get(p.source)!.push(p);
+      });
+    map.forEach((v) => v.sort((a, b) => a.date_conducted.localeCompare(b.date_conducted)));
     return map;
   }, [picker.filteredPolls]);
 
@@ -225,7 +239,6 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
   const selectAll = useCallback(() => setHiddenSources(new Set()), []);
   const deselectAll = useCallback(() => setHiddenSources(new Set(allSourceIds)), [allSourceIds]);
 
-  // Visible sources sorted
   const visibleEntries = useMemo(() => {
     const entries = Array.from(latestBySource.entries()).filter(([k]) => !hiddenSources.has(k));
     entries.sort((a, b) => {
@@ -237,25 +250,71 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
     return entries;
   }, [latestBySource, hiddenSources, sortBy]);
 
+  const visibleSources = useMemo(() => {
+    const map = new Map<string, PollEntry[]>();
+    approvalBySource.forEach((v, k) => {
+      if (!hiddenSources.has(k)) map.set(k, v);
+    });
+    return map;
+  }, [approvalBySource, hiddenSources]);
+
   if (latestBySource.size === 0) return null;
 
   const W = 700;
-  const barGroupW = Math.min(50, Math.max(20, (W - 60) / visibleEntries.length - 8));
-  const chartW = visibleEntries.length * (barGroupW + 8) + 60;
   const H = 300;
+  const barGroupW = Math.min(50, Math.max(20, (W - 60) / visibleEntries.length - 8));
+  const barChartW = visibleEntries.length * (barGroupW + 8) + 60;
   const PAD = { top: 20, right: 20, bottom: 70, left: 45 };
   const plotH = H - PAD.top - PAD.bottom;
+  const trendPAD = { top: 20, right: 20, bottom: 40, left: 45 };
+  const trendPlotW = W - trendPAD.left - trendPAD.right;
+  const trendPlotH = H - trendPAD.top - trendPAD.bottom;
 
-  const allVals = visibleEntries.flatMap(([, p]) => [p.approve_pct ?? 0, p.disapprove_pct ?? 0]);
-  if (allVals.length === 0) allVals.push(30, 60);
-  const minVal = Math.floor(Math.min(...allVals) - 3);
-  const maxVal = Math.ceil(Math.max(...allVals) + 3);
+  const allDates = picker.filteredPolls
+    .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval")
+    .map((p) => p.date_conducted).sort();
+  const absoluteMin = allDates[0] ?? "2025-01-01";
+  const absoluteMax = allDates[allDates.length - 1] ?? "2026-12-31";
+  let trendMinDate = absoluteMin;
+  const trendMaxDate = absoluteMax;
+  if (zoomMonths > 0) {
+    const cutoff = new Date(trendMaxDate);
+    cutoff.setMonth(cutoff.getMonth() - zoomMonths);
+    const cutoffStr = cutoff.toISOString().split("T")[0];
+    if (cutoffStr > absoluteMin) trendMinDate = cutoffStr;
+  }
+  const trendDateRange = new Date(trendMaxDate).getTime() - new Date(trendMinDate).getTime() || 1;
+
+  const trendVisiblePolls = picker.filteredPolls.filter(
+    (p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval" && p.approve_pct !== null && p.date_conducted >= trendMinDate && !hiddenSources.has(p.source)
+  );
+  const barVals = visibleEntries.flatMap(([, p]) => [p.approve_pct ?? 0, p.disapprove_pct ?? 0]);
+  if (barVals.length === 0) barVals.push(30, 60);
+  const trendVals = trendVisiblePolls.map((p) => p.approve_pct!);
+  if (trendVals.length === 0) trendVals.push(30, 60);
+
+  const activeVals = viewMode === "bars" ? barVals : trendVals;
+  const minVal = Math.floor(Math.min(...activeVals) - 3);
+  const maxVal = Math.ceil(Math.max(...activeVals) + 3);
   const valRange = maxVal - minVal || 1;
 
   const valToY = (v: number) => PAD.top + plotH - (v - minVal) / valRange * plotH;
+  const trendValToY = (v: number) => trendPAD.top + trendPlotH - (v - minVal) / valRange * trendPlotH;
+  const trendDateToX = (d: string) => trendPAD.left + (new Date(d).getTime() - new Date(trendMinDate).getTime()) / trendDateRange * trendPlotW;
 
   const yTicks: number[] = [];
   for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) yTicks.push(v);
+
+  const xTicks: {date: string; label: string}[] = [];
+  if (viewMode === "trend") {
+    const cur = new Date(new Date(trendMinDate).getFullYear(), new Date(trendMinDate).getMonth(), 1);
+    const end = new Date(trendMaxDate);
+    while (cur <= end) {
+      const d = cur.toISOString().split("T")[0];
+      if (d >= trendMinDate) xTicks.push({ date: d, label: cur.toLocaleDateString("en-US", { month: "short" }) });
+      cur.setMonth(cur.getMonth() + 1);
+    }
+  }
 
   const sortOptions: { label: string; value: typeof sortBy }[] = [
     { label: "Approve ↓", value: "approve" },
@@ -263,64 +322,61 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
     { label: "Margin ↓", value: "margin" },
     { label: "Name A-Z", value: "name" },
   ];
+  const zoomOptions = [
+    { label: "All", value: 0 },
+    { label: "3M", value: 3 },
+    { label: "6M", value: 6 },
+    { label: "1Y", value: 12 },
+    { label: "2Y", value: 24 },
+  ];
 
   return (
     <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between mb-1">
         <div>
           <h3 className="font-display text-sm font-semibold text-foreground">
-            Approval Rating by Source
+            {viewMode === "bars" ? "Approval Rating by Source" : "Approval Rating Trend by Source"}
           </h3>
           <p className="text-xs text-muted-foreground">
-            {picker.isAll ? `Latest approval from ${visibleEntries.length} of ${latestBySource.size} sources` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
+            {viewMode === "bars"
+              ? (picker.isAll ? `Latest approval from ${visibleEntries.length} of ${latestBySource.size} sources` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`)
+              : (picker.isAll ? `Tracked across ${visibleSources.size} of ${approvalBySource.size} sources` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`)}
           </p>
         </div>
         <div className="flex items-center gap-1 flex-wrap">
+          <div className="flex rounded-lg border border-border overflow-hidden mr-1">
+            <button onClick={() => setViewMode("bars")} className={`px-2 py-0.5 text-[10px] font-bold transition-colors ${viewMode === "bars" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>By Source</button>
+            <button onClick={() => setViewMode("trend")} className={`px-2 py-0.5 text-[10px] font-bold transition-colors ${viewMode === "trend" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>Trend</button>
+          </div>
           <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
-          {sortOptions.map((opt) =>
-            <button
-              key={opt.value}
-              onClick={() => setSortBy(opt.value)}
-              className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
-                sortBy === opt.value ?
-                "bg-primary text-primary-foreground" :
-                "bg-muted text-muted-foreground hover:bg-accent"}`
-              }>
-              {opt.label}
-            </button>
+          {viewMode === "bars" && sortOptions.map((opt) =>
+            <button key={opt.value} onClick={() => setSortBy(opt.value)} className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${sortBy === opt.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>{opt.label}</button>
           )}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`ml-1 p-1 rounded transition-colors ${showFilters ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
-            title="Filter sources">
+          {viewMode === "trend" && zoomOptions.map((opt) =>
+            <button key={opt.value} onClick={() => setZoomMonths(opt.value)} className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${zoomMonths === opt.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>{opt.label}</button>
+          )}
+          <button onClick={() => setShowFilters(!showFilters)} className={`ml-1 p-1 rounded transition-colors ${showFilters ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`} title="Filter sources">
             <Filter className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Poll picker */}
       {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
 
-      {/* Source filter panel */}
       {showFilters &&
         <div className="mb-3 p-2 rounded-lg border border-border bg-muted/30">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] font-bold text-muted-foreground">FILTER SOURCES</span>
             <button onClick={selectAll} className="text-[9px] text-primary hover:underline">Select All</button>
             <button onClick={deselectAll} className="text-[9px] text-primary hover:underline">Deselect All</button>
-            <span className="text-[9px] text-muted-foreground ml-auto">{visibleEntries.length}/{allSourceIds.length} visible</span>
+            <span className="text-[9px] text-muted-foreground ml-auto">{viewMode === "bars" ? visibleEntries.length : visibleSources.size}/{allSourceIds.length} visible</span>
           </div>
           <div className="flex flex-wrap gap-1">
             {allSourceIds.map((id) => {
               const src = getSourceInfo(id);
               const active = !hiddenSources.has(id);
               return (
-                <button
-                  key={id}
-                  onClick={() => toggleSource(id)}
-                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all ${
-                    active ? "bg-card border border-border shadow-sm" : "opacity-40 bg-transparent border border-transparent"}`
-                  }>
+                <button key={id} onClick={() => toggleSource(id)} className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all ${active ? "bg-card border border-border shadow-sm" : "opacity-40 bg-transparent border border-transparent"}`}>
                   <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
                   {src.name}
                 </button>);
@@ -330,114 +386,120 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
       }
 
       <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${Math.max(W, chartW)} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 340 }}>
-          {/* Grid lines */}
-          {yTicks.map((v) =>
-            <g key={v}>
-              <line x1={PAD.left} y1={valToY(v)} x2={Math.max(W, chartW) - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} />
-              <text x={PAD.left - 6} y={valToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
-            </g>
-          )}
-          {/* 50% reference line */}
-          {minVal < 50 && maxVal > 50 &&
-            <line x1={PAD.left} y1={valToY(50)} x2={Math.max(W, chartW) - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.5} />
-          }
-
-          {/* Grouped bars per source */}
-          {visibleEntries.map(([sourceId, poll], i) => {
-            const src = getSourceInfo(sourceId);
-            const groupX = PAD.left + 10 + i * (barGroupW + 8);
-            const halfBar = barGroupW / 2 - 1;
-            const approve = poll.approve_pct ?? 0;
-            const disapprove = poll.disapprove_pct ?? 0;
-            const approveH = (approve - minVal) / valRange * plotH;
-            const disapproveH = (disapprove - minVal) / valRange * plotH;
-            const baseY = PAD.top + plotH;
-
-            return (
-              <g key={sourceId}
-                onMouseEnter={() => setHoveredBar({ source: sourceId, approve, disapprove, margin: approve - disapprove, x: groupX + barGroupW / 2, y: valToY(Math.max(approve, disapprove)) })}
-                onMouseLeave={() => setHoveredBar(null)}
-                style={{ cursor: "pointer" }}
-              >
-                {/* Approve bar (left) */}
-                <rect
-                  x={groupX}
-                  y={baseY - approveH}
-                  width={halfBar}
-                  height={inView ? approveH : 0}
-                  rx={2}
-                  fill="hsl(150, 55%, 45%)"
-                  opacity={0.85}
-                  style={{ transition: "height 0.8s ease, y 0.8s ease" }}
-                />
-                {/* Disapprove bar (right) */}
-                <rect
-                  x={groupX + halfBar + 2}
-                  y={baseY - disapproveH}
-                  width={halfBar}
-                  height={inView ? disapproveH : 0}
-                  rx={2}
-                  fill="hsl(0, 65%, 50%)"
-                  opacity={0.85}
-                  style={{ transition: "height 0.8s ease, y 0.8s ease" }}
-                />
-                {/* Value labels */}
-                <text x={groupX + halfBar / 2} y={baseY - approveH - 3} textAnchor="middle" fontSize={8} fontWeight="600" fill="hsl(150, 55%, 45%)">{approve}%</text>
-                <text x={groupX + halfBar + 2 + halfBar / 2} y={baseY - disapproveH - 3} textAnchor="middle" fontSize={8} fontWeight="600" fill="hsl(0, 65%, 50%)">{disapprove}%</text>
-
-                {/* Source name (rotated) */}
-                <text
-                  x={groupX + barGroupW / 2}
-                  y={H - PAD.bottom + 8}
-                  textAnchor="end"
-                  fontSize={9}
-                  fill={`hsl(${src.color})`}
-                  fontWeight="500"
-                  transform={`rotate(-45, ${groupX + barGroupW / 2}, ${H - PAD.bottom + 8})`}
-                >
-                  {src.name.length > 14 ? src.name.slice(0, 13) + "…" : src.name}
-                </text>
+        {viewMode === "bars" && (
+          <svg viewBox={`0 0 ${Math.max(W, barChartW)} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 340 }}>
+            {yTicks.map((v) =>
+              <g key={v}>
+                <line x1={PAD.left} y1={valToY(v)} x2={Math.max(W, barChartW) - PAD.right} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} />
+                <text x={PAD.left - 6} y={valToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
               </g>
-            );
-          })}
+            )}
+            {minVal < 50 && maxVal > 50 &&
+              <line x1={PAD.left} y1={valToY(50)} x2={Math.max(W, barChartW) - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.5} />
+            }
+            {visibleEntries.map(([sourceId, poll], i) => {
+              const src = getSourceInfo(sourceId);
+              const groupX = PAD.left + 10 + i * (barGroupW + 8);
+              const halfBar = barGroupW / 2 - 1;
+              const approve = poll.approve_pct ?? 0;
+              const disapprove = poll.disapprove_pct ?? 0;
+              const approveH = (approve - minVal) / valRange * plotH;
+              const disapproveH = (disapprove - minVal) / valRange * plotH;
+              const baseY = PAD.top + plotH;
+              return (
+                <g key={sourceId} onMouseEnter={() => setHoveredBar({ source: sourceId, approve, disapprove, margin: approve - disapprove, x: groupX + barGroupW / 2, y: valToY(Math.max(approve, disapprove)) })} onMouseLeave={() => setHoveredBar(null)} style={{ cursor: "pointer" }}>
+                  <rect x={groupX} y={baseY - approveH} width={halfBar} height={inView ? approveH : 0} rx={2} fill="hsl(150, 55%, 45%)" opacity={0.85} style={{ transition: "height 0.8s ease, y 0.8s ease" }} />
+                  <rect x={groupX + halfBar + 2} y={baseY - disapproveH} width={halfBar} height={inView ? disapproveH : 0} rx={2} fill="hsl(0, 65%, 50%)" opacity={0.85} style={{ transition: "height 0.8s ease, y 0.8s ease" }} />
+                  <text x={groupX + halfBar / 2} y={baseY - approveH - 3} textAnchor="middle" fontSize={8} fontWeight="600" fill="hsl(150, 55%, 45%)">{approve}%</text>
+                  <text x={groupX + halfBar + 2 + halfBar / 2} y={baseY - disapproveH - 3} textAnchor="middle" fontSize={8} fontWeight="600" fill="hsl(0, 65%, 50%)">{disapprove}%</text>
+                  <text x={groupX + barGroupW / 2} y={H - PAD.bottom + 8} textAnchor="end" fontSize={9} fill={`hsl(${src.color})`} fontWeight="500" transform={`rotate(-45, ${groupX + barGroupW / 2}, ${H - PAD.bottom + 8})`}>
+                    {src.name.length > 14 ? src.name.slice(0, 13) + "…" : src.name}
+                  </text>
+                </g>
+              );
+            })}
+            {hoveredBar && (
+              <g>
+                <rect x={Math.min(hoveredBar.x + 10, Math.max(W, barChartW) - 145)} y={Math.max(hoveredBar.y - 50, 5)} width={130} height={44} rx={6} fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth={1} />
+                <text x={Math.min(hoveredBar.x + 18, Math.max(W, barChartW) - 137)} y={Math.max(hoveredBar.y - 50, 5) + 14} fontSize={10} fontWeight="600" fill="hsl(var(--foreground))">{getSourceInfo(hoveredBar.source).name}</text>
+                <text x={Math.min(hoveredBar.x + 18, Math.max(W, barChartW) - 137)} y={Math.max(hoveredBar.y - 50, 5) + 26} fontSize={9} fill="hsl(150, 55%, 45%)">Approve: {hoveredBar.approve}%</text>
+                <text x={Math.min(hoveredBar.x + 18, Math.max(W, barChartW) - 137)} y={Math.max(hoveredBar.y - 50, 5) + 38} fontSize={9} fill="hsl(0, 65%, 50%)">Disapprove: {hoveredBar.disapprove}% (net {hoveredBar.margin > 0 ? "+" : ""}{hoveredBar.margin.toFixed(1)})</text>
+              </g>
+            )}
+          </svg>
+        )}
 
-          {/* Tooltip */}
-          {hoveredBar && (
-            <g>
-              <rect
-                x={Math.min(hoveredBar.x + 10, Math.max(W, chartW) - 145)}
-                y={Math.max(hoveredBar.y - 50, 5)}
-                width={130}
-                height={44}
-                rx={6}
-                fill="hsl(var(--popover))"
-                stroke="hsl(var(--border))"
-                strokeWidth={1}
-              />
-              <text x={Math.min(hoveredBar.x + 18, Math.max(W, chartW) - 137)} y={Math.max(hoveredBar.y - 50, 5) + 14} fontSize={10} fontWeight="600" fill="hsl(var(--foreground))">
-                {getSourceInfo(hoveredBar.source).name}
-              </text>
-              <text x={Math.min(hoveredBar.x + 18, Math.max(W, chartW) - 137)} y={Math.max(hoveredBar.y - 50, 5) + 26} fontSize={9} fill="hsl(150, 55%, 45%)">
-                Approve: {hoveredBar.approve}%
-              </text>
-              <text x={Math.min(hoveredBar.x + 18, Math.max(W, chartW) - 137)} y={Math.max(hoveredBar.y - 50, 5) + 38} fontSize={9} fill="hsl(0, 65%, 50%)">
-                Disapprove: {hoveredBar.disapprove}% (net {hoveredBar.margin > 0 ? "+" : ""}{hoveredBar.margin.toFixed(1)})
-              </text>
-            </g>
-          )}
-        </svg>
+        {viewMode === "trend" && (
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[500px]" style={{ maxHeight: 340 }}>
+            {yTicks.map((v) =>
+              <g key={v}>
+                <line x1={trendPAD.left} y1={trendValToY(v)} x2={W - trendPAD.right} y2={trendValToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} />
+                <text x={trendPAD.left - 6} y={trendValToY(v) + 3.5} textAnchor="end" fontSize={10} fill="hsl(var(--muted-foreground))">{v}%</text>
+              </g>
+            )}
+            {minVal < 50 && maxVal > 50 &&
+              <line x1={trendPAD.left} y1={trendValToY(50)} x2={W - trendPAD.right} y2={trendValToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.5} />
+            }
+            {xTicks.map((t) =>
+              <text key={t.date} x={trendDateToX(t.date)} y={H - 8} textAnchor="middle" fontSize={10} fill="hsl(var(--muted-foreground))">{t.label}</text>
+            )}
+            {Array.from(visibleSources.entries()).map(([sourceId, sourcePolls]) => {
+              const src = getSourceInfo(sourceId);
+              const color = `hsl(${src.color})`;
+              const points = sourcePolls
+                .filter((p) => p.approve_pct !== null && p.date_conducted >= trendMinDate)
+                .map((p) => ({ x: trendDateToX(p.date_conducted), y: trendValToY(p.approve_pct!), date: p.date_conducted, val: p.approve_pct! }));
+              if (points.length < 2) return null;
+              const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+              return (
+                <g key={sourceId}>
+                  <path d={pathD} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.8}
+                    style={{ strokeDasharray: inView ? "none" : "2000", strokeDashoffset: inView ? 0 : 2000, transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)" }} />
+                  {points.map((p, i) =>
+                    <circle key={i} cx={p.x} cy={p.y} r={hoveredPoint?.source === sourceId && hoveredPoint?.date === p.date ? 5 : 3}
+                      fill={color} stroke="hsl(var(--card))" strokeWidth={1.5}
+                      style={{ cursor: "pointer", opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${1000 + i * 100}ms` }}
+                      onMouseEnter={() => setHoveredPoint({ source: sourceId, date: p.date, value: p.val, x: p.x, y: p.y })}
+                      onMouseLeave={() => setHoveredPoint(null)} />
+                  )}
+                </g>
+              );
+            })}
+            {hoveredPoint && (
+              <g>
+                <rect x={hoveredPoint.x + 10} y={hoveredPoint.y - 28} width={120} height={32} rx={6} fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth={1} />
+                <text x={hoveredPoint.x + 18} y={hoveredPoint.y - 14} fontSize={10} fontWeight="600" fill="hsl(var(--foreground))">{getSourceInfo(hoveredPoint.source).name}</text>
+                <text x={hoveredPoint.x + 18} y={hoveredPoint.y - 2} fontSize={9} fill="hsl(var(--muted-foreground))">{hoveredPoint.value}% · {formatDateShort(hoveredPoint.date)}</text>
+              </g>
+            )}
+          </svg>
+        )}
       </div>
+
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 mt-3">
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-5 rounded" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} />
-          <span className="text-[10px] font-medium text-muted-foreground">Approve</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-5 rounded" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} />
-          <span className="text-[10px] font-medium text-muted-foreground">Disapprove</span>
-        </div>
+      <div className="flex flex-wrap gap-3 mt-3">
+        {viewMode === "bars" ? (
+          <>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-5 rounded" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} />
+              <span className="text-[10px] font-medium text-muted-foreground">Approve</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-5 rounded" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} />
+              <span className="text-[10px] font-medium text-muted-foreground">Disapprove</span>
+            </div>
+          </>
+        ) : (
+          Array.from(visibleSources.keys()).map((sourceId) => {
+            const src = getSourceInfo(sourceId);
+            return (
+              <div key={sourceId} className="flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(${src.color})` }} />
+                <span className="text-[10px] font-medium text-muted-foreground">{src.name}</span>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>);
 }
