@@ -162,7 +162,7 @@ export function exportPollingPDF(polls: PollEntry[], filename = "polling-report"
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   setColor(doc, [255, 255, 255]);
-  doc.text("📊 Polling Data Report", margin, 14);
+  doc.text("Polling Data Report", margin, 14);
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.text(
