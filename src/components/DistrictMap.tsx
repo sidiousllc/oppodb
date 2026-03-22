@@ -204,7 +204,16 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [geoData, setGeoData] = useState<DistrictGeoJSON | null>(null);
   const [loading, setLoading] = useState(true);
-...
+  const [colorMode, setColorMode] = useState<ColorMode>("cook");
+  const [zoomState, setZoomState] = useState<{ center: [number, number]; zoom: number }>({
+    center: [-96, 38],
+    zoom: 1,
+  });
+  const [zoomedStateAbbr, setZoomedStateAbbr] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [highlightedDistrict, setHighlightedDistrict] = useState<string | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     let isMounted = true;
     fetchDistrictGeo().then((data) => {
