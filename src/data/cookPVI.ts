@@ -230,15 +230,8 @@ export function getEffectivePVI(districtId: string): { score: number; estimated:
   const actual = getCurrentPVI(districtId);
   if (actual !== null) return { score: actual, estimated: false };
 
-  // Try to estimate from cook rating (imported dynamically to avoid circular deps)
-  // We inline the lookup here using a lazy import pattern
-  try {
-    const { getCookRating } = require("@/data/cookRatings");
-    const rating = getCookRating(districtId);
-    if (rating) return { score: estimatePVIFromCookRating(rating), estimated: true };
-  } catch {
-    // Fallback: not available
-  }
+  const rating = getCookRating(districtId);
+  if (rating) return { score: estimatePVIFromCookRating(rating), estimated: true };
   return null;
 }
 
