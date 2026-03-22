@@ -21,12 +21,21 @@ function categorize(name: string, slug: string): { category: Candidate["category
   }
   
   // Governor
-  if (["jack-ciattarelli", "jason-miyares", "winsome-earle-sears", "derek-dooley", "john-king"].includes(lslug)) {
-    const stateMap: Record<string, string> = {
-      "jack-ciattarelli": "NJ", "jason-miyares": "VA", "winsome-earle-sears": "VA",
-      "derek-dooley": "GA", "john-king": "GA"
-    };
-    return { category: "governor", state: stateMap[lslug] || "" };
+  const govSlugs: Record<string, string> = {
+    "jack-ciattarelli": "NJ", "jason-miyares": "VA", "winsome-earle-sears": "VA",
+    "derek-dooley": "GA", "john-king": "GA",
+    // Governor race candidates from state folders
+    "andy-biggs": "AZ", "brad-raffensperger": "GA", "brad-sherman": "IA",
+    "burt-jones": "GA", "chris-carr": "GA", "david-schweikert": "AZ",
+    "doug-mastriano": "PA", "joe-lombardo": "NV", "john-james": "MI",
+    "jonathan-bush": "ME", "karrin-taylor-robson": "AZ", "kelly-ayotte": "NH",
+    "lisa-demuth": "MN", "maria-lazar": "WI", "mike-cox": "MI",
+    "mike-lindell": "MN", "perry-johnson": "MI", "randy-feenstra": "IA",
+    "rick-jackson": "GA", "bobby-charles": "ME", "stacy-garrity": "PA",
+    "tom-tiffany": "WI",
+  };
+  if (govSlugs[lslug]) {
+    return { category: "governor", state: govSlugs[lslug] };
   }
   
   // State level
