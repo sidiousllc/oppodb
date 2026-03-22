@@ -204,6 +204,43 @@ export function getCurrentPVI(districtId: string): number | null {
 }
 
 /**
+ * Estimate PVI from Cook rating when actual PVI data is unavailable.
+ * Returns an approximate PVI score based on the Cook Political Report rating.
+ */
+function estimatePVIFromCookRating(rating: string): number {
+  switch (rating) {
+    case "Solid D": return -20;
+    case "Likely D": return -8;
+    case "Lean D": return -4;
+    case "Toss Up": return 0;
+    case "Lean R": return 4;
+    case "Likely R": return 8;
+    case "Solid R": return 20;
+    default: return 0;
+  }
+}
+
+/**
+ * Get the effective PVI for a district — actual data if available, otherwise
+ * estimated from Cook rating. Returns null only if neither source exists.
+ */
+export function getEffectivePVI(districtId: string): { score: number; estimated: boolean } | null {
+  const actual = getCurrentPVI(districtId);
+  if (actual !== null) return { score: actual, estimated: false };
+
+  // Try to estimate from cook rating (imported dynamically to avoid circular deps)
+  // We inline the lookup here using a lazy import pattern
+  try {
+    const { getCookRating } = require("@/data/cookRatings");
+    const rating = getCookRating(districtId);
+    if (rating) return { score: estimatePVIFromCookRating(rating), estimated: true };
+  } catch {
+    // Fallback: not available
+  }
+  return null;
+}
+
+/**
  * Check if a district's PVI has shifted significantly (>4 points) between oldest and newest.
  */
 export function hasPVIShift(districtId: string): { shifted: boolean; delta: number } {
