@@ -11,6 +11,8 @@
  *   2024 PVI = 2016+2020 avg vs national (current)
  */
 
+import { getCookRating } from "@/data/cookRatings";
+
 export type PVICycle = "2012" | "2016" | "2020" | "2024";
 
 export const PVI_CYCLES: PVICycle[] = ["2012", "2016", "2020", "2024"];
