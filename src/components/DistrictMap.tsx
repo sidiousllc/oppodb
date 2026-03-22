@@ -66,12 +66,13 @@ function toDistrictId(stateAbbr: string, cdfips: string): string | null {
 
 function matchesPVIFilter(districtId: string, filter: PVIFilter): boolean {
   if (filter === "all") return true;
-  const pvi = getCurrentPVI(districtId);
+  const effective = getEffectivePVI(districtId);
+  const pvi = effective?.score ?? null;
   if (pvi === null) return false;
   switch (filter) {
     case "strong-d": return pvi <= -8;
     case "lean-d": return pvi >= -7 && pvi <= -1;
-    case "swing": return pvi === 0;
+    case "swing": return pvi >= -2 && pvi <= 2; // Widen swing to catch near-even
     case "lean-r": return pvi >= 1 && pvi <= 7;
     case "strong-r": return pvi >= 8;
     default: return true;
