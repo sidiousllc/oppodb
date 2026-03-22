@@ -4,6 +4,16 @@ import IssuePollingSection from "@/components/IssuePollingSection";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, ExternalLink, TrendingDown, TrendingUp, Minus, Filter, RefreshCw, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { exportPollingCSV, exportPollingPDF } from "@/lib/pollingExport";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ReferenceLine,
+} from "recharts";
 
 // ─── useInView Hook ─────────────────────────────────────────────────────────
 
@@ -907,7 +917,6 @@ function ApprovalGauge({ approve, disapprove, margin }: {approve: number;disappr
 
 function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
   const { ref, inView } = useInView();
-  const [hovered, setHovered] = useState<{label: string;x: number;y: number;} | null>(null);
   const [zoomMonths, setZoomMonths] = useState<number>(0);
 
   const favFilter = useCallback((p: PollEntry) => p.poll_type === "favorability", []);
@@ -929,53 +938,33 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
   const sorted = allSorted.filter((p) => p.date_conducted >= minDateStr);
   if (sorted.length < 2) return null;
 
-  const W = 700;
-  const H = 300;
-  const PAD = { top: 20, right: 80, bottom: 40, left: 45 };
-  const plotW = W - PAD.left - PAD.right;
-  const plotH = H - PAD.top - PAD.bottom;
-
-  const allVals = sorted.flatMap((p) => [p.favor_pct ?? 0, p.oppose_pct ?? 0]);
-  const dataMin = Math.min(...allVals);
-  const dataMax = Math.max(...allVals);
-  const minVal = Math.floor(dataMin / 5) * 5 - 5;
-  const maxVal = Math.ceil(dataMax / 5) * 5 + 5;
-  const valRange = maxVal - minVal || 1;
-
-  const dateRange = new Date(sorted[sorted.length - 1].date_conducted).getTime() - new Date(sorted[0].date_conducted).getTime() || 1;
-  const dateToX = (d: string) => PAD.left + (new Date(d).getTime() - new Date(sorted[0].date_conducted).getTime()) / dateRange * plotW;
-  const valToY = (v: number) => PAD.top + plotH - (v - minVal) / valRange * plotH;
-
-  const favPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.favor_pct ?? 0)}`).join(" ");
-  const unfavPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.oppose_pct ?? 0)}`).join(" ");
-  const areaPath = sorted.map((p, i) => `${i === 0 ? "M" : "L"} ${dateToX(p.date_conducted)} ${valToY(p.favor_pct ?? 0)}`).join(" ") +
-  [...sorted].reverse().map((p) => ` L ${dateToX(p.date_conducted)} ${valToY(p.oppose_pct ?? 0)}`).join("") + " Z";
-
   const latest = sorted[sorted.length - 1];
 
-  const yTicks: number[] = [];
-  for (let v = Math.ceil(minVal / 5) * 5; v <= maxVal; v += 5) yTicks.push(v);
+  // Build chart data — aggregate by date (average if multiple polls same day)
+  const byDate = new Map<string, { fav: number[]; unfav: number[]; sources: string[] }>();
+  sorted.forEach((p) => {
+    const entry = byDate.get(p.date_conducted) ?? { fav: [], unfav: [], sources: [] };
+    if (p.favor_pct != null) entry.fav.push(p.favor_pct);
+    if (p.oppose_pct != null) entry.unfav.push(p.oppose_pct);
+    entry.sources.push(getSourceInfo(p.source).name);
+    byDate.set(p.date_conducted, entry);
+  });
 
-  const xTicks: {date: string;label: string;}[] = [];
-  const s = new Date(sorted[0].date_conducted);
-  const e = new Date(sorted[sorted.length - 1].date_conducted);
-  const c = new Date(s.getFullYear(), s.getMonth(), 1);
-  while (c <= e) {
-    const d = c.toISOString().split("T")[0];
-    if (d >= sorted[0].date_conducted) {
-      const showYear = c.getMonth() === 0 || xTicks.length === 0;
-      xTicks.push({ date: d, label: c.toLocaleDateString("en-US", { month: "short", ...(showYear ? { year: "2-digit" } : {}) }) });
-    }
-    c.setMonth(c.getMonth() + 1);
-  }
+  const chartData = Array.from(byDate.entries()).map(([date, v]) => ({
+    date,
+    dateLabel: new Date(date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
+    favorable: Math.round(v.fav.reduce((a, b) => a + b, 0) / v.fav.length * 10) / 10,
+    unfavorable: Math.round(v.unfav.reduce((a, b) => a + b, 0) / v.unfav.length * 10) / 10,
+    sources: v.sources.join(", "),
+  }));
 
   const zoomOptions = [
-  { label: "All", value: 0 },
-  { label: "3M", value: 3 },
-  { label: "6M", value: 6 },
-  { label: "1Y", value: 12 },
-  { label: "2Y", value: 24 }];
-
+    { label: "All", value: 0 },
+    { label: "3M", value: 3 },
+    { label: "6M", value: 6 },
+    { label: "1Y", value: 12 },
+    { label: "2Y", value: 24 },
+  ];
 
   return (
     <AnimatedCard>
@@ -984,7 +973,9 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">Favorability Tracking</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {picker.isAll ? `${sorted.length} data points from ${new Set(sorted.map((p) => p.source)).size} sources` : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
+              {picker.isAll
+                ? `${sorted.length} data points from ${new Set(sorted.map((p) => p.source)).size} sources`
+                : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -996,64 +987,97 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
         </div>
         <div className="flex items-center gap-1 flex-wrap mb-3">
           <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
-          {zoomOptions.map((opt) =>
-          <button
-            key={opt.value}
-            onClick={() => setZoomMonths(opt.value)}
-            className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
-            zoomMonths === opt.value ?
-            "bg-primary text-primary-foreground" :
-            "bg-muted text-muted-foreground hover:bg-accent"}`
-            }>
-            
+          {zoomOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setZoomMonths(opt.value)}
+              className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
+                zoomMonths === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-accent"
+              }`}
+            >
               {opt.label}
             </button>
-          )}
+          ))}
         </div>
-        {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
-        <div className="w-full">
-          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet" onMouseLeave={() => setHovered(null)}>
-            {yTicks.map((v) =>
-            <g key={v}>
-                <line x1={PAD.left} x2={W - PAD.right} y1={valToY(v)} y2={valToY(v)} stroke="hsl(var(--border))" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "3,3"} />
-                <text x={PAD.left - 6} y={valToY(v) + 3} textAnchor="end" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
-              </g>
-            )}
-            {minVal < 50 && maxVal > 50 &&
-            <line x1={PAD.left} y1={valToY(50)} x2={W - PAD.right} y2={valToY(50)} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
-            }
-            {xTicks.map((t) =>
-            <text key={t.date} x={dateToX(t.date)} y={H - PAD.bottom + 20} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{t.label}</text>
-            )}
-            <path d={areaPath} fill="hsl(270, 50%, 60%)" opacity={0.06} />
-            <path d={unfavPath} fill="none" stroke="hsl(0, 65%, 50%)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: inView ? "0" : "2000", strokeDashoffset: inView ? "0" : "2000", transition: "stroke-dashoffset 1.5s ease 0.3s" }} />
-            <path d={favPath} fill="none" stroke="hsl(150, 55%, 45%)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: inView ? "0" : "2000", strokeDashoffset: inView ? "0" : "2000", transition: "stroke-dashoffset 1.5s ease" }} />
-            {sorted.map((p, i) => {
-              const x = dateToX(p.date_conducted);
-              const regionW = plotW / sorted.length;
-              return (
-                <g key={i}>
-                  <rect
-                    x={x - regionW / 2} y={PAD.top} width={regionW} height={plotH} fill="transparent"
-                    onMouseEnter={() => setHovered({
-                      label: `${formatDate(p.date_conducted)} · ${getSourceInfo(p.source).name}: ${p.favor_pct}% fav / ${p.oppose_pct}% unfav`,
-                      x, y: Math.min(valToY(p.favor_pct ?? 0), valToY(p.oppose_pct ?? 0)) - 12
-                    })} />
-                  
-                  <circle cx={x} cy={valToY(p.favor_pct ?? 0)} r={3} fill="hsl(150, 55%, 45%)" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${i * 60}ms` }} />
-                  <circle cx={x} cy={valToY(p.oppose_pct ?? 0)} r={3} fill="hsl(0, 65%, 50%)" style={{ opacity: inView ? 1 : 0, transition: `opacity 0.3s ease ${i * 60 + 300}ms` }} />
-                </g>);
-
-            })}
-            {hovered &&
-            <g>
-                <rect x={Math.max(PAD.left, Math.min(hovered.x - 120, W - PAD.right - 240))} y={hovered.y - 18} width={240} height={18} rx={4} fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth={0.5} />
-                <text x={Math.max(PAD.left + 120, Math.min(hovered.x, W - PAD.right - 120))} y={hovered.y - 6} textAnchor="middle" fontSize={9} fontWeight={600} fill="hsl(var(--popover-foreground))">{hovered.label}</text>
-              </g>
-            }
-            <text x={W - PAD.right + 6} y={valToY(latest.favor_pct ?? 0) + 3} fontSize={10} fontWeight={700} fill="hsl(150, 55%, 45%)">Fav {latest.favor_pct}%</text>
-            <text x={W - PAD.right + 6} y={valToY(latest.oppose_pct ?? 0) + 3} fontSize={10} fontWeight={700} fill="hsl(0, 65%, 50%)">Unfav {latest.oppose_pct}%</text>
-          </svg>
+        {picker.showPicker && (
+          <PollPickerDropdown
+            uniquePolls={picker.uniquePolls}
+            selectedIds={picker.selectedIds}
+            isAll={picker.isAll}
+            toggle={picker.toggle}
+            setSelectedIds={picker.setSelectedIds}
+          />
+        )}
+        <div className="w-full" style={{ height: 280 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="favGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(150, 55%, 45%)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(150, 55%, 45%)" stopOpacity={0.02} />
+                </linearGradient>
+                <linearGradient id="unfavGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(0, 65%, 50%)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(0, 65%, 50%)" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+              <XAxis
+                dataKey="dateLabel"
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tickLine={false}
+                axisLine={{ stroke: "hsl(var(--border))" }}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                domain={["dataMin - 5", "dataMax + 5"]}
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tickLine={false}
+                axisLine={{ stroke: "hsl(var(--border))" }}
+                tickFormatter={(v: number) => `${v}%`}
+              />
+              <RechartsTooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--popover))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 8,
+                  fontSize: 11,
+                  color: "hsl(var(--popover-foreground))",
+                }}
+                labelFormatter={(label: string) => label}
+                formatter={(value: number, name: string) => [
+                  `${value}%`,
+                  name === "favorable" ? "Favorable" : "Unfavorable",
+                ]}
+              />
+              <ReferenceLine y={50} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 3" opacity={0.4} />
+              <Area
+                type="monotone"
+                dataKey="favorable"
+                stroke="hsl(150, 55%, 45%)"
+                strokeWidth={2.5}
+                fill="url(#favGrad)"
+                dot={{ r: 3, fill: "hsl(150, 55%, 45%)", strokeWidth: 0 }}
+                activeDot={{ r: 5, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                isAnimationActive={inView}
+                animationDuration={1500}
+              />
+              <Area
+                type="monotone"
+                dataKey="unfavorable"
+                stroke="hsl(0, 65%, 50%)"
+                strokeWidth={2.5}
+                fill="url(#unfavGrad)"
+                dot={{ r: 3, fill: "hsl(0, 65%, 50%)", strokeWidth: 0 }}
+                activeDot={{ r: 5, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                isAnimationActive={inView}
+                animationDuration={1500}
+                animationBegin={300}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
         <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Favorable</span>
@@ -1061,8 +1085,8 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
           <span className="ml-auto">{sorted.length} data points tracked</span>
         </div>
       </div>
-    </AnimatedCard>);
-
+    </AnimatedCard>
+  );
 }
 
 // ─── Demographic Breakdown Chart ────────────────────────────────────────────
