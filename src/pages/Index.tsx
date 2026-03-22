@@ -676,7 +676,7 @@ export default function Index() {
                         </h2>
                       </div>
                       <div className="mb-3">
-                        <SearchBar value={search} onChange={setSearch} />
+                        <SearchBar value={search} onChange={setSearch} districts={districts} onNavigate={(s, slug) => { setSection(s as Section); setSelectedSlug(slug); }} />
                       </div>
                       {renderList()}
                     </>
