@@ -23,7 +23,7 @@ const STATE_GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 const ESRI_CD_BASE =
   "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query";
 
-function buildCdUrl(offset: number): string {
+function buildCdUrl(offset: number, cacheBust: string): string {
   return `${ESRI_CD_BASE}?${new URLSearchParams({
     where: "1=1",
     outFields: "STATE_ABBR,CDFIPS,DISTRICTID",
@@ -32,6 +32,7 @@ function buildCdUrl(offset: number): string {
     returnGeometry: "true",
     resultRecordCount: "250",
     resultOffset: String(offset),
+    _cb: cacheBust,
   }).toString()}`;
 }
 
@@ -151,9 +152,25 @@ async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
     const allFeatures: DistrictGeoJSON["features"] = [];
     let offset = 0;
     const PAGE_SIZE = 250;
+    const cacheBustBase = `${Date.now()}`;
+
+    const fetchPage = async (pageOffset: number, attempt = 0): Promise<Response> => {
+      const cacheBust = attempt === 0 ? cacheBustBase : `${cacheBustBase}-${pageOffset}-${attempt}`;
+      const response = await fetch(buildCdUrl(pageOffset, cacheBust), {
+        cache: "no-store",
+      });
+
+      // ArcGIS occasionally returns a 304 with empty body in preview environments.
+      // Retry once with a fresh cache-bust token to guarantee a JSON body.
+      if (response.status === 304 && attempt < 1) {
+        return fetchPage(pageOffset, attempt + 1);
+      }
+
+      return response;
+    };
 
     while (true) {
-      const res = await fetch(buildCdUrl(offset));
+      const res = await fetchPage(offset);
       if (!res.ok) {
         console.error("[DistrictMap] Fetch failed:", res.status, res.statusText);
         break;
