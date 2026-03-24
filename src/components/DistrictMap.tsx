@@ -180,6 +180,21 @@ function countUniqueDistricts(features: DistrictGeoJSON["features"]): number {
   return ids.size;
 }
 
+async function fetchEsriJson(urlBuilder: (attempt: number) => string): Promise<{ features?: DistrictGeoJSON["features"]; exceededTransferLimit?: boolean } | null> {
+  for (let attempt = 0; attempt <= ESRI_MAX_RETRIES; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), ESRI_REQUEST_TIMEOUT_MS);
+    try {
+      const res = await fetch(urlBuilder(attempt), { cache: "no-store", signal: controller.signal });
+      if (!res.ok || res.status === 304) { if (attempt === ESRI_MAX_RETRIES) return null; continue; }
+      const data = await res.json();
+      if (data?.error) { if (attempt === ESRI_MAX_RETRIES) return null; continue; }
+      return data;
+    } catch { if (attempt === ESRI_MAX_RETRIES) return null; } finally { clearTimeout(timeout); }
+  }
+  return null;
+}
+
 async function fetchDistrictGeoPaginated(): Promise<DistrictGeoJSON | null> {
   const allFeatures: DistrictGeoJSON["features"] = [];
   const cacheSeed = `${Date.now()}`;
