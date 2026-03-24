@@ -153,6 +153,8 @@ const STATE_CENTERS: Record<string, { coords: [number, number]; zoom: number }> 
 
 // ─── GeoJSON Cache ──────────────────────────────────────────────────────────
 
+const LOCAL_CD_GEO = "/us-cd-118.json";
+
 interface DistrictGeoJSON {
   type: string;
   features: Array<{
@@ -178,106 +180,34 @@ function countUniqueDistricts(features: DistrictGeoJSON["features"]): number {
   return ids.size;
 }
 
-async function fetchEsriJson(urlBuilder: (attempt: number) => string): Promise<{ features?: DistrictGeoJSON["features"]; exceededTransferLimit?: boolean } | null> {
-  for (let attempt = 0; attempt <= ESRI_MAX_RETRIES; attempt += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), ESRI_REQUEST_TIMEOUT_MS);
-
-    try {
-      const res = await fetch(urlBuilder(attempt), {
-        cache: "no-store",
-        signal: controller.signal,
-      });
-
-      if (!res.ok || res.status === 304) {
-        if (attempt === ESRI_MAX_RETRIES) return null;
-        continue;
-      }
-
-      const data = await res.json();
-      if (data?.error) {
-        if (attempt === ESRI_MAX_RETRIES) return null;
-        continue;
-      }
-
-      return data;
-    } catch {
-      if (attempt === ESRI_MAX_RETRIES) return null;
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-
-  return null;
-}
-
-async function fetchDistrictGeoPaginated(): Promise<DistrictGeoJSON | null> {
-  const allFeatures: DistrictGeoJSON["features"] = [];
-  const cacheSeed = `${Date.now()}`;
-  let offset = 0;
-
-  while (true) {
-    const data = await fetchEsriJson((attempt) =>
-      buildCdUrl(offset, `${cacheSeed}-${offset}-${attempt}`)
-    );
-
-    if (!data || !Array.isArray(data.features)) {
-      return null;
-    }
-
-    if (data.features.length === 0) break;
-
-    allFeatures.push(...data.features);
-
-    const needsNextPage = Boolean(data.exceededTransferLimit) || data.features.length >= ESRI_PAGE_SIZE;
-    if (!needsNextPage) break;
-
-    offset += ESRI_PAGE_SIZE;
-  }
-
-  if (allFeatures.length === 0) return null;
-
-  const uniqueDistricts = countUniqueDistricts(allFeatures);
-  if (uniqueDistricts < ESRI_MIN_DISTRICT_COUNT) return null;
-
-  return { type: "FeatureCollection", features: allFeatures };
-}
-
-async function fetchDistrictGeoByState(): Promise<DistrictGeoJSON | null> {
-  const cacheSeed = `${Date.now()}`;
-  const states = Object.keys(STATE_CENTERS);
-  const responses = await Promise.all(
-    states.map((stateAbbr) =>
-      fetchEsriJson((attempt) =>
-        buildCdStateUrl(stateAbbr, `${cacheSeed}-${stateAbbr}-${attempt}`)
-      )
-    )
-  );
-
-  if (responses.some((res) => !res || !Array.isArray(res.features))) {
-    return null;
-  }
-
-  const features = responses.flatMap((res) => (res?.features ?? []));
-  if (features.length === 0) return null;
-
-  const uniqueDistricts = countUniqueDistricts(features);
-  if (uniqueDistricts < ESRI_MIN_DISTRICT_COUNT) return null;
-
-  return { type: "FeatureCollection", features };
-}
-
+/** Try loading from bundled static file first (instant), fall back to Esri API */
 async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
   if (districtGeoCache) return districtGeoCache;
   if (districtGeoPromise) return districtGeoPromise;
 
   districtGeoPromise = (async () => {
+    // 1. Try local static file (fast, no external API calls)
+    try {
+      const res = await fetch(LOCAL_CD_GEO);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.features?.length >= ESRI_MIN_DISTRICT_COUNT) {
+          districtGeoCache = data;
+          return data;
+        }
+      }
+    } catch {
+      // fall through to Esri
+    }
+
+    // 2. Paginated Esri fetch
     const paginated = await fetchDistrictGeoPaginated();
     if (paginated) {
       districtGeoCache = paginated;
       return paginated;
     }
 
+    // 3. State-by-state Esri fallback
     const byState = await fetchDistrictGeoByState();
     if (byState) {
       districtGeoCache = byState;
@@ -291,6 +221,9 @@ async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
 
   return districtGeoPromise;
 }
+
+// Start prefetching immediately on module load so data is ready before component mounts
+fetchDistrictGeo();
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
