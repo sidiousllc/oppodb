@@ -22,6 +22,10 @@ const STATE_GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 // Esri Living Atlas — 118th Congressional Districts (reliable, CORS-enabled)
 const ESRI_CD_BASE =
   "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query";
+const ESRI_PAGE_SIZE = 250;
+const ESRI_MIN_DISTRICT_COUNT = 435;
+const ESRI_REQUEST_TIMEOUT_MS = 20000;
+const ESRI_MAX_RETRIES = 2;
 
 function buildCdUrl(offset: number, cacheBust: string): string {
   return `${ESRI_CD_BASE}?${new URLSearchParams({
@@ -32,6 +36,18 @@ function buildCdUrl(offset: number, cacheBust: string): string {
     returnGeometry: "true",
     resultRecordCount: "250",
     resultOffset: String(offset),
+    _cb: cacheBust,
+  }).toString()}`;
+}
+
+function buildCdStateUrl(stateAbbr: string, cacheBust: string): string {
+  return `${ESRI_CD_BASE}?${new URLSearchParams({
+    where: `STATE_ABBR='${stateAbbr}'`,
+    outFields: "STATE_ABBR,CDFIPS,DISTRICTID",
+    f: "geojson",
+    outSR: "4326",
+    returnGeometry: "true",
+    resultRecordCount: "250",
     _cb: cacheBust,
   }).toString()}`;
 }
@@ -141,63 +157,139 @@ interface DistrictGeoJSON {
   type: string;
   features: Array<{
     type: string;
-    properties: Record<string, string>;
+    properties: Record<string, unknown>;
     geometry: unknown;
   }>;
 }
 
-async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
-  try {
-    console.log("[DistrictMap] Fetching district boundaries from Esri (paginated)…");
-    const allFeatures: DistrictGeoJSON["features"] = [];
-    let offset = 0;
-    const PAGE_SIZE = 250;
-    const cacheBustBase = `${Date.now()}`;
+let districtGeoCache: DistrictGeoJSON | null = null;
+let districtGeoPromise: Promise<DistrictGeoJSON | null> | null = null;
 
-    const fetchPage = async (pageOffset: number, attempt = 0): Promise<Response> => {
-      const cacheBust = attempt === 0 ? cacheBustBase : `${cacheBustBase}-${pageOffset}-${attempt}`;
-      const response = await fetch(buildCdUrl(pageOffset, cacheBust), {
+function countUniqueDistricts(features: DistrictGeoJSON["features"]): number {
+  const ids = new Set<string>();
+  for (const feature of features) {
+    const id = toDistrictId(
+      feature.properties?.STATE_ABBR,
+      feature.properties?.CDFIPS,
+      feature.properties?.DISTRICTID
+    );
+    if (id) ids.add(id);
+  }
+  return ids.size;
+}
+
+async function fetchEsriJson(urlBuilder: (attempt: number) => string): Promise<{ features?: DistrictGeoJSON["features"]; exceededTransferLimit?: boolean } | null> {
+  for (let attempt = 0; attempt <= ESRI_MAX_RETRIES; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), ESRI_REQUEST_TIMEOUT_MS);
+
+    try {
+      const res = await fetch(urlBuilder(attempt), {
         cache: "no-store",
+        signal: controller.signal,
       });
 
-      // ArcGIS occasionally returns a 304 with empty body in preview environments.
-      // Retry once with a fresh cache-bust token to guarantee a JSON body.
-      if (response.status === 304 && attempt < 1) {
-        return fetchPage(pageOffset, attempt + 1);
+      if (!res.ok || res.status === 304) {
+        if (attempt === ESRI_MAX_RETRIES) return null;
+        continue;
       }
 
-      return response;
-    };
-
-    while (true) {
-      const res = await fetchPage(offset);
-      if (!res.ok) {
-        console.error("[DistrictMap] Fetch failed:", res.status, res.statusText);
-        break;
-      }
       const data = await res.json();
-      if (data.error) {
-        console.error("[DistrictMap] API error:", data.error);
-        break;
+      if (data?.error) {
+        if (attempt === ESRI_MAX_RETRIES) return null;
+        continue;
       }
-      if (!data.features || data.features.length === 0) break;
-      allFeatures.push(...data.features);
-      console.log(`[DistrictMap] Loaded batch: ${data.features.length} features (total: ${allFeatures.length})`);
-      if (data.features.length < PAGE_SIZE) break;
-      offset += data.features.length;
-    }
 
-    if (allFeatures.length === 0) {
-      console.error("[DistrictMap] No features returned");
+      return data;
+    } catch {
+      if (attempt === ESRI_MAX_RETRIES) return null;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  return null;
+}
+
+async function fetchDistrictGeoPaginated(): Promise<DistrictGeoJSON | null> {
+  const allFeatures: DistrictGeoJSON["features"] = [];
+  const cacheSeed = `${Date.now()}`;
+  let offset = 0;
+
+  while (true) {
+    const data = await fetchEsriJson((attempt) =>
+      buildCdUrl(offset, `${cacheSeed}-${offset}-${attempt}`)
+    );
+
+    if (!data || !Array.isArray(data.features)) {
       return null;
     }
 
-    console.log(`[DistrictMap] Loaded ${allFeatures.length} total district boundaries`);
-    return { type: "FeatureCollection", features: allFeatures };
-  } catch (e) {
-    console.error("[DistrictMap] Fetch error:", e);
+    if (data.features.length === 0) break;
+
+    allFeatures.push(...data.features);
+
+    const needsNextPage = Boolean(data.exceededTransferLimit) || data.features.length >= ESRI_PAGE_SIZE;
+    if (!needsNextPage) break;
+
+    offset += ESRI_PAGE_SIZE;
+  }
+
+  if (allFeatures.length === 0) return null;
+
+  const uniqueDistricts = countUniqueDistricts(allFeatures);
+  if (uniqueDistricts < ESRI_MIN_DISTRICT_COUNT) return null;
+
+  return { type: "FeatureCollection", features: allFeatures };
+}
+
+async function fetchDistrictGeoByState(): Promise<DistrictGeoJSON | null> {
+  const cacheSeed = `${Date.now()}`;
+  const states = Object.keys(STATE_CENTERS);
+  const responses = await Promise.all(
+    states.map((stateAbbr) =>
+      fetchEsriJson((attempt) =>
+        buildCdStateUrl(stateAbbr, `${cacheSeed}-${stateAbbr}-${attempt}`)
+      )
+    )
+  );
+
+  if (responses.some((res) => !res || !Array.isArray(res.features))) {
     return null;
   }
+
+  const features = responses.flatMap((res) => (res?.features ?? []));
+  if (features.length === 0) return null;
+
+  const uniqueDistricts = countUniqueDistricts(features);
+  if (uniqueDistricts < ESRI_MIN_DISTRICT_COUNT) return null;
+
+  return { type: "FeatureCollection", features };
+}
+
+async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
+  if (districtGeoCache) return districtGeoCache;
+  if (districtGeoPromise) return districtGeoPromise;
+
+  districtGeoPromise = (async () => {
+    const paginated = await fetchDistrictGeoPaginated();
+    if (paginated) {
+      districtGeoCache = paginated;
+      return paginated;
+    }
+
+    const byState = await fetchDistrictGeoByState();
+    if (byState) {
+      districtGeoCache = byState;
+      return byState;
+    }
+
+    return null;
+  })().finally(() => {
+    districtGeoPromise = null;
+  });
+
+  return districtGeoPromise;
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
