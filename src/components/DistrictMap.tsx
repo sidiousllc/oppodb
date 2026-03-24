@@ -180,6 +180,55 @@ function countUniqueDistricts(features: DistrictGeoJSON["features"]): number {
   return ids.size;
 }
 
+async function fetchDistrictGeoPaginated(): Promise<DistrictGeoJSON | null> {
+  const allFeatures: DistrictGeoJSON["features"] = [];
+  const cacheSeed = `${Date.now()}`;
+  let offset = 0;
+
+  while (true) {
+    const data = await fetchEsriJson((attempt) =>
+      buildCdUrl(offset, `${cacheSeed}-${offset}-${attempt}`)
+    );
+
+    if (!data || !Array.isArray(data.features)) return null;
+    if (data.features.length === 0) break;
+
+    allFeatures.push(...data.features);
+
+    const needsNextPage = Boolean(data.exceededTransferLimit) || data.features.length >= ESRI_PAGE_SIZE;
+    if (!needsNextPage) break;
+
+    offset += ESRI_PAGE_SIZE;
+  }
+
+  if (allFeatures.length === 0) return null;
+  const uniqueDistricts = countUniqueDistricts(allFeatures);
+  if (uniqueDistricts < ESRI_MIN_DISTRICT_COUNT) return null;
+
+  return { type: "FeatureCollection", features: allFeatures };
+}
+
+async function fetchDistrictGeoByState(): Promise<DistrictGeoJSON | null> {
+  const cacheSeed = `${Date.now()}`;
+  const states = Object.keys(STATE_CENTERS);
+  const responses = await Promise.all(
+    states.map((stateAbbr) =>
+      fetchEsriJson((attempt) =>
+        buildCdStateUrl(stateAbbr, `${cacheSeed}-${stateAbbr}-${attempt}`)
+      )
+    )
+  );
+
+  if (responses.some((res) => !res || !Array.isArray(res.features))) return null;
+
+  const features = responses.flatMap((res) => (res?.features ?? []));
+  if (features.length === 0) return null;
+  const uniqueDistricts = countUniqueDistricts(features);
+  if (uniqueDistricts < ESRI_MIN_DISTRICT_COUNT) return null;
+
+  return { type: "FeatureCollection", features };
+}
+
 /** Try loading from bundled static file first (instant), fall back to Esri API */
 async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
   if (districtGeoCache) return districtGeoCache;
