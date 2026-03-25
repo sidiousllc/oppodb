@@ -51,8 +51,14 @@ export default function ProfilePage() {
     if (newPassword !== confirmPassword) { setPwMessage({ type: "error", text: "Passwords don't match." }); return; }
     setChangingPassword(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) setPwMessage({ type: "error", text: error.message });
-    else { setPwMessage({ type: "success", text: "Password changed." }); setNewPassword(""); setConfirmPassword(""); }
+    if (error) {
+      setPwMessage({ type: "error", text: error.message });
+    } else {
+      // Revoke all other sessions server-side after credential rotation
+      await supabase.functions.invoke("revoke-sessions");
+      setPwMessage({ type: "success", text: "Password changed. All other sessions have been revoked." });
+      setNewPassword(""); setConfirmPassword("");
+    }
     setChangingPassword(false);
   };
 

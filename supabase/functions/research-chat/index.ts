@@ -245,6 +245,14 @@ Format responses with clear headers and bullet points. Be direct, factual, and a
 
         let toolResult = "";
 
+        // Server-side enforcement: block write operations for non-admin/moderator users
+        const WRITE_TOOLS = ["create_candidate_profile", "edit_candidate_profile", "discover_candidates", "generate_issue_subpages"];
+        if (WRITE_TOOLS.includes(fnName) && !canEdit) {
+          toolResult = JSON.stringify({ success: false, error: "Permission denied. Only admin or moderator accounts can create or modify content." });
+          toolCallMessages.push({ role: "tool", tool_call_id: toolCall.id, content: toolResult });
+          continue;
+        }
+
         if (fnName === "search_candidates") {
           const { data: profiles } = await supabaseAdmin
             .from("candidate_profiles")
