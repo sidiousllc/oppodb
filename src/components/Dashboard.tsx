@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { fetchPollingData, getSourceInfo, POLLING_SOURCES, type PollEntry } from "@/data/pollingData";
 import { cookRatings, getCookRatingColor, type CookRating } from "@/data/cookRatings";
 import { getCurrentPVI, formatPVI, getPVIColor } from "@/data/cookPVI";
