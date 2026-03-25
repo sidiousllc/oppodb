@@ -37,6 +37,8 @@ import { StateLegislativeSection } from "@/components/StateLegislativeSection";
 import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
+import { ResearchToolsDashboard } from "@/components/ResearchToolsDashboard";
+import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { LegislationSection } from "@/components/LegislationSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
@@ -61,6 +63,7 @@ export default function Index() {
   const [electionSyncing, setElectionSyncing] = useState(false);
   const [electionSyncProgress, setElectionSyncProgress] = useState("");
   const [trackedOnly, setTrackedOnly] = useState(false);
+  const [researchSubsection, setResearchSubsection] = useState<string | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
   const [pviFilter, setPviFilter] = useState<PVIFilter>("all");
@@ -201,6 +204,7 @@ export default function Index() {
     setSection(newSection);
     setSelectedSlug(null);
     setSearch("");
+    setResearchSubsection(null);
   }, []);
 
   const navigateBySlug = useCallback((rawSlug: string) => {
@@ -254,6 +258,7 @@ export default function Index() {
     polling: pollingCount,
     "campaign-finance": financeCount,
     "voter-data": 0,
+    "research-tools": 0,
     "live-elections": 0,
     legislation: 0,
     documentation: 13,
@@ -277,7 +282,7 @@ export default function Index() {
     "state-legislative": "State Legislative Districts",
     polling: "Polling Data",
     "campaign-finance": "Campaign Finance",
-    "voter-data": "Voter Data",
+    "research-tools": "Research Tools",
     "live-elections": "Live Elections",
     legislation: "Legislation",
     documentation: "Documentation",
@@ -602,8 +607,18 @@ export default function Index() {
       return <CampaignFinanceSection onNavigateSlug={navigateBySlug} />;
     }
 
-    if (section === "voter-data") {
-      return <VoterDataSection />;
+    if (section === "research-tools") {
+      if (researchSubsection === "voter-data") {
+        return <VoterDataSection />;
+      }
+      if (researchSubsection === "court-records") {
+        return <CourtRecordsSearch onBack={() => setResearchSubsection(null)} />;
+      }
+      return (
+        <ResearchToolsDashboard
+          onNavigateSubsection={(sub) => setResearchSubsection(sub)}
+        />
+      );
     }
 
     if (section === "live-elections") {
