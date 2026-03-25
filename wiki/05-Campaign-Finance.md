@@ -112,9 +112,25 @@ Provides state-level campaign finance data via FollowTheMoney.org patterns:
 - Top contributors by sector
 - Small donor vs large donor breakdown
 
-## Supabase Table
+## Supabase Tables
 
-All federal campaign finance data is stored in the `campaign_finance` Supabase table, queried via the Supabase client in `campaignFinance.ts`.
+| Table | Scope | Description |
+|-------|-------|-------------|
+| `campaign_finance` | Federal | FEC filings with fundraising, spending, donor composition |
+| `state_cfb_candidates` | Multi-state | State CFB candidate finance (all states with CFB data) |
+| `mn_cfb_candidates` | Minnesota | Detailed MN CFB candidate finance data |
+
+## API Access
+
+All campaign finance data is accessible via the public API and MCP server:
+
+| REST Endpoint | MCP Tool | Data Source |
+|---------------|----------|-------------|
+| `/campaign-finance` | `get_campaign_finance` | `campaign_finance` (FEC) |
+| `/state-finance` | `get_state_finance` | `state_cfb_candidates` (multi-state) |
+| `/mn-finance` | `get_mn_finance` | `mn_cfb_candidates` (Minnesota) |
+
+All three are also included in the unified `/search` endpoint and `master_search` MCP tool under the `campaign_finance`, `state_finance`, and `mn_finance` categories respectively.
 
 ## Data Sources
 
@@ -123,3 +139,5 @@ All federal campaign finance data is stored in the `campaign_finance` Supabase t
 | Federal candidates | FEC (Federal Election Commission) |
 | State candidates | FollowTheMoney.org |
 | Industry coding | OpenSecrets.org patterns |
+| Minnesota | Minnesota Campaign Finance Board (CFB) |
+| Multi-state | State CFBs via `state-cfb-finance` edge function |

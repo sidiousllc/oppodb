@@ -202,6 +202,21 @@ Legislative bill tracking and voting record analysis.
 - `voter-registration-stats` — Aggregate registration statistics
 - `state-voter-portal-lookup` — Query state-specific voter portals
 
+### Voter Registration Stats Table (`state_voter_stats`)
+
+Stores state-level voter registration data with the following fields:
+- `state` — State name (e.g., "Minnesota")
+- `total_registered` — Total registered voters
+- `total_eligible` — Total eligible voters
+- `registration_rate` — Registration as % of eligible population
+- `turnout_general_2024` — 2024 general election turnout percentage
+- `source` — Data source attribution (default: "EAVS")
+- `source_url` — Link to source data
+
+**RLS Policies**: Public read access, service role manages writes.
+
+**API Access**: Available via `/voter-registration-stats` REST endpoint and `get_voter_registration_stats` MCP tool. Also included in the unified `/search` and `master_search` under the `voter_stats` category.
+
 ---
 
 ## WinRed Webhook
