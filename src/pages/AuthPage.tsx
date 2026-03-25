@@ -4,6 +4,15 @@ import { lovable } from "@/integrations/lovable";
 import { Win98Window } from "@/components/Win98Window";
 import { AOLDialUpAnimation } from "@/components/AOLDialUpAnimation";
 
+const PRODUCTION_ORIGIN = "https://oppodb.com";
+const getRedirectOrigin = () => {
+  // Always redirect to production domain to avoid Lovable preview login gates
+  if (typeof window !== "undefined" && window.location.origin === PRODUCTION_ORIGIN) {
+    return PRODUCTION_ORIGIN;
+  }
+  return PRODUCTION_ORIGIN;
+};
+
 export default function AuthPage() {
   const [showDialUp, setShowDialUp] = useState(true);
   const [mode, setMode] = useState<"login" | "signup" | "forgot" | "request">("login");
