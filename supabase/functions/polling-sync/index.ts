@@ -16,14 +16,6 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-function parseJwtClaims(token: string): Record<string, unknown> | null {
-  const parts = token.split(".");
-  if (parts.length < 2) return null;
-  try {
-    const payload = parts[1].replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-    return JSON.parse(atob(payload)) as Record<string, unknown>;
-  } catch { return null; }
-}
 
 interface PollRecord {
   source: string;
@@ -194,25 +186,27 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const token = authHeader.slice(7).trim();
-    const claims = parseJwtClaims(token);
+
+    // Use getClaims() for signature-verified JWT validation
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // Accept service_role (from scheduled-sync) or admin user
-    if (claims?.role !== "service_role") {
-      const authClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user }, error: authError } = await authClient.auth.getUser(token);
-      if (authError || !user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
+    if (claimsData.claims.role !== "service_role") {
+      const userId = claimsData.claims.sub as string;
       const adminClient = createClient(supabaseUrl, serviceKey);
-      const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: userId, _role: "admin" });
       if (!roleCheck) {
         return new Response(JSON.stringify({ error: "Forbidden: admin role required" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      console.log(`[SECURITY] polling-sync: authenticated as admin user ${user.id}`);
+      console.log(`[SECURITY] polling-sync: authenticated as admin user ${userId}`);
     } else {
       console.log("[SECURITY] polling-sync: authenticated as service_role");
     }
