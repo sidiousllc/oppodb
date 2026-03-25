@@ -622,8 +622,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                         key={geo.rsmKey}
                         geography={geo}
                         fill={getDistrictFill(districtId)}
-                        stroke={highlightedDistrict === districtId ? "hsl(45, 100%, 40%)" : "hsl(0, 0%, 100%)"}
-                        strokeWidth={highlightedDistrict === districtId ? 2 : 0.3}
+                        stroke={highlightedDistrict === districtId ? "hsl(45, 100%, 40%)" : "hsl(0, 0%, 40%)"}
+                        strokeWidth={highlightedDistrict === districtId ? 2 : 0.5}
                         onMouseEnter={() => handleDistrictHover(stateAbbr, cdfips, districtRaw)}
                         onMouseLeave={() => setTooltip(null)}
                         onClick={() => {
