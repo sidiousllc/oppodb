@@ -83,7 +83,18 @@ export function AccessControlTab() {
 
       const inviteUrl = `${window.location.origin}/auth?invite=${data.invite.token}`;
       await navigator.clipboard.writeText(inviteUrl);
-      toast.success("Invite created & link copied to clipboard!");
+
+      // Send invite-link email
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "invite-link",
+          recipientEmail: inviteEmail.trim(),
+          idempotencyKey: `invite-${data.invite.id}`,
+          templateData: { inviteUrl, role: inviteRole },
+        },
+      });
+
+      toast.success("Invite created, email sent & link copied to clipboard!");
       setInviteEmail("");
       loadInvitations();
     } catch (e: any) {
@@ -108,11 +119,25 @@ export function AccessControlTab() {
   };
 
   const handleApprove = async (requestId: string) => {
+    const request = requests.find(r => r.id === requestId);
     try {
       const { error } = await supabase.functions.invoke("admin-users", {
         body: { action: "approve_access_request", request_id: requestId, role: "user" },
       });
       if (error) throw error;
+
+      // Send access-approved email
+      if (request?.email) {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "access-approved",
+            recipientEmail: request.email,
+            idempotencyKey: `access-approved-${requestId}`,
+            templateData: { displayName: request.display_name || undefined },
+          },
+        });
+      }
+
       toast.success("Access granted — user account created with password reset email");
       loadRequests();
     } catch (e: any) {
@@ -122,11 +147,25 @@ export function AccessControlTab() {
 
   const handleDeny = async (requestId: string) => {
     if (!confirm("Deny this access request?")) return;
+    const request = requests.find(r => r.id === requestId);
     try {
       const { error } = await supabase.functions.invoke("admin-users", {
         body: { action: "deny_access_request", request_id: requestId },
       });
       if (error) throw error;
+
+      // Send access-denied email
+      if (request?.email) {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "access-denied",
+            recipientEmail: request.email,
+            idempotencyKey: `access-denied-${requestId}`,
+            templateData: { displayName: request.display_name || undefined },
+          },
+        });
+      }
+
       toast.success("Request denied");
       loadRequests();
     } catch (e: any) {
