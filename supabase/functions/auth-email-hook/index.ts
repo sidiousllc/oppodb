@@ -218,11 +218,26 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   // Build template props from payload.data (HookData structure)
+  // Rewrite the confirmation URL redirect to point to our app domain
+  let confirmationUrl = payload.data.url || '';
+  try {
+    const parsed = new URL(confirmationUrl);
+    const redirectTo = parsed.searchParams.get('redirect_to');
+    if (redirectTo) {
+      // Replace any Lovable preview/default redirect with our actual domain
+      const newRedirect = `https://${ROOT_DOMAIN}`;
+      parsed.searchParams.set('redirect_to', newRedirect);
+      confirmationUrl = parsed.toString();
+    }
+  } catch {
+    // If URL parsing fails, use as-is
+  }
+
   const templateProps = {
     siteName: SITE_NAME,
     siteUrl: `https://${ROOT_DOMAIN}`,
     recipient: payload.data.email,
-    confirmationUrl: payload.data.url,
+    confirmationUrl,
     token: payload.data.token,
     email: payload.data.email,
     newEmail: payload.data.new_email,
