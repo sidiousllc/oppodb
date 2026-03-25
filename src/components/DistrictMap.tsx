@@ -650,8 +650,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                         }}
                       />
                     );
-                  })
-                }
+                  });
+                }}
               </Geographies>
             </ZoomableGroup>
           </ComposableMap>
