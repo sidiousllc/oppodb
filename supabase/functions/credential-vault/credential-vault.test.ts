@@ -143,4 +143,4 @@ Deno.test({ name: "credential-vault encrypts at rest", sanitizeResources: false,
     await adminClient.from("user_integrations").delete().eq("user_id", userId);
     await adminClient.auth.admin.deleteUser(userId);
   }
-});
+}});
