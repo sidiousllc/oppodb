@@ -49,11 +49,23 @@ export function CampaignFinanceSection({ onNavigateSlug }: { onNavigateSlug?: (s
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const { data } = await supabase
-        .from("campaign_finance")
-        .select("*")
-        .order("total_raised", { ascending: false });
-      setRecords((data as FinanceRow[] | null) ?? []);
+      // Fetch all records in batches to avoid the 1000-row limit
+      const all: FinanceRow[] = [];
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      let done = false;
+      while (!done) {
+        const { data } = await supabase
+          .from("campaign_finance")
+          .select("*")
+          .order("total_raised", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        const batch = (data as FinanceRow[] | null) ?? [];
+        all.push(...batch);
+        if (batch.length < PAGE_SIZE) done = true;
+        else from += PAGE_SIZE;
+      }
+      setRecords(all);
       setLoading(false);
     }
     load();
