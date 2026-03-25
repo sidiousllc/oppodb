@@ -30,22 +30,6 @@ const DATASETS: Record<string, { fileId: number; office: string; description: st
   },
 };
 
-function parseTSV(text: string): Record<string, string>[] {
-  const lines = text.split("\n").filter((l) => l.trim());
-  if (lines.length < 2) return [];
-  const headers = lines[0].split("\t").map((h) => h.replace(/"/g, "").trim().toLowerCase());
-  const rows: Record<string, string>[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const vals = lines[i].split("\t").map((v) => v.replace(/^"|"$/g, "").trim());
-    const row: Record<string, string> = {};
-    headers.forEach((h, idx) => {
-      row[h] = vals[idx] || "";
-    });
-    rows.push(row);
-  }
-  return rows;
-}
-
 // Some datasets are CSV (quoted), others TSV. Handle both.
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -161,12 +145,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // For house data, upsert into congressional_election_results
-    // For senate/president, upsert into mit_election_results
     let totalSynced = 0;
+    let totalErrors = 0;
 
     if (dataset === "house") {
       // Map to congressional_election_results format
+      // Unique constraint: (state_abbr, district_number, election_year, election_type, candidate_name)
       const batchSize = 500;
       for (let i = 0; i < filtered.length; i += batchSize) {
         const batch = filtered.slice(i, i + batchSize).map((r) => ({
@@ -187,16 +171,21 @@ Deno.serve(async (req) => {
 
         const { error } = await adminClient
           .from("congressional_election_results")
-          .upsert(batch, { onConflict: "state_abbr,district_number,election_year,candidate_name,election_type" });
+          .upsert(batch, {
+            onConflict: "state_abbr,district_number,election_year,election_type,candidate_name",
+          });
 
         if (error) {
-          console.error(`Batch error at ${i}: ${error.message}`);
+          console.error(`House batch error at ${i}: ${error.message}`);
+          totalErrors++;
         } else {
           totalSynced += batch.length;
         }
       }
     } else {
-      // Senate, President - upsert into mit_election_results
+      // Senate, President, President County - upsert into mit_election_results
+      // Unique index: (year, state_po, office, district, candidate, party, county_fips)
+      // All columns must be non-null (use '' for missing values)
       const batchSize = 500;
       for (let i = 0; i < filtered.length; i += batchSize) {
         const batch = filtered.slice(i, i + batchSize).map((r) => ({
@@ -206,11 +195,11 @@ Deno.serve(async (req) => {
           office: ds.office,
           district: r.district || "statewide",
           county_name: r.county_name || null,
-          county_fips: r.county_fips || null,
+          county_fips: r.county_fips || "",
           stage: r.stage || "gen",
           special: r.special === "TRUE" || r.special === "true",
           candidate: r.candidate,
-          party: r.party || r.party_detailed || r.party_simplified || null,
+          party: r.party || r.party_detailed || r.party_simplified || "",
           writein: r.writein === "TRUE" || r.writein === "true",
           candidatevotes: r.candidatevotes ? parseInt(r.candidatevotes) : null,
           totalvotes: r.totalvotes ? parseInt(r.totalvotes) : null,
@@ -220,19 +209,19 @@ Deno.serve(async (req) => {
         const { error } = await adminClient
           .from("mit_election_results")
           .upsert(batch, {
-            onConflict: "year,state_po,office,district,candidate,party",
-            ignoreDuplicates: true,
+            onConflict: "year,state_po,office,district,candidate,party,county_fips",
           });
 
         if (error) {
-          console.error(`Batch error at ${i}: ${error.message}`);
+          console.error(`MIT batch error at ${i}: ${error.message}`);
+          totalErrors++;
         } else {
           totalSynced += batch.length;
         }
       }
     }
 
-    console.log(`Synced ${totalSynced} rows for ${ds.description}`);
+    console.log(`Synced ${totalSynced} rows for ${ds.description} (${totalErrors} batch errors)`);
 
     return new Response(
       JSON.stringify({
@@ -241,6 +230,7 @@ Deno.serve(async (req) => {
         total_parsed: allRows.length,
         total_filtered: filtered.length,
         total_synced: totalSynced,
+        total_errors: totalErrors,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
