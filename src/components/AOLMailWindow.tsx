@@ -3,6 +3,7 @@ import { Win98Window } from "./Win98Window";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Inbox, Send, Trash2, PenLine, ArrowLeft, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 interface MailMessage {
   id: string;
@@ -155,25 +156,37 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const handleSend = async () => {
     if (!user || !toUserId || !subject.trim() || !body.trim()) return;
     setSending(true);
-    await supabase.from("user_mail").insert({
+    const { error: mailInsertError } = await supabase.from("user_mail").insert({
       sender_id: user.id,
       recipient_id: toUserId,
       subject: subject.trim().slice(0, 200),
       body: body.trim().slice(0, 5000),
     });
 
+    if (mailInsertError) {
+      console.error("Failed to send in-app mail", mailInsertError);
+      toast.error("Failed to send message.");
+      setSending(false);
+      return;
+    }
+
     // Optionally send email notification to recipient's personal email
     if (sendToEmail) {
       try {
-        await supabase.functions.invoke("send-mail-notification", {
+        const { error } = await supabase.functions.invoke("send-mail-notification", {
           body: {
             recipientUserId: toUserId,
             subject: subject.trim().slice(0, 200),
             bodyText: body.trim().slice(0, 5000),
           },
         });
+        if (error) {
+          console.error("Failed to send email notification", error);
+          toast.error("Message sent in-app, but email notification failed.");
+        }
       } catch (err) {
         console.error("Failed to send email notification", err);
+        toast.error("Message sent in-app, but email notification failed.");
       }
     }
 
