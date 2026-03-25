@@ -666,7 +666,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
           {/* Result groups */}
           <div className="grid gap-2 sm:grid-cols-2">
-            {allGroups.map((group) => (
+            {filteredGroups.map((group) => (
               <div key={group.key} className="candidate-card">
                 <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-b-[hsl(var(--win98-shadow))]">
                   <span className="text-[hsl(var(--muted-foreground))]">{group.icon}</span>
