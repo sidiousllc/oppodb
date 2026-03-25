@@ -207,8 +207,28 @@ function ensureYearly(c: CandidateAgg, year: string) {
 
 // ─── ZIP fetch helper ───────────────────────────────────────────────────────
 
+function buildValidatedUrl(baseUrl: string): string {
+  try {
+    const url = new URL(baseUrl);
+    
+    const allowedDomains = ['pa.gov', 'miboecfr.nictusa.com'];
+    if (!allowedDomains.includes(url.hostname)) {
+      throw new Error('Invalid host');
+    }
+    
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
+}
+
 async function fetchAndUnzip(url: string): Promise<Record<string, string>> {
-  const resp = await fetch(url);
+  const validatedUrl = buildValidatedUrl(url);
+  const resp = await fetch(validatedUrl);
   if (!resp.ok) throw new Error(`Failed to fetch ${url}: ${resp.status}`);
   const buf = new Uint8Array(await resp.arrayBuffer());
   const files = unzipSync(buf);

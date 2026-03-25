@@ -56,6 +56,30 @@ const STATE_ABBREV: Record<string, string> = {
 // Nebraska is unicameral — only has "senate" (49 legislative districts)
 const UNICAMERAL_STATES = ["31"]; // Nebraska FIPS
 
+function buildValidatedCensusUrl(
+  baseUrl: string,
+  getParam: string,
+  forParam: string,
+  inParam: string
+): string {
+  try {
+    const url = new URL(baseUrl);
+    
+    // Validate the stateFips parameter (should be 2-digit FIPS code)
+    if (!/^[0-9]{2}$/.test(inParam.replace('state:', ''))) {
+      throw new Error('Invalid parameter');
+    }
+    
+    url.searchParams.set('get', getParam);
+    url.searchParams.set('for', forParam);
+    url.searchParams.set('in', inParam);
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
+}
+
 function safeInt(val: string): number | null {
   const n = parseInt(val);
   return isNaN(n) || n < 0 ? null : n;
@@ -121,7 +145,12 @@ async function fetchChamber(
     ? "state%20legislative%20district%20(upper%20chamber)"
     : "state%20legislative%20district%20(lower%20chamber)";
 
-  const url = `${CENSUS_BASE}?get=${CENSUS_VARS}&for=${geoType}:*&in=state:${stateFips}`;
+  const url = buildValidatedCensusUrl(
+    CENSUS_BASE,
+    CENSUS_VARS,
+    `${geoType}:*`,
+    `state:${stateFips}`
+  );
   console.log(`Fetching ${chamber} districts for ${stateAbbr}: ${url}`);
 
   let response: Response;

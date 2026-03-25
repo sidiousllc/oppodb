@@ -277,12 +277,26 @@ interface CivicParams {
   address?: string; city?: string; state?: string; zip?: string;
 }
 
+function buildCivicApiUrl(baseUrl: string, address: string, apiKey: string): string {
+  try {
+    const url = new URL(baseUrl);
+    
+    // Add query parameters
+    url.searchParams.set('address', address);
+    url.searchParams.set('key', apiKey);
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
+}
+
 async function searchCivicAPI(params: CivicParams): Promise<VoterRecord[]> {
   const { apiKey, address, city, state, zip } = params;
   const fullAddress = [address, city, state, zip].filter(Boolean).join(', ');
   if (!fullAddress) return [];
 
-  const url = `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`;
+  const url = buildCivicApiUrl('https://www.googleapis.com/civicinfo/v2/representatives', fullAddress, apiKey);
 
   const response = await fetch(url);
   if (!response.ok) {
