@@ -536,11 +536,18 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="flex items-center gap-3 text-muted-foreground">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-            <span className="text-sm">Loading district boundaries…</span>
+            <span className="text-sm">{loadLabel}</span>
           </div>
+          <div className="w-64 h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+              style={{ width: `${loadProgress}%` }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">{loadProgress}%</span>
         </div>
       )}
 
