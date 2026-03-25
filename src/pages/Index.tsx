@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, initCandidates } from "@/data/candidates";
 import { loadCandidateData } from "@/data/candidateContent";
-import { magaFiles, searchMagaFiles } from "@/data/magaFiles";
-import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/data/localImpact";
-import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
+import { magaFiles, searchMagaFiles, mergeMagaFilesFromDB } from "@/data/magaFiles";
+import { localImpactReports, searchLocalImpact, getLocalImpactBySlug, mergeLocalImpactFromDB } from "@/data/localImpact";
+import { narrativeReports, searchNarrativeReports, mergeNarrativeReportsFromDB } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
 import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
 import { syncCongressionalElections } from "@/data/congressionalElections";
