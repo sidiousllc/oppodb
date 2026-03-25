@@ -64,7 +64,7 @@ export default function ProfilePage() {
 
   const handleLinkGoogle = async () => {
     setLinkingGoogle(true); setSsoMessage(null);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/profile" });
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: "https://oppodb.com/profile" });
     if (result?.error) setSsoMessage({ type: "error", text: result.error.message || "Failed to link Google." });
     setLinkingGoogle(false);
   };
