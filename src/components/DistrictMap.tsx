@@ -344,6 +344,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [geoData, setGeoData] = useState<DistrictGeoJSON | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [loadLabel, setLoadLabel] = useState("Loading district boundaries…");
   const [colorMode, setColorMode] = useState<ColorMode>("cook");
   const [zoomState, setZoomState] = useState<{ center: [number, number]; zoom: number }>({
     center: [-96, 38],
@@ -356,6 +358,13 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
 
   useEffect(() => {
     let isMounted = true;
+    const onProgress: ProgressCallback = (pct, label) => {
+      if (!isMounted) return;
+      setLoadProgress(pct);
+      setLoadLabel(label);
+    };
+    progressListeners.push(onProgress);
+
     fetchDistrictGeo().then((data) => {
       if (!isMounted) return;
       setGeoData(data);
@@ -363,6 +372,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     });
     return () => {
       isMounted = false;
+      progressListeners = progressListeners.filter((cb) => cb !== onProgress);
     };
   }, []);
 
