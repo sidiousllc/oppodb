@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { insertContent, updateContent, deleteContent } from "@/lib/contentAdmin";
 import { ArrowLeft, Save, Trash2, Loader2, Eye, Edit3 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
@@ -63,36 +63,27 @@ export function CandidateEditor({ mode, initialData, onBack, onSaved }: Candidat
     setSaving(true);
     try {
       if (mode === "edit" && initialData) {
-        const { error } = await supabase
-          .from("candidate_profiles")
-          .update({
-            name: name.trim(),
-            slug: slug.trim(),
-            content,
-            github_path: githubPath.trim(),
-            is_subpage: isSubpage,
-            parent_slug: isSubpage ? parentSlug.trim() || null : null,
-            subpage_title: isSubpage ? subpageTitle.trim() || null : null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", initialData.id);
-
-        if (error) throw error;
+        await updateContent("candidate_profiles", initialData.id, {
+          name: name.trim(),
+          slug: slug.trim(),
+          content,
+          github_path: githubPath.trim(),
+          is_subpage: isSubpage,
+          parent_slug: isSubpage ? parentSlug.trim() || null : null,
+          subpage_title: isSubpage ? subpageTitle.trim() || null : null,
+          updated_at: new Date().toISOString(),
+        });
         toast.success("Candidate profile updated");
       } else {
-        const { error } = await supabase
-          .from("candidate_profiles")
-          .insert({
-            name: name.trim(),
-            slug: slug.trim(),
-            content,
-            github_path: githubPath.trim(),
-            is_subpage: isSubpage,
-            parent_slug: isSubpage ? parentSlug.trim() || null : null,
-            subpage_title: isSubpage ? subpageTitle.trim() || null : null,
-          });
-
-        if (error) throw error;
+        await insertContent("candidate_profiles", {
+          name: name.trim(),
+          slug: slug.trim(),
+          content,
+          github_path: githubPath.trim(),
+          is_subpage: isSubpage,
+          parent_slug: isSubpage ? parentSlug.trim() || null : null,
+          subpage_title: isSubpage ? subpageTitle.trim() || null : null,
+        });
         toast.success("Candidate profile created");
       }
       onSaved();
@@ -108,12 +99,7 @@ export function CandidateEditor({ mode, initialData, onBack, onSaved }: Candidat
     if (!initialData) return;
     setDeleting(true);
     try {
-      const { error } = await supabase
-        .from("candidate_profiles")
-        .delete()
-        .eq("id", initialData.id);
-
-      if (error) throw error;
+      await deleteContent("candidate_profiles", initialData.id);
       toast.success("Candidate profile deleted");
       onSaved();
     } catch (e: unknown) {
