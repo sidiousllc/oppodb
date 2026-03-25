@@ -6,7 +6,7 @@ project_id = "yysbtxpupmwkxovgkama"
   [functions.census-sync]
     verify_jwt = false
   [functions.congressional-election-sync]
-    verify_jwt = false
+    verify_jwt = true
   [functions.district-intel]
     verify_jwt = false
   [functions.election-results-sync]
