@@ -139,8 +139,6 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
     { label: "District Profiles", value: districtCount, emoji: "🧭", section: "district-intel" },
     { label: "MAGA Files", value: magaFiles.length, emoji: "⚠️", section: "maga-files" },
     { label: "Toss Up Races", value: tossUpDistricts.length, emoji: "🎯", section: "district-intel" },
-    { label: "Research Tools", value: 2, emoji: "🔬", section: "research-tools" },
-    { label: "Documentation", value: 13, emoji: "📖", section: "documentation" },
   ];
 
   return (
@@ -393,6 +391,8 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
             { label: "Research Tools", emoji: "🔬", section: "research-tools" },
             { label: "Live Elections", emoji: "🏛️", section: "live-elections" },
             { label: "Legislation", emoji: "📜", section: "legislation" },
+            { label: "Voter Data", emoji: "🗳️", section: "voter-data" },
+            { label: "Documentation", emoji: "📖", section: "documentation" },
           ].map((item) => (
             <button
               key={item.section}
