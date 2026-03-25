@@ -412,7 +412,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
       <div className="flex items-center gap-2 mb-3">
         <Search className="h-4 w-4" />
-        <h2 className="text-sm font-bold">🔍 Master Search</h2>
+        <h2 className="text-sm font-bold">🔍OppoDB Search</h2>
         <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
           Search across all databases & research tools
         </span>
