@@ -291,7 +291,13 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") runDbSearch();
-  }, [runDbSearch]);
+    if (e.key === "Escape") {
+      if (query.trim()) {
+        handleClear();
+      }
+      inputRef.current?.blur();
+    }
+  }, [runDbSearch, query]);
 
   // Build DB result groups
   const dbGroups = useMemo<SearchResultGroup[]>(() => {
