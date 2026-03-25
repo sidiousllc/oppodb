@@ -240,7 +240,18 @@ When users send in-app AOL mail, the recipient receives a real email notificatio
 ### Supabase Tables Used
 - `user_roles` — Role assignments (enum-based)
 - `profiles` — Extended user profiles (display_name, avatar_url)
-- `user_invitations` — Invite tokens with expiry
+- `user_invitations` — Invite tokens with expiry (SELECT restricted to admins only; anonymous access blocked)
 - `access_requests` — Public access request queue
-- `role_groups` — Role group definitions
+- `role_groups` — Role group definitions (SELECT restricted to authenticated users only)
 - `role_group_members` — User ↔ group mappings
+
+---
+
+## Security Hardening (March 2026)
+
+### JWT Signature Verification
+All sync Edge Functions (`census-sync`, `election-results-sync`, `forecast-sync`, `polling-sync`, `scheduled-sync`) now use `getClaims()` for cryptographic JWT signature verification instead of the previous `parseJwtClaims()` which only performed base64 decoding without signature checks. This prevents attackers from forging `service_role` claims to bypass authentication.
+
+### RLS Policy Restrictions
+- **`user_invitations`**: SELECT policy changed from `USING (true)` (public) to admin-only (`has_role(auth.uid(), 'admin')`). Invitation tokens and email addresses are no longer readable by anonymous or non-admin users. The `admin-users` Edge Function uses service-role client to bypass RLS for token validation flows.
+- **`role_groups`**: SELECT policy changed from `{public}` to `{authenticated}` only. Internal role structure (group names, assigned roles) is no longer exposed to unauthenticated users.

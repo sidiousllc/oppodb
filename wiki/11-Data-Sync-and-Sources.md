@@ -106,8 +106,10 @@ Requires `CONGRESS_GOV_API_KEY` secret.
 Historical and current congressional election results synced across all 50 states.
 
 ### Security
-- **JWT Verification Enabled**: The `election-results-sync` edge function requires valid JWT
-- Defense-in-depth: Both edge function JWT verification and in-code authorization checks
+- All sync functions (`census-sync`, `election-results-sync`, `forecast-sync`, `polling-sync`) use **signature-verified JWT authentication** via `getClaims()`
+- Service-role tokens (from `scheduled-sync` cron) are cryptographically verified before being trusted
+- Non-service-role callers must be authenticated admin users (verified via `has_role()` RPC)
+- The previous `parseJwtClaims()` pattern (base64 decode without signature verification) was replaced in March 2026 to prevent JWT forgery attacks
 
 ### Bulk Sync Process
 1. Admin triggers "Sync Elections" button
@@ -234,11 +236,13 @@ Receives real-time donation data from WinRed platform.
 ## Scheduled Sync
 
 ### Purpose
-The `scheduled-sync` edge function provides automated periodic data synchronization.
+The `scheduled-sync` edge function provides automated periodic data synchronization, running daily at 3:00 AM UTC.
 
 ### Security
-- JWT verification required
-- Admin role check enforced
+- JWT signature verification via `getClaims()` — tokens are cryptographically validated
+- Admin or moderator role required for manual triggers
+- Service-role tokens accepted for cron/scheduled invocations (signature-verified)
+- Internal function calls use service-role key for downstream sync functions
 
 ---
 
