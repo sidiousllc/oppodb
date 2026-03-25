@@ -296,16 +296,23 @@ export function AccessControlTab() {
                         {new Date(inv.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-2 py-1.5 text-right">
-                        {!isUsed && !isExpired && (
-                          <div className="flex items-center justify-end gap-0.5">
-                            <button onClick={() => handleCopyLink(inv.token)} className="win98-button px-1 py-0 text-[9px]" title="Copy link">
-                              <Copy className="h-2.5 w-2.5" />
+                        <div className="flex items-center justify-end gap-0.5">
+                          {!isUsed && !isExpired && (
+                            <>
+                              <button onClick={() => handleCopyLink(inv.token)} className="win98-button px-1 py-0 text-[9px]" title="Copy link">
+                                <Copy className="h-2.5 w-2.5" />
+                              </button>
+                              <button onClick={() => handleRevokeInvite(inv.id)} className="win98-button px-1 py-0 text-[9px]" title="Revoke" style={{ color: "hsl(0, 65%, 50%)" }}>
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </>
+                          )}
+                          {(isUsed || isExpired) && (
+                            <button onClick={() => handleDeleteInvite(inv.id)} className="win98-button px-1 py-0 text-[9px]" title="Remove" style={{ color: "hsl(0, 65%, 50%)" }}>
+                              <Trash2 className="h-2.5 w-2.5" />
                             </button>
-                            <button onClick={() => handleRevokeInvite(inv.id)} className="win98-button px-1 py-0 text-[9px]" title="Revoke" style={{ color: "hsl(0, 65%, 50%)" }}>
-                              <X className="h-2.5 w-2.5" />
-                            </button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
