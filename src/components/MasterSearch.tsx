@@ -362,6 +362,17 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
             )}
           </div>
           <button
+            onClick={toggleBookmark}
+            disabled={query.trim().length < 2}
+            className="win98-button text-[10px] flex items-center gap-1 px-2"
+            title={isCurrentQuerySaved ? "Remove bookmark" : "Bookmark this search"}
+          >
+            {isCurrentQuerySaved
+              ? <BookmarkCheck className="h-3.5 w-3.5" style={{ color: "hsl(45, 90%, 45%)" }} />
+              : <Bookmark className="h-3.5 w-3.5" />
+            }
+          </button>
+          <button
             onClick={runDbSearch}
             disabled={isSearching || query.trim().length < 2}
             className="win98-button text-[10px] font-bold flex items-center gap-1 px-3"
@@ -371,9 +382,74 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           </button>
         </div>
         <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
-          Type to see instant results • Press Enter or click "Search All" to query databases (polling, finance, legislation, congress members, elections)
+          Type to see instant results • Press Enter or click "Search All" to query databases • ⭐ Bookmark to save
         </p>
       </div>
+
+      {/* Saved & Recent Searches (shown when no active query) */}
+      {query.trim().length < 2 && (savedSearches.length > 0 || recentSearches.length > 0) && (
+        <div className="grid gap-2 sm:grid-cols-2 mb-3">
+          {savedSearches.length > 0 && (
+            <div className="candidate-card">
+              <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-b-[hsl(var(--win98-shadow))]">
+                <BookmarkCheck className="h-3.5 w-3.5" style={{ color: "hsl(45, 90%, 45%)" }} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Saved Searches</span>
+                <span className="text-[9px] text-[hsl(var(--muted-foreground))] ml-auto">{savedSearches.length}</span>
+              </div>
+              <div className="space-y-0.5 max-h-[160px] overflow-y-auto">
+                {savedSearches.map((s) => (
+                  <div key={s} className="flex items-center gap-1 group">
+                    <button
+                      onClick={() => loadSearch(s)}
+                      className="flex-1 text-left px-1.5 py-1 text-[10px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white rounded-sm transition-colors truncate flex items-center gap-1"
+                    >
+                      <Bookmark className="h-2.5 w-2.5 shrink-0" style={{ color: "hsl(45, 90%, 45%)" }} />
+                      {s}
+                    </button>
+                    <button
+                      onClick={() => removeSaved(s)}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(0,60%,50%)] transition-opacity"
+                      title="Remove"
+                    >
+                      <Trash2 className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {recentSearches.length > 0 && (
+            <div className="candidate-card">
+              <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-b-[hsl(var(--win98-shadow))]">
+                <Clock className="h-3.5 w-3.5 text-[hsl(var(--muted-foreground))]" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Recent Searches</span>
+                <span className="text-[9px] text-[hsl(var(--muted-foreground))] ml-auto">{recentSearches.length}</span>
+              </div>
+              <div className="space-y-0.5 max-h-[160px] overflow-y-auto">
+                {recentSearches.map((s) => (
+                  <div key={s} className="flex items-center gap-1 group">
+                    <button
+                      onClick={() => loadSearch(s)}
+                      className="flex-1 text-left px-1.5 py-1 text-[10px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white rounded-sm transition-colors truncate flex items-center gap-1"
+                    >
+                      <Clock className="h-2.5 w-2.5 shrink-0 text-[hsl(var(--muted-foreground))]" />
+                      {s}
+                    </button>
+                    <button
+                      onClick={() => removeRecent(s)}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(0,60%,50%)] transition-opacity"
+                      title="Remove"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Results */}
       {query.trim().length >= 2 && (
