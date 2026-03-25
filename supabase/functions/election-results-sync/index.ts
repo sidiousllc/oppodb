@@ -14,14 +14,6 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
     "Vary": "Origin",
   };
 }
-function parseJwtClaims(token: string): Record<string, unknown> | null {
-  const parts = token.split(".");
-  if (parts.length < 2) return null;
-  try {
-    const payload = parts[1].replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-    return JSON.parse(atob(payload)) as Record<string, unknown>;
-  } catch { return null; }
-}
 
 const STATE_ABBREV_TO_LOWER: Record<string, string> = {
   AL:"al",AK:"ak",AZ:"az",AR:"ar",CA:"ca",CO:"co",CT:"ct",DE:"de",
@@ -336,20 +328,22 @@ Deno.serve(async (req) => {
     }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const token = authHeader.slice(7).trim();
-    const claims = parseJwtClaims(token);
-    if (claims?.role !== "service_role") {
-      const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-      const authClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user }, error: authError } = await authClient.auth.getUser(token);
-      if (authError || !user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
+
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (claimsData.claims.role !== "service_role") {
+      const userId = claimsData.claims.sub as string;
       const adminClient = createClient(supabaseUrl, supabaseKey);
-      const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: userId, _role: "admin" });
       if (!roleCheck) {
         return new Response(JSON.stringify({ error: "Forbidden: admin role required" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });

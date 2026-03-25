@@ -216,12 +216,13 @@ OppoDB uses a sophisticated email pipeline:
 ## Security
 
 OppoDB uses defense-in-depth security:
-- **JWT Verification** on all edge functions
+- **Signature-Verified JWT Authentication** on all edge functions using `getClaims()` (cryptographic signature verification, not base64 decoding)
 - **Row Level Security (RLS)** policies on all tables
 - **SECURITY DEFINER** functions for role checks (prevents RLS recursion)
 - **SSRF Protection** on URL construction (domain allowlisting, protocol restriction)
 - **API Key Hashing** (bcrypt, only prefix visible)
 - **Encrypted Credential Vault** for third-party API keys
 - **Email Suppression** for bounce/complaint handling
+- **Restricted RLS on sensitive tables**: `user_invitations` (admin-only SELECT), `role_groups` (authenticated-only SELECT)
 - Auth via email/password with invite-only or access-request user creation
 - Production domain pinning for auth redirects (prevents Lovable preview gate)

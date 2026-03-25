@@ -29,19 +29,6 @@ const ALL_STATES = [
 
 const STATES_PER_BATCH = 5;
 
-function parseJwtClaims(token: string): Record<string, unknown> | null {
-  const parts = token.split(".");
-  if (parts.length < 2) return null;
-  try {
-    const payload = parts[1]
-      .replaceAll("-", "+")
-      .replaceAll("_", "/")
-      .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-    return JSON.parse(atob(payload)) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("Origin");
@@ -66,31 +53,30 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     const token = authHeader.slice("Bearer ".length).trim();
-    const claims = parseJwtClaims(token);
+
+    // Use getClaims() for signature-verified JWT validation
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Allow service_role tokens (for scheduled cron jobs)
-    if (claims?.role === "service_role") {
+    if (claimsData.claims.role === "service_role") {
       console.log("[SECURITY] Authenticated as service_role (cron)");
     } else {
       // For non-service_role tokens, verify user and check admin/moderator role
-      const authClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-
-      const { data: { user }, error: authError } = await authClient.auth.getUser(token);
-      if (authError || !user) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized: Invalid user token" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Check if user has admin or moderator role
+      const userId = claimsData.claims.sub as string;
       const adminClient = createClient(supabaseUrl, supabaseKey);
       const { data: roles } = await adminClient
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       const userRoles = (roles || []).map((r: any) => r.role);
       const isAuthorized = userRoles.includes("admin") || userRoles.includes("moderator");
@@ -102,7 +88,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      console.log(`[SECURITY] Authenticated as user ${user.id} with roles: ${userRoles.join(", ")}`);
+      console.log(`[SECURITY] Authenticated as user ${userId} with roles: ${userRoles.join(", ")}`);
     }
 
     // Create privileged client for sync operations (only after auth check passes)
