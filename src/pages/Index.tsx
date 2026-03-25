@@ -257,7 +257,6 @@ export default function Index() {
     "state-legislative": stateLegDistricts.length,
     polling: pollingCount,
     "campaign-finance": financeCount,
-    "voter-data": 0,
     "research-tools": 0,
     "live-elections": 0,
     legislation: 0,
