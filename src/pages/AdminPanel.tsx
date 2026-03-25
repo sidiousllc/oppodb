@@ -499,23 +499,24 @@ function CandidatesTab() {
   useEffect(() => { load(); }, [load]);
 
   const handleSave = async (item: ContentItem) => {
-    if (item.id) {
-      const { error } = await supabase.from("candidate_profiles").update({ name: item.name, slug: item.slug, content: item.content }).eq("id", item.id);
-      if (error) { toast.error(error.message); return; }
-      toast.success("Updated");
-    } else {
-      const { error } = await supabase.from("candidate_profiles").insert({ name: item.name || "", slug: item.slug, content: item.content, github_path: `candidates/${item.slug}.md` });
-      if (error) { toast.error(error.message); return; }
-      toast.success("Created");
-    }
-    setEditing(null); setCreating(false); load();
+    try {
+      if (item.id) {
+        await updateContent("candidate_profiles", item.id, { name: item.name, slug: item.slug, content: item.content });
+        toast.success("Updated");
+      } else {
+        await insertContent("candidate_profiles", { name: item.name || "", slug: item.slug, content: item.content, github_path: `candidates/${item.slug}.md` });
+        toast.success("Created");
+      }
+      setEditing(null); setCreating(false); load();
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this candidate profile?")) return;
-    const { error } = await supabase.from("candidate_profiles").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Deleted"); load();
+    try {
+      await deleteContent("candidate_profiles", id);
+      toast.success("Deleted"); load();
+    } catch (e: any) { toast.error(e.message); }
   };
 
   if (loading) return <div className="text-center py-8 text-[10px]">Loading...</div>;
