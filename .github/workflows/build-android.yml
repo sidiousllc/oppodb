@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android
 
 on:
   workflow_dispatch:
@@ -11,12 +11,22 @@ on:
         options:
           - debug
           - release
+      output_format:
+        description: 'Output format'
+        required: true
+        default: 'apk'
+        type: choice
+        options:
+          - apk
+          - aab
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,7 +34,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: 'npm'
 
       - name: Setup Java
@@ -33,8 +43,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install dependencies
-        run: npm install
+        run: npm ci --legacy-peer-deps
 
       - name: Add Android platform
         run: npx cap add android || true
@@ -54,12 +67,12 @@ jobs:
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release-keystore.jks
 
       - name: Build Debug APK
-        if: ${{ inputs.build_type == 'debug' }}
+        if: ${{ inputs.build_type == 'debug' && inputs.output_format == 'apk' }}
         working-directory: android
         run: ./gradlew assembleDebug
 
       - name: Build Release APK
-        if: ${{ inputs.build_type == 'release' }}
+        if: ${{ inputs.build_type == 'release' && inputs.output_format == 'apk' }}
         working-directory: android
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -67,6 +80,20 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$PWD/app/release-keystore.jks \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
+
+      - name: Build Release AAB
+        if: ${{ inputs.build_type == 'release' && inputs.output_format == 'aab' }}
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew bundleRelease \
             -Pandroid.injected.signing.store.file=$PWD/app/release-keystore.jks \
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
@@ -81,9 +108,17 @@ jobs:
           retention-days: 30
 
       - name: Upload Release APK
-        if: ${{ inputs.build_type == 'release' }}
+        if: ${{ inputs.build_type == 'release' && inputs.output_format == 'apk' }}
         uses: actions/upload-artifact@v4
         with:
           name: ordb-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
+      - name: Upload Release AAB
+        if: ${{ inputs.build_type == 'release' && inputs.output_format == 'aab' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ordb-release.aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
