@@ -291,7 +291,15 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") runDbSearch();
-  }, [runDbSearch]);
+    if (e.key === "Escape") {
+      if (query.trim()) {
+        setQuery("");
+        setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
+        setHasSearched(false);
+      }
+      inputRef.current?.blur();
+    }
+  }, [runDbSearch, query]);
 
   // Build DB result groups
   const dbGroups = useMemo<SearchResultGroup[]>(() => {
