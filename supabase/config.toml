@@ -22,7 +22,7 @@ project_id = "yysbtxpupmwkxovgkama"
   [functions.sync-github]
     verify_jwt = false
   [functions.campaign-finance-sync]
-    verify_jwt = false
+    verify_jwt = true
   [functions.opensecrets-sync]
     verify_jwt = false
   [functions.elevenlabs-sfx]
