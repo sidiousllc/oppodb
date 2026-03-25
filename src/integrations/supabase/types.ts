@@ -1913,8 +1913,6 @@ export type Database = {
           read_ct: number
         }[]
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       validate_api_key: {
         Args: { p_key_hash: string }
         Returns: {
