@@ -5,7 +5,7 @@ import {
   Geography,
   ZoomableGroup,
 } from "react-simple-maps";
-import { Search, X, Users, DollarSign, BarChart3 } from "lucide-react";
+import { Search, X, Users, DollarSign, BarChart3, Swords } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CompetitiveRacesSidebar } from "@/components/CompetitiveRacesSidebar";
 import { type DistrictProfile } from "@/data/districtIntel";
@@ -226,6 +226,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   const [zoomedStateAbbr, setZoomedStateAbbr] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [highlightedDistrict, setHighlightedDistrict] = useState<string | null>(null);
+  const [competitiveOnly, setCompetitiveOnly] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // DB-sourced data
@@ -357,12 +358,29 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     setTooltipPos({ x: e.clientX, y: e.clientY });
   }, []);
 
+  const COMPETITIVE_RATINGS = useMemo(() => new Set([
+    "Toss Up", "Toss-Up", "Tossup", "Lean D", "Lean R", "Likely D", "Likely R",
+  ]), []);
+
+  const isCompetitive = useCallback((districtId: string): boolean => {
+    const consensus = consensusRatings.get(districtId);
+    if (consensus && COMPETITIVE_RATINGS.has(consensus)) return true;
+    const cook = getCookRating(districtId);
+    if (cook && COMPETITIVE_RATINGS.has(cook)) return true;
+    return false;
+  }, [consensusRatings, COMPETITIVE_RATINGS]);
+
   const getDistrictFill = useCallback(
     (districtId: string | null): string => {
       if (!districtId) return "hsl(220, 15%, 90%)";
 
       if (highlightedDistrict && districtId === highlightedDistrict) {
         return "hsl(45, 100%, 55%)";
+      }
+
+      // Competitive filter: gray out non-competitive districts
+      if (competitiveOnly && !isCompetitive(districtId)) {
+        return "hsl(220, 5%, 94%)";
       }
 
       if (pviFilter !== "all" && !matchesPVIFilter(districtId, pviFilter)) {
@@ -374,7 +392,6 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         if (consensus && FORECAST_COLORS[consensus]) {
           return `hsl(${FORECAST_COLORS[consensus]})`;
         }
-        // Fall back to Cook static
         const rating = getCookRating(districtId);
         if (rating) return `hsl(${getCookRatingColor(rating)})`;
         return "hsl(220, 15%, 88%)";
@@ -386,12 +403,11 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         return "hsl(220, 15%, 88%)";
       }
 
-      // Cook rating mode
       const rating = getCookRating(districtId);
       if (rating) return `hsl(${getCookRatingColor(rating)})`;
       return "hsl(220, 15%, 85%)";
     },
-    [pviFilter, colorMode, highlightedDistrict, consensusRatings]
+    [pviFilter, colorMode, highlightedDistrict, consensusRatings, competitiveOnly, isCompetitive]
   );
 
   const handleDistrictHover = useCallback(
@@ -532,6 +548,18 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
             </button>
           ))}
         </div>
+
+        <button
+          onClick={() => setCompetitiveOnly(!competitiveOnly)}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border ${
+            competitiveOnly
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card text-muted-foreground border-border hover:text-foreground"
+          }`}
+        >
+          <Swords className="h-3 w-3" />
+          Competitive Only
+        </button>
 
         {isZoomed && (
           <button
