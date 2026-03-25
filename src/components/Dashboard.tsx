@@ -109,7 +109,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
             const d = (f.district || "AL").padStart(2, "0");
             return `${f.state_abbr}-${d}`;
           }))].sort();
-          setDbTossUps(ids);
+          setDbTossUps(ids as string[]);
         }
       });
   }, []);
