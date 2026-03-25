@@ -38,6 +38,7 @@ Columns:
 - **Joined** — Registration date
 - **Last Sign In** — Most recent login date
 - **Roles** — Toggle buttons for admin, moderator, premium
+- **Groups** — Color-coded role group badges
 - **Actions** — Suspend, Edit, Reset Password, Delete
 
 ### Role Toggle
@@ -76,41 +77,54 @@ Duration options:
 - 90 Days
 - Indefinite
 
-Shows banned_until timestamp.
+Shows `banned_until` timestamp. "Restore Access" button to unban.
 
 ### Delete User
 Confirmation prompt required, then permanent deletion.
 
 ---
 
-## Role Groups Tab
+## Role Groups Tab (`RoleGroupsTab`)
 
 ### Purpose
-Role Groups provide flexible team/project-based categorization.
+Role Groups provide flexible team/project-based categorization with automatic role synchronization.
 
 ### Create Group
 - Name input
+- Description field
 - Color picker (hex color)
+- Roles multi-select (admin, moderator, user)
 - Creates group in `role_groups` table
 
 ### Manage Membership
-- Add users to groups
+- Add users to groups by email or user ID
 - Remove users from groups
-- Change group name/color
+- Change group name, description, color, and roles
 - Delete groups
+
+### Automatic Role Sync
+When group membership or group roles change, the system recalculates user roles as the union of all assigned groups' roles. This is handled atomically by the `admin-users` edge function.
 
 ---
 
-## Access Control Tab
+## Access Control Tab (`AccessControlTab`)
 
-### Purpose
-Fine-grained access permission management.
+### Invitations Sub-Tab
+Manage user invitations:
+- **Send Invite Form**: Email input + role dropdown (user, premium, moderator, admin)
+- **Invitation List**: Shows all invitations with status (pending/used/expired)
+- **Copy Invite Link**: Copies `/auth?invite=<token>` URL to clipboard
+- **Delete Used/Expired Invites**: Trash button appears for invitations that are either used or expired
+- Sends invite email via transactional email pipeline
 
-### Features
-- View all current access rules
-- Modify permissions by role
-- Configure resource-level access
-- Audit log of permission changes
+### Access Requests Sub-Tab
+Manage public access requests:
+- **Status Filter**: Toggle between pending, approved, and denied views
+- **Pending Count Badge**: Shows number of unreviewed requests
+- **Approve Button**: Creates user account with default role, sends welcome email
+- **Deny Button**: Marks as denied, sends denial notification email
+- **Delete Processed Requests**: Trash button appears for non-pending requests (approved or denied)
+- **Backend Safety Check**: The `delete_access_request` action verifies the request is not pending before allowing deletion
 
 ---
 
@@ -121,7 +135,7 @@ Moderators and admins can manage candidate profiles.
 ### Content List
 - List of all candidates with slug
 - Character count of content
-- edit_file and Delete buttons
+- Edit and Delete buttons
 
 ### Create Candidate
 Form with:
@@ -184,47 +198,47 @@ Confirmation required.
 
 ---
 
-## Shared Content Components
-
-### ContentList Component
-Reusable table component for all content types:
-- Item name/slug displayed
-- Content length shown
-- Action buttons (edit/delete)
-- Empty state message
-
-### ContentEditor Component
-Reusable form for content editing:
-- Name/State field (label configurable)
-- Slug field
-- Summary field (optional)
-- Large content textarea (monospace font)
-- Save / Cancel buttons
-- Creates new or updates existing based on presence of ID
-
----
-
-## Real-time Updates
-
-After any content operation (create/edit/delete):
-- UI updates immediately
-- Data refreshes from Supabase
-- Toast notifications confirm success/failure
-
----
-
 ## Admin API Functions (`lib/adminApi.ts`)
 
 ```typescript
 listUsers(): Promise<AdminUser[]>
-setUserRole(userId: string, role: string, hasRole: boolean): Promise<void>
-deleteUser(userId: string): Promise<void>
-createUser(email: string, password: string, role: string): Promise<void>
-updateUser(userId: string, updates: {...}): Promise<void>
+setUserRole(userId: string, role: string, remove?: boolean): Promise<void>
+createUser(email: string, password: string, role?: string): Promise<void>
+updateUser(userId: string, updates: { email?: string; display_name?: string }): Promise<void>
 resetUserPassword(userId: string, newPassword: string): Promise<void>
-banUser(userId: string, duration: string): Promise<void>
+deleteUser(userId: string): Promise<void>
+banUser(userId: string, duration?: string): Promise<void>
 unbanUser(userId: string): Promise<void>
 ```
+
+### Edge Function Actions (`admin-users`)
+The `admin-users` edge function handles all administrative operations:
+
+**User Management:**
+- `list_users` — List all users with roles and profiles
+- `create_user` — Create new user with email/password/role
+- `update_user` — Update email or display name
+- `set_role` — Grant or revoke a role
+- `reset_password` — Set new password for user
+- `ban_user` — Suspend user for specified duration
+- `delete_user` — Permanently delete user
+
+**Invitation Management:**
+- `create_invitation` — Generate invite token with 7-day expiry
+- `list_invitations` — List all invitations
+- `validate_invite` — Check invite token validity (public, no auth)
+- `consume_invite` — Mark invite as used (public, no auth)
+- `delete_invitation` — Remove invitation record
+
+**Access Request Management:**
+- `list_access_requests` — List requests with optional status filter
+- `approve_access_request` — Create account + assign role + send welcome email
+- `deny_access_request` — Mark denied + send notification
+- `delete_access_request` — Remove processed request (safety check: cannot delete pending)
+
+**Role Groups:**
+- Role group CRUD and membership management
+- Atomic role recalculation on membership changes
 
 ---
 
@@ -241,6 +255,6 @@ deleteContent(table: string, id: string): Promise<void>
 ## Toast Notifications
 
 All admin actions show toast notifications:
-- Success (green): "User updated", "Candidate created"
+- Success (green): "User updated", "Candidate created", "Invite deleted"
 - Error (red): "Failed to create: error message"
 - Info (blue): "No changes detected"
