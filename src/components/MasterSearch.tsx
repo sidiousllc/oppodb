@@ -183,7 +183,46 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       congressElections: congressElRes.data || [],
     });
     setIsSearching(false);
+
+    // Track recent search
+    setRecentSearches(prev => {
+      const updated = [q, ...prev.filter(s => s !== q)].slice(0, MAX_RECENT);
+      saveToStorage(RECENT_KEY, updated);
+      return updated;
+    });
   }, [query]);
+
+  const toggleBookmark = useCallback(() => {
+    const q = query.trim();
+    if (!q) return;
+    setSavedSearches(prev => {
+      const updated = prev.includes(q)
+        ? prev.filter(s => s !== q)
+        : [q, ...prev].slice(0, MAX_SAVED);
+      saveToStorage(STORAGE_KEY, updated);
+      return updated;
+    });
+  }, [query]);
+
+  const removeSaved = useCallback((s: string) => {
+    setSavedSearches(prev => {
+      const updated = prev.filter(x => x !== s);
+      saveToStorage(STORAGE_KEY, updated);
+      return updated;
+    });
+  }, []);
+
+  const removeRecent = useCallback((s: string) => {
+    setRecentSearches(prev => {
+      const updated = prev.filter(x => x !== s);
+      saveToStorage(RECENT_KEY, updated);
+      return updated;
+    });
+  }, []);
+
+  const loadSearch = useCallback((s: string) => {
+    setQuery(s);
+  }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") runDbSearch();
