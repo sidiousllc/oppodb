@@ -52,7 +52,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     stateFinance: any[];
     mnFinance: any[];
     winredDonations: any[];
-  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [] });
+    voterStats: any[];
+  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
   const [hasSearched, setHasSearched] = useState(false);
 
   // Ctrl+K shortcut to focus search
