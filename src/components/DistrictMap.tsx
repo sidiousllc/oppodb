@@ -609,7 +609,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
               minZoom={1}
               maxZoom={20}
             >
-              <Geographies geography={geoData}>
+              <Geographies geography={LOCAL_CD_GEO}>
                 {({ geographies }) =>
                   geographies.map((geo) => {
                     const stateAbbr = geo.properties?.STATE_ABBR;
