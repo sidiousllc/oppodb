@@ -100,14 +100,20 @@ export function AppSidebar({
       const { data, error } = await supabase.functions.invoke("sync-github");
       if (error) {
         console.error("Sync error:", error);
+        toast.error("Sync failed", { description: error.message || "Could not sync from GitHub" });
         return;
       }
       console.log("Sync result:", data);
       const t = await getLastSyncTime();
       setLastSync(t);
       onSyncComplete?.();
+      const count = data?.upserted ?? data?.count;
+      toast.success("GitHub sync complete", {
+        description: count != null ? `${count} profiles updated` : "All profiles are up to date",
+      });
     } catch (e) {
       console.error("Sync failed:", e);
+      toast.error("Sync failed", { description: "An unexpected error occurred" });
     } finally {
       setSyncing(false);
     }
