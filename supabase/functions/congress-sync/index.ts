@@ -13,15 +13,40 @@ interface SyncResult {
   errors: string[];
 }
 
-async function fetchCongress(path: string, apiKey: string, params: Record<string, string> = {}): Promise<any> {
-  const url = new URL(`${API_BASE}${path}`);
-  url.searchParams.set("api_key", apiKey);
-  url.searchParams.set("format", "json");
-  for (const [k, v] of Object.entries(params)) {
-    url.searchParams.set(k, v);
+function buildValidatedUrl(baseUrl: string, path: string, apiKey: string, params: Record<string, string> = {}): string {
+  try {
+    // Minimal path validation (Do this before new URL(baseUrl), as URL() resolves dot-segments.)
+    if (path.includes('/../') || /\/%2e%2e\//i.test(path)) {
+      throw new Error('Invalid path');
+    }
+    
+    const url = new URL(baseUrl);
+    
+    // Validate path parameter
+    if (!/^\/[A-Za-z0-9\/_-]*$/.test(path)) {
+      throw new Error('Invalid parameter');
+    }
+    
+    // Set the pathname from the validated path
+    url.pathname = path;
+    
+    // Add query parameters
+    url.searchParams.set("api_key", apiKey);
+    url.searchParams.set("format", "json");
+    for (const [k, v] of Object.entries(params)) {
+      url.searchParams.set(k, v);
+    }
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
   }
+}
 
-  const resp = await fetch(url.toString());
+async function fetchCongress(path: string, apiKey: string, params: Record<string, string> = {}): Promise<any> {
+  const url = buildValidatedUrl(API_BASE, path, apiKey, params);
+
+  const resp = await fetch(url);
   if (!resp.ok) {
     throw new Error(`Congress API ${resp.status}: ${await resp.text()}`);
   }
