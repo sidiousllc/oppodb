@@ -556,23 +556,24 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
     const record: any = { slug: item.slug, content: item.content };
     if (hasState) { record.state = item.state || item.name; if (hasSummary) record.summary = item.summary || ""; }
     else { record.name = item.name; }
-    if (item.id) {
-      const { error } = await supabase.from(table as "maga_files" | "local_impacts" | "narrative_reports").update(record).eq("id", item.id);
-      if (error) { toast.error(error.message); return; }
-      toast.success("Updated");
-    } else {
-      const { error } = await supabase.from(table as "maga_files" | "local_impacts" | "narrative_reports").insert(record);
-      if (error) { toast.error(error.message); return; }
-      toast.success("Created");
-    }
-    setEditing(null); setCreating(false); load();
+    try {
+      if (item.id) {
+        await updateContent(table as "maga_files" | "local_impacts" | "narrative_reports", item.id, record);
+        toast.success("Updated");
+      } else {
+        await insertContent(table as "maga_files" | "local_impacts" | "narrative_reports", record);
+        toast.success("Created");
+      }
+      setEditing(null); setCreating(false); load();
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this item?")) return;
-    const { error } = await supabase.from(table as "maga_files" | "local_impacts" | "narrative_reports").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Deleted"); load();
+    try {
+      await deleteContent(table as "maga_files" | "local_impacts" | "narrative_reports", id);
+      toast.success("Deleted"); load();
+    } catch (e: any) { toast.error(e.message); }
   };
 
   if (loading) return <div className="text-center py-8 text-[10px]">Loading...</div>;
