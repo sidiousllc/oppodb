@@ -542,7 +542,7 @@ mcpServer.tool("master_search", {
       categories: {
         type: "array" as const,
         items: { type: "string" as const },
-        description: "Optional list of categories to search. Available: candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats. Defaults to all.",
+        description: "Optional list of categories to search. Available: candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats, mn_finance. Defaults to all.",
       },
       limit: { type: "number" as const, description: "Max results per category (default 10, max 20)" },
     },
@@ -561,7 +561,7 @@ mcpServer.tool("master_search", {
       "candidates", "congress_members", "bills", "polling",
       "campaign_finance", "state_finance", "election_results",
       "forecasts", "maga_files", "narrative_reports",
-      "local_impacts", "voter_stats",
+      "local_impacts", "voter_stats", "mn_finance",
     ];
 
     const requestedCategories = args.categories as string[] | undefined;
@@ -644,6 +644,13 @@ mcpServer.tool("master_search", {
         .select("*").ilike("state", likeQ).limit(perLimit)
         .order("total_registered", { ascending: false })
         .then(r => ({ label: "Voter Registration Stats", data: r.data || [] }));
+    }
+    if (activeCategories.includes("mn_finance")) {
+      queries.mn_finance = supabase.from("mn_cfb_candidates")
+        .select("candidate_name,chamber,committee_name,total_contributions,total_expenditures,net_cash")
+        .or(`candidate_name.ilike.${likeQ},committee_name.ilike.${likeQ}`)
+        .order("total_contributions", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "MN Campaign Finance", data: r.data || [] }));
     }
 
     const entries = Object.entries(queries);
