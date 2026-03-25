@@ -15,6 +15,7 @@ const sectionItems: Array<{ id: Section; label: string }> = [
   { id: "local-impact", label: "Local Impact" },
   { id: "narratives", label: "Narratives" },
   { id: "district-intel", label: "District Intel" },
+  { id: "documentation", label: "Docs" },
 ];
 
 const filters: Array<{ id: FilterCategory; label: string }> = [
