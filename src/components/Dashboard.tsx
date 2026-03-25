@@ -14,6 +14,7 @@ interface DashboardProps {
   onNavigateSection: (section: string, slug?: string) => void;
   candidateCount: number;
   districtCount: number;
+  districts?: DistrictProfile[];
 }
 
 export function Dashboard({ onNavigateSection, candidateCount, districtCount }: DashboardProps) {
