@@ -167,6 +167,13 @@ interface DistrictGeoJSON {
 let districtGeoCache: DistrictGeoJSON | null = null;
 let districtGeoPromise: Promise<DistrictGeoJSON | null> | null = null;
 
+type ProgressCallback = (pct: number, label: string) => void;
+let progressListeners: ProgressCallback[] = [];
+
+function notifyProgress(pct: number, label: string) {
+  progressListeners.forEach((cb) => cb(pct, label));
+}
+
 function countUniqueDistricts(features: DistrictGeoJSON["features"]): number {
   const ids = new Set<string>();
   for (const feature of features) {
@@ -200,6 +207,8 @@ async function fetchDistrictGeoPaginated(): Promise<DistrictGeoJSON | null> {
   const cacheSeed = `${Date.now()}`;
   let offset = 0;
 
+  notifyProgress(10, "Fetching districts from Esri…");
+
   while (true) {
     const data = await fetchEsriJson((attempt) =>
       buildCdUrl(offset, `${cacheSeed}-${offset}-${attempt}`)
@@ -209,6 +218,9 @@ async function fetchDistrictGeoPaginated(): Promise<DistrictGeoJSON | null> {
     if (data.features.length === 0) break;
 
     allFeatures.push(...data.features);
+    const loaded = countUniqueDistricts(allFeatures);
+    const pct = Math.min(90, Math.round((loaded / ESRI_MIN_DISTRICT_COUNT) * 90));
+    notifyProgress(pct, `Loading districts… ${loaded}/${ESRI_MIN_DISTRICT_COUNT}`);
 
     const needsNextPage = Boolean(data.exceededTransferLimit) || data.features.length >= ESRI_PAGE_SIZE;
     if (!needsNextPage) break;
@@ -220,28 +232,44 @@ async function fetchDistrictGeoPaginated(): Promise<DistrictGeoJSON | null> {
   const uniqueDistricts = countUniqueDistricts(allFeatures);
   if (uniqueDistricts < ESRI_MIN_DISTRICT_COUNT) return null;
 
+  notifyProgress(95, `Loaded ${uniqueDistricts} districts`);
   return { type: "FeatureCollection", features: allFeatures };
 }
 
 async function fetchDistrictGeoByState(): Promise<DistrictGeoJSON | null> {
   const cacheSeed = `${Date.now()}`;
   const states = Object.keys(STATE_CENTERS);
-  const responses = await Promise.all(
-    states.map((stateAbbr) =>
-      fetchEsriJson((attempt) =>
-        buildCdStateUrl(stateAbbr, `${cacheSeed}-${stateAbbr}-${attempt}`)
+  notifyProgress(10, "Fetching districts by state…");
+
+  const allFeatures: DistrictGeoJSON["features"] = [];
+  const batchSize = 10;
+
+  for (let i = 0; i < states.length; i += batchSize) {
+    const batch = states.slice(i, i + batchSize);
+    const responses = await Promise.all(
+      batch.map((stateAbbr) =>
+        fetchEsriJson((attempt) =>
+          buildCdStateUrl(stateAbbr, `${cacheSeed}-${stateAbbr}-${attempt}`)
+        )
       )
-    )
-  );
+    );
 
-  if (responses.some((res) => !res || !Array.isArray(res.features))) return null;
+    for (const res of responses) {
+      if (!res || !Array.isArray(res.features)) return null;
+      allFeatures.push(...res.features);
+    }
 
-  const features = responses.flatMap((res) => (res?.features ?? []));
-  if (features.length === 0) return null;
-  const uniqueDistricts = countUniqueDistricts(features);
+    const pct = Math.min(90, Math.round(((i + batch.length) / states.length) * 90));
+    const loaded = countUniqueDistricts(allFeatures);
+    notifyProgress(pct, `Loading states… ${i + batch.length}/${states.length} (${loaded} districts)`);
+  }
+
+  if (allFeatures.length === 0) return null;
+  const uniqueDistricts = countUniqueDistricts(allFeatures);
   if (uniqueDistricts < ESRI_MIN_DISTRICT_COUNT) return null;
 
-  return { type: "FeatureCollection", features };
+  notifyProgress(95, `Loaded ${uniqueDistricts} districts`);
+  return { type: "FeatureCollection", features: allFeatures };
 }
 
 /** Try loading from bundled static file first (instant), fall back to Esri API */
@@ -250,12 +278,16 @@ async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
   if (districtGeoPromise) return districtGeoPromise;
 
   districtGeoPromise = (async () => {
+    notifyProgress(5, "Loading district boundaries…");
+
     // 1. Try local static file (fast, no external API calls)
     try {
       const res = await fetch(LOCAL_CD_GEO);
       if (res.ok) {
+        notifyProgress(50, "Parsing local geometry…");
         const data = await res.json();
         if (data?.features?.length >= ESRI_MIN_DISTRICT_COUNT) {
+          notifyProgress(100, "Ready");
           districtGeoCache = data;
           return data;
         }
@@ -267,6 +299,7 @@ async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
     // 2. Paginated Esri fetch
     const paginated = await fetchDistrictGeoPaginated();
     if (paginated) {
+      notifyProgress(100, "Ready");
       districtGeoCache = paginated;
       return paginated;
     }
@@ -274,6 +307,7 @@ async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
     // 3. State-by-state Esri fallback
     const byState = await fetchDistrictGeoByState();
     if (byState) {
+      notifyProgress(100, "Ready");
       districtGeoCache = byState;
       return byState;
     }
@@ -310,6 +344,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [geoData, setGeoData] = useState<DistrictGeoJSON | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [loadLabel, setLoadLabel] = useState("Loading district boundaries…");
   const [colorMode, setColorMode] = useState<ColorMode>("cook");
   const [zoomState, setZoomState] = useState<{ center: [number, number]; zoom: number }>({
     center: [-96, 38],
@@ -322,6 +358,13 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
 
   useEffect(() => {
     let isMounted = true;
+    const onProgress: ProgressCallback = (pct, label) => {
+      if (!isMounted) return;
+      setLoadProgress(pct);
+      setLoadLabel(label);
+    };
+    progressListeners.push(onProgress);
+
     fetchDistrictGeo().then((data) => {
       if (!isMounted) return;
       setGeoData(data);
@@ -329,6 +372,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     });
     return () => {
       isMounted = false;
+      progressListeners = progressListeners.filter((cb) => cb !== onProgress);
     };
   }, []);
 
@@ -492,11 +536,18 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="flex items-center gap-3 text-muted-foreground">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-            <span className="text-sm">Loading district boundaries…</span>
+            <span className="text-sm">{loadLabel}</span>
           </div>
+          <div className="w-64 h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+              style={{ width: `${loadProgress}%` }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">{loadProgress}%</span>
         </div>
       )}
 
