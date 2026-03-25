@@ -161,7 +161,33 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
     const likeQ = `%${q}%`;
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes] = await Promise.all([
+    // Fetch voter registration stats via edge function
+    const fetchVoterStats = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return [];
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voter-registration-stats`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        );
+        const data = await response.json();
+        if (data.states) {
+          const qLower = q.toLowerCase();
+          return data.states.filter((s: any) =>
+            s.state?.toLowerCase().includes(qLower)
+          ).slice(0, 10);
+        }
+        return [];
+      } catch { return []; }
+    };
+
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -206,6 +232,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`donor_last_name.ilike.${likeQ},donor_city.ilike.${likeQ},candidate_name.ilike.${likeQ},committee_name.ilike.${likeQ},donor_state.ilike.${likeQ}`)
         .order("transaction_date", { ascending: false })
         .limit(10),
+      fetchVoterStats(),
     ]);
 
     setDbResults({
