@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Search, ExternalLink, Scale, ArrowLeft, Info } from "lucide-react";
+import { Search, Scale, ArrowLeft, Info, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface CourtRecordsSearchProps {
@@ -23,11 +23,9 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
       toast.error("Please enter a search query");
       return;
     }
-    // Sanitize and encode
     const encoded = encodeURIComponent(trimmed);
     const url = `https://www.judyrecords.com/search?q=${encoded}`;
-    
-    // Track recent searches (max 10)
+
     setRecentSearches((prev) => {
       const updated = [trimmed, ...prev.filter((s) => s !== trimmed)].slice(0, 10);
       return updated;
@@ -43,6 +41,12 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
     [handleSearch]
   );
 
+  const openSearch = (s: string) => {
+    setQuery(s);
+    const encoded = encodeURIComponent(s);
+    window.open(`https://www.judyrecords.com/search?q=${encoded}`, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div>
       {onBack && (
@@ -52,7 +56,6 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
         </button>
       )}
 
-      {/* Header */}
       <div className="win98-sunken bg-[hsl(var(--win98-light))] px-3 py-2 mb-3">
         <div className="flex items-center gap-2 text-[11px]">
           <Scale className="h-4 w-4" />
@@ -61,22 +64,19 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
         </div>
       </div>
 
-      {/* Info box */}
       <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mb-3">
         <div className="flex items-start gap-2">
           <Info className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "hsl(210, 60%, 50%)" }} />
           <div className="text-[10px]">
             <p className="font-bold mb-1">How It Works</p>
             <p className="text-[hsl(var(--muted-foreground))]">
-              Search opens results on JudyRecords.com in a new tab. JudyRecords indexes over 400 million court cases
-              from federal, state, and local courts across all 50 states. Results include case details, parties, attorneys,
-              and direct links to court dockets.
+              Enter your search query below and click Search. Results will open on JudyRecords.com in a new tab.
+              JudyRecords indexes over 400 million court cases from federal, state, and local courts across all 50 states.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Search form */}
       <div className="win98-sunken bg-white p-3 mb-3">
         <label className="block text-[10px] font-bold mb-1">Search Query:</label>
         <div className="flex gap-2">
@@ -91,15 +91,14 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
           <button onClick={handleSearch} className="win98-button text-[10px] font-bold flex items-center gap-1">
             <Search className="h-3 w-3" />
             Search
-            <ExternalLink className="h-3 w-3 ml-1" />
+            <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
           </button>
         </div>
         <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
-          Use quotes for exact names. Results open on judyrecords.com in a new tab.
+          Use quotes for exact names. Results open in a new tab on JudyRecords.com.
         </p>
       </div>
 
-      {/* Search tips */}
       <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mb-3">
         <p className="text-[10px] font-bold mb-2">🔍 Search Tips & Examples</p>
         <div className="grid grid-cols-2 gap-2">
@@ -124,7 +123,6 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
         </div>
       </div>
 
-      {/* Coverage info */}
       <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mb-3">
         <p className="text-[10px] font-bold mb-2">📋 Court Coverage</p>
         <div className="grid grid-cols-3 gap-2 text-[9px]">
@@ -146,7 +144,6 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
         </div>
       </div>
 
-      {/* Recent searches */}
       {recentSearches.length > 0 && (
         <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
           <p className="text-[10px] font-bold mb-2">🕒 Recent Searches</p>
@@ -154,15 +151,12 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
             {recentSearches.map((s, i) => (
               <button
                 key={i}
-                onClick={() => {
-                  setQuery(s);
-                  const encoded = encodeURIComponent(s);
-                  window.open(`https://www.judyrecords.com/search?q=${encoded}`, "_blank", "noopener,noreferrer");
-                }}
+                onClick={() => openSearch(s)}
                 className="win98-button text-[9px] px-2 py-0.5 flex items-center gap-1"
               >
                 <Search className="h-2.5 w-2.5" />
                 {s.length > 40 ? s.slice(0, 40) + "…" : s}
+                <ExternalLink className="h-2 w-2" />
               </button>
             ))}
           </div>

@@ -6,15 +6,17 @@ import { getCurrentPVI, formatPVI, getPVIColor } from "@/data/cookPVI";
 import { candidates } from "@/data/candidates";
 import { magaFiles } from "@/data/magaFiles";
 import { BarChart3, TrendingDown, TrendingUp, Minus, MapPin, Users, AlertTriangle, FileText, Compass, Scale } from "lucide-react";
+import type { DistrictProfile } from "@/data/districtIntel";
 
 
 interface DashboardProps {
   onNavigateSection: (section: string, slug?: string) => void;
   candidateCount: number;
   districtCount: number;
+  districts?: DistrictProfile[];
 }
 
-export function Dashboard({ onNavigateSection, candidateCount, districtCount }: DashboardProps) {
+export function Dashboard({ onNavigateSection, candidateCount, districtCount, districts = [] }: DashboardProps) {
   const [polls, setPolls] = useState<PollEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -137,8 +139,6 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
     { label: "District Profiles", value: districtCount, emoji: "🧭", section: "district-intel" },
     { label: "MAGA Files", value: magaFiles.length, emoji: "⚠️", section: "maga-files" },
     { label: "Toss Up Races", value: tossUpDistricts.length, emoji: "🎯", section: "district-intel" },
-    { label: "Research Tools", value: 2, emoji: "🔬", section: "research-tools" },
-    { label: "Documentation", value: 13, emoji: "📖", section: "documentation" },
   ];
 
   return (
@@ -158,8 +158,6 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
         ))}
       </div>
 
-
-      {/* ═══ POLLING DATA SECTION ═══ */}
       <div>
         <div className="flex items-center gap-2 mb-2">
           <BarChart3 className="h-4 w-4" />
@@ -393,6 +391,8 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
             { label: "Research Tools", emoji: "🔬", section: "research-tools" },
             { label: "Live Elections", emoji: "🏛️", section: "live-elections" },
             { label: "Legislation", emoji: "📜", section: "legislation" },
+            { label: "Voter Data", emoji: "🗳️", section: "voter-data" },
+            { label: "Documentation", emoji: "📖", section: "documentation" },
           ].map((item) => (
             <button
               key={item.section}

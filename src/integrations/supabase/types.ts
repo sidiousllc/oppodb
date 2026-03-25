@@ -1506,6 +1506,45 @@ export type Database = {
         }
         Relationships: []
       }
+      state_voter_stats: {
+        Row: {
+          created_at: string
+          id: string
+          registration_rate: number | null
+          source: string | null
+          source_url: string | null
+          state: string
+          total_eligible: number | null
+          total_registered: number | null
+          turnout_general_2024: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          registration_rate?: number | null
+          source?: string | null
+          source_url?: string | null
+          state: string
+          total_eligible?: number | null
+          total_registered?: number | null
+          turnout_general_2024?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          registration_rate?: number | null
+          source?: string | null
+          source_url?: string | null
+          state?: string
+          total_eligible?: number | null
+          total_registered?: number | null
+          turnout_general_2024?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
