@@ -1,5 +1,9 @@
 # Welcome to Sidio.us Group's Opposition Research Database
 
+<a href="https://app.aikido.dev/audit-report/external/8A4IU23ayEgeSwA0wiLzIWS2/request" target="_blank">
+  <img src="https://app.aikido.dev/assets/badges/full-light-theme.svg" alt="Aikido Security Audit Report" height="40" />
+</a>
+
 ## Project info
 
 **URL**: https://lovable.dev/projects/4f0f9990-c3c0-4e04-9ceb-2c41704d227e
