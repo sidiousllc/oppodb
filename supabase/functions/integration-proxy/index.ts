@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: integration, error: intError } = await serviceClient
       .from("user_integrations")
-      .select("api_key_encrypted, slug, is_active")
+      .select("api_key, slug, is_active")
       .eq("user_id", userId)
       .eq("service", service)
       .single();
