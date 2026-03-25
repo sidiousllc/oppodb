@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { describe, it, expect, beforeEach } from "vitest";
 
 /**
  * Security tests for scheduled-sync edge function
@@ -27,15 +26,6 @@ function createMockJwt(payload: Record<string, unknown>): string {
   return `${header}.${body}.${signature}`;
 }
 
-/**
- * Helper to parse JWT claims (mimics the function in scheduled-sync/index.ts)
- */
- * These tests verify that the mitigation for the pentest finding is effective:
- * - Unauthenticated requests are rejected (401)
- * - Requests with non-service_role tokens are rejected (403)
- * - Only service_role tokens can invoke the function
- */
-
 // Helper function to parse JWT claims (mirrors the implementation in scheduled-sync/index.ts)
 function parseJwtClaims(token: string): Record<string, unknown> | null {
   const parts = token.split(".");
@@ -45,8 +35,8 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
 
   try {
     const payload = parts[1]
-      .replaceAll("-", "+")
-      .replaceAll("_", "/")
+      .split("-").join("+")
+      .split("_").join("/")
       .split("-").join("+")
       .split("_").join("/")
       .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
@@ -456,8 +446,8 @@ describe("scheduled-sync security - Edge cases", () => {
     // JWT tokens use URL-safe base64 (- and _ instead of + and /)
     const payload = { role: "service_role", sub: "test" };
     const encodedPayload = btoa(JSON.stringify(payload))
-      .replaceAll("+", "-")
-      .replaceAll("/", "_");
+      .split("+").join("-")
+      .split("/").join("_");
     
     const token = `header.${encodedPayload}.signature`;
     const claims = parseJwtClaims(token);
@@ -521,8 +511,11 @@ describe("scheduled-sync security - Configuration verification", () => {
     expect(securityRequirements.authorization).toContain("admin");
     expect(securityRequirements.authorization).toContain("moderator");
     expect(securityRequirements.jwt_verification).toContain("true");
+  });
+});
+
 // Helper to create a mock JWT token with specific claims
-function createMockJwt(claims: Record<string, unknown>): string {
+function createMockJwt2(claims: Record<string, unknown>): string {
   const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const payload = btoa(JSON.stringify(claims));
   const signature = "mock_signature";
