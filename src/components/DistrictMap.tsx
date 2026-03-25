@@ -610,8 +610,9 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
               maxZoom={20}
             >
               <Geographies geography={LOCAL_CD_GEO}>
-                {({ geographies }) =>
-                  geographies.map((geo) => {
+                {({ geographies }) => {
+                  console.log("[DistrictMap] geographies count:", geographies.length, "sample:", geographies[0]?.properties);
+                  return geographies.map((geo) => {
                     const stateAbbr = geo.properties?.STATE_ABBR;
                     const cdfips = geo.properties?.CDFIPS;
                     const districtRaw = geo.properties?.DISTRICTID;
