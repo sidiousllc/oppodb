@@ -47,3 +47,5 @@ project_id = "yysbtxpupmwkxovgkama"
     verify_jwt = false
   [functions.polling-sync]
     verify_jwt = false
+  [functions.version-history]
+    verify_jwt = false
