@@ -591,7 +591,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         </div>
       )}
 
-      {!loading && geoData && (
+      {!loading && (
         <>
           <ComposableMap
             projection="geoAlbersUsa"
