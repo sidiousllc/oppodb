@@ -310,6 +310,22 @@ export const localImpactReports: LocalImpactReport[] = [
 **Veterans:** Fired a veteran who worked at a VA mental health center in Cheyenne.` },
 ];
 
+// Merge DB records into the in-memory array (call once at startup)
+export function mergeLocalImpactFromDB(dbRecords: Array<{ state: string; slug: string; summary: string; content: string }>) {
+  const existing = new Set(localImpactReports.map(r => r.slug));
+  for (const r of dbRecords) {
+    if (existing.has(r.slug)) {
+      const idx = localImpactReports.findIndex(li => li.slug === r.slug);
+      if (idx >= 0) {
+        localImpactReports[idx] = { state: r.state, slug: r.slug, summary: r.summary, content: r.content };
+      }
+    } else {
+      localImpactReports.push({ state: r.state, slug: r.slug, summary: r.summary, content: r.content });
+    }
+  }
+  localImpactReports.sort((a, b) => a.state.localeCompare(b.state));
+}
+
 export function searchLocalImpact(query: string): LocalImpactReport[] {
   if (!query.trim()) return localImpactReports;
   const q = query.toLowerCase();
