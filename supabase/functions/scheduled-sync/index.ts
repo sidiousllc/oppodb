@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // --- Authentication & Authorization ---
     // Authentication: require service_role token to prevent unauthorized access
     // This function performs privileged operations (DB writes, triggering syncs)
     // and must only be invoked by authorized callers (e.g., cron jobs with service_role key)
@@ -66,6 +67,54 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    const token = authHeader.slice("Bearer ".length).trim();
+    const claims = parseJwtClaims(token);
+
+    // Allow service_role tokens (for scheduled cron jobs)
+    if (claims?.role === "service_role") {
+      console.log("Authenticated as service_role");
+    } else {
+      // For non-service_role tokens, verify user and check admin/moderator role
+      const authClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+
+      const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized: Invalid user token" }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Check if user has admin or moderator role
+      const adminClient = createClient(supabaseUrl, supabaseKey);
+      const { data: roles } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+
+      const userRoles = (roles || []).map((r: any) => r.role);
+      const isAuthorized = userRoles.includes("admin") || userRoles.includes("moderator");
+
+      if (!isAuthorized) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: Requires admin or moderator role" }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      console.log(`Authenticated as user ${user.id} with roles: ${userRoles.join(", ")}`);
+    }
+
+    // Create privileged client for sync operations (only after auth check passes)
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const results: Record<string, unknown> = {};
