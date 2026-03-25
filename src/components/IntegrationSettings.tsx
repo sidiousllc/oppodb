@@ -92,7 +92,7 @@ export function IntegrationSettings() {
     const record = {
       user_id: user.id,
       service: serviceId,
-      api_key_encrypted: data.api_key || "",
+      api_key: data.api_key || "",
       slug: data.slug || "",
       display_name: service.name,
       is_active: true,
