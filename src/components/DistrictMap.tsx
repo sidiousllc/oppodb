@@ -848,7 +848,6 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
           <span className="text-xs text-muted-foreground">No data</span>
         </div>
       </div>
-        </div>
       </div>
 
       {/* Competitive Races Sidebar */}
