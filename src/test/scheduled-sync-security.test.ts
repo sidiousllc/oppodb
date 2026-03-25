@@ -511,8 +511,11 @@ describe("scheduled-sync security - Configuration verification", () => {
     expect(securityRequirements.authorization).toContain("admin");
     expect(securityRequirements.authorization).toContain("moderator");
     expect(securityRequirements.jwt_verification).toContain("true");
+  });
+});
+
 // Helper to create a mock JWT token with specific claims
-function createMockJwt(claims: Record<string, unknown>): string {
+function createMockJwt2(claims: Record<string, unknown>): string {
   const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const payload = btoa(JSON.stringify(claims));
   const signature = "mock_signature";
