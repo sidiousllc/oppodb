@@ -84,6 +84,9 @@ Deno.serve(async (req) => {
   const { error: sendError } = await userClient.functions.invoke(
     'send-transactional-email',
     {
+      headers: {
+        Authorization: authHeader,
+      },
       body: {
         templateName: 'mail-notification',
         recipientEmail,
