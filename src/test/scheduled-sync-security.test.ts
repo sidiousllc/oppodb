@@ -35,8 +35,8 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
 
   try {
     const payload = parts[1]
-      .replaceAll("-", "+")
-      .replaceAll("_", "/")
+      .split("-").join("+")
+      .split("_").join("/")
       .split("-").join("+")
       .split("_").join("/")
       .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
