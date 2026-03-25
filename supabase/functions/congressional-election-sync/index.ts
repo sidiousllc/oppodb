@@ -231,15 +231,44 @@ function extractElectionDate(filename: string): { date: string; year: number } |
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // --- Authentication: require admin role ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const githubToken = Deno.env.get("GITHUB_TOKEN") || undefined;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data: roleCheck } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    if (!roleCheck) {
+      console.warn(`[congressional-election-sync] Forbidden: user=${user.id} lacks admin role`);
+      return new Response(JSON.stringify({ error: "Forbidden: admin role required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const githubToken = Deno.env.get("GITHUB_TOKEN") || undefined;
 
     const url = new URL(req.url);
     const stateFilter = url.searchParams.get("state")?.toUpperCase();
