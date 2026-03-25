@@ -416,6 +416,9 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
           Search across all databases & research tools
         </span>
+        <kbd className="ml-auto text-[9px] px-1.5 py-0.5 rounded border border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-light))] text-[hsl(var(--muted-foreground))] font-mono">
+          Ctrl+K
+        </kbd>
       </div>
 
       <div className="win98-sunken bg-white p-2 mb-3">
