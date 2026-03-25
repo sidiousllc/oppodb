@@ -1,6 +1,6 @@
 // Cook Political Report 2026 House Race Ratings
 // Source: https://www.cookpolitical.com/ratings/house-race-ratings
-// Last updated: March 12, 2026
+// Last updated: March 25, 2026 — synced from forecast-sync seed data
 
 export type CookRating =
   | "Solid D"
@@ -33,10 +33,10 @@ export const COOK_RATING_ORDER: CookRating[] = [
 
 /**
  * Complete mapping of all 435 House districts to their Cook Political Report rating.
- * Based on March 12, 2026 ratings.
+ * Based on March 2026 ratings — synced to match forecast-sync seed data.
  */
 export const cookRatings: Record<string, CookRating> = {
-  // ===== Solid Democrat (189) =====
+  // ===== Solid Democrat (180) =====
   "AL-02": "Solid D", "AL-07": "Solid D",
   "AZ-03": "Solid D", "AZ-04": "Solid D", "AZ-07": "Solid D",
   "CA-01": "Solid D", "CA-02": "Solid D", "CA-03": "Solid D", "CA-04": "Solid D",
@@ -44,14 +44,14 @@ export const cookRatings: Record<string, CookRating> = {
   "CA-10": "Solid D", "CA-11": "Solid D", "CA-12": "Solid D", "CA-14": "Solid D",
   "CA-15": "Solid D", "CA-16": "Solid D", "CA-17": "Solid D", "CA-18": "Solid D",
   "CA-19": "Solid D", "CA-24": "Solid D", "CA-25": "Solid D", "CA-26": "Solid D",
-  "CA-27": "Solid D", "CA-28": "Solid D", "CA-29": "Solid D", "CA-30": "Solid D",
+  "CA-28": "Solid D", "CA-29": "Solid D", "CA-30": "Solid D",
   "CA-31": "Solid D", "CA-32": "Solid D", "CA-33": "Solid D", "CA-34": "Solid D",
   "CA-35": "Solid D", "CA-36": "Solid D", "CA-37": "Solid D", "CA-38": "Solid D",
   "CA-39": "Solid D", "CA-41": "Solid D", "CA-42": "Solid D", "CA-43": "Solid D",
-  "CA-44": "Solid D", "CA-46": "Solid D", "CA-47": "Solid D", "CA-49": "Solid D",
-  "CA-50": "Solid D", "CA-51": "Solid D", "CA-52": "Solid D",
+  "CA-44": "Solid D", "CA-46": "Solid D",
+  "CA-49": "Solid D", "CA-50": "Solid D", "CA-51": "Solid D", "CA-52": "Solid D",
   "CO-01": "Solid D", "CO-02": "Solid D", "CO-06": "Solid D", "CO-07": "Solid D",
-  "CT-01": "Solid D", "CT-02": "Solid D", "CT-03": "Solid D", "CT-04": "Solid D", "CT-05": "Solid D",
+  "CT-01": "Solid D", "CT-02": "Solid D", "CT-03": "Solid D", "CT-04": "Solid D",
   "DE-AL": "Solid D",
   "FL-09": "Solid D", "FL-10": "Solid D", "FL-14": "Solid D", "FL-20": "Solid D",
   "FL-22": "Solid D", "FL-24": "Solid D", "FL-25": "Solid D",
@@ -59,10 +59,9 @@ export const cookRatings: Record<string, CookRating> = {
   "HI-01": "Solid D", "HI-02": "Solid D",
   "IL-01": "Solid D", "IL-02": "Solid D", "IL-03": "Solid D", "IL-04": "Solid D",
   "IL-05": "Solid D", "IL-06": "Solid D", "IL-07": "Solid D", "IL-08": "Solid D",
-  "IL-09": "Solid D", "IL-10": "Solid D", "IL-11": "Solid D", "IL-13": "Solid D",
+  "IL-09": "Solid D", "IL-10": "Solid D", "IL-11": "Solid D",
   "IL-14": "Solid D", "IL-17": "Solid D",
   "IN-07": "Solid D",
-  "KS-03": "Solid D",
   "KY-03": "Solid D",
   "LA-02": "Solid D", "LA-06": "Solid D",
   "MA-01": "Solid D", "MA-02": "Solid D", "MA-03": "Solid D", "MA-04": "Solid D",
@@ -70,8 +69,8 @@ export const cookRatings: Record<string, CookRating> = {
   "MD-02": "Solid D", "MD-03": "Solid D", "MD-04": "Solid D", "MD-05": "Solid D",
   "MD-06": "Solid D", "MD-07": "Solid D", "MD-08": "Solid D",
   "ME-01": "Solid D",
-  "MI-03": "Solid D", "MI-06": "Solid D", "MI-11": "Solid D", "MI-12": "Solid D", "MI-13": "Solid D",
-  "MN-03": "Solid D", "MN-04": "Solid D", "MN-05": "Solid D",
+  "MI-06": "Solid D", "MI-11": "Solid D", "MI-12": "Solid D", "MI-13": "Solid D",
+  "MN-04": "Solid D", "MN-05": "Solid D",
   "MO-01": "Solid D", "MO-05": "Solid D",
   "MS-02": "Solid D",
   "NC-02": "Solid D", "NC-04": "Solid D", "NC-12": "Solid D",
@@ -80,12 +79,12 @@ export const cookRatings: Record<string, CookRating> = {
   "NM-01": "Solid D", "NM-03": "Solid D",
   "NY-05": "Solid D", "NY-06": "Solid D", "NY-07": "Solid D", "NY-08": "Solid D",
   "NY-09": "Solid D", "NY-10": "Solid D", "NY-12": "Solid D", "NY-13": "Solid D",
-  "NY-14": "Solid D", "NY-15": "Solid D", "NY-16": "Solid D", "NY-18": "Solid D",
-  "NY-20": "Solid D", "NY-22": "Solid D", "NY-25": "Solid D", "NY-26": "Solid D",
+  "NY-14": "Solid D", "NY-15": "Solid D", "NY-16": "Solid D",
+  "NY-20": "Solid D", "NY-25": "Solid D", "NY-26": "Solid D",
   "OH-03": "Solid D", "OH-11": "Solid D",
   "OR-01": "Solid D", "OR-03": "Solid D", "OR-04": "Solid D", "OR-06": "Solid D",
   "PA-02": "Solid D", "PA-03": "Solid D", "PA-04": "Solid D", "PA-05": "Solid D",
-  "PA-06": "Solid D", "PA-12": "Solid D", "PA-17": "Solid D",
+  "PA-06": "Solid D", "PA-12": "Solid D",
   "RI-01": "Solid D", "RI-02": "Solid D",
   "SC-06": "Solid D",
   "TN-09": "Solid D",
@@ -98,68 +97,73 @@ export const cookRatings: Record<string, CookRating> = {
   "WA-08": "Solid D", "WA-09": "Solid D", "WA-10": "Solid D",
   "WI-02": "Solid D", "WI-04": "Solid D",
 
-  // ===== Likely Democrat (8) =====
+  // ===== Likely Democrat (6) =====
   "CA-21": "Likely D",
   "IN-01": "Likely D",
-  "MN-02": "Likely D",
   "NH-01": "Likely D", "NH-02": "Likely D",
   "NV-01": "Likely D", "NV-04": "Likely D",
-  "OR-05": "Likely D",
 
-  // ===== Lean Democrat (15) =====
-  "CA-13": "Lean D", "CA-45": "Lean D", "CA-48": "Lean D",
+  // ===== Lean Democrat (14) =====
+  "CA-47": "Lean D", "CA-48": "Lean D",
+  "CT-05": "Lean D",
   "FL-23": "Lean D",
-  "MI-08": "Lean D",
-  "NE-02": "Lean D",
+  "IL-13": "Lean D",
+  "KS-03": "Lean D",
+  "MI-03": "Lean D",
+  "MN-03": "Lean D",
   "NJ-09": "Lean D",
-  "NM-02": "Lean D",
   "NV-03": "Lean D",
-  "NY-03": "Lean D", "NY-04": "Lean D", "NY-19": "Lean D",
-  "OH-13": "Lean D",
+  "NY-03": "Lean D",
+  "PA-17": "Lean D",
   "TX-28": "Lean D",
-  "VA-07": "Lean D",
+  "WA-03": "Lean D",
 
-  // ===== Toss Up (17) =====
-  "AZ-01": "Toss Up", "AZ-06": "Toss Up",
-  "CA-22": "Toss Up",
+  // ===== Toss Up (29) =====
+  "AK-AL": "Toss Up",
+  "CA-13": "Toss Up", "CA-22": "Toss Up", "CA-27": "Toss Up", "CA-45": "Toss Up",
   "CO-08": "Toss Up",
-  "IA-01": "Toss Up", "IA-03": "Toss Up",
-  "MI-07": "Toss Up",
+  "IA-01": "Toss Up", "IA-02": "Toss Up",
+  "ME-02": "Toss Up",
+  "MI-07": "Toss Up", "MI-08": "Toss Up",
+  "MN-02": "Toss Up",
+  "NE-02": "Toss Up",
   "NJ-07": "Toss Up",
-  "NY-17": "Toss Up",
-  "OH-01": "Toss Up", "OH-09": "Toss Up",
-  "PA-07": "Toss Up", "PA-10": "Toss Up",
-  "TX-34": "Toss Up",
-  "VA-02": "Toss Up",
-  "WA-03": "Toss Up",
-  "WI-03": "Toss Up",
+  "NM-02": "Toss Up",
+  "NY-04": "Toss Up", "NY-17": "Toss Up", "NY-18": "Toss Up", "NY-19": "Toss Up", "NY-22": "Toss Up",
+  "OH-09": "Toss Up", "OH-13": "Toss Up",
+  "OR-05": "Toss Up",
+  "PA-07": "Toss Up", "PA-08": "Toss Up", "PA-10": "Toss Up",
+  "VA-07": "Toss Up",
+  "WI-01": "Toss Up", "WI-03": "Toss Up",
 
-  // ===== Lean Republican (4) =====
+  // ===== Lean Republican (10) =====
+  "AZ-01": "Lean R", "AZ-06": "Lean R",
+  "CA-40": "Lean R",
+  "FL-13": "Lean R",
+  "IA-03": "Lean R",
   "MI-10": "Lean R",
   "NC-01": "Lean R",
-  "PA-08": "Lean R",
+  "OH-01": "Lean R",
+  "TX-34": "Lean R",
   "VA-01": "Lean R",
 
-  // ===== Likely Republican (17) =====
-  "AK-AL": "Likely R",
+  // ===== Likely Republican (13) =====
   "AZ-02": "Likely R",
   "CO-03": "Likely R", "CO-05": "Likely R",
-  "FL-07": "Likely R", "FL-13": "Likely R",
-  "IA-02": "Likely R",
-  "ME-02": "Likely R",
+  "FL-07": "Likely R",
   "MI-04": "Likely R",
   "MT-01": "Likely R",
   "NC-11": "Likely R",
   "PA-01": "Likely R",
   "TN-05": "Likely R",
   "TX-15": "Likely R", "TX-23": "Likely R", "TX-35": "Likely R",
-  "WI-01": "Likely R",
+  "VA-02": "Likely R",
 
-  // ===== Solid Republican (185) =====
+  // ===== Solid Republican (183) =====
   "AL-01": "Solid R", "AL-03": "Solid R", "AL-04": "Solid R", "AL-05": "Solid R", "AL-06": "Solid R",
   "AR-01": "Solid R", "AR-02": "Solid R", "AR-03": "Solid R", "AR-04": "Solid R",
   "AZ-05": "Solid R", "AZ-08": "Solid R", "AZ-09": "Solid R",
-  "CA-05": "Solid R", "CA-20": "Solid R", "CA-23": "Solid R", "CA-40": "Solid R",
+  "CA-05": "Solid R", "CA-20": "Solid R", "CA-23": "Solid R",
   "CO-04": "Solid R",
   "FL-01": "Solid R", "FL-02": "Solid R", "FL-03": "Solid R", "FL-04": "Solid R",
   "FL-05": "Solid R", "FL-06": "Solid R", "FL-08": "Solid R", "FL-11": "Solid R",

@@ -91,13 +91,36 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
       .sort((a, b) => (a.margin || 0) - (b.margin || 0));
   }, [approvalPolls]);
 
-  // ─── District calculations ──────────────────────────────────────────
+  // ─── District calculations (DB-backed with static fallback) ─────────
+  const [dbTossUps, setDbTossUps] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    // Load toss-up races from DB forecasts (consensus across sources)
+    supabase
+      .from("election_forecasts")
+      .select("state_abbr, district, rating")
+      .eq("cycle", 2026)
+      .eq("race_type", "house")
+      .in("rating", ["Toss Up", "Toss-Up", "Tossup"])
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const ids = [...new Set(data.map((f: any) => {
+            const d = (f.district || "AL").padStart(2, "0");
+            return `${f.state_abbr}-${d}`;
+          }))].sort();
+          setDbTossUps(ids);
+        }
+      });
+  }, []);
+
   const tossUpDistricts = useMemo(() => {
+    if (dbTossUps && dbTossUps.length > 0) return dbTossUps;
+    // Fallback to static Cook ratings
     return Object.entries(cookRatings)
       .filter(([_, rating]) => rating === "Toss Up")
       .map(([id]) => id)
       .sort();
-  }, []);
+  }, [dbTossUps]);
 
   const evenPVIDistricts = useMemo(() => {
     return Object.entries(cookRatings)
