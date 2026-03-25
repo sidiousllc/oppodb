@@ -84,8 +84,8 @@ supabase/
 │   ├── process-email-queue/       # Email queue processor
 │   ├── handle-email-unsubscribe/  # Unsubscribe handling
 │   ├── handle-email-suppression/  # Bounce/complaint suppression
-│   ├── public-api/           # REST API for external consumers
-│   ├── mcp-server/           # MCP server for AI agents
+│   ├── public-api/           # REST API for external consumers (17 endpoints)
+│   ├── mcp-server/           # MCP server for AI agents (18 tools)
 │   ├── research-chat/        # AI research chat
 │   ├── credential-vault/     # Encrypted credential storage
 │   ├── campaign-finance-sync/# FEC data sync
