@@ -18,6 +18,7 @@ Welcome to the OppoDB documentation wiki.
 - [Cook Ratings & Forecasting](Cook-Ratings-and-Forecasting) — PVI, ratings, forecast models
 - [Admin Panel](Admin-Panel) — User management, content CRUD, role groups, access control
 - [Research Tools](Research-Tools) — Court records search, voter data, and investigative tools
+- [Android App](Android-App) — Download APKs, build instructions, and version history
 
 ## About
 
