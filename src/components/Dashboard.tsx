@@ -303,7 +303,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
                 className="inline-block w-[8px] h-[8px] rounded-full"
                 style={{ background: `hsl(${getCookRatingColor("Toss Up")})` }}
               />
-              <span className="text-[10px] font-bold">TOSS UP — Cook Rating ({tossUpDistricts.length})</span>
+              <span className="text-[10px] font-bold">TOSS UP ({tossUpDistricts.length}){dbTossUps ? " • Live" : " • Cook"}</span>
             </div>
             <div className="flex flex-wrap gap-1">
               {tossUpDistricts.map((id) => {
