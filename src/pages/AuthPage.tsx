@@ -93,7 +93,7 @@ export default function AuthPage() {
 
     const { data: signupData, error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { display_name: displayName }, emailRedirectTo: window.location.origin },
+      options: { data: { display_name: displayName }, emailRedirectTo: getRedirectOrigin() },
     });
 
     if (error) {
