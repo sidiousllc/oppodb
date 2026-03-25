@@ -549,6 +549,18 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
           ))}
         </div>
 
+        <button
+          onClick={() => setCompetitiveOnly(!competitiveOnly)}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border ${
+            competitiveOnly
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card text-muted-foreground border-border hover:text-foreground"
+          }`}
+        >
+          <Swords className="h-3 w-3" />
+          Competitive Only
+        </button>
+
         {isZoomed && (
           <button
             onClick={handleResetZoom}
