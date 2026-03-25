@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Search, Scale, ArrowLeft, Info, X } from "lucide-react";
+import { Search, Scale, ArrowLeft, Info, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface CourtRecordsSearchProps {
@@ -16,7 +16,6 @@ const EXAMPLE_SEARCHES = [
 export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
   const [query, setQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [lastSearched, setLastSearched] = useState<string | null>(null);
 
   const handleSearch = useCallback(() => {
     const trimmed = query.trim();
@@ -32,7 +31,7 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
       return updated;
     });
 
-    setIframeUrl(url);
+    window.open(url, "_blank", "noopener,noreferrer");
   }, [query]);
 
   const handleKeyDown = useCallback(
@@ -42,32 +41,11 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
     [handleSearch]
   );
 
-  if (iframeUrl) {
-    return (
-      <div className="flex flex-col h-full">
-        <div className="flex items-center gap-2 px-2 py-1 bg-[hsl(var(--win98-face))] border-b border-b-[hsl(var(--win98-shadow))]">
-          <button onClick={() => setIframeUrl(null)} className="win98-button text-[10px] flex items-center gap-1">
-            <ArrowLeft className="h-3 w-3" />
-            Back
-          </button>
-          <span className="text-[10px] truncate flex-1 text-[hsl(var(--muted-foreground))]">{iframeUrl}</span>
-          <button onClick={() => window.open(iframeUrl, "_blank", "noopener,noreferrer")} className="win98-button text-[10px]">
-            Open in New Tab
-          </button>
-          <button onClick={() => setIframeUrl(null)} className="win98-button text-[10px]">
-            <X className="h-3 w-3" />
-          </button>
-        </div>
-        <iframe
-          src={iframeUrl}
-          className="flex-1 w-full border-0"
-          style={{ minHeight: 500 }}
-          title="Court Records Search Results"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        />
-      </div>
-    );
-  }
+  const openSearch = (s: string) => {
+    setQuery(s);
+    const encoded = encodeURIComponent(s);
+    window.open(`https://www.judyrecords.com/search?q=${encoded}`, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div>
@@ -92,8 +70,8 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
           <div className="text-[10px]">
             <p className="font-bold mb-1">How It Works</p>
             <p className="text-[hsl(var(--muted-foreground))]">
-              Search results from JudyRecords.com load directly below. JudyRecords indexes over 400 million court cases
-              from federal, state, and local courts across all 50 states.
+              Enter your search query below and click Search. Results will open on JudyRecords.com in a new tab.
+              JudyRecords indexes over 400 million court cases from federal, state, and local courts across all 50 states.
             </p>
           </div>
         </div>
@@ -113,10 +91,11 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
           <button onClick={handleSearch} className="win98-button text-[10px] font-bold flex items-center gap-1">
             <Search className="h-3 w-3" />
             Search
+            <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
           </button>
         </div>
         <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
-          Use quotes for exact names. Results load in-app below.
+          Use quotes for exact names. Results open in a new tab on JudyRecords.com.
         </p>
       </div>
 
@@ -172,15 +151,12 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
             {recentSearches.map((s, i) => (
               <button
                 key={i}
-                onClick={() => {
-                  setQuery(s);
-                  const encoded = encodeURIComponent(s);
-                  setIframeUrl(`https://www.judyrecords.com/search?q=${encoded}`);
-                }}
+                onClick={() => openSearch(s)}
                 className="win98-button text-[9px] px-2 py-0.5 flex items-center gap-1"
               >
                 <Search className="h-2.5 w-2.5" />
                 {s.length > 40 ? s.slice(0, 40) + "…" : s}
+                <ExternalLink className="h-2 w-2" />
               </button>
             ))}
           </div>
