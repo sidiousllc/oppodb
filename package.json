@@ -91,20 +91,23 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19",
+    "vite": "^5.4.21",
     "vitest": "^3.2.4"
   },
   "overrides": {
+    "d3-color@<=3.1.0": "3.1.0",
+    "rollup": "4.59.0",
     "flatted": "3.4.2",
     "glob": "10.5.0",
-    "rollup": "4.22.4",
+    "react-router": "6.30.2",
+    "@babel/runtime": "7.26.10",
+    "@remix-run/router": "1.23.2",
+    "lodash": "4.17.23",
     "js-yaml": "4.1.1",
     "minimatch": "3.1.4",
     "@tootallnate/once": "3.0.1",
     "brace-expansion": "1.1.12",
-    "react-router": "6.30.2",
-    "@remix-run/router": "1.23.2",
-    "lodash": "4.17.23",
-    "d3-color@<=3.1.0": "3.1.0"
+    "ajv": "6.14.0",
+    "browserslist": "4.25.3"
   }
 }
