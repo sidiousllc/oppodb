@@ -28,14 +28,51 @@ All previous APK builds are retained as GitHub Actions artifacts for 30 days. To
 | Latest | Debug / Release | Auto-built on push | ✅ Available via Actions |
 | Previous | Debug / Release | See run history | 📦 30-day retention |
 
+## Release Signing Setup
+
+To produce signed production APKs, configure the following **GitHub Repository Secrets**:
+
+| Secret Name | Description |
+|-------------|-------------|
+| `ANDROID_KEYSTORE_BASE64` | Your `.jks` keystore file encoded as base64 |
+| `ANDROID_KEYSTORE_PASSWORD` | Password for the keystore |
+| `ANDROID_KEY_ALIAS` | Key alias (e.g., `ordb`) |
+| `ANDROID_KEY_PASSWORD` | Password for the key |
+
+### Generating a Keystore
+
+If you don't have a keystore yet, create one with:
+
+```bash
+keytool -genkey -v -keystore release-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias ordb
+```
+
+### Encoding the Keystore for GitHub
+
+Convert the keystore to base64 and copy it:
+
+```bash
+# macOS
+base64 -i release-keystore.jks | pbcopy
+
+# Linux
+base64 release-keystore.jks | xclip -selection clipboard
+```
+
+Paste the result as the `ANDROID_KEYSTORE_BASE64` secret in **GitHub → Settings → Secrets and variables → Actions**.
+
+> **Security:** Never commit your `.jks` keystore file to the repository. The workflow decodes it from the secret at build time and it only exists on the runner during the build.
+
 ## Building a New APK
 
 To trigger a new build manually:
 
 1. Go to **Actions → Build Android APK** on GitHub
 2. Click **Run workflow**
-3. Choose `debug` (for testing) or `release` (for distribution)
+3. Choose `debug` (for testing) or `release` (for signed production distribution)
 4. Click **Run workflow** — the build takes ~3-5 minutes
+
+> **Note:** Release builds require the signing secrets above to be configured. Debug builds work without them.
 
 ## App Details
 
