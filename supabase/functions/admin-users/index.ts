@@ -583,6 +583,31 @@ Deno.serve(async (req) => {
         });
       }
 
+      case 'delete_access_request': {
+        const { request_id } = params;
+        if (!request_id) throw new Error('request_id required');
+
+        const { data: req, error: reqErr } = await supabaseAdmin
+          .from('access_requests')
+          .select('status')
+          .eq('id', request_id)
+          .single();
+
+        if (reqErr || !req) throw new Error('Request not found');
+        if (req.status === 'pending') throw new Error('Cannot delete pending requests — approve or deny first');
+
+        const { error } = await supabaseAdmin
+          .from('access_requests')
+          .delete()
+          .eq('id', request_id);
+
+        if (error) throw error;
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: 'Unknown action' }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
