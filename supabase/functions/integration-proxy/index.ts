@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const apiKey = integration.api_key_encrypted;
+    const apiKey = integration.api_key;
     const slug = integration.slug || "";
 
     let result: any;
