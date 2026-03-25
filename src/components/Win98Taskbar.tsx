@@ -113,6 +113,11 @@ export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarP
 
         <div className="flex-1" />
 
+        {/* Security badge */}
+        <a href="https://app.aikido.dev/audit-report/external/8A4IU23ayEgeSwA0wiLzIWS2/request" target="_blank" rel="noopener noreferrer" className="flex items-center h-[20px] opacity-60 hover:opacity-100 transition-opacity" title="Security Audit Report">
+          <img src="https://app.aikido.dev/assets/badges/full-light-theme.svg" alt="Aikido Security" className="h-[16px]" />
+        </a>
+
         {/* System tray */}
         <div className="win98-sunken flex items-center gap-2 px-2 h-[20px] text-[10px]">
           <span>🔊</span>
