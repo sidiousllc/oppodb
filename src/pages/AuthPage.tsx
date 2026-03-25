@@ -95,6 +95,15 @@ export default function AuthPage() {
         await supabase.functions.invoke("admin-users", {
           body: { action: "use_invite", token: inviteToken, user_id: signupData.user.id },
         });
+        // Send welcome email
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "welcome",
+            recipientEmail: email,
+            idempotencyKey: `welcome-${signupData.user.id}`,
+            templateData: { displayName: displayName || undefined },
+          },
+        });
       }
       setMessage({ type: "success", text: "Account created! Check your email for a confirmation link." });
     }
