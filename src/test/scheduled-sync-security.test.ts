@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { describe, it, expect, beforeEach } from "vitest";
 
 /**
  * Security tests for scheduled-sync edge function
@@ -26,15 +25,6 @@ function createMockJwt(payload: Record<string, unknown>): string {
   const signature = "mock-signature";
   return `${header}.${body}.${signature}`;
 }
-
-/**
- * Helper to parse JWT claims (mimics the function in scheduled-sync/index.ts)
- */
- * These tests verify that the mitigation for the pentest finding is effective:
- * - Unauthenticated requests are rejected (401)
- * - Requests with non-service_role tokens are rejected (403)
- * - Only service_role tokens can invoke the function
- */
 
 // Helper function to parse JWT claims (mirrors the implementation in scheduled-sync/index.ts)
 function parseJwtClaims(token: string): Record<string, unknown> | null {
