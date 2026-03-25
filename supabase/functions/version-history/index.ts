@@ -60,13 +60,16 @@ function buildValidatedUrl(baseUrl: string, filePath: string): string {
   }
 }
 
-function buildValidatedGitHubApiUrl(baseUrl: string, filePath: string, perPage: string): string {
+function buildGitHubApiUrl(baseUrl: string, filePath: string, perPage: string): string {
   try {
     if (filePath.includes("/../") || /\/%2e%2e\//i.test(filePath)) {
       throw new Error("Invalid path");
     }
     const url = new URL(baseUrl);
     if (!/^[A-Za-z0-9_.\/-]+$/.test(filePath)) {
+      throw new Error("Invalid parameter");
+    }
+    if (!/^[0-9]+$/.test(perPage)) {
       throw new Error("Invalid parameter");
     }
     url.searchParams.set('path', filePath);
@@ -224,10 +227,10 @@ serve(async (req) => {
       const results = await Promise.allSettled(
         batch.map(async (filePath: string) => {
           const commitsRes = await fetch(
-            buildValidatedGitHubApiUrl(
+            buildGitHubApiUrl(
               `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/commits`,
               filePath,
-              '30'
+              "30"
             ),
             { headers: ghHeaders }
           );

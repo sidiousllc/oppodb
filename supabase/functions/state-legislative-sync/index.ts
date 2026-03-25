@@ -56,30 +56,6 @@ const STATE_ABBREV: Record<string, string> = {
 // Nebraska is unicameral — only has "senate" (49 legislative districts)
 const UNICAMERAL_STATES = ["31"]; // Nebraska FIPS
 
-function buildValidatedCensusUrl(
-  baseUrl: string,
-  getParam: string,
-  forParam: string,
-  inParam: string
-): string {
-  try {
-    const url = new URL(baseUrl);
-    
-    // Validate the stateFips parameter (should be 2-digit FIPS code)
-    if (!/^[0-9]{2}$/.test(inParam.replace('state:', ''))) {
-      throw new Error('Invalid parameter');
-    }
-    
-    url.searchParams.set('get', getParam);
-    url.searchParams.set('for', forParam);
-    url.searchParams.set('in', inParam);
-    
-    return url.href;
-  } catch {
-    throw new Error('Invalid URL');
-  }
-}
-
 function safeInt(val: string): number | null {
   const n = parseInt(val);
   return isNaN(n) || n < 0 ? null : n;
@@ -95,6 +71,30 @@ function safePct(numerator: string, denominator: string): number | null {
   const den = parseInt(denominator);
   if (isNaN(num) || isNaN(den) || den <= 0) return null;
   return Math.round((num / den) * 1000) / 10;
+}
+
+function buildValidatedUrl(
+  baseUrl: string,
+  get: string,
+  forParam: string,
+  inParam: string
+): string {
+  try {
+    const url = new URL(baseUrl);
+    
+    // Validate stateFips parameter (should be 2-digit FIPS code)
+    if (!/^[0-9]{2}$/.test(inParam.replace('state:', ''))) {
+      throw new Error('Invalid parameter');
+    }
+    
+    url.searchParams.set('get', get);
+    url.searchParams.set('for', forParam);
+    url.searchParams.set('in', inParam);
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
 }
 
 function parseRow(r: Record<string, string>) {
@@ -145,12 +145,7 @@ async function fetchChamber(
     ? "state%20legislative%20district%20(upper%20chamber)"
     : "state%20legislative%20district%20(lower%20chamber)";
 
-  const url = buildValidatedCensusUrl(
-    CENSUS_BASE,
-    CENSUS_VARS,
-    `${geoType}:*`,
-    `state:${stateFips}`
-  );
+  const url = buildValidatedUrl(CENSUS_BASE, CENSUS_VARS, `${geoType}:*`, `state:${stateFips}`);
   console.log(`Fetching ${chamber} districts for ${stateAbbr}: ${url}`);
 
   let response: Response;

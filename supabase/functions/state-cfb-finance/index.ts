@@ -207,17 +207,41 @@ function ensureYearly(c: CandidateAgg, year: string) {
 
 // ─── ZIP fetch helper ───────────────────────────────────────────────────────
 
-function buildValidatedUrl(baseUrl: string): string {
+function buildValidatedUrl(baseUrl: string, year: string, fileType?: string): string {
   try {
+    // Minimal path validation
+    if (baseUrl.includes('/../') || /\/%2e%2e\//i.test(baseUrl)) {
+      throw new Error('Invalid path');
+    }
+    
     const url = new URL(baseUrl);
     
-    const allowedDomains = ['pa.gov', 'miboecfr.nictusa.com'];
+    // Protocol + host checks
+    const allowedDomains = ['www.pa.gov', 'miboecfr.nictusa.com'];
     if (!allowedDomains.includes(url.hostname)) {
       throw new Error('Invalid host');
     }
-    
     if (!['http:', 'https:'].includes(url.protocol)) {
       throw new Error('Invalid protocol');
+    }
+    
+    // Validate path parameters
+    if (!/^[0-9]+$/.test(year)) {
+      throw new Error('Invalid parameter');
+    }
+    if (fileType && !/^[A-Za-z0-9_-]+$/.test(fileType)) {
+      throw new Error('Invalid parameter');
+    }
+    
+    // Rebuild pathname from fixed literals + validated segments
+    if (url.hostname === 'www.pa.gov') {
+      if (year === '2025') {
+        url.pathname = '/content/dam/copapwp-pagov/en/dos/resources/voting-and-elections/campaign-finance/campaign-finance-data/2025 campaign finance full export .zip';
+      } else {
+        url.pathname = `/content/dam/copapwp-pagov/en/dos/resources/voting-and-elections/campaign-finance/campaign-finance-data/${year}.zip`;
+      }
+    } else if (url.hostname === 'miboecfr.nictusa.com' && fileType) {
+      url.pathname = `/cfr/dumpall/cfrdetail/${year}_mi_cfr_${fileType}.zip`;
     }
     
     return url.href;
@@ -227,8 +251,7 @@ function buildValidatedUrl(baseUrl: string): string {
 }
 
 async function fetchAndUnzip(url: string): Promise<Record<string, string>> {
-  const validatedUrl = buildValidatedUrl(url);
-  const resp = await fetch(validatedUrl);
+  const resp = await fetch(url);
   if (!resp.ok) throw new Error(`Failed to fetch ${url}: ${resp.status}`);
   const buf = new Uint8Array(await resp.arrayBuffer());
   const files = unzipSync(buf);
@@ -259,9 +282,7 @@ async function syncPA(supabase: any) {
 
   // Process recent years only to stay within memory limits
   for (const year of ["2026", "2025", "2024"]) {
-    const zipUrl = year === "2025"
-      ? `https://www.pa.gov/content/dam/copapwp-pagov/en/dos/resources/voting-and-elections/campaign-finance/campaign-finance-data/2025%20campaign%20finance%20full%20export%20.zip`
-      : `https://www.pa.gov/content/dam/copapwp-pagov/en/dos/resources/voting-and-elections/campaign-finance/campaign-finance-data/${year}.zip`;
+    const zipUrl = buildValidatedUrl("https://www.pa.gov/", year);
 
     let files: Record<string, string>;
     try {
@@ -404,7 +425,7 @@ async function syncMI(supabase: any) {
   // Process recent years
   for (const year of ["2024", "2023", "2022"]) {
     // Contributions
-    const contribUrl = `https://miboecfr.nictusa.com/cfr/dumpall/cfrdetail/${year}_mi_cfr_contributions.zip`;
+    const contribUrl = buildValidatedUrl("https://miboecfr.nictusa.com/", year, "contributions");
     try {
       const files = await fetchAndUnzip(contribUrl);
       const csvFile = Object.keys(files).find(f => f.toLowerCase().endsWith(".csv") || f.toLowerCase().endsWith(".txt")) || Object.keys(files)[0];
@@ -447,7 +468,7 @@ async function syncMI(supabase: any) {
     }
 
     // Expenditures
-    const expendUrl = `https://miboecfr.nictusa.com/cfr/dumpall/cfrdetail/${year}_mi_cfr_expenditures.zip`;
+    const expendUrl = buildValidatedUrl("https://miboecfr.nictusa.com/", year, "expenditures");
     try {
       const files = await fetchAndUnzip(expendUrl);
       const csvFile = Object.keys(files).find(f => f.toLowerCase().endsWith(".csv") || f.toLowerCase().endsWith(".txt")) || Object.keys(files)[0];

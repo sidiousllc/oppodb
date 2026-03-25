@@ -63,12 +63,21 @@ function buildValidatedUrl(
       throw new Error('Invalid parameter');
     }
     
+    // Validate regNum parameter if provided
+    if (regNum && !/^[A-Za-z0-9_-]+$/.test(regNum)) {
+      throw new Error('Invalid parameter');
+    }
+    
     // Set the hostname with validated project ID
     url.hostname = `${projectId}.supabase.co`;
     
     // Domain validation
     const allowedDomains = ['supabase.co'];
-    if (!allowedDomains.includes(url.hostname)) {
+    const hostname = url.hostname;
+    const isAllowedDomain = allowedDomains.some(domain => 
+      hostname === domain || hostname.endsWith('.' + domain)
+    );
+    if (!isAllowedDomain) {
       throw new Error('Invalid host');
     }
     
