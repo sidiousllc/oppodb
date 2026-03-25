@@ -102,6 +102,7 @@ Voter data analysis and registration statistics.
 - Demographic breakdowns of voter rolls
 - Historical voter turnout trends
 - Party registration data where available
+- Voter lookup via `voter-lookup` and `state-voter-portal-lookup` edge functions
 
 ---
 
@@ -125,10 +126,71 @@ Real-time election results and returns for ongoing elections.
 Tracks legislation relevant to tracked candidates and districts.
 
 ### Features
+- **Federal Bills Tab** (`FederalBillsTab`): Congress.gov bill tracking via `congress_bills` table
+- **Bill Tracking**: Users can track specific bills via `tracked_bills` table (LegiScan integration)
 - Bill sponsorship lookup
 - Key vote tracking
 - Legislative scorecards
 - Links to full bill text and status
+
+---
+
+## In-App Communication
+
+### AOL Mail System (`AOLMailWindow` + `MailContext`)
+Functional in-app mail system simulating AOL Mail:
+- **Compose**: Send messages to other OppoDB users
+- **Inbox**: View received messages with read/unread status
+- **Sent Mail**: View sent messages
+- **Delete**: Soft-delete (per-user: `deleted_by_sender` / `deleted_by_recipient`)
+- **Email Notifications**: Sends real email to recipient via `send-mail-notification` edge function
+- **Real-time**: Messages stored in `user_mail` table
+
+### Chat / Instant Messaging (`ChatPanel`)
+Real-time chat between users:
+- Messages stored in `chat_messages` table
+- Read receipts via `read_at` timestamp
+- Real-time updates via Supabase Realtime
+
+### Buddy List (`AOLBuddyList`)
+AIM-style buddy list with real presence tracking:
+- Online/Away/Offline status via `user_presence` table
+- Heartbeat-based presence updates
+- Click to start IM conversation
+
+---
+
+## Email Notification Pipeline
+
+### Architecture
+In-app mail triggers real email notifications through a standardized pipeline:
+
+1. **`send-mail-notification`** edge function:
+   - Authenticates the sender via JWT
+   - Looks up recipient email via service role
+   - Gets sender display name from `profiles` table
+   - Generates unique idempotency key
+   - Routes through `send-transactional-email`
+
+2. **`send-transactional-email`** edge function:
+   - Renders React email template (`mail-notification` template)
+   - Checks suppression list
+   - Generates unsubscribe token
+   - Enqueues to pgmq email queue
+
+3. **`process-email-queue`** edge function:
+   - Reads batch from pgmq queue
+   - Sends via Resend API
+   - Logs delivery status
+   - Moves failures to dead letter queue
+
+### Email Templates
+Templates are React components in `supabase/functions/_shared/transactional-email-templates/`:
+- `welcome.tsx` — Welcome email for new users
+- `access-approved.tsx` — Access request approved
+- `access-denied.tsx` — Access request denied
+- `invite-link.tsx` — Invitation email
+- `mail-notification.tsx` — In-app mail notification
 
 ---
 
@@ -149,24 +211,24 @@ The landing page when users log in, providing an overview of the entire database
 ## Documentation Wiki (`DocumentationSection`)
 
 ### Description
-A new in-app documentation reader that provides access to all OppoDB wiki documentation directly within the application. Users can browse, search, and read documentation without leaving the app.
+An in-app documentation reader that provides access to all OppoDB wiki documentation directly within the application.
 
 ### Features
 - **Table of Contents Index**: Grid view of all 13 documentation pages with numbered entries
 - **Search**: Filter documentation pages by title
-- **Lazy Loading**: Wiki content loaded on-demand via dynamic imports for performance
+- **Lazy Loading**: Wiki content loaded on-demand via Vite dynamic imports (`?raw` suffix)
 - **Markdown Rendering**: Full markdown support with Win98-styled components (tables, code blocks, blockquotes)
 - **Breadcrumb Navigation**: Shows current location within documentation hierarchy
 - **Quick Page Navigation**: Bottom nav allows jumping to other documentation pages without returning to index
 - **Integration**: Accessible from sidebar navigation and mobile nav
 
-### Data Model
+### Technical Implementation
 ```typescript
-interface WikiPage {
-  slug: string;
-  title: string;
-  content: string;
-}
+// Lazy-load wiki content via raw imports
+const wikiImports: Record<string, () => Promise<string>> = {
+  "overview": () => import("../../wiki/01-Overview.md?raw").then(m => m.default),
+  // ... one entry per wiki page
+};
 ```
 
 ### Wiki Sections (13 pages)
@@ -184,51 +246,39 @@ interface WikiPage {
 12. Cook Ratings & Forecasting
 13. Admin Panel
 
-### Content Source
-Wiki content is loaded from `/wiki/*.md` files in the repository, enabling documentation to be version-controlled alongside code.
-
-### Admin Management
-Documentation wiki pages are automatically generated and maintained by syncing with the repository wiki folder.
-
 ---
 
 ## Search
 
 ### Global Search (`SearchBar`)
-
 A unified search bar available across all sections:
 - Searches candidates, districts, MAGA files, local impact reports, and narratives simultaneously
 - Auto-complete suggestions as user types
 - Navigates directly to search result
-- Used in district filter context for quick district lookup
 
 ### Cross-Section Navigation
-The `researchLinkResolver.ts` system allows content in any section to link to any other section via slug resolution:
-```
-/joni-ernst → Candidate profile
-/ia-01 → District profile
-/tx-14 → State legislative district
-```
+The `researchLinkResolver.ts` system allows content in any section to link to any other section via slug resolution.
 
 ---
 
-## Generic Card & Detail Components
+## Integration Settings (`IntegrationSettings`)
 
-### `GenericCard`
-Reusable card component for displaying list items:
-- Icon (emoji or component)
-- Title
-- Optional tag/badge
-- Preview text (first non-empty line of content)
-- Click handler
+### Description
+User-configurable third-party API key management:
+- Store API keys for external services (encrypted in `user_integrations` table)
+- Managed via `credential-vault` edge function with AES encryption
+- Supports: LegiScan, FollowTheMoney, OpenStates, Congress.gov, and more
 
-### `GenericDetail`
-Reusable detail view for content types:
-- Header with icon, title, subtitle, tag
-- Markdown-rendered content
-- Back button
-- Internal link navigation
-- PDF export capability
+---
+
+## WinRed Donations (`WinRedPanel`)
+
+### Description
+Tracks WinRed donation data received via webhook:
+- Donation amounts and donor information
+- Committee/candidate attribution
+- Stored in `winred_donations` table
+- Webhook endpoint: `winred-webhook` edge function
 
 ---
 
@@ -246,7 +296,7 @@ Polling data PDF export.
 ### `exportStateLegPDF()`
 State legislative district PDF export.
 
-All exports use browser print / PDF generation to create formatted documents.
+All exports use jsPDF + jspdf-autotable for formatted document generation.
 
 ---
 
@@ -261,25 +311,14 @@ Exports polling data to CSV format for spreadsheet analysis.
 
 The `githubSync.ts` module syncs candidate profiles from a GitHub repository:
 
-### `fetchCandidatesFromDB()`
-Loads all candidates from Supabase.
-
-### `fetchSubpages(candidateSlug)`
-Loads subpages (issue research pages) for a specific candidate.
-
 ### Content Structure
-GitHub markdown files organized as:
 ```
 candidates/{slug}.md          # Main profile
 candidates/{slug}-{topic}.md  # Issue subpages
 ```
 
-Each file contains markdown research content that is loaded into Supabase and displayed in the app.
-
 ### Version History
-
-The `VersionHistory` component shows git commit history for research files:
-- Commit messages
-- Commit dates
-- File diffs (added/removed lines)
-- Shows the current content vs previous versions
+The `VersionHistory` component shows git commit history:
+- Commit messages, dates, and diffs
+- Powered by `version-history` edge function
+- Data stored in `candidate_versions` table
