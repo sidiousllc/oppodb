@@ -17,6 +17,7 @@ Welcome to the OppoDB documentation wiki.
 - [Data Sync & External Sources](Data-Sync-and-Sources) — Edge functions, external APIs, sync processes
 - [Cook Ratings & Forecasting](Cook-Ratings-and-Forecasting) — PVI, ratings, forecast models
 - [Admin Panel](Admin-Panel) — User management, content CRUD, role groups, access control
+- [Research Tools](Research-Tools) — Court records search, voter data, and investigative tools
 
 ## About
 
