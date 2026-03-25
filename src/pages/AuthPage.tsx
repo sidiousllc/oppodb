@@ -4,6 +4,15 @@ import { lovable } from "@/integrations/lovable";
 import { Win98Window } from "@/components/Win98Window";
 import { AOLDialUpAnimation } from "@/components/AOLDialUpAnimation";
 
+const PRODUCTION_ORIGIN = "https://oppodb.com";
+const getRedirectOrigin = () => {
+  // Always redirect to production domain to avoid Lovable preview login gates
+  if (typeof window !== "undefined" && window.location.origin === PRODUCTION_ORIGIN) {
+    return PRODUCTION_ORIGIN;
+  }
+  return PRODUCTION_ORIGIN;
+};
+
 export default function AuthPage() {
   const [showDialUp, setShowDialUp] = useState(true);
   const [mode, setMode] = useState<"login" | "signup" | "forgot" | "request">("login");
@@ -84,7 +93,7 @@ export default function AuthPage() {
 
     const { data: signupData, error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { display_name: displayName }, emailRedirectTo: window.location.origin },
+      options: { data: { display_name: displayName }, emailRedirectTo: getRedirectOrigin() },
     });
 
     if (error) {
@@ -132,7 +141,7 @@ export default function AuthPage() {
     setLoading(true);
     setMessage(null);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${getRedirectOrigin()}/reset-password`,
     });
     if (error) setMessage({ type: "error", text: error.message });
     else setMessage({ type: "success", text: "Check your email for a password reset link." });
@@ -292,7 +301,7 @@ export default function AuthPage() {
                   setLoading(true);
                   setMessage(null);
                   const result = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
+                    redirect_uri: getRedirectOrigin(),
                   });
                   if (result?.error) {
                     setMessage({ type: "error", text: result.error.message || "Google sign-in failed" });
