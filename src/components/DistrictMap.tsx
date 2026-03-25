@@ -5,7 +5,7 @@ import {
   Geography,
   ZoomableGroup,
 } from "react-simple-maps";
-import { Search, X, Users, DollarSign, BarChart3 } from "lucide-react";
+import { Search, X, Users, DollarSign, BarChart3, Swords } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CompetitiveRacesSidebar } from "@/components/CompetitiveRacesSidebar";
 import { type DistrictProfile } from "@/data/districtIntel";
