@@ -68,7 +68,7 @@ export function LiveElectionsSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [limit, setLimit] = useState(20);
 
-  // Load today's races on mount
+  // Load races on mount
   useEffect(() => {
     fetchRaces(true);
   }, []);
@@ -86,11 +86,6 @@ export function LiveElectionsSection() {
       if (electionTypeFilter) params.set("election_type", electionTypeFilter);
       if (dateFilter) params.set("election_date", dateFilter);
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
-
-      // If no filters set on initial load, get upcoming races
-      if (isInitial && !stateFilter && !typeFilter && !dateFilter && !searchQuery.trim()) {
-        params.set("election_date", "2026-11-03");
-      }
 
       const response = await fetch(`https://civicapi.org/api/v2/race/search?${params.toString()}`);
       if (!response.ok) {
