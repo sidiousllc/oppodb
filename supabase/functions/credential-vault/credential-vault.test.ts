@@ -89,7 +89,7 @@ Deno.test({ name: "user_integrations RLS isolation", sanitizeResources: false, s
   }
 });
 
-Deno.test("credential-vault encrypts at rest", async (t) => {
+Deno.test({ name: "credential-vault encrypts at rest", sanitizeResources: false, sanitizeOps: false, fn: async (t) => {
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
   const email = `enc-test-${Date.now()}@test.local`;
   const password = "TestPassword123!";
