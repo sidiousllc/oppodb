@@ -78,7 +78,8 @@ Deno.test({ name: "user_integrations RLS isolation", sanitizeResources: false, s
     await t.step("owner can delete own integrations", async () => {
       const { data } = await client1.from("user_integrations").delete().eq("service", "nationbuilder").select();
       assert(data && data.length > 0, "Owner should be able to delete own row");
-    });
+  }
+});
 
   } finally {
     await adminClient.from("user_integrations").delete().eq("user_id", user1Id);
