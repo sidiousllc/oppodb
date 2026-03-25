@@ -5,7 +5,8 @@ import {
   Geography,
   ZoomableGroup,
 } from "react-simple-maps";
-import { Search, X } from "lucide-react";
+import { Search, X, Users, DollarSign, BarChart3 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { type DistrictProfile } from "@/data/districtIntel";
 import { getEffectivePVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
 import {
@@ -17,44 +18,12 @@ import {
 } from "@/data/cookRatings";
 
 // ─── Data Sources ───────────────────────────────────────────────────────────
-const STATE_GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
-
-// Esri Living Atlas — 118th Congressional Districts (reliable, CORS-enabled)
-const ESRI_CD_BASE =
-  "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query";
-const ESRI_PAGE_SIZE = 250;
-const ESRI_MIN_DISTRICT_COUNT = 435;
-const ESRI_REQUEST_TIMEOUT_MS = 20000;
-const ESRI_MAX_RETRIES = 2;
-
-function buildCdUrl(offset: number, cacheBust: string): string {
-  return `${ESRI_CD_BASE}?${new URLSearchParams({
-    where: "1=1",
-    outFields: "STATE_ABBR,CDFIPS,DISTRICTID",
-    f: "geojson",
-    outSR: "4326",
-    returnGeometry: "true",
-    resultRecordCount: "250",
-    resultOffset: String(offset),
-    _cb: cacheBust,
-  }).toString()}`;
-}
-
-function buildCdStateUrl(stateAbbr: string, cacheBust: string): string {
-  return `${ESRI_CD_BASE}?${new URLSearchParams({
-    where: `STATE_ABBR='${stateAbbr}'`,
-    outFields: "STATE_ABBR,CDFIPS,DISTRICTID",
-    f: "geojson",
-    outSR: "4326",
-    returnGeometry: "true",
-    resultRecordCount: "250",
-    _cb: cacheBust,
-  }).toString()}`;
-}
+// Use local static file only — no external CDN calls
+const LOCAL_CD_GEO = "/us-cd-118.json";
 
 // ─── Types & Exports ────────────────────────────────────────────────────────
 
-export type ColorMode = "cook" | "pvi";
+export type ColorMode = "cook" | "pvi" | "forecast";
 export type PVIFilter = "all" | "strong-d" | "lean-d" | "swing" | "lean-r" | "strong-r";
 
 export const PVI_FILTER_OPTIONS: { id: PVIFilter; label: string; color: string }[] = [
@@ -77,7 +46,6 @@ function normalizeDistrictCode(raw: unknown): string | null {
   return digits.padStart(2, "0").slice(-2);
 }
 
-/** Build district ID from Esri fields (e.g. "AL-01", "WY-AL") */
 function toDistrictId(stateAbbrRaw: unknown, cdfipsRaw: unknown, districtIdRaw?: unknown): string | null {
   const stateAbbr = String(stateAbbrRaw ?? "").trim().toUpperCase();
   if (!stateAbbr) return null;
@@ -121,6 +89,19 @@ const PVI_LEGEND_ENTRIES = [
   { label: "R+15+", color: "0 85% 38%" },
 ];
 
+// Forecast rating → color
+const FORECAST_COLORS: Record<string, string> = {
+  "Solid D": "210 100% 35%",
+  "Likely D": "210 80% 45%",
+  "Lean D": "210 55% 60%",
+  "Toss Up": "45 80% 50%",
+  "Toss-Up": "45 80% 50%",
+  "Tossup": "45 80% 50%",
+  "Lean R": "0 55% 60%",
+  "Likely R": "0 80% 45%",
+  "Solid R": "0 85% 38%",
+};
+
 // Approximate state centroids for zoom targets
 const STATE_CENTERS: Record<string, { coords: [number, number]; zoom: number }> = {
   AL: { coords: [-86.9, 32.8], zoom: 5 }, AK: { coords: [-153.5, 63.6], zoom: 2.5 },
@@ -151,9 +132,46 @@ const STATE_CENTERS: Record<string, { coords: [number, number]; zoom: number }> 
   DC: { coords: [-77.0, 38.9], zoom: 14 },
 };
 
-// ─── GeoJSON Cache ──────────────────────────────────────────────────────────
+const STATE_NAME_TO_ABBR: Record<string, string> = {
+  Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
+  Colorado: "CO", Connecticut: "CT", Delaware: "DE", Florida: "FL", Georgia: "GA",
+  Hawaii: "HI", Idaho: "ID", Illinois: "IL", Indiana: "IN", Iowa: "IA",
+  Kansas: "KS", Kentucky: "KY", Louisiana: "LA", Maine: "ME", Maryland: "MD",
+  Massachusetts: "MA", Michigan: "MI", Minnesota: "MN", Mississippi: "MS",
+  Missouri: "MO", Montana: "MT", Nebraska: "NE", Nevada: "NV",
+  "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY",
+  "North Carolina": "NC", "North Dakota": "ND", Ohio: "OH", Oklahoma: "OK",
+  Oregon: "OR", Pennsylvania: "PA", "Rhode Island": "RI", "South Carolina": "SC",
+  "South Dakota": "SD", Tennessee: "TN", Texas: "TX", Utah: "UT", Vermont: "VT",
+  Virginia: "VA", Washington: "WA", "West Virginia": "WV", Wisconsin: "WI",
+  Wyoming: "WY", "District of Columbia": "DC",
+};
 
-const LOCAL_CD_GEO = "/us-cd-118.json";
+// ─── DB Data Types ──────────────────────────────────────────────────────────
+
+interface ForecastEntry {
+  state_abbr: string;
+  district: string | null;
+  source: string;
+  rating: string | null;
+}
+
+interface DemographicEntry {
+  district_id: string;
+  population: number | null;
+  median_income: number | null;
+  top_issues: string[];
+}
+
+interface FinanceEntry {
+  candidate_name: string;
+  state_abbr: string;
+  district: string | null;
+  total_raised: number | null;
+  party: string | null;
+}
+
+// ─── GeoJSON ────────────────────────────────────────────────────────────────
 
 interface DistrictGeoJSON {
   type: string;
@@ -165,163 +183,6 @@ interface DistrictGeoJSON {
 }
 
 let districtGeoCache: DistrictGeoJSON | null = null;
-let districtGeoPromise: Promise<DistrictGeoJSON | null> | null = null;
-
-type ProgressCallback = (pct: number, label: string) => void;
-let progressListeners: ProgressCallback[] = [];
-
-function notifyProgress(pct: number, label: string) {
-  progressListeners.forEach((cb) => cb(pct, label));
-}
-
-function countUniqueDistricts(features: DistrictGeoJSON["features"]): number {
-  const ids = new Set<string>();
-  for (const feature of features) {
-    const id = toDistrictId(
-      feature.properties?.STATE_ABBR,
-      feature.properties?.CDFIPS,
-      feature.properties?.DISTRICTID
-    );
-    if (id) ids.add(id);
-  }
-  return ids.size;
-}
-
-async function fetchEsriJson(urlBuilder: (attempt: number) => string): Promise<{ features?: DistrictGeoJSON["features"]; exceededTransferLimit?: boolean } | null> {
-  for (let attempt = 0; attempt <= ESRI_MAX_RETRIES; attempt += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), ESRI_REQUEST_TIMEOUT_MS);
-    try {
-      const res = await fetch(urlBuilder(attempt), { cache: "no-store", signal: controller.signal });
-      if (!res.ok || res.status === 304) { if (attempt === ESRI_MAX_RETRIES) return null; continue; }
-      const data = await res.json();
-      if (data?.error) { if (attempt === ESRI_MAX_RETRIES) return null; continue; }
-      return data;
-    } catch { if (attempt === ESRI_MAX_RETRIES) return null; } finally { clearTimeout(timeout); }
-  }
-  return null;
-}
-
-async function fetchDistrictGeoPaginated(): Promise<DistrictGeoJSON | null> {
-  const allFeatures: DistrictGeoJSON["features"] = [];
-  const cacheSeed = `${Date.now()}`;
-  let offset = 0;
-
-  notifyProgress(10, "Fetching districts from Esri…");
-
-  while (true) {
-    const data = await fetchEsriJson((attempt) =>
-      buildCdUrl(offset, `${cacheSeed}-${offset}-${attempt}`)
-    );
-
-    if (!data || !Array.isArray(data.features)) return null;
-    if (data.features.length === 0) break;
-
-    allFeatures.push(...data.features);
-    const loaded = countUniqueDistricts(allFeatures);
-    const pct = Math.min(90, Math.round((loaded / ESRI_MIN_DISTRICT_COUNT) * 90));
-    notifyProgress(pct, `Loading districts… ${loaded}/${ESRI_MIN_DISTRICT_COUNT}`);
-
-    const needsNextPage = Boolean(data.exceededTransferLimit) || data.features.length >= ESRI_PAGE_SIZE;
-    if (!needsNextPage) break;
-
-    offset += ESRI_PAGE_SIZE;
-  }
-
-  if (allFeatures.length === 0) return null;
-  const uniqueDistricts = countUniqueDistricts(allFeatures);
-  if (uniqueDistricts < ESRI_MIN_DISTRICT_COUNT) return null;
-
-  notifyProgress(95, `Loaded ${uniqueDistricts} districts`);
-  return { type: "FeatureCollection", features: allFeatures };
-}
-
-async function fetchDistrictGeoByState(): Promise<DistrictGeoJSON | null> {
-  const cacheSeed = `${Date.now()}`;
-  const states = Object.keys(STATE_CENTERS);
-  notifyProgress(10, "Fetching districts by state…");
-
-  const allFeatures: DistrictGeoJSON["features"] = [];
-  const batchSize = 10;
-
-  for (let i = 0; i < states.length; i += batchSize) {
-    const batch = states.slice(i, i + batchSize);
-    const responses = await Promise.all(
-      batch.map((stateAbbr) =>
-        fetchEsriJson((attempt) =>
-          buildCdStateUrl(stateAbbr, `${cacheSeed}-${stateAbbr}-${attempt}`)
-        )
-      )
-    );
-
-    for (const res of responses) {
-      if (!res || !Array.isArray(res.features)) return null;
-      allFeatures.push(...res.features);
-    }
-
-    const pct = Math.min(90, Math.round(((i + batch.length) / states.length) * 90));
-    const loaded = countUniqueDistricts(allFeatures);
-    notifyProgress(pct, `Loading states… ${i + batch.length}/${states.length} (${loaded} districts)`);
-  }
-
-  if (allFeatures.length === 0) return null;
-  const uniqueDistricts = countUniqueDistricts(allFeatures);
-  if (uniqueDistricts < ESRI_MIN_DISTRICT_COUNT) return null;
-
-  notifyProgress(95, `Loaded ${uniqueDistricts} districts`);
-  return { type: "FeatureCollection", features: allFeatures };
-}
-
-/** Try loading from bundled static file first (instant), fall back to Esri API */
-async function fetchDistrictGeo(): Promise<DistrictGeoJSON | null> {
-  if (districtGeoCache) return districtGeoCache;
-  if (districtGeoPromise) return districtGeoPromise;
-
-  districtGeoPromise = (async () => {
-    notifyProgress(5, "Loading district boundaries…");
-
-    // 1. Try local static file (fast, no external API calls)
-    try {
-      const res = await fetch(LOCAL_CD_GEO);
-      if (res.ok) {
-        notifyProgress(50, "Parsing local geometry…");
-        const data = await res.json();
-        if (data?.features?.length >= ESRI_MIN_DISTRICT_COUNT) {
-          notifyProgress(100, "Ready");
-          districtGeoCache = data;
-          return data;
-        }
-      }
-    } catch {
-      // fall through to Esri
-    }
-
-    // 2. Paginated Esri fetch
-    const paginated = await fetchDistrictGeoPaginated();
-    if (paginated) {
-      notifyProgress(100, "Ready");
-      districtGeoCache = paginated;
-      return paginated;
-    }
-
-    // 3. State-by-state Esri fallback
-    const byState = await fetchDistrictGeoByState();
-    if (byState) {
-      notifyProgress(100, "Ready");
-      districtGeoCache = byState;
-      return byState;
-    }
-
-    return null;
-  })().finally(() => {
-    districtGeoPromise = null;
-  });
-
-  return districtGeoPromise;
-}
-
-// Start prefetching immediately on module load so data is ready before component mounts
-fetchDistrictGeo();
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -337,6 +198,16 @@ interface TooltipData {
   pvi: number | null;
   shift: { shifted: boolean; delta: number };
   topIssues: string[];
+  population: number | null;
+  medianIncome: number | null;
+  forecasts: { source: string; rating: string }[];
+  finance: { name: string; raised: number; party: string | null }[];
+}
+
+function formatMoney(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
+  return `$${n}`;
 }
 
 const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: DistrictMapProps) => {
@@ -356,24 +227,123 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   const [highlightedDistrict, setHighlightedDistrict] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    const onProgress: ProgressCallback = (pct, label) => {
-      if (!isMounted) return;
-      setLoadProgress(pct);
-      setLoadLabel(label);
-    };
-    progressListeners.push(onProgress);
+  // DB-sourced data
+  const [dbForecasts, setDbForecasts] = useState<Map<string, ForecastEntry[]>>(new Map());
+  const [dbDemographics, setDbDemographics] = useState<Map<string, DemographicEntry>>(new Map());
+  const [dbFinance, setDbFinance] = useState<Map<string, FinanceEntry[]>>(new Map());
+  const [consensusRatings, setConsensusRatings] = useState<Map<string, string>>(new Map());
 
-    fetchDistrictGeo().then((data) => {
-      if (!isMounted) return;
-      setGeoData(data);
-      setLoading(false);
-    });
-    return () => {
-      isMounted = false;
-      progressListeners = progressListeners.filter((cb) => cb !== onProgress);
+  // Load GeoJSON from local static file
+  useEffect(() => {
+    let cancelled = false;
+    setLoadProgress(10);
+    setLoadLabel("Loading district boundaries…");
+
+    (async () => {
+      if (districtGeoCache) {
+        if (!cancelled) { setGeoData(districtGeoCache); setLoading(false); setLoadProgress(100); }
+        return;
+      }
+      try {
+        setLoadProgress(30);
+        const res = await fetch(LOCAL_CD_GEO);
+        if (!res.ok) throw new Error("Failed to load local GeoJSON");
+        setLoadProgress(60);
+        setLoadLabel("Parsing geometry…");
+        const data = await res.json();
+        districtGeoCache = data;
+        if (!cancelled) {
+          setGeoData(data);
+          setLoadProgress(100);
+          setLoadLabel("Ready");
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled) { setLoading(false); setLoadLabel("Failed to load map data"); }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Load DB data in parallel
+  useEffect(() => {
+    const loadForecasts = async () => {
+      const { data } = await supabase
+        .from("election_forecasts")
+        .select("state_abbr, district, source, rating")
+        .eq("cycle", 2026)
+        .eq("race_type", "house");
+      if (!data) return;
+
+      const map = new Map<string, ForecastEntry[]>();
+      const scoreMap: Record<string, number> = {
+        "Solid D": 1, "Likely D": 2, "Lean D": 3,
+        "Toss Up": 4, "Toss-Up": 4, "Tossup": 4,
+        "Lean R": 5, "Likely R": 6, "Solid R": 7,
+      };
+      const reverseScore: Record<number, string> = {
+        1: "Solid D", 2: "Likely D", 3: "Lean D", 4: "Toss Up",
+        5: "Lean R", 6: "Likely R", 7: "Solid R",
+      };
+
+      for (const f of data) {
+        const did = `${f.state_abbr}-${(f.district || "AL").padStart(2, "0")}`;
+        if (!map.has(did)) map.set(did, []);
+        map.get(did)!.push(f);
+      }
+
+      // Calculate consensus
+      const consensus = new Map<string, string>();
+      for (const [did, entries] of map) {
+        const scores = entries
+          .map(e => scoreMap[e.rating || ""])
+          .filter(Boolean);
+        if (scores.length) {
+          const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+          consensus.set(did, reverseScore[avg] || "Toss Up");
+        }
+      }
+
+      setDbForecasts(map);
+      setConsensusRatings(consensus);
     };
+
+    const loadDemographics = async () => {
+      const { data } = await supabase
+        .from("district_profiles")
+        .select("district_id, population, median_income, top_issues");
+      if (!data) return;
+      const map = new Map<string, DemographicEntry>();
+      for (const d of data) {
+        // Normalize district_id (AK-00 → AK-AL)
+        let did = d.district_id;
+        if (did.endsWith("-00")) did = did.replace("-00", "-AL");
+        map.set(did, { ...d, district_id: did });
+      }
+      setDbDemographics(map);
+    };
+
+    const loadFinance = async () => {
+      const { data } = await supabase
+        .from("campaign_finance")
+        .select("candidate_name, state_abbr, district, total_raised, party")
+        .eq("cycle", 2026)
+        .eq("office", "house")
+        .not("total_raised", "is", null)
+        .order("total_raised", { ascending: false });
+      if (!data) return;
+      const map = new Map<string, FinanceEntry[]>();
+      for (const f of data) {
+        const did = `${f.state_abbr}-${(f.district || "AL").padStart(2, "0")}`;
+        if (!map.has(did)) map.set(did, []);
+        map.get(did)!.push(f);
+      }
+      setDbFinance(map);
+    };
+
+    loadForecasts();
+    loadDemographics();
+    loadFinance();
   }, []);
 
   const districtLookup = useMemo(() => {
@@ -390,14 +360,23 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     (districtId: string | null): string => {
       if (!districtId) return "hsl(220, 15%, 90%)";
 
-      // Highlight selected district from search
       if (highlightedDistrict && districtId === highlightedDistrict) {
         return "hsl(45, 100%, 55%)";
       }
 
-      // PVI filter: dim non-matching districts
       if (pviFilter !== "all" && !matchesPVIFilter(districtId, pviFilter)) {
         return "hsl(220, 5%, 92%)";
+      }
+
+      if (colorMode === "forecast") {
+        const consensus = consensusRatings.get(districtId);
+        if (consensus && FORECAST_COLORS[consensus]) {
+          return `hsl(${FORECAST_COLORS[consensus]})`;
+        }
+        // Fall back to Cook static
+        const rating = getCookRating(districtId);
+        if (rating) return `hsl(${getCookRatingColor(rating)})`;
+        return "hsl(220, 15%, 88%)";
       }
 
       if (colorMode === "pvi") {
@@ -411,7 +390,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       if (rating) return `hsl(${getCookRatingColor(rating)})`;
       return "hsl(220, 15%, 85%)";
     },
-    [pviFilter, colorMode, highlightedDistrict]
+    [pviFilter, colorMode, highlightedDistrict, consensusRatings]
   );
 
   const handleDistrictHover = useCallback(
@@ -422,15 +401,27 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         districtLookup.get(districtId) ||
         districtLookup.get(districtId.replace("-AL", "-00"));
       const effective = getEffectivePVI(districtId);
+      const demo = dbDemographics.get(districtId);
+      const forecasts = (dbForecasts.get(districtId) || [])
+        .filter(f => f.rating)
+        .map(f => ({ source: f.source, rating: f.rating! }));
+      const finance = (dbFinance.get(districtId) || [])
+        .slice(0, 4)
+        .map(f => ({ name: f.candidate_name, raised: f.total_raised || 0, party: f.party }));
+
       setTooltip({
         districtId,
         rating: getCookRating(districtId),
         pvi: effective?.score ?? null,
         shift: hasPVIShift(districtId),
-        topIssues: tracked?.top_issues || [],
+        topIssues: demo?.top_issues || tracked?.top_issues || [],
+        population: demo?.population ?? null,
+        medianIncome: demo?.median_income ?? null,
+        forecasts,
+        finance,
       });
     },
-    [districtLookup]
+    [districtLookup, dbDemographics, dbForecasts, dbFinance]
   );
 
   const handleStateClick = useCallback((stateAbbr: string) => {
@@ -450,7 +441,6 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     }
   }, [zoomState.zoom, zoomedStateAbbr]);
 
-  // Districts in the zoomed state for the search overlay
   const stateDistricts = useMemo(() => {
     if (!zoomedStateAbbr || !geoData) return [];
     const ids = new Set<string>();
@@ -474,14 +464,16 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       const rating = getCookRating(id);
       const pvi = getEffectivePVI(id)?.score ?? null;
       const profile = districtLookup.get(id);
+      const consensus = consensusRatings.get(id);
       return (
         id.toLowerCase().includes(q) ||
         (rating && rating.toLowerCase().includes(q)) ||
+        (consensus && consensus.toLowerCase().includes(q)) ||
         (pvi !== null && formatPVI(pvi).toLowerCase().includes(q)) ||
         (profile?.top_issues || []).some((i) => i.toLowerCase().includes(q))
       );
     });
-  }, [searchQuery, stateDistricts, districtLookup]);
+  }, [searchQuery, stateDistricts, districtLookup, consensusRatings]);
 
   const handleResetZoom = useCallback(() => {
     setZoomState({ center: [-96, 38], zoom: 1 });
@@ -492,35 +484,53 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
 
   const isZoomed = zoomState.zoom > 1;
 
+  // Stats summary
+  const mapStats = useMemo(() => {
+    const tossUps = Array.from(consensusRatings.entries()).filter(
+      ([, r]) => r === "Toss Up" || r === "Toss-Up" || r === "Tossup"
+    ).length;
+    const totalForecasts = dbForecasts.size;
+    const totalDemos = dbDemographics.size;
+    return { tossUps, totalForecasts, totalDemos };
+  }, [consensusRatings, dbForecasts, dbDemographics]);
+
   return (
     <div className="relative" onMouseMove={handleMouseMove}>
+      {/* Stats bar */}
+      <div className="flex items-center gap-4 mb-3 px-1 text-xs text-muted-foreground flex-wrap">
+        <span className="flex items-center gap-1">
+          <BarChart3 className="h-3 w-3" />
+          {mapStats.totalForecasts} forecasted
+        </span>
+        <span className="flex items-center gap-1">
+          <Users className="h-3 w-3" />
+          {mapStats.totalDemos} demographics
+        </span>
+        {mapStats.tossUps > 0 && (
+          <span className="flex items-center gap-1 text-amber-600 font-medium">
+            ⚔ {mapStats.tossUps} Toss Ups
+          </span>
+        )}
+      </div>
+
       {/* Controls bar */}
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        {/* Color mode toggle */}
         <div className="inline-flex rounded-lg border border-border overflow-hidden">
-          <button
-            onClick={() => setColorMode("cook")}
-            className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-              colorMode === "cook"
-                ? "bg-foreground text-background"
-                : "bg-card text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Cook Ratings
-          </button>
-          <button
-            onClick={() => setColorMode("pvi")}
-            className={`px-3 py-1.5 text-xs font-medium transition-colors border-l border-border ${
-              colorMode === "pvi"
-                ? "bg-foreground text-background"
-                : "bg-card text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            PVI Scores
-          </button>
+          {(["cook", "forecast", "pvi"] as ColorMode[]).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setColorMode(mode)}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors border-l border-border first:border-l-0 ${
+                colorMode === mode
+                  ? "bg-foreground text-background"
+                  : "bg-card text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {mode === "cook" ? "Cook Ratings" : mode === "forecast" ? "Consensus" : "PVI Scores"}
+            </button>
+          ))}
         </div>
 
-        {/* Zoom reset */}
         {isZoomed && (
           <button
             onClick={handleResetZoom}
@@ -531,7 +541,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         )}
 
         <p className="text-[10px] text-muted-foreground">
-          Click a state to zoom in
+          Click a state to zoom · Click a district for details
         </p>
       </div>
 
@@ -569,7 +579,6 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
               minZoom={1}
               maxZoom={20}
             >
-              {/* Congressional district polygons */}
               <Geographies geography={geoData}>
                 {({ geographies }) =>
                   geographies.map((geo) => {
@@ -588,7 +597,15 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                         onMouseEnter={() => handleDistrictHover(stateAbbr, cdfips, districtRaw)}
                         onMouseLeave={() => setTooltip(null)}
                         onClick={() => {
-                          if (districtId) onSelectDistrict(districtId);
+                          if (districtId) {
+                            if (zoomState.zoom <= 1) {
+                              // Zoom to state first
+                              const st = districtId.split("-")[0];
+                              handleStateClick(st);
+                            } else {
+                              onSelectDistrict(districtId);
+                            }
+                          }
                         }}
                         style={{
                           default: { outline: "none" },
@@ -605,47 +622,12 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                   })
                 }
               </Geographies>
-
-              {/* State boundary overlay — clickable for zoom */}
-              <Geographies geography={STATE_GEO_URL}>
-                {({ geographies }) =>
-                  geographies.map((geo) => {
-                    const geoName = geo.properties?.name;
-                    const stateAbbr = Object.entries(STATE_NAME_TO_ABBR).find(
-                      ([name]) => name === geoName
-                    )?.[1];
-
-                    return (
-                      <Geography
-                        key={`state-${geo.rsmKey}`}
-                        geography={geo}
-                        fill="transparent"
-                        stroke="hsl(220, 20%, 60%)"
-                        strokeWidth={0.7}
-                        onClick={() => {
-                          if (stateAbbr) handleStateClick(stateAbbr);
-                        }}
-                        style={{
-                          default: { outline: "none", cursor: "pointer" },
-                          hover: {
-                            outline: "none",
-                            stroke: "hsl(var(--foreground))",
-                            strokeWidth: 1.5,
-                            cursor: "pointer",
-                          },
-                          pressed: { outline: "none" },
-                        }}
-                      />
-                    );
-                  })
-                }
-              </Geographies>
             </ZoomableGroup>
           </ComposableMap>
 
           {/* Search overlay when zoomed */}
           {isZoomed && zoomedStateAbbr && (
-            <div className="absolute top-14 right-3 z-40 w-64 rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg">
+            <div className="absolute top-14 right-3 z-40 w-72 rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-lg">
               <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
                 <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <input
@@ -661,10 +643,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                 />
                 {searchQuery && (
                   <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setHighlightedDistrict(null);
-                    }}
+                    onClick={() => { setSearchQuery(""); setHighlightedDistrict(null); }}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     <X className="h-3 w-3" />
@@ -677,8 +656,10 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                 ) : (
                   filteredStateDistricts.map((did) => {
                     const rating = getCookRating(did);
+                    const consensus = consensusRatings.get(did);
                     const effectivePvi = getEffectivePVI(did);
                     const pvi = effectivePvi?.score ?? null;
+                    const demo = dbDemographics.get(did);
                     const isHighlighted = highlightedDistrict === did;
                     return (
                       <button
@@ -692,18 +673,25 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                         <span
                           className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
                           style={{
-                            backgroundColor: rating
-                              ? `hsl(${getCookRatingColor(rating)})`
-                              : "hsl(220, 15%, 85%)",
+                            backgroundColor: consensus
+                              ? `hsl(${FORECAST_COLORS[consensus] || "220, 15%, 85%"})`
+                              : rating
+                                ? `hsl(${getCookRatingColor(rating)})`
+                                : "hsl(220, 15%, 85%)",
                           }}
                         />
                         <span className="text-xs font-semibold text-foreground">{did}</span>
                         <span className="text-[10px] text-muted-foreground ml-auto">
-                          {rating || "N/A"}
+                          {consensus || rating || "N/A"}
                         </span>
                         {pvi !== null && (
                           <span className="text-[10px] font-medium" style={{ color: `hsl(${getPVIColor(pvi)})` }}>
                             {formatPVI(pvi)}
+                          </span>
+                        )}
+                        {demo?.population && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {(demo.population / 1000).toFixed(0)}K
                           </span>
                         )}
                       </button>
@@ -730,37 +718,32 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 pointer-events-none rounded-lg border border-border bg-card px-3 py-2 shadow-lg max-w-[220px]"
+          className="fixed z-50 pointer-events-none rounded-lg border border-border bg-card px-3 py-2.5 shadow-lg max-w-[280px]"
           style={{
             left: tooltipPos.x + 14,
-            top: tooltipPos.y - 50,
+            top: tooltipPos.y - 60,
           }}
         >
-          <p className="font-display text-sm font-semibold text-foreground">
+          <p className="font-display text-sm font-bold text-foreground">
             {tooltip.districtId}
           </p>
-          {tooltip.rating && (
-            <div className="mt-1 flex items-center gap-1.5">
-              <span
-                className="inline-block h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: `hsl(${getCookRatingColor(tooltip.rating)})` }}
-              />
-              <span className="text-xs font-medium text-foreground">
-                {tooltip.rating}
-              </span>
-            </div>
-          )}
-          {tooltip.pvi !== null && (
-            <div className="mt-1 flex items-center gap-1.5">
-              <span
-                className="inline-block h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: `hsl(${getPVIColor(tooltip.pvi)})` }}
-              />
-              <span className="text-xs font-medium text-foreground">
-                PVI: {formatPVI(tooltip.pvi)}
-              </span>
-            </div>
-          )}
+
+          {/* Ratings row */}
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            {tooltip.rating && (
+              <div className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(${getCookRatingColor(tooltip.rating)})` }} />
+                <span className="text-xs font-medium text-foreground">{tooltip.rating}</span>
+              </div>
+            )}
+            {tooltip.pvi !== null && (
+              <div className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(${getPVIColor(tooltip.pvi)})` }} />
+                <span className="text-xs font-medium text-foreground">PVI: {formatPVI(tooltip.pvi)}</span>
+              </div>
+            )}
+          </div>
+
           {tooltip.shift.shifted && (
             <div className="mt-1">
               <span
@@ -772,6 +755,53 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
               </span>
             </div>
           )}
+
+          {/* Demographics */}
+          {(tooltip.population || tooltip.medianIncome) && (
+            <div className="mt-1.5 flex gap-3 text-xs text-muted-foreground">
+              {tooltip.population && (
+                <span className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {(tooltip.population / 1000).toFixed(0)}K pop.
+                </span>
+              )}
+              {tooltip.medianIncome && (
+                <span className="flex items-center gap-1">
+                  <DollarSign className="h-3 w-3" />
+                  {formatMoney(tooltip.medianIncome)} income
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Forecasts from multiple sources */}
+          {tooltip.forecasts.length > 0 && (
+            <div className="mt-1.5 border-t border-border pt-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Forecasts</p>
+              <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                {tooltip.forecasts.map((f, i) => (
+                  <span key={i} className="text-xs text-foreground">
+                    <span className="text-muted-foreground">{f.source.replace("Cook Political Report", "Cook").replace("Inside Elections", "IE").replace("Sabato's Crystal Ball", "Sabato")}:</span>{" "}
+                    <span className="font-medium">{f.rating}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Finance */}
+          {tooltip.finance.length > 0 && (
+            <div className="mt-1.5 border-t border-border pt-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Top Fundraisers</p>
+              {tooltip.finance.slice(0, 2).map((f, i) => (
+                <div key={i} className="text-xs text-foreground flex justify-between">
+                  <span>{f.name} {f.party ? `(${f.party})` : ""}</span>
+                  <span className="font-medium">{formatMoney(f.raised)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {tooltip.topIssues.length > 0 && (
             <div className="mt-1.5 border-t border-border pt-1.5">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Top Issues</p>
@@ -787,11 +817,17 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
           <>
             {COOK_RATING_ORDER.map((rating) => (
               <div key={rating} className="flex items-center gap-1.5">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-sm"
-                  style={{ backgroundColor: `hsl(${COOK_RATING_COLORS[rating]})` }}
-                />
+                <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: `hsl(${COOK_RATING_COLORS[rating]})` }} />
                 <span className="text-xs text-muted-foreground">{rating}</span>
+              </div>
+            ))}
+          </>
+        ) : colorMode === "forecast" ? (
+          <>
+            {Object.entries(FORECAST_COLORS).filter(([k]) => !["Toss-Up", "Tossup"].includes(k)).map(([label, color]) => (
+              <div key={label} className="flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: `hsl(${color})` }} />
+                <span className="text-xs text-muted-foreground">{label}</span>
               </div>
             ))}
           </>
@@ -799,41 +835,19 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
           <>
             {PVI_LEGEND_ENTRIES.map((entry) => (
               <div key={entry.label} className="flex items-center gap-1.5">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-sm"
-                  style={{ backgroundColor: `hsl(${entry.color})` }}
-                />
+                <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: `hsl(${entry.color})` }} />
                 <span className="text-xs text-muted-foreground">{entry.label}</span>
               </div>
             ))}
           </>
         )}
         <div className="flex items-center gap-1.5 border-l border-border pl-3 ml-1">
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-sm"
-            style={{ backgroundColor: "hsl(220, 15%, 85%)" }}
-          />
+          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: "hsl(220, 15%, 85%)" }} />
           <span className="text-xs text-muted-foreground">No data</span>
         </div>
       </div>
     </div>
   );
-};
-
-// State name → abbreviation for zoom targets from us-atlas topology
-const STATE_NAME_TO_ABBR: Record<string, string> = {
-  Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
-  Colorado: "CO", Connecticut: "CT", Delaware: "DE", Florida: "FL", Georgia: "GA",
-  Hawaii: "HI", Idaho: "ID", Illinois: "IL", Indiana: "IN", Iowa: "IA",
-  Kansas: "KS", Kentucky: "KY", Louisiana: "LA", Maine: "ME", Maryland: "MD",
-  Massachusetts: "MA", Michigan: "MI", Minnesota: "MN", Mississippi: "MS",
-  Missouri: "MO", Montana: "MT", Nebraska: "NE", Nevada: "NV",
-  "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY",
-  "North Carolina": "NC", "North Dakota": "ND", Ohio: "OH", Oklahoma: "OK",
-  Oregon: "OR", Pennsylvania: "PA", "Rhode Island": "RI", "South Carolina": "SC",
-  "South Dakota": "SD", Tennessee: "TN", Texas: "TX", Utah: "UT", Vermont: "VT",
-  Virginia: "VA", Washington: "WA", "West Virginia": "WV", Wisconsin: "WI",
-  Wyoming: "WY", "District of Columbia": "DC",
 };
 
 export const DistrictMap = memo(DistrictMapInner);
