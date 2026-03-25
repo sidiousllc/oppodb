@@ -118,6 +118,24 @@ export function AccessControlTab() {
     else { toast.success("Invite revoked"); loadInvitations(); }
   };
 
+  const handleDeleteInvite = async (inviteId: string) => {
+    if (!confirm("Remove this invitation record?")) return;
+    const { error } = await supabase.functions.invoke("admin-users", {
+      body: { action: "revoke_invite", invite_id: inviteId },
+    });
+    if (error) toast.error("Failed to remove");
+    else { toast.success("Invitation removed"); loadInvitations(); }
+  };
+
+  const handleDeleteRequest = async (requestId: string) => {
+    if (!confirm("Remove this access request record?")) return;
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: { action: "delete_access_request", request_id: requestId },
+    });
+    if (error || data?.error) toast.error(data?.error || "Failed to remove");
+    else { toast.success("Request removed"); loadRequests(); }
+  };
+
   const handleApprove = async (requestId: string) => {
     const request = requests.find(r => r.id === requestId);
     try {
