@@ -161,8 +161,10 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
         ))}
       </div>
 
+      {/* ═══ MASTER SEARCH ═══ */}
+      <MasterSearch onNavigate={onNavigateSection} districts={districts} />
 
-      {/* ═══ POLLING DATA SECTION ═══ */}
+
       <div>
         <div className="flex items-center gap-2 mb-2">
           <BarChart3 className="h-4 w-4" />
