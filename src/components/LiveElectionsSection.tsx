@@ -242,9 +242,12 @@ export function LiveElectionsSection() {
                     {topTwo.map((c, i) => (
                       <span key={i} className="text-[9px] font-bold" style={{ color: getPartyColor(c.party, c.color) }}>
                         {c.name.split(" ").pop()}
-                        {c.percent > 0 && ` ${c.percent}%`}
+                        {c.percent > 0 ? ` ${c.percent}%` : ""}
                       </span>
                     ))}
+                    {topTwo.length === 0 && (
+                      <span className="text-[9px] text-[hsl(var(--muted-foreground))]">No candidates listed</span>
+                    )}
                   </div>
 
                   {/* Winner/Status */}
