@@ -861,5 +861,6 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
     </div>
     </div>
   );
+};
 
 export const DistrictMap = memo(DistrictMapInner);
