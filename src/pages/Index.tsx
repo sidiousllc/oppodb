@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, initCandidates } from "@/data/candidates";
 import { loadCandidateData } from "@/data/candidateContent";
-import { magaFiles, searchMagaFiles } from "@/data/magaFiles";
-import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/data/localImpact";
-import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
+import { magaFiles, searchMagaFiles, mergeMagaFilesFromDB } from "@/data/magaFiles";
+import { localImpactReports, searchLocalImpact, getLocalImpactBySlug, mergeLocalImpactFromDB } from "@/data/localImpact";
+import { narrativeReports, searchNarrativeReports, mergeNarrativeReportsFromDB } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
 import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
 import { syncCongressionalElections } from "@/data/congressionalElections";
@@ -99,6 +99,26 @@ export default function Index() {
     });
     supabase.from("campaign_finance").select("id", { count: "exact", head: true }).then(({ count }) => {
       setFinanceCount(count ?? 0);
+    });
+
+    // Merge DB data for MAGA files, local impact, and narrative reports
+    supabase.from("maga_files").select("name, slug, content").order("name").then(({ data }) => {
+      if (data && data.length > 0) {
+        mergeMagaFilesFromDB(data);
+        setDataVersion((v) => v + 1);
+      }
+    });
+    supabase.from("local_impacts").select("state, slug, summary, content").order("state").then(({ data }) => {
+      if (data && data.length > 0) {
+        mergeLocalImpactFromDB(data);
+        setDataVersion((v) => v + 1);
+      }
+    });
+    supabase.from("narrative_reports").select("name, slug, content").order("name").then(({ data }) => {
+      if (data && data.length > 0) {
+        mergeNarrativeReportsFromDB(data);
+        setDataVersion((v) => v + 1);
+      }
     });
   }, []);
 
@@ -229,9 +249,9 @@ export default function Index() {
     return results;
   }, [search, filter, dataVersion]);
 
-  const filteredMaga = useMemo(() => searchMagaFiles(search), [search]);
-  const filteredLocal = useMemo(() => searchLocalImpact(search), [search]);
-  const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search]);
+  const filteredMaga = useMemo(() => searchMagaFiles(search), [search, dataVersion]);
+  const filteredLocal = useMemo(() => searchLocalImpact(search), [search, dataVersion]);
+  const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search, dataVersion]);
   const filteredDistricts = useMemo(() => {
     let results = searchDistricts(districts, search);
     if (trackedOnly) results = results.filter(d => trackedDistrictIds.has(d.district_id));

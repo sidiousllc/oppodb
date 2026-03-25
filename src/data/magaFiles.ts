@@ -242,6 +242,23 @@ Blanche represented Trump across multiple criminal trials and also worked for Tr
 His investment firm underwrote a bond for Alabama's prison system, which has come under scrutiny for mistreatment of prisoners. He also has a long history of donating to anti-Trump candidates.` },
 ];
 
+// Merge DB records into the in-memory array (call once at startup)
+export function mergeMagaFilesFromDB(dbRecords: Array<{ name: string; slug: string; content: string }>) {
+  const existing = new Set(magaFiles.map(m => m.slug));
+  for (const r of dbRecords) {
+    if (existing.has(r.slug)) {
+      // Update existing with DB content (DB is authoritative)
+      const idx = magaFiles.findIndex(m => m.slug === r.slug);
+      if (idx >= 0) {
+        magaFiles[idx] = { name: r.name, slug: r.slug, content: r.content };
+      }
+    } else {
+      magaFiles.push({ name: r.name, slug: r.slug, content: r.content });
+    }
+  }
+  magaFiles.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function searchMagaFiles(query: string): MagaFile[] {
   if (!query.trim()) return magaFiles;
   const q = query.toLowerCase();
