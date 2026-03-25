@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, MapPin, Building2, ChevronDown, ChevronRight, AlertTriangle, Loader2, DollarSign, Trophy, Calendar, ExternalLink, Vote } from "lucide-react";
+import { Search, Users, MapPin, Building2, ChevronDown, ChevronRight, AlertTriangle, Loader2, DollarSign, Trophy, Calendar, ExternalLink, Vote, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 
 const US_STATES = [
@@ -12,8 +12,9 @@ const US_STATES = [
 import { MITElectionTab } from "@/components/MITElectionTab";
 import { FollowTheMoneyPanel } from "@/components/FollowTheMoneyPanel";
 import { WinRedPanel } from "@/components/WinRedPanel";
+import { VoterStatsPanel } from "@/components/VoterStatsPanel";
 
-type SearchType = "name" | "address" | "district" | "races" | "election_history" | "ftm" | "winred";
+type SearchType = "name" | "address" | "district" | "races" | "election_history" | "ftm" | "winred" | "state_data";
 
 interface VoterRecord {
   source: string;
@@ -208,6 +209,7 @@ export function VoterDataSection() {
     { id: "name", label: "Name + State", icon: Users },
     { id: "address", label: "Address", icon: MapPin },
     { id: "district", label: "District", icon: Building2 },
+    { id: "state_data", label: "State Data", icon: BarChart3 },
     { id: "races", label: "Live Races", icon: Trophy },
     { id: "election_history", label: "Election History", icon: Vote },
     { id: "ftm", label: "State Finance", icon: DollarSign },
@@ -656,6 +658,9 @@ export function VoterDataSection() {
 
       {/* WinRed tab */}
       {searchType === "winred" && <WinRedPanel embedded />}
+
+      {/* State Data tab */}
+      {searchType === "state_data" && <VoterStatsPanel />}
     </div>
   );
 }
