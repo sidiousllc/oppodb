@@ -446,8 +446,8 @@ describe("scheduled-sync security - Edge cases", () => {
     // JWT tokens use URL-safe base64 (- and _ instead of + and /)
     const payload = { role: "service_role", sub: "test" };
     const encodedPayload = btoa(JSON.stringify(payload))
-      .replaceAll("+", "-")
-      .replaceAll("/", "_");
+      .split("+").join("-")
+      .split("/").join("_");
     
     const token = `header.${encodedPayload}.signature`;
     const claims = parseJwtClaims(token);
