@@ -717,9 +717,11 @@ export default function Index() {
                           📂 {sectionLabels[section]}
                         </h2>
                       </div>
-                      <div className="mb-3">
-                        <MasterSearch onNavigate={(s, slug) => { setSection(s as Section); if (slug) setSelectedSlug(slug); }} districts={districts} />
-                      </div>
+                      {section === "dashboard" && (
+                        <div className="mb-3">
+                          <MasterSearch onNavigate={(s, slug) => { setSection(s as Section); if (slug) setSelectedSlug(slug); }} districts={districts} />
+                        </div>
+                      )}
                       {renderList()}
                     </>
                   )}
