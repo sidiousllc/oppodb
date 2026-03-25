@@ -4,20 +4,32 @@ Welcome to the OppoDB documentation wiki.
 
 ## Quick Links
 
-- [Overview](Overview)
-- [Candidate Profiles](Candidate-Profiles)
-- [District Intelligence](District-Intelligence)
-- [Polling Data](Polling-Data)
-- [Campaign Finance](Campaign-Finance)
-- [State Legislative Districts](State-Legislative-Districts)
-- [Additional Features](Additional-Features)
-- [Authentication & User Management](Authentication-and-User-Management)
-- [API Access](API-Access)
-- [UI Design System](UI-Design-System)
-- [Data Sync & External Sources](Data-Sync-and-Sources)
-- [Cook Ratings & Forecasting](Cook-Ratings-and-Forecasting)
-- [Admin Panel](Admin-Panel)
+- [Overview](Overview) — Architecture, tech stack, data models, and security
+- [Candidate Profiles](Candidate-Profiles) — Research profiles, subpages, and voting records
+- [District Intelligence](District-Intelligence) — Congressional district demographics and maps
+- [Polling Data](Polling-Data) — Multi-source polling visualization and analysis
+- [Campaign Finance](Campaign-Finance) — FEC and state-level finance tracking
+- [State Legislative Districts](State-Legislative-Districts) — State legislature coverage
+- [Additional Features](Additional-Features) — MAGA files, narratives, in-app mail, documentation wiki, email pipeline
+- [Authentication & User Management](Authentication-and-User-Management) — Auth flows, RBAC, invites, access requests
+- [API Access](API-Access) — REST API, MCP server, API key management
+- [UI Design System](UI-Design-System) — Win98/AOL theme, components, and styling
+- [Data Sync & External Sources](Data-Sync-and-Sources) — Edge functions, external APIs, sync processes
+- [Cook Ratings & Forecasting](Cook-Ratings-and-Forecasting) — PVI, ratings, forecast models
+- [Admin Panel](Admin-Panel) — User management, content CRUD, role groups, access control
 
 ## About
 
-OppoDB is a comprehensive opposition research database for political campaigns, consultants, and journalists.
+OppoDB is a comprehensive opposition research database for political campaigns, consultants, and journalists. Built with React + TypeScript + Supabase, it features a nostalgic Windows 98 / AOL desktop interface wrapping modern political research tools.
+
+## Key Features
+
+- **50+ Edge Functions** for data sync, API access, email, and administration
+- **Role-Based Access Control** with admin, moderator, premium, and user tiers
+- **Role Groups** with automatic role synchronization
+- **Invite & Access Request** workflows for controlled onboarding
+- **Transactional Email Pipeline** with queue, suppression, and unsubscribe support
+- **Public REST API & MCP Server** for programmatic and AI agent access
+- **In-App Mail & Chat** with real email notification delivery
+- **Real-Time Presence** via AOL Buddy List
+- **Documentation Wiki** accessible directly within the application
