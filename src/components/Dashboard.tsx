@@ -6,15 +6,18 @@ import { getCurrentPVI, formatPVI, getPVIColor } from "@/data/cookPVI";
 import { candidates } from "@/data/candidates";
 import { magaFiles } from "@/data/magaFiles";
 import { BarChart3, TrendingDown, TrendingUp, Minus, MapPin, Users, AlertTriangle, FileText, Compass, Scale } from "lucide-react";
+import { MasterSearch } from "@/components/MasterSearch";
+import type { DistrictProfile } from "@/data/districtIntel";
 
 
 interface DashboardProps {
   onNavigateSection: (section: string, slug?: string) => void;
   candidateCount: number;
   districtCount: number;
+  districts?: DistrictProfile[];
 }
 
-export function Dashboard({ onNavigateSection, candidateCount, districtCount }: DashboardProps) {
+export function Dashboard({ onNavigateSection, candidateCount, districtCount, districts = [] }: DashboardProps) {
   const [polls, setPolls] = useState<PollEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -158,8 +161,10 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
         ))}
       </div>
 
+      {/* ═══ MASTER SEARCH ═══ */}
+      <MasterSearch onNavigate={onNavigateSection} districts={districts} />
 
-      {/* ═══ POLLING DATA SECTION ═══ */}
+
       <div>
         <div className="flex items-center gap-2 mb-2">
           <BarChart3 className="h-4 w-4" />

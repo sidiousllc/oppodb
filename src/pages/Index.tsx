@@ -379,6 +379,7 @@ export default function Index() {
           }}
           candidateCount={candidates.length}
           districtCount={districts.length}
+          districts={districts}
         />
       );
     }
