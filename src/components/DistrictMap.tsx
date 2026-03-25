@@ -7,6 +7,7 @@ import {
 } from "react-simple-maps";
 import { Search, X, Users, DollarSign, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { CompetitiveRacesSidebar } from "@/components/CompetitiveRacesSidebar";
 import { type DistrictProfile } from "@/data/districtIntel";
 import { getEffectivePVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
 import {
@@ -495,7 +496,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   }, [consensusRatings, dbForecasts, dbDemographics]);
 
   return (
-    <div className="relative" onMouseMove={handleMouseMove}>
+    <div className="flex gap-4">
+      <div className="flex-1 min-w-0 relative" onMouseMove={handleMouseMove}>
       {/* Stats bar */}
       <div className="flex items-center gap-4 mb-3 px-1 text-xs text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1">
@@ -845,6 +847,16 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
           <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: "hsl(220, 15%, 85%)" }} />
           <span className="text-xs text-muted-foreground">No data</span>
         </div>
+      </div>
+      </div>
+
+      {/* Competitive Races Sidebar */}
+      <div className="hidden lg:block w-72 shrink-0">
+        <CompetitiveRacesSidebar
+          consensusRatings={consensusRatings}
+          dbFinance={dbFinance}
+          onSelectDistrict={onSelectDistrict}
+        />
       </div>
     </div>
   );
