@@ -18,7 +18,7 @@ project_id = "yysbtxpupmwkxovgkama"
   [functions.research-chat]
     verify_jwt = false
   [functions.scheduled-sync]
-    verify_jwt = false
+    verify_jwt = true
   [functions.sync-github]
     verify_jwt = false
   [functions.campaign-finance-sync]
