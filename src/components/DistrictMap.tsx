@@ -496,7 +496,8 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   }, [consensusRatings, dbForecasts, dbDemographics]);
 
   return (
-    <div className="relative" onMouseMove={handleMouseMove}>
+    <div className="flex gap-4">
+    <div className="flex-1 min-w-0 relative" onMouseMove={handleMouseMove}>
       {/* Stats bar */}
       <div className="flex items-center gap-4 mb-3 px-1 text-xs text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1">
