@@ -22,6 +22,8 @@ const wikiPages: WikiPage[] = [
   { slug: "data-sync-and-sources", title: "Data Sync & Sources", content: "" },
   { slug: "cook-ratings-and-forecasting", title: "Cook Ratings & Forecasting", content: "" },
   { slug: "admin-panel", title: "Admin Panel", content: "" },
+  { slug: "research-tools", title: "Research Tools", content: "" },
+  { slug: "android-app", title: "Android App", content: "" },
 ];
 
 // Lazy-load wiki content via raw imports
@@ -39,6 +41,8 @@ const wikiImports: Record<string, () => Promise<string>> = {
   "data-sync-and-sources": () => import("../../wiki/11-Data-Sync-and-Sources.md?raw").then(m => m.default),
   "cook-ratings-and-forecasting": () => import("../../wiki/12-Cook-Ratings-and-Forecasting.md?raw").then(m => m.default),
   "admin-panel": () => import("../../wiki/13-Admin-Panel.md?raw").then(m => m.default),
+  "research-tools": () => import("../../wiki/14-Research-Tools.md?raw").then(m => m.default),
+  "android-app": () => import("../../wiki/15-Android-App.md?raw").then(m => m.default),
 };
 
 export function DocumentationSection() {
