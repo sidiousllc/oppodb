@@ -72,3 +72,4 @@ jobs:
           name: ordb-release.apk
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           retention-days: 30
+FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true
