@@ -425,6 +425,20 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    if (dbResults.voterStats.length > 0) {
+      groups.push({
+        key: "voter-stats",
+        label: "Voter Registration Stats",
+        icon: <Users className="h-3.5 w-3.5" />,
+        section: "voter-data",
+        results: dbResults.voterStats.map((s: any) => ({
+          id: s.state,
+          title: s.state,
+          subtitle: `${(s.total_registered || 0).toLocaleString()} registered • ${(s.total_eligible || 0).toLocaleString()} eligible • ${s.registration_rate ? `${s.registration_rate.toFixed(1)}%` : "N/A"} rate${s.turnout_general_2024 ? ` • ${s.turnout_general_2024}% turnout '24` : ""}`,
+        })),
+      });
+    }
+
     return groups;
   }, [dbResults]);
 
