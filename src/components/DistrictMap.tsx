@@ -226,6 +226,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   const [zoomedStateAbbr, setZoomedStateAbbr] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [highlightedDistrict, setHighlightedDistrict] = useState<string | null>(null);
+  const [competitiveOnly, setCompetitiveOnly] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // DB-sourced data
