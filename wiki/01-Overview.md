@@ -139,11 +139,12 @@ supabase/
 - `congress_bills` — Federal bill tracking
 - `congress_committees` — Congressional committee data
 - `congress_votes` — Roll call vote records
-- `congressional_election_results` — Historical election results
+- `congressional_election_results` — Historical congressional election results
 - `state_leg_election_results` — State legislative election results
 - `mit_election_results` — MIT Election Lab historical data
 - `election_forecasts` — Multi-source election forecasts
 - `election_forecast_history` — Forecast rating change tracking
+- `state_voter_stats` — State-level voter registration statistics (registered, eligible, turnout)
 - `maga_files` — Trump administration appointee files
 - `narrative_reports` — Thematic narrative reports
 - `local_impacts` — State-level local impact reports
