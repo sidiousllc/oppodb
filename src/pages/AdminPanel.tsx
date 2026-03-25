@@ -10,7 +10,7 @@ import { AccessControlTab } from "@/components/AccessControlTab";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "roles" | "candidates" | "maga" | "local" | "narratives";
+type Tab = "users" | "roles" | "access" | "candidates" | "maga" | "local" | "narratives";
 
 interface ContentItem {
   id: string;
