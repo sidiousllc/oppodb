@@ -848,17 +848,17 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
           <span className="text-xs text-muted-foreground">No data</span>
         </div>
       </div>
+        </div>
       </div>
-    </div>
 
-    {/* Competitive Races Sidebar */}
-    <div className="hidden lg:block w-72 shrink-0">
-      <CompetitiveRacesSidebar
-        consensusRatings={consensusRatings}
-        dbFinance={dbFinance}
-        onSelectDistrict={onSelectDistrict}
-      />
-    </div>
+      {/* Competitive Races Sidebar */}
+      <div className="hidden lg:block w-72 shrink-0">
+        <CompetitiveRacesSidebar
+          consensusRatings={consensusRatings}
+          dbFinance={dbFinance}
+          onSelectDistrict={onSelectDistrict}
+        />
+      </div>
     </div>
   );
 };
