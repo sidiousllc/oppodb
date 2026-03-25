@@ -16,6 +16,7 @@ import {
 import { useState, useEffect } from "react";
 import { getLastSyncTime } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
 export type Section =
