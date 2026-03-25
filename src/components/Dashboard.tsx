@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { fetchPollingData, getSourceInfo, POLLING_SOURCES, type PollEntry } from "@/data/pollingData";
 import { cookRatings, getCookRatingColor, type CookRating } from "@/data/cookRatings";
 import { getCurrentPVI, formatPVI, getPVIColor } from "@/data/cookPVI";
@@ -91,13 +92,36 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
       .sort((a, b) => (a.margin || 0) - (b.margin || 0));
   }, [approvalPolls]);
 
-  // ─── District calculations ──────────────────────────────────────────
+  // ─── District calculations (DB-backed with static fallback) ─────────
+  const [dbTossUps, setDbTossUps] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    // Load toss-up races from DB forecasts (consensus across sources)
+    supabase
+      .from("election_forecasts")
+      .select("state_abbr, district, rating")
+      .eq("cycle", 2026)
+      .eq("race_type", "house")
+      .in("rating", ["Toss Up", "Toss-Up", "Tossup"])
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const ids = [...new Set(data.map((f: any) => {
+            const d = (f.district || "AL").padStart(2, "0");
+            return `${f.state_abbr}-${d}`;
+          }))].sort();
+          setDbTossUps(ids as string[]);
+        }
+      });
+  }, []);
+
   const tossUpDistricts = useMemo(() => {
+    if (dbTossUps && dbTossUps.length > 0) return dbTossUps;
+    // Fallback to static Cook ratings
     return Object.entries(cookRatings)
       .filter(([_, rating]) => rating === "Toss Up")
       .map(([id]) => id)
       .sort();
-  }, []);
+  }, [dbTossUps]);
 
   const evenPVIDistricts = useMemo(() => {
     return Object.entries(cookRatings)
@@ -279,7 +303,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
                 className="inline-block w-[8px] h-[8px] rounded-full"
                 style={{ background: `hsl(${getCookRatingColor("Toss Up")})` }}
               />
-              <span className="text-[10px] font-bold">TOSS UP — Cook Rating ({tossUpDistricts.length})</span>
+              <span className="text-[10px] font-bold">TOSS UP ({tossUpDistricts.length}){dbTossUps ? " • Live" : " • Cook"}</span>
             </div>
             <div className="flex flex-wrap gap-1">
               {tossUpDistricts.map((id) => {
