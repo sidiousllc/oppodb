@@ -293,7 +293,9 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     if (e.key === "Enter") runDbSearch();
     if (e.key === "Escape") {
       if (query.trim()) {
-        handleClear();
+        setQuery("");
+        setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
+        setHasSearched(false);
       }
       inputRef.current?.blur();
     }
