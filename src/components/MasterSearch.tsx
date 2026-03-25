@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown } from "lucide-react";
+import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt } from "lucide-react";
 import { exportSearchCSV, exportSearchPDF } from "@/lib/masterSearchExport";
 import { supabase } from "@/integrations/supabase/client";
 import { searchCandidates } from "@/data/candidates";
@@ -48,7 +48,10 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     bills: any[];
     forecasts: any[];
     congressElections: any[];
-  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [] });
+    stateFinance: any[];
+    mnFinance: any[];
+    winredDonations: any[];
+  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [] });
   const [hasSearched, setHasSearched] = useState(false);
 
   const isCurrentQuerySaved = savedSearches.includes(query.trim());
@@ -143,14 +146,14 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
     const likeQ = `%${q}%`;
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
         .order("date_conducted", { ascending: false })
         .limit(10),
       supabase.from("campaign_finance")
-        .select("id, candidate_name, state_abbr, district, party, total_raised, office")
+        .select("id, candidate_name, state_abbr, district, party, total_raised, total_spent, cash_on_hand, office, cycle")
         .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ},district.ilike.${likeQ}`)
         .order("total_raised", { ascending: false })
         .limit(10),
@@ -173,6 +176,21 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
         .order("election_year", { ascending: false })
         .limit(10),
+      supabase.from("state_cfb_candidates")
+        .select("id, candidate_name, state_abbr, chamber, party, office, total_contributions, total_expenditures, net_cash")
+        .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ},committee_name.ilike.${likeQ}`)
+        .order("total_contributions", { ascending: false })
+        .limit(10),
+      supabase.from("mn_cfb_candidates")
+        .select("id, candidate_name, chamber, committee_name, total_contributions, total_expenditures, net_cash")
+        .or(`candidate_name.ilike.${likeQ},committee_name.ilike.${likeQ}`)
+        .order("total_contributions", { ascending: false })
+        .limit(10),
+      supabase.from("winred_donations")
+        .select("id, donor_first_name, donor_last_name, donor_state, donor_city, amount, candidate_name, committee_name, transaction_date, recurring")
+        .or(`donor_last_name.ilike.${likeQ},donor_city.ilike.${likeQ},candidate_name.ilike.${likeQ},committee_name.ilike.${likeQ},donor_state.ilike.${likeQ}`)
+        .order("transaction_date", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
@@ -182,6 +200,9 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       bills: billsRes.data || [],
       forecasts: forecastsRes.data || [],
       congressElections: congressElRes.data || [],
+      stateFinance: stateFinRes.data || [],
+      mnFinance: mnFinRes.data || [],
+      winredDonations: winredRes.data || [],
     });
     setIsSearching(false);
 
@@ -251,13 +272,55 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     if (dbResults.finance.length > 0) {
       groups.push({
         key: "campaign-finance",
-        label: "Campaign Finance",
+        label: "Campaign Finance (Federal)",
         icon: <DollarSign className="h-3.5 w-3.5" />,
         section: "campaign-finance",
         results: dbResults.finance.map((f: any) => ({
           id: f.id,
           title: f.candidate_name === "Unknown" ? `${f.district || f.state_abbr}` : f.candidate_name,
-          subtitle: `${f.party || ""} • ${f.state_abbr} • $${(f.total_raised || 0).toLocaleString()} raised`,
+          subtitle: `${f.party || ""} • ${f.state_abbr} • ${f.office} • $${(f.total_raised || 0).toLocaleString()} raised • $${(f.cash_on_hand || 0).toLocaleString()} COH`,
+        })),
+      });
+    }
+
+    if (dbResults.stateFinance.length > 0) {
+      groups.push({
+        key: "state-finance",
+        label: "State Campaign Finance",
+        icon: <DollarSign className="h-3.5 w-3.5" />,
+        section: "campaign-finance",
+        results: dbResults.stateFinance.map((f: any) => ({
+          id: f.id,
+          title: f.candidate_name,
+          subtitle: `${f.party || ""} • ${f.state_abbr} • ${f.office || f.chamber} • $${(f.total_contributions || 0).toLocaleString()} raised • $${(f.net_cash || 0).toLocaleString()} net`,
+        })),
+      });
+    }
+
+    if (dbResults.mnFinance.length > 0) {
+      groups.push({
+        key: "mn-finance",
+        label: "MN CFB Finance",
+        icon: <DollarSign className="h-3.5 w-3.5" />,
+        section: "campaign-finance",
+        results: dbResults.mnFinance.map((f: any) => ({
+          id: f.id,
+          title: f.candidate_name,
+          subtitle: `${f.chamber} • ${f.committee_name} • $${(f.total_contributions || 0).toLocaleString()} raised`,
+        })),
+      });
+    }
+
+    if (dbResults.winredDonations.length > 0) {
+      groups.push({
+        key: "winred-donations",
+        label: "WinRed Donations",
+        icon: <Receipt className="h-3.5 w-3.5" />,
+        section: "voter-data",
+        results: dbResults.winredDonations.map((d: any) => ({
+          id: d.id,
+          title: `${d.donor_first_name || ""} ${d.donor_last_name || ""}`.trim() || "Anonymous",
+          subtitle: `$${(d.amount || 0).toLocaleString()} → ${d.candidate_name || d.committee_name || "Unknown"} • ${d.donor_city || ""}, ${d.donor_state || ""} • ${d.transaction_date || ""}${d.recurring ? " • Recurring" : ""}`,
         })),
       });
     }
@@ -327,7 +390,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
   const handleClear = () => {
     setQuery("");
-    setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [] });
+    setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [] });
     setHasSearched(false);
   };
 
