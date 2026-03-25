@@ -177,6 +177,7 @@ export default function ApiPage() {
                 { path: "/narrative-reports", desc: "Narrative reports" },
                 { path: "/local-impacts", desc: "Local impact" },
                 { path: "/voter-registration-stats", desc: "Voter registration stats" },
+                { path: "/search?search=query", desc: "Unified master search (supports ?categories= filter)" },
               ].map(ep => (
                 <div key={ep.path} className="flex justify-between px-2 py-0.5 border-b border-[hsl(var(--win98-light))] text-[9px]">
                   <code className="font-mono font-bold">GET {ep.path}</code>

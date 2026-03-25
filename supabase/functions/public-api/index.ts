@@ -16,6 +16,7 @@ const VALID_ENDPOINTS = [
   "narrative-reports",
   "local-impacts",
   "voter-registration-stats",
+  "search",
 ];
 
 async function hashKey(key: string): Promise<string> {
@@ -93,10 +94,11 @@ Deno.serve(async (req) => {
           })),
           authentication: "Include X-API-Key header with your API key",
           query_params: {
-            limit: "Max results (default 100, max 1000)",
+            limit: "Max results per category (default 100, max 1000)",
             offset: "Pagination offset (default 0)",
             state: "Filter by state abbreviation (where applicable)",
             search: "Search text (where applicable)",
+            categories: "Comma-separated category filter for /search (e.g. candidates,polling,bills)",
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -248,6 +250,141 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "search": {
+        const q = searchQuery;
+        if (!q || q.length < 2) {
+          return new Response(
+            JSON.stringify({ error: "search param required (min 2 chars)" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+
+        const likeQ = `%${q}%`;
+        const perCategoryLimit = Math.min(limit, 20);
+
+        const ALL_CATEGORIES = [
+          "candidates", "congress_members", "bills", "polling",
+          "campaign_finance", "state_finance", "election_results",
+          "forecasts", "maga_files", "narrative_reports",
+          "local_impacts", "voter_stats",
+        ];
+
+        const categoriesParam = url.searchParams.get("categories");
+        const activeCategories = categoriesParam
+          ? categoriesParam.split(",").map(c => c.trim().toLowerCase()).filter(c => ALL_CATEGORIES.includes(c))
+          : ALL_CATEGORIES;
+
+        const categoryQueries: Record<string, Promise<{ data: unknown[]; label: string }>> = {};
+
+        if (activeCategories.includes("candidates")) {
+          categoryQueries.candidates = supabase.from("candidate_profiles")
+            .select("id,name,slug,is_subpage,parent_slug")
+            .ilike("name", likeQ).limit(perCategoryLimit).order("name")
+            .then(r => ({ data: r.data || [], label: "Candidate Profiles" }));
+        }
+        if (activeCategories.includes("congress_members")) {
+          categoryQueries.congress_members = supabase.from("congress_members")
+            .select("id,name,state,district,party,chamber,bioguide_id,candidate_slug")
+            .or(`name.ilike.${likeQ},state.ilike.${likeQ},bioguide_id.ilike.${likeQ}`)
+            .limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Congress Members" }));
+        }
+        if (activeCategories.includes("bills")) {
+          categoryQueries.bills = supabase.from("congress_bills")
+            .select("id,bill_id,title,short_title,sponsor_name,status,latest_action_date")
+            .or(`title.ilike.${likeQ},short_title.ilike.${likeQ},sponsor_name.ilike.${likeQ},bill_id.ilike.${likeQ}`)
+            .order("latest_action_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Legislation" }));
+        }
+        if (activeCategories.includes("polling")) {
+          categoryQueries.polling = supabase.from("polling_data")
+            .select("id,candidate_or_topic,source,poll_type,approve_pct,disapprove_pct,date_conducted")
+            .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ}`)
+            .order("date_conducted", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Polling Data" }));
+        }
+        if (activeCategories.includes("campaign_finance")) {
+          categoryQueries.campaign_finance = supabase.from("campaign_finance")
+            .select("id,candidate_name,state_abbr,district,party,total_raised,total_spent,cash_on_hand,office,cycle")
+            .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ},district.ilike.${likeQ}`)
+            .order("total_raised", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Campaign Finance (Federal)" }));
+        }
+        if (activeCategories.includes("state_finance")) {
+          categoryQueries.state_finance = supabase.from("state_cfb_candidates")
+            .select("id,candidate_name,state_abbr,chamber,party,office,total_contributions,total_expenditures,net_cash")
+            .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ},committee_name.ilike.${likeQ}`)
+            .order("total_contributions", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "State Campaign Finance" }));
+        }
+        if (activeCategories.includes("election_results")) {
+          categoryQueries.election_results = supabase.from("congressional_election_results")
+            .select("id,candidate_name,state_abbr,district_number,party,election_year,votes,vote_pct,is_winner")
+            .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+            .order("election_year", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Election Results" }));
+        }
+        if (activeCategories.includes("forecasts")) {
+          categoryQueries.forecasts = supabase.from("election_forecasts")
+            .select("id,state_abbr,district,source,rating,race_type")
+            .or(`state_abbr.ilike.${likeQ},district.ilike.${likeQ},rating.ilike.${likeQ}`)
+            .eq("cycle", 2026).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Election Forecasts" }));
+        }
+        if (activeCategories.includes("maga_files")) {
+          categoryQueries.maga_files = supabase.from("maga_files")
+            .select("id,name,slug").ilike("name", likeQ).limit(perCategoryLimit).order("name")
+            .then(r => ({ data: r.data || [], label: "MAGA Files" }));
+        }
+        if (activeCategories.includes("narrative_reports")) {
+          categoryQueries.narrative_reports = supabase.from("narrative_reports")
+            .select("id,name,slug").ilike("name", likeQ).limit(perCategoryLimit).order("name")
+            .then(r => ({ data: r.data || [], label: "Narrative Reports" }));
+        }
+        if (activeCategories.includes("local_impacts")) {
+          categoryQueries.local_impacts = supabase.from("local_impacts")
+            .select("id,state,slug,summary").ilike("state", likeQ).limit(perCategoryLimit).order("state")
+            .then(r => ({ data: r.data || [], label: "Local Impacts" }));
+        }
+        if (activeCategories.includes("voter_stats")) {
+          categoryQueries.voter_stats = supabase.from("state_voter_stats")
+            .select("*").ilike("state", likeQ).limit(perCategoryLimit)
+            .order("total_registered", { ascending: false })
+            .then(r => ({ data: r.data || [], label: "Voter Registration Stats" }));
+        }
+
+        const entries = Object.entries(categoryQueries);
+        const settled = await Promise.all(entries.map(async ([key, promise]) => {
+          const res = await promise;
+          return { key, label: res.label, count: res.data.length, results: res.data };
+        }));
+
+        const categories = Object.fromEntries(
+          settled.filter(s => s.count > 0).map(s => [s.key, { label: s.label, count: s.count, results: s.results }])
+        );
+        const totalResults = settled.reduce((sum, s) => sum + s.count, 0);
+
+        // Special response format for search
+        supabase.rpc("log_api_request", {
+          p_key_id: keyId,
+          p_user_id: userId,
+          p_endpoint: "search",
+          p_status: 200,
+        }).then(() => {});
+
+        return new Response(
+          JSON.stringify({
+            query: q,
+            total_results: totalResults,
+            categories_searched: settled.length,
+            categories_with_results: Object.keys(categories).length,
+            available_categories: ALL_CATEGORIES,
+            categories,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: "Unknown endpoint" }),
@@ -297,6 +434,7 @@ function endpointDescription(endpoint: string): string {
     "narrative-reports": "Narrative research reports",
     "local-impacts": "Local impact analyses by state",
     "voter-registration-stats": "State voter registration statistics with registration rates and turnout data",
+    search: "Unified search across all databases (requires ?search= param, optional ?categories= filter)",
   };
   return descs[endpoint] || "";
 }
