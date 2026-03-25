@@ -171,13 +171,20 @@ export default function ApiPage() {
                 { path: "/candidates", desc: "Candidate profiles" },
                 { path: "/districts", desc: "Congressional districts" },
                 { path: "/state-legislative", desc: "State leg districts" },
-                { path: "/election-results", desc: "Election results" },
+                { path: "/election-results", desc: "State leg election results" },
                 { path: "/polling", desc: "Polling data" },
                 { path: "/maga-files", desc: "MAGA files" },
                 { path: "/narrative-reports", desc: "Narrative reports" },
                 { path: "/local-impacts", desc: "Local impact" },
                 { path: "/voter-registration-stats", desc: "Voter registration stats" },
-                { path: "/search?search=query", desc: "Unified master search (supports ?categories= filter)" },
+                { path: "/congress-members", desc: "Congress members" },
+                { path: "/congress-bills", desc: "Federal legislation" },
+                { path: "/campaign-finance", desc: "Federal campaign finance" },
+                { path: "/election-forecasts", desc: "Race ratings & forecasts" },
+                { path: "/congressional-elections", desc: "Congressional election results" },
+                { path: "/state-finance", desc: "State campaign finance" },
+                { path: "/mn-finance", desc: "MN campaign finance" },
+                { path: "/search?search=query", desc: "Unified master search" },
               ].map(ep => (
                 <div key={ep.path} className="flex justify-between px-2 py-0.5 border-b border-[hsl(var(--win98-light))] text-[9px]">
                   <code className="font-mono font-bold">GET {ep.path}</code>
