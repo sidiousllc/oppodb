@@ -17,7 +17,7 @@ interface DashboardProps {
   districts?: DistrictProfile[];
 }
 
-export function Dashboard({ onNavigateSection, candidateCount, districtCount }: DashboardProps) {
+export function Dashboard({ onNavigateSection, candidateCount, districtCount, districts = [] }: DashboardProps) {
   const [polls, setPolls] = useState<PollEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
