@@ -78,8 +78,7 @@ Deno.test({ name: "user_integrations RLS isolation", sanitizeResources: false, s
     await t.step("owner can delete own integrations", async () => {
       const { data } = await client1.from("user_integrations").delete().eq("service", "nationbuilder").select();
       assert(data && data.length > 0, "Owner should be able to delete own row");
-  }
-});
+    });
 
   } finally {
     await adminClient.from("user_integrations").delete().eq("user_id", user1Id);
@@ -87,7 +86,7 @@ Deno.test({ name: "user_integrations RLS isolation", sanitizeResources: false, s
     await adminClient.auth.admin.deleteUser(user1Id);
     await adminClient.auth.admin.deleteUser(user2Id);
   }
-});
+}});
 
 Deno.test({ name: "credential-vault encrypts at rest", sanitizeResources: false, sanitizeOps: false, fn: async (t) => {
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
