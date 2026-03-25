@@ -100,6 +100,26 @@ export default function Index() {
     supabase.from("campaign_finance").select("id", { count: "exact", head: true }).then(({ count }) => {
       setFinanceCount(count ?? 0);
     });
+
+    // Merge DB data for MAGA files, local impact, and narrative reports
+    supabase.from("maga_files").select("name, slug, content").order("name").then(({ data }) => {
+      if (data && data.length > 0) {
+        mergeMagaFilesFromDB(data);
+        setDataVersion((v) => v + 1);
+      }
+    });
+    supabase.from("local_impacts").select("state, slug, summary, content").order("state").then(({ data }) => {
+      if (data && data.length > 0) {
+        mergeLocalImpactFromDB(data);
+        setDataVersion((v) => v + 1);
+      }
+    });
+    supabase.from("narrative_reports").select("name, slug, content").order("name").then(({ data }) => {
+      if (data && data.length > 0) {
+        mergeNarrativeReportsFromDB(data);
+        setDataVersion((v) => v + 1);
+      }
+    });
   }, []);
 
   const handleCensusSync = useCallback(async () => {
