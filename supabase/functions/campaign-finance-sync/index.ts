@@ -14,14 +14,6 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
     "Vary": "Origin",
   };
 }
-function parseJwtClaims(token: string): Record<string, unknown> | null {
-  const parts = token.split(".");
-  if (parts.length < 2) return null;
-  try {
-    const payload = parts[1].replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-    return JSON.parse(atob(payload)) as Record<string, unknown>;
-  } catch { return null; }
-}
 
 const FEC_BASE = "https://api.open.fec.gov/v1";
 // FEC provides a demo key; for production use apply at api.data.gov
@@ -256,34 +248,45 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // --- Authentication ---
+    // --- Authentication & Authorization ---
+    // JWT validation is enforced at platform level (verify_jwt=true)
+    // Extract user from validated JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }),
+      return new Response(JSON.stringify({ error: "Unauthorized: Missing or invalid Authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const token = authHeader.slice(7).trim();
-    const claims = parseJwtClaims(token);
-    if (claims?.role !== "service_role") {
-      const authClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user }, error: authError } = await authClient.auth.getUser(token);
-      if (authError || !user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      const adminClient = createClient(supabaseUrl, supabaseKey);
-      const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: user.id, _role: "admin" });
-      if (!roleCheck) {
-        return new Response(JSON.stringify({ error: "Forbidden: admin role required" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Create client with user's JWT to verify authentication
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    // Verify user is authenticated (JWT already validated by platform)
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized: Invalid or expired token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Verify user has admin role
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: isAdmin, error: roleError } = await adminClient.rpc("has_role", { 
+      _user_id: user.id, 
+      _role: "admin" 
+    });
+
+    if (roleError || !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden: Admin role required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Use service role client for privileged operations (user is verified admin)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const url = new URL(req.url);
     const stateParam = url.searchParams.get("state");
