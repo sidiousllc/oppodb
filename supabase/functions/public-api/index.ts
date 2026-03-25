@@ -390,7 +390,7 @@ Deno.serve(async (req) => {
           "candidates", "congress_members", "bills", "polling",
           "campaign_finance", "state_finance", "election_results",
           "forecasts", "maga_files", "narrative_reports",
-          "local_impacts", "voter_stats",
+          "local_impacts", "voter_stats", "mn_finance",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
@@ -475,6 +475,13 @@ Deno.serve(async (req) => {
             .select("*").ilike("state", likeQ).limit(perCategoryLimit)
             .order("total_registered", { ascending: false })
             .then(r => ({ data: r.data || [], label: "Voter Registration Stats" }));
+        }
+        if (activeCategories.includes("mn_finance")) {
+          categoryQueries.mn_finance = supabase.from("mn_cfb_candidates")
+            .select("id,candidate_name,chamber,committee_name,total_contributions,total_expenditures,net_cash")
+            .or(`candidate_name.ilike.${likeQ},committee_name.ilike.${likeQ}`)
+            .order("total_contributions", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "MN Campaign Finance" }));
         }
 
         const entries = Object.entries(categoryQueries);
