@@ -301,7 +301,7 @@ export default function AuthPage() {
                   setLoading(true);
                   setMessage(null);
                   const result = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
+                    redirect_uri: getRedirectOrigin(),
                   });
                   if (result?.error) {
                     setMessage({ type: "error", text: result.error.message || "Google sign-in failed" });
