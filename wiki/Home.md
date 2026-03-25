@@ -30,7 +30,9 @@ OppoDB is a comprehensive opposition research database for political campaigns, 
 - **Role Groups** with automatic role synchronization
 - **Invite & Access Request** workflows for controlled onboarding
 - **Transactional Email Pipeline** with queue, suppression, and unsubscribe support
-- **Public REST API & MCP Server** for programmatic and AI agent access
+- **Public REST API** with 17 endpoints covering all data sources
+- **MCP Server** with 18 tools for AI agent access (Claude, GPT, etc.)
+- **Unified Master Search** across 13 data categories via API and web UI
 - **In-App Mail & Chat** with real email notification delivery
 - **Real-Time Presence** via AOL Buddy List
 - **Documentation Wiki** accessible directly within the application
