@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2 } from "lucide-react";
+import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown } from "lucide-react";
+import { exportSearchCSV, exportSearchPDF } from "@/lib/masterSearchExport";
 import { supabase } from "@/integrations/supabase/client";
 import { searchCandidates } from "@/data/candidates";
 import { searchMagaFiles } from "@/data/magaFiles";
@@ -466,6 +467,24 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
               <span className="text-[hsl(var(--muted-foreground))] flex items-center gap-1">
                 <Loader2 className="h-3 w-3 animate-spin" /> Searching databases...
               </span>
+            )}
+            {totalResults > 0 && (
+              <div className="ml-auto flex items-center gap-1">
+                <button
+                  onClick={() => exportSearchCSV(query, allGroups)}
+                  className="win98-button text-[9px] flex items-center gap-1 px-2 py-0.5"
+                  title="Export as CSV"
+                >
+                  <Download className="h-3 w-3" /> CSV
+                </button>
+                <button
+                  onClick={() => exportSearchPDF(query, allGroups)}
+                  className="win98-button text-[9px] flex items-center gap-1 px-2 py-0.5"
+                  title="Export as PDF"
+                >
+                  <FileDown className="h-3 w-3" /> PDF
+                </button>
+              </div>
             )}
           </div>
 
