@@ -55,6 +55,19 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
   }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [] });
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Ctrl+K shortcut to focus search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
+
   const isCurrentQuerySaved = savedSearches.includes(query.trim());
 
   // Local/static data search (instant)
@@ -414,6 +427,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               className="win98-input w-full pl-7 pr-7"
+              ref={inputRef}
               placeholder="Search candidates, districts, bills, finance, polling, elections..."
               maxLength={500}
             />
