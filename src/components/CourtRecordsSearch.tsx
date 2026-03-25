@@ -16,7 +16,7 @@ const EXAMPLE_SEARCHES = [
 export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
   const [query, setQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+  const [lastSearched, setLastSearched] = useState<string | null>(null);
 
   const handleSearch = useCallback(() => {
     const trimmed = query.trim();
