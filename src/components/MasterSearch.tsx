@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt } from "lucide-react";
+import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users } from "lucide-react";
 import { exportSearchCSV, exportSearchPDF } from "@/lib/masterSearchExport";
 import { supabase } from "@/integrations/supabase/client";
 import { searchCandidates } from "@/data/candidates";
@@ -52,7 +52,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     stateFinance: any[];
     mnFinance: any[];
     winredDonations: any[];
-  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [] });
+    voterStats: any[];
+  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
   const [hasSearched, setHasSearched] = useState(false);
 
   // Ctrl+K shortcut to focus search
@@ -160,7 +161,33 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
     const likeQ = `%${q}%`;
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes] = await Promise.all([
+    // Fetch voter registration stats via edge function
+    const fetchVoterStats = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return [];
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voter-registration-stats`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        );
+        const data = await response.json();
+        if (data.states) {
+          const qLower = q.toLowerCase();
+          return data.states.filter((s: any) =>
+            s.state?.toLowerCase().includes(qLower)
+          ).slice(0, 10);
+        }
+        return [];
+      } catch { return []; }
+    };
+
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -205,6 +232,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`donor_last_name.ilike.${likeQ},donor_city.ilike.${likeQ},candidate_name.ilike.${likeQ},committee_name.ilike.${likeQ},donor_state.ilike.${likeQ}`)
         .order("transaction_date", { ascending: false })
         .limit(10),
+      fetchVoterStats(),
     ]);
 
     setDbResults({
@@ -217,6 +245,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       stateFinance: stateFinRes.data || [],
       mnFinance: mnFinRes.data || [],
       winredDonations: winredRes.data || [],
+      voterStats: voterStatsRes || [],
     });
     setIsSearching(false);
 
@@ -396,6 +425,20 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    if (dbResults.voterStats.length > 0) {
+      groups.push({
+        key: "voter-stats",
+        label: "Voter Registration Stats",
+        icon: <Users className="h-3.5 w-3.5" />,
+        section: "voter-data",
+        results: dbResults.voterStats.map((s: any) => ({
+          id: s.state,
+          title: s.state,
+          subtitle: `${(s.total_registered || 0).toLocaleString()} registered • ${(s.total_eligible || 0).toLocaleString()} eligible • ${s.registration_rate ? `${s.registration_rate.toFixed(1)}%` : "N/A"} rate${s.turnout_general_2024 ? ` • ${s.turnout_general_2024}% turnout '24` : ""}`,
+        })),
+      });
+    }
+
     return groups;
   }, [dbResults]);
 
@@ -404,7 +447,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
   const handleClear = () => {
     setQuery("");
-    setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [] });
+    setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
     setHasSearched(false);
   };
 
