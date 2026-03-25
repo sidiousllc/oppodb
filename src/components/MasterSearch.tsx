@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users } from "lucide-react";
+import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users, Filter } from "lucide-react";
 import { exportSearchCSV, exportSearchPDF } from "@/lib/masterSearchExport";
 import { supabase } from "@/integrations/supabase/client";
 import { searchCandidates } from "@/data/candidates";
@@ -442,8 +442,20 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     return groups;
   }, [dbResults]);
 
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategory = useCallback((key: string) => {
+    setHiddenCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
   const allGroups = [...localResults, ...dbGroups];
-  const totalResults = allGroups.reduce((s, g) => s + g.results.length, 0);
+  const filteredGroups = allGroups.filter(g => !hiddenCategories.has(g.key));
+  const totalResults = filteredGroups.reduce((s, g) => s + g.results.length, 0);
 
   const handleClear = () => {
     setQuery("");
