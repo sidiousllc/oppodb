@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { insertContent, updateContent, deleteContent } from "@/lib/contentAdmin";
 import { ArrowLeft, Save, Trash2, Loader2, Eye, Edit3 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
