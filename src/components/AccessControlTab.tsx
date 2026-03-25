@@ -382,26 +382,38 @@ export function AccessControlTab() {
                         {new Date(req.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-2 py-1.5 text-right">
-                        {req.status === "pending" && (
-                          <div className="flex items-center justify-end gap-0.5">
+                        <div className="flex items-center justify-end gap-0.5">
+                          {req.status === "pending" && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(req.id)}
+                                className="win98-button px-1 py-0 text-[9px] font-bold"
+                                style={{ color: "hsl(140, 60%, 30%)" }}
+                                title="Approve"
+                              >
+                                <Check className="h-2.5 w-2.5 inline mr-0.5" />Approve
+                              </button>
+                              <button
+                                onClick={() => handleDeny(req.id)}
+                                className="win98-button px-1 py-0 text-[9px]"
+                                style={{ color: "hsl(0, 65%, 50%)" }}
+                                title="Deny"
+                              >
+                                <X className="h-2.5 w-2.5 inline mr-0.5" />Deny
+                              </button>
+                            </>
+                          )}
+                          {req.status !== "pending" && (
                             <button
-                              onClick={() => handleApprove(req.id)}
-                              className="win98-button px-1 py-0 text-[9px] font-bold"
-                              style={{ color: "hsl(140, 60%, 30%)" }}
-                              title="Approve"
-                            >
-                              <Check className="h-2.5 w-2.5 inline mr-0.5" />Approve
-                            </button>
-                            <button
-                              onClick={() => handleDeny(req.id)}
+                              onClick={() => handleDeleteRequest(req.id)}
                               className="win98-button px-1 py-0 text-[9px]"
                               style={{ color: "hsl(0, 65%, 50%)" }}
-                              title="Deny"
+                              title="Remove"
                             >
-                              <X className="h-2.5 w-2.5 inline mr-0.5" />Deny
+                              <Trash2 className="h-2.5 w-2.5" />
                             </button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
