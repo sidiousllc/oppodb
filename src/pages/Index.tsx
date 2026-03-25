@@ -249,9 +249,9 @@ export default function Index() {
     return results;
   }, [search, filter, dataVersion]);
 
-  const filteredMaga = useMemo(() => searchMagaFiles(search), [search]);
-  const filteredLocal = useMemo(() => searchLocalImpact(search), [search]);
-  const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search]);
+  const filteredMaga = useMemo(() => searchMagaFiles(search), [search, dataVersion]);
+  const filteredLocal = useMemo(() => searchLocalImpact(search), [search, dataVersion]);
+  const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search, dataVersion]);
   const filteredDistricts = useMemo(() => {
     let results = searchDistricts(districts, search);
     if (trackedOnly) results = results.filter(d => trackedDistrictIds.has(d.district_id));
