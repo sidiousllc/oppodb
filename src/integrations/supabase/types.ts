@@ -1565,7 +1565,7 @@ export type Database = {
       }
       user_integrations: {
         Row: {
-          api_key_encrypted: string
+          api_key: string
           created_at: string
           display_name: string | null
           id: string
@@ -1576,7 +1576,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          api_key_encrypted: string
+          api_key: string
           created_at?: string
           display_name?: string | null
           id?: string
@@ -1587,7 +1587,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          api_key_encrypted?: string
+          api_key?: string
           created_at?: string
           display_name?: string | null
           id?: string
