@@ -99,12 +99,7 @@ export function CandidateEditor({ mode, initialData, onBack, onSaved }: Candidat
     if (!initialData) return;
     setDeleting(true);
     try {
-      const { error } = await supabase
-        .from("candidate_profiles")
-        .delete()
-        .eq("id", initialData.id);
-
-      if (error) throw error;
+      await deleteContent("candidate_profiles", initialData.id);
       toast.success("Candidate profile deleted");
       onSaved();
     } catch (e: unknown) {
