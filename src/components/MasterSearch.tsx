@@ -20,9 +20,26 @@ interface SearchResultGroup {
   results: { id: string; title: string; subtitle?: string; slug?: string }[];
 }
 
+const STORAGE_KEY = "master-search-saved";
+const RECENT_KEY = "master-search-recent";
+const MAX_SAVED = 20;
+const MAX_RECENT = 10;
+
+function loadFromStorage(key: string): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch { return []; }
+}
+
+function saveToStorage(key: string, items: string[]) {
+  localStorage.setItem(key, JSON.stringify(items));
+}
+
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [savedSearches, setSavedSearches] = useState<string[]>(() => loadFromStorage(STORAGE_KEY));
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => loadFromStorage(RECENT_KEY));
   const [dbResults, setDbResults] = useState<{
     polling: any[];
     finance: any[];
@@ -32,6 +49,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     congressElections: any[];
   }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [] });
   const [hasSearched, setHasSearched] = useState(false);
+
+  const isCurrentQuerySaved = savedSearches.includes(query.trim());
 
   // Local/static data search (instant)
   const localResults = useMemo<SearchResultGroup[]>(() => {
