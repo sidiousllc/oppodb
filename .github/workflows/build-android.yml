@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android
 
 on:
   workflow_dispatch:
@@ -11,6 +11,14 @@ on:
         options:
           - debug
           - release
+      output_format:
+        description: 'Output format'
+        required: true
+        default: 'apk'
+        type: choice
+        options:
+          - apk
+          - aab
 
 jobs:
   build:
@@ -54,12 +62,12 @@ jobs:
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release-keystore.jks
 
       - name: Build Debug APK
-        if: ${{ inputs.build_type == 'debug' }}
+        if: ${{ inputs.build_type == 'debug' && inputs.output_format == 'apk' }}
         working-directory: android
         run: ./gradlew assembleDebug
 
       - name: Build Release APK
-        if: ${{ inputs.build_type == 'release' }}
+        if: ${{ inputs.build_type == 'release' && inputs.output_format == 'apk' }}
         working-directory: android
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -67,6 +75,20 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$PWD/app/release-keystore.jks \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
+
+      - name: Build Release AAB
+        if: ${{ inputs.build_type == 'release' && inputs.output_format == 'aab' }}
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew bundleRelease \
             -Pandroid.injected.signing.store.file=$PWD/app/release-keystore.jks \
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
@@ -81,9 +103,17 @@ jobs:
           retention-days: 30
 
       - name: Upload Release APK
-        if: ${{ inputs.build_type == 'release' }}
+        if: ${{ inputs.build_type == 'release' && inputs.output_format == 'apk' }}
         uses: actions/upload-artifact@v4
         with:
           name: ordb-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
+      - name: Upload Release AAB
+        if: ${{ inputs.build_type == 'release' && inputs.output_format == 'aab' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ordb-release.aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
