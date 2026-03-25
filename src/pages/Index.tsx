@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, initCandidates } from "@/data/candidates";
 import { loadCandidateData } from "@/data/candidateContent";
-import { magaFiles, searchMagaFiles } from "@/data/magaFiles";
-import { localImpactReports, searchLocalImpact, getLocalImpactBySlug } from "@/data/localImpact";
-import { narrativeReports, searchNarrativeReports } from "@/data/narrativeReports";
+import { magaFiles, searchMagaFiles, mergeMagaFilesFromDB } from "@/data/magaFiles";
+import { localImpactReports, searchLocalImpact, getLocalImpactBySlug, mergeLocalImpactFromDB } from "@/data/localImpact";
+import { narrativeReports, searchNarrativeReports, mergeNarrativeReportsFromDB } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
 import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
 import { syncCongressionalElections } from "@/data/congressionalElections";
@@ -37,6 +37,8 @@ import { StateLegislativeSection } from "@/components/StateLegislativeSection";
 import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
+import { ResearchToolsDashboard } from "@/components/ResearchToolsDashboard";
+import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { LegislationSection } from "@/components/LegislationSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
@@ -61,6 +63,7 @@ export default function Index() {
   const [electionSyncing, setElectionSyncing] = useState(false);
   const [electionSyncProgress, setElectionSyncProgress] = useState("");
   const [trackedOnly, setTrackedOnly] = useState(false);
+  const [researchSubsection, setResearchSubsection] = useState<string | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
   const [pviFilter, setPviFilter] = useState<PVIFilter>("all");
@@ -96,6 +99,26 @@ export default function Index() {
     });
     supabase.from("campaign_finance").select("id", { count: "exact", head: true }).then(({ count }) => {
       setFinanceCount(count ?? 0);
+    });
+
+    // Merge DB data for MAGA files, local impact, and narrative reports
+    supabase.from("maga_files").select("name, slug, content").order("name").then(({ data }) => {
+      if (data && data.length > 0) {
+        mergeMagaFilesFromDB(data);
+        setDataVersion((v) => v + 1);
+      }
+    });
+    supabase.from("local_impacts").select("state, slug, summary, content").order("state").then(({ data }) => {
+      if (data && data.length > 0) {
+        mergeLocalImpactFromDB(data);
+        setDataVersion((v) => v + 1);
+      }
+    });
+    supabase.from("narrative_reports").select("name, slug, content").order("name").then(({ data }) => {
+      if (data && data.length > 0) {
+        mergeNarrativeReportsFromDB(data);
+        setDataVersion((v) => v + 1);
+      }
     });
   }, []);
 
@@ -201,6 +224,7 @@ export default function Index() {
     setSection(newSection);
     setSelectedSlug(null);
     setSearch("");
+    setResearchSubsection(null);
   }, []);
 
   const navigateBySlug = useCallback((rawSlug: string) => {
@@ -225,9 +249,9 @@ export default function Index() {
     return results;
   }, [search, filter, dataVersion]);
 
-  const filteredMaga = useMemo(() => searchMagaFiles(search), [search]);
-  const filteredLocal = useMemo(() => searchLocalImpact(search), [search]);
-  const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search]);
+  const filteredMaga = useMemo(() => searchMagaFiles(search), [search, dataVersion]);
+  const filteredLocal = useMemo(() => searchLocalImpact(search), [search, dataVersion]);
+  const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search, dataVersion]);
   const filteredDistricts = useMemo(() => {
     let results = searchDistricts(districts, search);
     if (trackedOnly) results = results.filter(d => trackedDistrictIds.has(d.district_id));
@@ -253,7 +277,7 @@ export default function Index() {
     "state-legislative": stateLegDistricts.length,
     polling: pollingCount,
     "campaign-finance": financeCount,
-    "voter-data": 0,
+    "research-tools": 0,
     "live-elections": 0,
     legislation: 0,
     documentation: 13,
@@ -277,7 +301,7 @@ export default function Index() {
     "state-legislative": "State Legislative Districts",
     polling: "Polling Data",
     "campaign-finance": "Campaign Finance",
-    "voter-data": "Voter Data",
+    "research-tools": "Research Tools",
     "live-elections": "Live Elections",
     legislation: "Legislation",
     documentation: "Documentation",
@@ -602,8 +626,18 @@ export default function Index() {
       return <CampaignFinanceSection onNavigateSlug={navigateBySlug} />;
     }
 
-    if (section === "voter-data") {
-      return <VoterDataSection />;
+    if (section === "research-tools") {
+      if (researchSubsection === "voter-data") {
+        return <VoterDataSection />;
+      }
+      if (researchSubsection === "court-records") {
+        return <CourtRecordsSearch onBack={() => setResearchSubsection(null)} />;
+      }
+      return (
+        <ResearchToolsDashboard
+          onNavigateSubsection={(sub) => setResearchSubsection(sub)}
+        />
+      );
     }
 
     if (section === "live-elections") {

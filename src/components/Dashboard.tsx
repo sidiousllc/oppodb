@@ -137,6 +137,8 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
     { label: "District Profiles", value: districtCount, emoji: "🧭", section: "district-intel" },
     { label: "MAGA Files", value: magaFiles.length, emoji: "⚠️", section: "maga-files" },
     { label: "Toss Up Races", value: tossUpDistricts.length, emoji: "🎯", section: "district-intel" },
+    { label: "Research Tools", value: 2, emoji: "🔬", section: "research-tools" },
+    { label: "Documentation", value: 13, emoji: "📖", section: "documentation" },
   ];
 
   return (
@@ -388,7 +390,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
             { label: "State Legislatures", emoji: "⚖️", section: "state-legislative" },
             { label: "Polling Data", emoji: "📊", section: "polling" },
             { label: "Campaign Finance", emoji: "💰", section: "campaign-finance" },
-            { label: "Voter Data", emoji: "🗳️", section: "voter-data" },
+            { label: "Research Tools", emoji: "🔬", section: "research-tools" },
             { label: "Live Elections", emoji: "🏛️", section: "live-elections" },
             { label: "Legislation", emoji: "📜", section: "legislation" },
           ].map((item) => (

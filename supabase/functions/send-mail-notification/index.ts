@@ -81,24 +81,31 @@ Deno.serve(async (req) => {
 
   // Route through send-transactional-email which handles rendering,
   // suppression checks, unsubscribe tokens, and proper queue enqueuing
-  const { data: sendResult, error: sendError } = await adminClient.functions.invoke(
-    'send-transactional-email',
-    {
-      body: {
-        templateName: 'mail-notification',
-        recipientEmail,
-        idempotencyKey,
-        templateData: {
-          senderName,
-          mailSubject: subject,
-          mailPreview: bodyText.length > 200 ? bodyText.substring(0, 200) + '...' : bodyText,
-        },
+  const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+    method: 'POST',
+    headers: {
+      Authorization: authHeader,
+      apikey: supabaseAnonKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      templateName: 'mail-notification',
+      recipientEmail,
+      idempotencyKey,
+      templateData: {
+        senderName,
+        mailSubject: subject,
+        mailPreview: bodyText.length > 200 ? bodyText.substring(0, 200) + '...' : bodyText,
       },
-    }
-  )
+    }),
+  })
 
-  if (sendError) {
-    console.error('Failed to send mail notification', { error: sendError })
+  if (!sendResponse.ok) {
+    const errorBody = await sendResponse.text()
+    console.error('Failed to send mail notification', {
+      status: sendResponse.status,
+      error: errorBody,
+    })
     return new Response(JSON.stringify({ error: 'Failed to send email' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
