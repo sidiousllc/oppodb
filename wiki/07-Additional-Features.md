@@ -146,6 +146,52 @@ The landing page when users log in, providing an overview of the entire database
 
 ---
 
+## Documentation Wiki (`DocumentationSection`)
+
+### Description
+A new in-app documentation reader that provides access to all OppoDB wiki documentation directly within the application. Users can browse, search, and read documentation without leaving the app.
+
+### Features
+- **Table of Contents Index**: Grid view of all 13 documentation pages with numbered entries
+- **Search**: Filter documentation pages by title
+- **Lazy Loading**: Wiki content loaded on-demand via dynamic imports for performance
+- **Markdown Rendering**: Full markdown support with Win98-styled components (tables, code blocks, blockquotes)
+- **Breadcrumb Navigation**: Shows current location within documentation hierarchy
+- **Quick Page Navigation**: Bottom nav allows jumping to other documentation pages without returning to index
+- **Integration**: Accessible from sidebar navigation and mobile nav
+
+### Data Model
+```typescript
+interface WikiPage {
+  slug: string;
+  title: string;
+  content: string;
+}
+```
+
+### Wiki Sections (13 pages)
+1. Overview
+2. Candidate Profiles
+3. District Intelligence
+4. Polling Data
+5. Campaign Finance
+6. State Legislative Districts
+7. Additional Features
+8. Authentication & User Management
+9. API Access
+10. UI Design System
+11. Data Sync & Sources
+12. Cook Ratings & Forecasting
+13. Admin Panel
+
+### Content Source
+Wiki content is loaded from `/wiki/*.md` files in the repository, enabling documentation to be version-controlled alongside code.
+
+### Admin Management
+Documentation wiki pages are automatically generated and maintained by syncing with the repository wiki folder.
+
+---
+
 ## Search
 
 ### Global Search (`SearchBar`)
