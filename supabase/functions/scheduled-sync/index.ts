@@ -1,10 +1,25 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const TRUSTED_ORIGINS = [
+  "https://oppodb.com",
+  "https://db.oppodb.com",
+  "https://ordb.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed = origin && (
+    TRUSTED_ORIGINS.includes(origin) ||
+    origin.endsWith(".lovableproject.com") ||
+    origin.endsWith(".lovable.app")
+  );
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : TRUSTED_ORIGINS[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Vary": "Origin",
+  };
+}
 
 const ALL_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS",
@@ -16,16 +31,12 @@ const STATES_PER_BATCH = 5;
 
 function parseJwtClaims(token: string): Record<string, unknown> | null {
   const parts = token.split(".");
-  if (parts.length < 2) {
-    return null;
-  }
-
+  if (parts.length < 2) return null;
   try {
     const payload = parts[1]
       .replaceAll("-", "+")
       .replaceAll("_", "/")
       .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-
     return JSON.parse(atob(payload)) as Record<string, unknown>;
   } catch {
     return null;
@@ -33,37 +44,23 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     // --- Authentication & Authorization ---
-    // Authentication: require service_role token to prevent unauthorized access
-    // This function performs privileged operations (DB writes, triggering syncs)
-    // and must only be invoked by authorized callers (e.g., cron jobs with service_role key)
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ error: "Unauthorized: Missing or invalid Authorization header" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const token = authHeader.slice("Bearer ".length).trim();
-    const claims = parseJwtClaims(token);
-    if (claims?.role !== "service_role") {
-      return new Response(
-        JSON.stringify({ error: "Forbidden: This endpoint requires service_role privileges" }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -73,7 +70,7 @@ Deno.serve(async (req) => {
 
     // Allow service_role tokens (for scheduled cron jobs)
     if (claims?.role === "service_role") {
-      console.log("Authenticated as service_role");
+      console.log("[SECURITY] Authenticated as service_role (cron)");
     } else {
       // For non-service_role tokens, verify user and check admin/moderator role
       const authClient = createClient(supabaseUrl, anonKey, {
@@ -84,10 +81,7 @@ Deno.serve(async (req) => {
       if (authError || !user) {
         return new Response(
           JSON.stringify({ error: "Unauthorized: Invalid user token" }),
-          {
-            status: 401,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
@@ -104,14 +98,11 @@ Deno.serve(async (req) => {
       if (!isAuthorized) {
         return new Response(
           JSON.stringify({ error: "Forbidden: Requires admin or moderator role" }),
-          {
-            status: 403,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      console.log(`Authenticated as user ${user.id} with roles: ${userRoles.join(", ")}`);
+      console.log(`[SECURITY] Authenticated as user ${user.id} with roles: ${userRoles.join(", ")}`);
     }
 
     // Create privileged client for sync operations (only after auth check passes)
@@ -119,13 +110,13 @@ Deno.serve(async (req) => {
 
     const results: Record<string, unknown> = {};
 
-    // 1. Sync GitHub research content
+    // 1. Sync GitHub research content — pass service_role key for internal call
     try {
       const ghRes = await fetch(`${supabaseUrl}/functions/v1/sync-github`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${anonKey}`,
+          "Authorization": `Bearer ${supabaseKey}`,
         },
         body: "{}",
       });
@@ -162,7 +153,7 @@ Deno.serve(async (req) => {
       try {
         const res = await fetch(
           `${supabaseUrl}/functions/v1/election-results-sync?state=${state}`,
-          { headers: { "Authorization": `Bearer ${anonKey}` } },
+          { headers: { "Authorization": `Bearer ${supabaseKey}` } },
         );
         const data = await res.json();
         electionResults.push({ state, status: res.ok ? "ok" : "error", upserted: data?.upserted ?? 0 });
@@ -185,7 +176,7 @@ Deno.serve(async (req) => {
       last_synced_at: new Date().toISOString(),
     });
 
-    // 3. Congressional election sync (batch 5 states per run, tracked via sync_metadata id=3)
+    // 3. Congressional election sync
     const { data: congMeta } = await supabase
       .from("sync_metadata")
       .select("*")
@@ -211,7 +202,7 @@ Deno.serve(async (req) => {
       try {
         const res = await fetch(
           `${supabaseUrl}/functions/v1/congressional-election-sync?state=${state}`,
-          { headers: { "Authorization": `Bearer ${anonKey}` } },
+          { headers: { "Authorization": `Bearer ${supabaseKey}` } },
         );
         const data = await res.json();
         congressionalResults.push({ state, status: res.ok ? "ok" : "error", upserted: data?.upserted ?? 0 });
@@ -234,7 +225,7 @@ Deno.serve(async (req) => {
       last_synced_at: new Date().toISOString(),
     });
 
-    // 4. Campaign finance sync (batch 5 states per run, tracked via sync_metadata id=4)
+    // 4. Campaign finance sync
     const { data: finMeta } = await supabase
       .from("sync_metadata")
       .select("*")
@@ -260,7 +251,7 @@ Deno.serve(async (req) => {
       try {
         const res = await fetch(
           `${supabaseUrl}/functions/v1/campaign-finance-sync?state=${state}`,
-          { headers: { "Authorization": `Bearer ${anonKey}` } },
+          { headers: { "Authorization": `Bearer ${supabaseKey}` } },
         );
         const data = await res.json();
         financeResults.push({ state, status: res.ok ? "ok" : "error", upserted: data?.upserted ?? 0 });
@@ -284,14 +275,12 @@ Deno.serve(async (req) => {
     });
 
     // 5. State-level campaign finance board sync (MN, PA, MI)
-    const stateCfbStates = ["MN", "PA", "MI"];
     const stateCfbResults: Array<{ state: string; status: string }> = [];
 
-    // MN CFB sync
     try {
       const res = await fetch(
         `${supabaseUrl}/functions/v1/mn-cfb-finance?action=sync`,
-        { headers: { "Authorization": `Bearer ${anonKey}` } },
+        { headers: { "Authorization": `Bearer ${supabaseKey}` } },
       );
       stateCfbResults.push({ state: "MN", status: res.ok ? "ok" : "error" });
       console.log(`MN CFB sync triggered: ${res.status}`);
@@ -300,12 +289,11 @@ Deno.serve(async (req) => {
       console.error("MN CFB sync error:", e);
     }
 
-    // PA and MI via state-cfb-finance
     for (const state of ["PA", "MI"]) {
       try {
         const res = await fetch(
           `${supabaseUrl}/functions/v1/state-cfb-finance?action=sync&state=${state}`,
-          { headers: { "Authorization": `Bearer ${anonKey}` } },
+          { headers: { "Authorization": `Bearer ${supabaseKey}` } },
         );
         stateCfbResults.push({ state, status: res.ok ? "ok" : "error" });
         console.log(`${state} CFB sync triggered: ${res.status}`);
@@ -317,10 +305,9 @@ Deno.serve(async (req) => {
 
     results.state_cfb = { states: stateCfbResults };
 
-    // 6. Auto-discover and generate candidate profiles (batch of 5 per run, tracked via sync_metadata id=5)
+    // 6. Auto-discover and generate candidate profiles
     const CANDIDATES_PER_BATCH = 5;
     try {
-      // Discover candidates without profiles from congress_members
       const { data: existingProfiles } = await supabase
         .from("candidate_profiles")
         .select("name")
@@ -328,7 +315,6 @@ Deno.serve(async (req) => {
       
       const existingNames = new Set((existingProfiles || []).map((p: any) => p.name.toLowerCase()));
 
-      // Get batch offset
       const { data: scraperMeta } = await supabase
         .from("sync_metadata")
         .select("*")
@@ -340,7 +326,6 @@ Deno.serve(async (req) => {
         scraperOffset = parseInt(scraperMeta.last_commit_sha) || 0;
       }
 
-      // Pull candidates from congress_members who lack profiles
       const { data: allMembers } = await supabase
         .from("congress_members")
         .select("name, state, party, district, chamber")
@@ -350,7 +335,6 @@ Deno.serve(async (req) => {
         (m: any) => !existingNames.has(m.name.toLowerCase())
       );
 
-      // Also check state election winners
       const { data: stateWinners } = await supabase
         .from("state_leg_election_results")
         .select("candidate_name, state_abbr, chamber, district_number, party")
@@ -365,7 +349,6 @@ Deno.serve(async (req) => {
         return true;
       });
 
-      // Combine and get batch
       const allCandidates = [
         ...needsProfile.map((m: any) => ({
           candidate_name: m.name,
@@ -402,12 +385,9 @@ Deno.serve(async (req) => {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${anonKey}`,
+                "Authorization": `Bearer ${supabaseKey}`,
               },
-              body: JSON.stringify({
-                action: "scrape",
-                ...candidate,
-              }),
+              body: JSON.stringify({ action: "scrape", ...candidate }),
             },
           );
           const data = await res.json();
@@ -416,8 +396,6 @@ Deno.serve(async (req) => {
             status: data.success ? "created" : "error",
           });
           console.log(`Profile ${candidate.candidate_name}: ${data.success ? "created" : "error"}`);
-
-          // Small delay between AI calls to avoid rate limiting
           await new Promise((r) => setTimeout(r, 2000));
         } catch (e) {
           scraperResults.push({ name: candidate.candidate_name, status: "error" });
@@ -442,6 +420,8 @@ Deno.serve(async (req) => {
       console.error("Candidate scraper error:", e);
     }
 
+    console.log(`[SECURITY] Sync completed. Results: ${JSON.stringify(Object.keys(results))}`);
+
     return new Response(
       JSON.stringify({ success: true, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -453,10 +433,7 @@ Deno.serve(async (req) => {
         success: false,
         error: error instanceof Error ? error.message : "Internal error",
       }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

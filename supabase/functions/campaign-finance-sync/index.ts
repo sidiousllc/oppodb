@@ -1,10 +1,27 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const TRUSTED_ORIGINS = [
+  "https://oppodb.com", "https://db.oppodb.com", "https://ordb.lovable.app",
+  "http://localhost:5173", "http://localhost:3000",
+];
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed = origin && (
+    TRUSTED_ORIGINS.includes(origin) || origin.endsWith(".lovableproject.com") || origin.endsWith(".lovable.app")
+  );
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : TRUSTED_ORIGINS[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Vary": "Origin",
+  };
+}
+function parseJwtClaims(token: string): Record<string, unknown> | null {
+  const parts = token.split(".");
+  if (parts.length < 2) return null;
+  try {
+    const payload = parts[1].replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
+    return JSON.parse(atob(payload)) as Record<string, unknown>;
+  } catch { return null; }
+}
 
 const FEC_BASE = "https://api.open.fec.gov/v1";
 // FEC provides a demo key; for production use apply at api.data.gov
@@ -231,13 +248,41 @@ async function syncStateFinance(
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // --- Authentication ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const token = authHeader.slice(7).trim();
+    const claims = parseJwtClaims(token);
+    if (claims?.role !== "service_role") {
+      const authClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const adminClient = createClient(supabaseUrl, supabaseKey);
+      const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      if (!roleCheck) {
+        return new Response(JSON.stringify({ error: "Forbidden: admin role required" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const url = new URL(req.url);
