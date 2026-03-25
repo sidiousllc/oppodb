@@ -106,7 +106,7 @@ export default function AdminPanel() {
       {/* Security Badge */}
       <div className="mt-3 flex justify-center">
         <a href="https://app.aikido.dev/audit-report/external/8A4IU23ayEgeSwA0wiLzIWS2/request" target="_blank" rel="noopener noreferrer">
-          <img src="https://app.aikido.dev/assets/badges/full-light-theme.svg" alt="Aikido Security Audit Report" className="h-8 opacity-70 hover:opacity-100 transition-opacity" />
+          <img src="/aikido-badge.svg" alt="Aikido Security Audit Report" className="h-8 opacity-70 hover:opacity-100 transition-opacity" />
         </a>
       </div>
     </Win98PageLayout>
