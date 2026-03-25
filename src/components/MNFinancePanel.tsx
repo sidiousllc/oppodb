@@ -49,6 +49,33 @@ type ChamberFilter = "all" | "house" | "senate" | "governor";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+function buildValidatedUrl(
+  baseUrl: string,
+  projectId: string,
+  action?: string,
+  regNum?: string
+): string {
+  try {
+    const url = new URL(baseUrl);
+    
+    // Validate project ID as a slug
+    if (!/^[A-Za-z0-9_-]+$/.test(projectId)) {
+      throw new Error('Invalid parameter');
+    }
+    
+    // Set the hostname with validated project ID
+    url.hostname = `${projectId}.supabase.co`;
+    
+    // Add query parameters
+    if (action) url.searchParams.set('action', action);
+    if (regNum) url.searchParams.set('reg_num', regNum);
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
+}
+
 function fmt(n: number | null): string {
   if (n == null) return "—";
   if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
@@ -245,7 +272,8 @@ function CandidateDetailView({ candidate, onBack }: { candidate: CandidateFinanc
     let cancelled = false;
     setYearlyLoading(true);
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    fetch(`https://${projectId}.supabase.co/functions/v1/mn-cfb-finance?action=yearly&reg_num=${encodeURIComponent(candidate.reg_num)}`)
+    const url = buildValidatedUrl('https://placeholder.supabase.co/functions/v1/mn-cfb-finance', projectId, 'yearly', candidate.reg_num);
+    fetch(url)
       .then(r => r.json())
       .then(data => {
         if (!cancelled && data.success) setYearlyData(data.yearly_breakdown || []);
@@ -367,8 +395,9 @@ export function MNFinancePanel() {
       if (chamber !== "all") params.set("chamber", chamber);
       if (search) params.set("search", search);
 
+      const url = buildValidatedUrl('https://placeholder.supabase.co/functions/v1/mn-cfb-finance', projectId) + '?' + params.toString();
       const resp = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/mn-cfb-finance?${params.toString()}`,
+        url,
         { headers: { "Content-Type": "application/json" } }
       );
       const data = await resp.json();
@@ -388,8 +417,9 @@ export function MNFinancePanel() {
     setSyncing(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const url = buildValidatedUrl('https://placeholder.supabase.co/functions/v1/mn-cfb-finance', projectId, 'sync');
       const resp = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/mn-cfb-finance?action=sync`,
+        url,
         { headers: { "Content-Type": "application/json" } }
       );
       const data = await resp.json();

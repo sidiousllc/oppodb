@@ -15,6 +15,32 @@ function stripFrontmatter(content: string): string {
   return match ? match[1].trim() : content.trim();
 }
 
+function buildValidatedUrl(
+  baseUrl: string,
+  filePath: string
+): string {
+  try {
+    // Minimal path validation (Do this before new URL(baseUrl), as URL() resolves dot-segments.)
+    if (filePath.includes('/../') || /\/%2e%2e\//i.test(filePath)) {
+      throw new Error('Invalid path');
+    }
+    
+    const url = new URL(baseUrl);
+    
+    // Validate path parameters
+    if (!/^[A-Za-z0-9_.\/-]+$/.test(filePath)) {
+      throw new Error('Invalid parameter');
+    }
+    
+    // Rebuild pathname from fixed literals + validated segments
+    url.pathname = url.pathname + filePath;
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS")
     return new Response(null, { headers: corsHeaders });
@@ -111,7 +137,7 @@ serve(async (req) => {
             if (existingSet.has(key)) continue; // Already stored
 
             // Fetch file content at this commit
-            const rawUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${sha}/${filePath}`;
+            const rawUrl = buildValidatedUrl(`https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${sha}/`, filePath);
             const contentRes = await fetch(rawUrl);
 
             if (!contentRes.ok) {
