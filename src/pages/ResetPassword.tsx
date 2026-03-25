@@ -28,7 +28,9 @@ export default function ResetPassword() {
     if (error) {
       setMessage({ type: "error", text: error.message });
     } else {
-      setMessage({ type: "success", text: "Password updated! Redirecting…" });
+      // Revoke all other sessions server-side after credential rotation
+      await supabase.functions.invoke("revoke-sessions");
+      setMessage({ type: "success", text: "Password updated! All other sessions revoked. Redirecting…" });
       setTimeout(() => navigate("/"), 1500);
     }
     setLoading(false);
