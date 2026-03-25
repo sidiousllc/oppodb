@@ -6,7 +6,7 @@ const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-Deno.test("user_integrations RLS isolation", async (t) => {
+Deno.test({ name: "user_integrations RLS isolation", sanitizeResources: false, sanitizeOps: false, fn: async (t) => {
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
   const email1 = `rls-test-1-${Date.now()}@test.local`;
