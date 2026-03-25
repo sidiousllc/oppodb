@@ -609,7 +609,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
               minZoom={1}
               maxZoom={20}
             >
-              <Geographies geography={geoData}>
+              <Geographies geography={LOCAL_CD_GEO}>
                 {({ geographies }) =>
                   geographies.map((geo) => {
                     const stateAbbr = geo.properties?.STATE_ABBR;
@@ -623,13 +623,12 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
                         geography={geo}
                         fill={getDistrictFill(districtId)}
                         stroke={highlightedDistrict === districtId ? "hsl(45, 100%, 40%)" : "hsl(0, 0%, 100%)"}
-                        strokeWidth={highlightedDistrict === districtId ? 2 : 0.3}
+                        strokeWidth={highlightedDistrict === districtId ? 2.5 : 0.8}
                         onMouseEnter={() => handleDistrictHover(stateAbbr, cdfips, districtRaw)}
                         onMouseLeave={() => setTooltip(null)}
                         onClick={() => {
                           if (districtId) {
                             if (zoomState.zoom <= 1) {
-                              // Zoom to state first
                               const st = districtId.split("-")[0];
                               handleStateClick(st);
                             } else {
