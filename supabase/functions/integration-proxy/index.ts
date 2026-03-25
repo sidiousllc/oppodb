@@ -6,6 +6,28 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// --- AES-256-GCM decryption ---
+async function getEncryptionKey(): Promise<CryptoKey> {
+  const hexKey = Deno.env.get("INTEGRATION_ENCRYPTION_KEY");
+  if (!hexKey || hexKey.length !== 64) {
+    throw new Error("INTEGRATION_ENCRYPTION_KEY not configured");
+  }
+  const keyBytes = new Uint8Array(32);
+  for (let i = 0; i < 32; i++) {
+    keyBytes[i] = parseInt(hexKey.substring(i * 2, i * 2 + 2), 16);
+  }
+  return crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["decrypt"]);
+}
+
+async function decryptValue(encrypted: string): Promise<string> {
+  const key = await getEncryptionKey();
+  const combined = Uint8Array.from(atob(encrypted), (c) => c.charCodeAt(0));
+  const iv = combined.slice(0, 12);
+  const ciphertext = combined.slice(12);
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+  return new TextDecoder().decode(decrypted);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -69,7 +91,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const apiKey = integration.api_key;
+    // Decrypt the API key at runtime
+    let apiKey: string;
+    try {
+      apiKey = await decryptValue(integration.api_key);
+    } catch {
+      // Fallback for legacy plaintext keys — decrypt will fail on non-base64/non-encrypted values
+      apiKey = integration.api_key;
+    }
     const slug = integration.slug || "";
 
     let result: any;

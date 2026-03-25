@@ -89,35 +89,39 @@ export function IntegrationSettings() {
     setSaving(serviceId);
     const existing = integrations.find(i => i.service === serviceId);
 
-    const record = {
-      user_id: user.id,
-      service: serviceId,
-      api_key: data.api_key || "",
-      slug: data.slug || "",
-      display_name: service.name,
-      is_active: true,
-      updated_at: new Date().toISOString(),
-    };
+    try {
+      // Save via credential-vault edge function (encrypts API key server-side)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not logged in");
 
-    let error;
-    if (existing) {
-      ({ error } = await supabase
-        .from("user_integrations" as any)
-        .update(record as any)
-        .eq("id", existing.id));
-    } else {
-      ({ error } = await supabase
-        .from("user_integrations" as any)
-        .insert(record as any));
-    }
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/credential-vault`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            action: "save",
+            api_key: data.api_key || "",
+            service: serviceId,
+            slug: data.slug || "",
+            display_name: service.name,
+            integration_id: existing?.id,
+          }),
+        }
+      );
 
-    if (error) {
-      toast.error(`Failed to save: ${error.message}`);
-    } else {
-      toast.success(`${service.name} credentials saved`);
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || "Failed to save");
+
+      toast.success(`${service.name} credentials saved (encrypted)`);
       await loadIntegrations();
-      // Clear form
       setFormData(prev => ({ ...prev, [serviceId]: {} }));
+    } catch (e: any) {
+      toast.error(`Failed to save: ${e.message}`);
     }
     setSaving(null);
   }
