@@ -81,48 +81,80 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
       return;
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
     const cdNum = districtNum === "AL" ? "01" : districtNum.padStart(2, "0");
-
-    const ESRI_URL =
-      "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query";
-
-    // Build URL with numeric CDFIPS (no quotes - the field is numeric)
-    const buildUrl = (cd: string) => {
-      const params = new URLSearchParams({
-        where: `STATE_ABBR='${stateAbbr}' AND CDFIPS=${cd}`,
-        outFields: "STATE_ABBR,CDFIPS",
-        f: "geojson",
-        outSR: "4326",
-        returnGeometry: "true",
-        maxAllowableOffset: "0.005",
-      });
-      return `${ESRI_URL}?${params}`;
-    };
-
-    const tryFetch = async (url: string): Promise<DistrictGeoJSON | null> => {
-      try {
-        const r = await fetch(url, { signal: controller.signal });
-        if (!r.ok) return null;
-        const data = await r.json();
-        if (data.error) return null;
-        if (data.features && data.features.length > 0) return data;
-        return null;
-      } catch (e) {
-        if ((e as Error).name === "AbortError") throw e;
-        return null;
-      }
-    };
 
     (async () => {
       try {
-        let result = await tryFetch(buildUrl(cdNum));
+        // Try local GeoJSON first (fast, reliable)
+        const localRes = await fetch("/us-cd-118.json");
+        if (localRes.ok) {
+          const allGeo = await localRes.json();
+          if (allGeo?.features) {
+            const matching = allGeo.features.filter(
+              (f: { properties: Record<string, unknown> }) =>
+                f.properties.STATE_ABBR === stateAbbr &&
+                String(f.properties.CDFIPS).padStart(2, "0") === cdNum
+            );
+            if (matching.length > 0) {
+              setDistrictGeo({ type: "FeatureCollection", features: matching });
+              setLoading(false);
+              return;
+            }
+            // Try at-large fallback
+            if (cdNum !== "01") {
+              const atLarge = allGeo.features.filter(
+                (f: { properties: Record<string, unknown> }) =>
+                  f.properties.STATE_ABBR === stateAbbr &&
+                  String(f.properties.CDFIPS).padStart(2, "0") === "01"
+              );
+              if (atLarge.length > 0) {
+                setDistrictGeo({ type: "FeatureCollection", features: atLarge });
+                setLoading(false);
+                return;
+              }
+            }
+          }
+        }
 
-        // Try at-large fallback
+        // Fallback to Esri API
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        const ESRI_URL =
+          "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query";
+
+        const buildUrl = (cd: string) => {
+          const params = new URLSearchParams({
+            where: `STATE_ABBR='${stateAbbr}' AND CDFIPS=${cd}`,
+            outFields: "STATE_ABBR,CDFIPS",
+            f: "geojson",
+            outSR: "4326",
+            returnGeometry: "true",
+            maxAllowableOffset: "0.005",
+          });
+          return `${ESRI_URL}?${params}`;
+        };
+
+        const tryFetch = async (url: string): Promise<DistrictGeoJSON | null> => {
+          try {
+            const r = await fetch(url, { signal: controller.signal });
+            if (!r.ok) return null;
+            const data = await r.json();
+            if (data.error) return null;
+            if (data.features && data.features.length > 0) return data;
+            return null;
+          } catch (e) {
+            if ((e as Error).name === "AbortError") throw e;
+            return null;
+          }
+        };
+
+        let result = await tryFetch(buildUrl(cdNum));
         if (!result && cdNum !== "01") {
           result = await tryFetch(buildUrl("01"));
         }
+
+        clearTimeout(timeoutId);
 
         if (result) {
           setDistrictGeo(result);
@@ -133,14 +165,8 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
         if ((e as Error).name !== "AbortError") setError(true);
       } finally {
         setLoading(false);
-        clearTimeout(timeoutId);
       }
     })();
-
-    return () => {
-      controller.abort();
-      clearTimeout(timeoutId);
-    };
   }, [fips, districtNum, stateAbbr]);
 
   // Compute bounding box from district geometry to auto-center
