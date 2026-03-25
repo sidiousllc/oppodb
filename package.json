@@ -97,9 +97,9 @@
   "overrides": {
     "d3-color@<=3.1.0": "3.1.0",
     "flatted": "3.4.2",
-    "rollup": "4.59.0",
     "glob": "10.5.0",
     "react-router": "6.30.2",
+    "rollup": "4.59.0",
     "@remix-run/router": "1.23.2",
     "lodash": "4.17.23",
     "js-yaml": "4.1.1",

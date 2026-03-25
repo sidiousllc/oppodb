@@ -68,11 +68,7 @@ function buildValidatedUrl(
     
     // Domain validation
     const allowedDomains = ['supabase.co'];
-    const hostname = url.hostname;
-    const isAllowedDomain = allowedDomains.some(domain => 
-      hostname === domain || hostname.endsWith('.' + domain)
-    );
-    if (!isAllowedDomain) {
+    if (!allowedDomains.includes(url.hostname)) {
       throw new Error('Invalid host');
     }
     

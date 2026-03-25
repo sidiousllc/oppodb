@@ -82,15 +82,17 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
     }
 
     const controller = new AbortController();
-    const cdNum = districtNum === "AL" ? "00" : districtNum.padStart(2, "0");
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const cdNum = districtNum === "AL" ? "01" : districtNum.padStart(2, "0");
 
     const ESRI_URL =
       "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query";
 
+    // Build URL with numeric CDFIPS (no quotes - the field is numeric)
     const buildUrl = (cd: string) => {
       const params = new URLSearchParams({
-        where: `STATE_ABBR='${stateAbbr}' AND CDFIPS='${cd}'`,
-        outFields: "STATE_ABBR,CDFIPS,BASENAME",
+        where: `STATE_ABBR='${stateAbbr}' AND CDFIPS=${cd}`,
+        outFields: "STATE_ABBR,CDFIPS",
         f: "geojson",
         outSR: "4326",
         returnGeometry: "true",
@@ -117,9 +119,9 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
       try {
         let result = await tryFetch(buildUrl(cdNum));
 
-        // Try at-large
-        if (!result && cdNum !== "00") {
-          result = await tryFetch(buildUrl("00"));
+        // Try at-large fallback
+        if (!result && cdNum !== "01") {
+          result = await tryFetch(buildUrl("01"));
         }
 
         if (result) {
@@ -131,11 +133,15 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
         if ((e as Error).name !== "AbortError") setError(true);
       } finally {
         setLoading(false);
+        clearTimeout(timeoutId);
       }
     })();
 
-    return () => controller.abort();
-  }, [fips, districtNum]);
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [fips, districtNum, stateAbbr]);
 
   // Compute bounding box from district geometry to auto-center
   const bounds = useMemo(() => {
@@ -179,7 +185,11 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
   }
 
   if (error || !districtGeo || !view) {
-    return null; // Silently fail — the rest of the detail page still works
+    return (
+      <div className="bg-card rounded-xl border border-border p-6 mb-6 flex items-center justify-center h-32">
+        <p className="text-sm text-muted-foreground">District boundary unavailable</p>
+      </div>
+    );
   }
 
   // Convert GeoJSON features to SVG paths manually for the district overlay

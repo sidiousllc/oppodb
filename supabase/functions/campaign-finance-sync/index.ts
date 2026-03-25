@@ -69,14 +69,42 @@ function partyLetter(party: string | null): string | null {
   return p.slice(0, 3);
 }
 
-async function fetchFECPage(endpoint: string, params: Record<string, string>): Promise<any> {
-  const url = new URL(`${FEC_BASE}${endpoint}`);
-  url.searchParams.set("api_key", FEC_API_KEY);
-  url.searchParams.set("per_page", "100");
-  for (const [k, v] of Object.entries(params)) {
-    url.searchParams.set(k, v);
+function buildValidatedFECUrl(baseUrl: string, endpoint: string, params: Record<string, string>): string {
+  try {
+    // Minimal path validation
+    if (baseUrl.includes('/../') || /\/%2e%2e\//i.test(baseUrl)) {
+      throw new Error('Invalid path');
+    }
+    if (endpoint.includes('/../') || /\/%2e%2e\//i.test(endpoint)) {
+      throw new Error('Invalid path');
+    }
+    
+    const url = new URL(baseUrl);
+    
+    // Validate endpoint parameter
+    if (!/^\/[A-Za-z0-9_\/-]+\/?$/.test(endpoint)) {
+      throw new Error('Invalid parameter');
+    }
+    
+    // Build pathname from fixed base + validated endpoint
+    url.pathname = url.pathname.replace(/\/$/, '') + endpoint;
+    
+    // Add query parameters
+    url.searchParams.set("api_key", FEC_API_KEY);
+    url.searchParams.set("per_page", "100");
+    for (const [k, v] of Object.entries(params)) {
+      url.searchParams.set(k, v);
+    }
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
   }
-  const res = await fetch(url.toString());
+}
+
+async function fetchFECPage(endpoint: string, params: Record<string, string>): Promise<any> {
+  const url = buildValidatedFECUrl(FEC_BASE, endpoint, params);
+  const res = await fetch(url);
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`FEC API ${res.status}: ${text.slice(0, 200)}`);

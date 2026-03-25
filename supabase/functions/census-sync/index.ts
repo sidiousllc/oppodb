@@ -125,6 +125,31 @@ function safePct(numerator: string, denominator: string): number | null {
   return Math.round((num / den) * 1000) / 10;
 }
 
+function buildValidatedCensusUrl(baseUrl: string, stateFips?: string): string {
+  try {
+    const url = new URL(baseUrl);
+    
+    // Validate state FIPS parameter
+    if (stateFips && !/^[0-9]+$/.test(stateFips)) {
+      throw new Error('Invalid parameter');
+    }
+    
+    // Add query parameters
+    url.searchParams.set('get', CENSUS_VARS);
+    if (stateFips) {
+      url.searchParams.set('for', 'congressional district:*');
+      url.searchParams.set('in', `state:${stateFips}`);
+    } else {
+      url.searchParams.set('for', 'congressional district:*');
+      url.searchParams.set('in', 'state:*');
+    }
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
+}
+
 Deno.serve(async (req) => {
   const origin = req.headers.get("Origin");
   const corsHeaders = getCorsHeaders(origin);
@@ -169,11 +194,7 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const stateFips = url.searchParams.get("state_fips") || undefined;
 
-    const geoParam = stateFips
-      ? `&for=congressional%20district:*&in=state:${stateFips}`
-      : `&for=congressional%20district:*&in=state:*`;
-
-    const censusUrl = `${CENSUS_BASE}?get=${CENSUS_VARS}${geoParam}`;
+    const censusUrl = buildValidatedCensusUrl(CENSUS_BASE, stateFips);
     console.log("Fetching Census data:", censusUrl);
 
     const response = await fetch(censusUrl);
