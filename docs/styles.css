@@ -1,0 +1,588 @@
+/* Win98 Help Application Styles */
+@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --win98-bg: #c0c0c0;
+  --win98-surface: #dfdfdf;
+  --win98-surface-light: #ffffff;
+  --win98-surface-dark: #808080;
+  --win98-surface-darker: #404040;
+  --win98-text: #000000;
+  --win98-blue: #000080;
+  --win98-selection: #000080;
+  --win98-title-bg: #000080;
+  --win98-title-text: #ffffff;
+  --win98-link: #0000ff;
+  --win98-link-visited: #800080;
+  --win98-code-bg: #ffffcc;
+  --win98-inset-light: #808080;
+  --win98-inset-dark: #ffffff;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Pixelify Sans', 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 11px;
+  background: var(--win98-bg);
+  color: var(--win98-text);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Pearl/pearlite background pattern */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+    linear-gradient(135deg, #d4d4d4 0%, #c0c0c0 50%, #b0b0b0 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.desktop {
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Win98 Window */
+.help-window {
+  width: 900px;
+  height: 650px;
+  background: var(--win98-bg);
+  border: 2px solid;
+  border-color: var(--win98-surface-light) var(--win98-surface-darker) var(--win98-surface-darker) var(--win98-surface-light);
+  box-shadow: inset 1px 1px 0 var(--win98-surface-light), inset -1px -1px 0 var(--win98-surface-dark);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.help-window.active {
+  z-index: 10;
+}
+
+/* Title Bar */
+.title-bar {
+  background: linear-gradient(90deg, var(--win98-title-bg) 0%, #1084d0 100%);
+  padding: 2px 3px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 22px;
+}
+
+.title-bar-text {
+  color: var(--win98-title-text);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  padding-left: 2px;
+}
+
+.title-bar-controls {
+  display: flex;
+  gap: 2px;
+}
+
+.title-btn {
+  width: 16px;
+  height: 14px;
+  background: var(--win98-bg);
+  border: 1px solid;
+  border-color: var(--win98-surface-light) var(--win98-surface-darker) var(--win98-surface-darker) var(--win98-surface-light);
+  font-family: 'Marlett', sans-serif;
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding-bottom: 2px;
+}
+
+.title-btn:active {
+  border-color: var(--win98-surface-darker) var(--win98-surface-light) var(--win98-surface-light) var(--win98-surface-darker);
+}
+
+/* Window Body */
+.window-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--win98-bg);
+  overflow: hidden;
+}
+
+/* Toolbar */
+.toolbar {
+  background: var(--win98-bg);
+  border-bottom: 1px solid var(--win98-surface-dark);
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(180deg, var(--win98-surface-light) 0%, var(--win98-bg) 100%);
+}
+
+.tb-btn {
+  width: 23px;
+  height: 22px;
+  background: var(--win98-bg);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--win98-text);
+}
+
+.tb-btn:hover {
+  border: 1px solid;
+  border-color: var(--win98-surface-light) var(--win98-surface-dark) var(--win98-surface-dark) var(--win98-surface-light);
+}
+
+.tb-btn:active {
+  border-color: var(--win98-surface-dark) var(--win98-surface-light) var(--win98-surface-light) var(--win98-surface-dark);
+}
+
+.toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--win98-surface-dark);
+  margin: 0 4px;
+}
+
+/* Content Area */
+.content-area {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  background: var(--win98-bg);
+}
+
+/* Navigation Pane */
+.nav-pane {
+  width: 220px;
+  background: var(--win98-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Tabs */
+.tab-row {
+  display: flex;
+  background: var(--win98-bg);
+  padding: 4px 4px 0 4px;
+  gap: 0;
+}
+
+.tab {
+  padding: 4px 12px;
+  background: var(--win98-bg);
+  border: 1px solid transparent;
+  border-bottom: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--win98-text);
+  position: relative;
+  top: 1px;
+}
+
+.tab.active {
+  background: var(--win98-bg);
+  border: 1px solid var(--win98-surface-dark);
+  border-bottom: 1px solid var(--win98-bg);
+  z-index: 1;
+}
+
+.tab:not(.active):hover {
+  text-decoration: underline;
+}
+
+/* Tab Content */
+.tab-content {
+  flex: 1;
+  background: var(--win98-bg);
+  border: 1px solid var(--win98-surface-dark);
+  margin: 0 4px 4px 4px;
+  display: none;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.tab-content.active {
+  display: flex;
+}
+
+/* Tree View */
+.tree-view {
+  flex: 1;
+  overflow: auto;
+  padding: 4px;
+  background: var(--win98-surface-light);
+  border: 2px solid;
+  border-color: var(--win98-surface-dark) var(--win98-surface-light) var(--win98-surface-light) var(--win98-surface-dark);
+  margin: 4px;
+}
+
+.tree-item {
+  padding: 2px 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.tree-item:hover {
+  background: var(--win98-selection);
+  color: white;
+}
+
+.tree-item.selected {
+  background: var(--win98-selection);
+  color: white;
+}
+
+.tree-item.folder::before {
+  content: '📁';
+  font-size: 12px;
+}
+
+.tree-item.folder.open::before {
+  content: '📂';
+}
+
+.tree-item.page::before {
+  content: '📄';
+  font-size: 12px;
+}
+
+/* Search Box */
+.search-box {
+  padding: 8px;
+  display: flex;
+  gap: 4px;
+  background: var(--win98-surface-light);
+  border: 2px solid;
+  border-color: var(--win98-surface-dark) var(--win98-surface-light) var(--win98-surface-light) var(--win98-surface-dark);
+  margin: 4px;
+}
+
+.win98-input {
+  flex: 1;
+  height: 20px;
+  padding: 2px 4px;
+  font-family: inherit;
+  font-size: 11px;
+  border: 2px solid;
+  border-color: var(--win98-surface-dark) var(--win98-surface-light) var(--win98-surface-light) var(--win98-surface-dark);
+  background: white;
+}
+
+.win98-input:focus {
+  outline: none;
+}
+
+.search-results {
+  flex: 1;
+  overflow: auto;
+  padding: 4px;
+  background: var(--win98-surface-light);
+  border: 2px solid;
+  border-color: var(--win98-surface-dark) var(--win98-surface-light) var(--win98-surface-light) var(--win98-surface-dark);
+  margin: 0 4px 4px 4px;
+}
+
+.search-result-item {
+  padding: 4px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--win98-surface-dark);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: var(--win98-selection);
+  color: white;
+}
+
+/* Divider */
+.divider-vertical {
+  width: 4px;
+  background: var(--win98-bg);
+  cursor: col-resize;
+  border-left: 1px solid var(--win98-surface-dark);
+  border-right: 1px solid var(--win98-surface-light);
+}
+
+.divider-vertical:hover {
+  background: #a0a0a0;
+}
+
+/* Topic Pane */
+.topic-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--win98-bg);
+}
+
+.topic-header {
+  padding: 8px;
+  background: linear-gradient(180deg, var(--win98-surface-light) 0%, var(--win98-bg) 100%);
+  border-bottom: 1px solid var(--win98-surface-dark);
+}
+
+.breadcrumb {
+  font-size: 11px;
+  color: var(--win98-link);
+}
+
+.topic-content {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 24px;
+  background: var(--win98-surface-light);
+  border: 2px solid;
+  border-color: var(--win98-surface-dark) var(--win98-surface-light) var(--win98-surface-light) var(--win98-surface-dark);
+  margin: 8px;
+  line-height: 1.6;
+}
+
+.topic-content h1 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--win98-blue);
+  border-bottom: 2px solid var(--win98-blue);
+  padding-bottom: 4px;
+}
+
+.topic-content h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 16px 0 8px 0;
+  color: var(--win98-text);
+}
+
+.topic-content h3 {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 12px 0 6px 0;
+}
+
+.topic-content p {
+  margin-bottom: 8px;
+}
+
+.topic-content ul, .topic-content ol {
+  margin: 8px 0 8px 24px;
+}
+
+.topic-content li {
+  margin-bottom: 4px;
+}
+
+.topic-content a {
+  color: var(--win98-link);
+  text-decoration: underline;
+}
+
+.topic-content a:visited {
+  color: var(--win98-link-visited);
+}
+
+.topic-content code {
+  background: var(--win98-code-bg);
+  padding: 1px 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  border: 1px solid var(--win98-surface-dark);
+}
+
+.topic-content pre {
+  background: var(--win98-code-bg);
+  padding: 8px;
+  margin: 8px 0;
+  border: 2px solid;
+  border-color: var(--win98-surface-dark) var(--win98-surface-light) var(--win98-surface-light) var(--win98-surface-dark);
+  overflow-x: auto;
+}
+
+.topic-content pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
+.topic-content blockquote {
+  margin: 12px 0;
+  padding: 8px 12px;
+  background: #ffffd0;
+  border-left: 3px solid var(--win98-blue);
+}
+
+/* Status Bar */
+.status-bar {
+  background: var(--win98-bg);
+  border-top: 1px solid var(--win98-surface-dark);
+  padding: 2px 4px;
+  display: flex;
+  align-items: center;
+}
+
+.status-text {
+  font-size: 11px;
+  color: var(--win98-text);
+}
+
+/* Win98 Button */
+.win98-btn {
+  padding: 4px 16px;
+  background: var(--win98-bg);
+  border: 2px solid;
+  border-color: var(--win98-surface-light) var(--win98-surface-darker) var(--win98-surface-darker) var(--win98-surface-light);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  min-width: 75px;
+}
+
+.win98-btn:hover {
+  background: #d0d0d0;
+}
+
+.win98-btn:active {
+  border-color: var(--win98-surface-darker) var(--win98-surface-light) var(--win98-surface-light) var(--win98-surface-darker);
+  padding: 5px 15px 3px 17px;
+}
+
+/* Dialog */
+.dialog {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  background: var(--win98-bg);
+}
+
+.dialog-body {
+  padding: 16px;
+}
+
+.about-content {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.win98-logo {
+  width: 48px;
+  height: 48px;
+  background: var(--win98-bg);
+  border: 2px solid;
+  border-color: var(--win98-surface-dark) var(--win98-surface-light) var(--win98-surface-light) var(--win98-surface-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.about-text {
+  flex: 1;
+}
+
+.prog-name {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.about-text p {
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.copyright {
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--win98-surface-dark);
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.note {
+  padding: 8px;
+  font-size: 11px;
+  color: var(--win98-surface-dark);
+  font-style: italic;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+::-webkit-scrollbar-track {
+  background: #dfdfdf;
+  border: 1px solid var(--win98-surface-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--win98-bg);
+  border: 1px solid;
+  border-color: var(--win98-surface-light) var(--win98-surface-darker) var(--win98-surface-darker) var(--win98-surface-light);
+}
+
+::-webkit-scrollbar-button {
+  background: var(--win98-bg);
+  border: 1px solid;
+  border-color: var(--win98-surface-light) var(--win98-surface-darker) var(--win98-surface-darker) var(--win98-surface-light);
+  height: 16px;
+  width: 16px;
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--win98-bg);
+}
+
+/* Section headers in tree */
+.tree-section {
+  padding: 4px 4px 2px 4px;
+  font-weight: 600;
+  font-size: 10px;
+  color: var(--win98-surface-dark);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tree-children {
+  padding-left: 16px;
+}
