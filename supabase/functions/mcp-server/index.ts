@@ -289,6 +289,32 @@ mcpServer.tool("get_local_impacts", {
   },
 });
 
+mcpServer.tool("get_voter_registration_stats", {
+  description: "Get state-level voter registration statistics including total registered, eligible voters, registration rates, and 2024 general election turnout.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      state: { type: "string" as const, description: "Filter by state name or abbreviation (e.g. 'Minnesota' or 'MN')" },
+      limit: { type: "number" as const, description: "Max results (default 50, max 100)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const state = args.state as string | undefined;
+    const limit = Math.min((args.limit as number) || 50, 100);
+    const offset = (args.offset as number) || 0;
+    let q = supabase
+      .from("state_voter_stats")
+      .select("*", { count: "exact" })
+      .range(offset, offset + limit - 1)
+      .order("total_registered", { ascending: false });
+    if (state) q = q.ilike("state", `%${state}%`);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
 // ─── HTTP Transport ─────────────────────────────────────────────────────────
 
 const transport = new StreamableHttpTransport();

@@ -15,6 +15,7 @@ const VALID_ENDPOINTS = [
   "maga-files",
   "narrative-reports",
   "local-impacts",
+  "voter-registration-stats",
 ];
 
 async function hashKey(key: string): Promise<string> {
@@ -233,6 +234,20 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "voter-registration-stats": {
+        let q = supabase
+          .from("state_voter_stats")
+          .select("*", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("total_registered", { ascending: false });
+        if (stateFilter) q = q.ilike("state", `%${stateFilter}%`);
+        if (searchQuery) q = q.ilike("state", `%${searchQuery}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: "Unknown endpoint" }),
@@ -281,6 +296,7 @@ function endpointDescription(endpoint: string): string {
     "maga-files": "MAGA-related research files",
     "narrative-reports": "Narrative research reports",
     "local-impacts": "Local impact analyses by state",
+    "voter-registration-stats": "State voter registration statistics with registration rates and turnout data",
   };
   return descs[endpoint] || "";
 }
