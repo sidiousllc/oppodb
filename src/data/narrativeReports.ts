@@ -525,6 +525,22 @@ export const narrativeReports: NarrativeReport[] = [
 - Trump promised to "drain the swamp" but hired more lobbyists and insiders than his predecessors` },
 ];
 
+// Merge DB records into the in-memory array (call once at startup)
+export function mergeNarrativeReportsFromDB(dbRecords: Array<{ name: string; slug: string; content: string }>) {
+  const existing = new Set(narrativeReports.map(r => r.slug));
+  for (const r of dbRecords) {
+    if (existing.has(r.slug)) {
+      const idx = narrativeReports.findIndex(nr => nr.slug === r.slug);
+      if (idx >= 0) {
+        narrativeReports[idx] = { name: r.name, slug: r.slug, content: r.content };
+      }
+    } else {
+      narrativeReports.push({ name: r.name, slug: r.slug, content: r.content });
+    }
+  }
+  narrativeReports.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function searchNarrativeReports(query: string): NarrativeReport[] {
   if (!query.trim()) return narrativeReports;
   const q = query.toLowerCase();
