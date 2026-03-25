@@ -245,6 +245,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       stateFinance: stateFinRes.data || [],
       mnFinance: mnFinRes.data || [],
       winredDonations: winredRes.data || [],
+      voterStats: voterStatsRes || [],
     });
     setIsSearching(false);
 
@@ -432,7 +433,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
   const handleClear = () => {
     setQuery("");
-    setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [] });
+    setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
     setHasSearched(false);
   };
 
