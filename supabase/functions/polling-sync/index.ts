@@ -1,10 +1,29 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const TRUSTED_ORIGINS = [
+  "https://oppodb.com", "https://db.oppodb.com", "https://ordb.lovable.app",
+  "http://localhost:5173", "http://localhost:3000",
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed = origin && (
+    TRUSTED_ORIGINS.includes(origin) || origin.endsWith(".lovableproject.com") || origin.endsWith(".lovable.app")
+  );
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : TRUSTED_ORIGINS[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Vary": "Origin",
+  };
+}
+
+function parseJwtClaims(token: string): Record<string, unknown> | null {
+  const parts = token.split(".");
+  if (parts.length < 2) return null;
+  try {
+    const payload = parts[1].replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
+    return JSON.parse(atob(payload)) as Record<string, unknown>;
+  } catch { return null; }
+}
 
 interface PollRecord {
   source: string;
@@ -30,10 +49,7 @@ interface PollRecord {
 async function scrapeWithFirecrawl(url: string, apiKey: string): Promise<string> {
   const resp = await fetch("https://api.firecrawl.dev/v1/scrape", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ url, formats: ["markdown"], onlyMainContent: true }),
   });
   const data = await resp.json();
@@ -43,110 +59,69 @@ async function scrapeWithFirecrawl(url: string, apiKey: string): Promise<string>
 async function searchWithFirecrawl(query: string, apiKey: string, limit = 5): Promise<any[]> {
   const resp = await fetch("https://api.firecrawl.dev/v1/search", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ query, limit, scrapeOptions: { formats: ["markdown"] } }),
   });
   const data = await resp.json();
   return data?.data || [];
 }
 
-// Pattern-based poll extraction from markdown content
 function extractPollsFromMarkdown(markdown: string, sourceName: string, sourceUrl: string): PollRecord[] {
   const polls: PollRecord[] = [];
   const today = new Date().toISOString().split("T")[0];
-  
-  // Pattern: "XX% approve" or "approval: XX%"
   const approvalPattern = /(\d{1,2}(?:\.\d)?)\s*%?\s*(?:approve|approval|favorable|favor)/gi;
   const disapprovalPattern = /(\d{1,2}(?:\.\d)?)\s*%?\s*(?:disapprove|disapproval|unfavorable|unfav)/gi;
   const datePattern = /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+202[5-6]/gi;
   const samplePattern = /(?:n\s*=\s*|sample(?:\s+size)?(?:\s*[:=]\s*|\s+of\s+))(\d[\d,]*)/gi;
-  
-  // Try to find date
   const dates = markdown.match(datePattern);
   const pollDate = dates?.[0] ? formatDateStr(dates[0]) : today;
-  
-  // Find approval/disapproval pairs
   const approvals = [...markdown.matchAll(approvalPattern)].map(m => parseFloat(m[1]));
   const disapprovals = [...markdown.matchAll(disapprovalPattern)].map(m => parseFloat(m[1]));
   const samples = [...markdown.matchAll(samplePattern)].map(m => parseInt(m[1].replace(/,/g, "")));
-  
   if (approvals.length > 0 && disapprovals.length > 0) {
     const approve = approvals[0];
     const disapprove = disapprovals[0];
-    
     polls.push({
-      source: sourceName,
-      source_url: sourceUrl,
-      poll_type: "approval",
-      question: "Trump Job Approval",
-      date_conducted: pollDate,
-      candidate_or_topic: "Trump Approval",
-      approve_pct: approve,
-      disapprove_pct: disapprove,
-      margin: Math.round((approve - disapprove) * 10) / 10,
-      sample_size: samples[0] || null,
+      source: sourceName, source_url: sourceUrl, poll_type: "approval", question: "Trump Job Approval",
+      date_conducted: pollDate, candidate_or_topic: "Trump Approval", approve_pct: approve, disapprove_pct: disapprove,
+      margin: Math.round((approve - disapprove) * 10) / 10, sample_size: samples[0] || null,
       sample_type: markdown.match(/likely\s+voters/i) ? "LV" : markdown.match(/registered\s+voters/i) ? "RV" : "Adults",
       methodology: "Online/Phone",
       raw_data: { source_name: sourceName, extracted_at: new Date().toISOString(), extraction: "pattern" },
     });
   }
-
-  // Generic ballot pattern: "Democrats XX% / Republicans XX%"
   const demPattern = /Democrat[s]?\s*(?:[:=]\s*)?(\d{1,2}(?:\.\d)?)\s*%/gi;
   const repPattern = /Republican[s]?\s*(?:[:=]\s*)?(\d{1,2}(?:\.\d)?)\s*%/gi;
   const dems = [...markdown.matchAll(demPattern)].map(m => parseFloat(m[1]));
   const reps = [...markdown.matchAll(repPattern)].map(m => parseFloat(m[1]));
-  
   if (dems.length > 0 && reps.length > 0) {
-    const dem = dems[0];
-    const rep = reps[0];
+    const dem = dems[0]; const rep = reps[0];
     polls.push({
-      source: sourceName,
-      source_url: sourceUrl,
-      poll_type: "generic-ballot",
-      question: "Generic Congressional Ballot",
-      date_conducted: pollDate,
-      candidate_or_topic: "Generic Ballot",
-      favor_pct: dem,
-      oppose_pct: rep,
-      margin: Math.round((dem - rep) * 10) / 10,
-      sample_size: samples[0] || null,
-      sample_type: "RV",
+      source: sourceName, source_url: sourceUrl, poll_type: "generic-ballot", question: "Generic Congressional Ballot",
+      date_conducted: pollDate, candidate_or_topic: "Generic Ballot", favor_pct: dem, oppose_pct: rep,
+      margin: Math.round((dem - rep) * 10) / 10, sample_size: samples[0] || null, sample_type: "RV",
       partisan_lean: dem > rep ? `D+${(dem - rep).toFixed(1)}` : `R+${(rep - dem).toFixed(1)}`,
       raw_data: { source_name: sourceName, extracted_at: new Date().toISOString(), extraction: "pattern" },
     });
   }
-
-  // Issue polling: look for topic + percentage patterns
   const issuePatterns = [
     { topic: "Economy", pattern: /econom[y|ic].*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
     { topic: "Immigration", pattern: /immigra(?:tion|nts?).*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
     { topic: "Healthcare", pattern: /health\s*care.*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
     { topic: "Education", pattern: /education.*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
   ];
-  
   for (const { topic, pattern } of issuePatterns) {
     const match = markdown.match(pattern);
     if (match) {
       const pct = parseFloat(match[1]);
       polls.push({
-        source: sourceName,
-        source_url: sourceUrl,
-        poll_type: "issue",
-        question: `${topic} Handling Approval`,
-        date_conducted: pollDate,
-        candidate_or_topic: topic,
-        approve_pct: pct,
-        disapprove_pct: pct < 50 ? 100 - pct - 10 : 100 - pct, // estimate
-        margin: pct - (100 - pct),
+        source: sourceName, source_url: sourceUrl, poll_type: "issue", question: `${topic} Handling Approval`,
+        date_conducted: pollDate, candidate_or_topic: topic, approve_pct: pct,
+        disapprove_pct: pct < 50 ? 100 - pct - 10 : 100 - pct, margin: pct - (100 - pct),
         raw_data: { source_name: sourceName, extracted_at: new Date().toISOString(), extraction: "pattern" },
       });
     }
   }
-
   return polls;
 }
 
@@ -155,21 +130,14 @@ function formatDateStr(dateStr: string): string {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return new Date().toISOString().split("T")[0];
     return d.toISOString().split("T")[0];
-  } catch {
-    return new Date().toISOString().split("T")[0];
-  }
+  } catch { return new Date().toISOString().split("T")[0]; }
 }
 
-// Direct data sources that don't need scraping
 function getDirectPollingData(): PollRecord[] {
   const today = new Date().toISOString().split("T")[0];
-  // These represent known aggregated values from public trackers
   return [
-    // International perspective polls
     { source: "Pew Global", source_url: "https://www.pewresearch.org/global/", poll_type: "favorability", question: "US Favorability Abroad", date_conducted: today, candidate_or_topic: "US Favorability (Global)", approve_pct: 38, disapprove_pct: 55, margin: -17, sample_size: 40000, sample_type: "Adults", methodology: "Multi-country survey", raw_data: { scope: "international", region: "global", extracted_at: today } },
     { source: "Pew Global", source_url: "https://www.pewresearch.org/global/", poll_type: "favorability", question: "Confidence in US President", date_conducted: today, candidate_or_topic: "Confidence in US President (Global)", approve_pct: 28, disapprove_pct: 65, margin: -37, sample_size: 40000, sample_type: "Adults", methodology: "Multi-country survey", raw_data: { scope: "international", region: "global", extracted_at: today } },
-    
-    // State-level tracking (Civiqs-sourced estimates)
     { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - MN", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 39, disapprove_pct: 56, margin: -17, sample_size: 850, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "MN", extracted_at: today } },
     { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - MI", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 41, disapprove_pct: 54, margin: -13, sample_size: 900, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "MI", extracted_at: today } },
     { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - PA", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 42, disapprove_pct: 53, margin: -11, sample_size: 1100, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "PA", extracted_at: today } },
@@ -178,8 +146,6 @@ function getDirectPollingData(): PollRecord[] {
     { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - GA", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 43, disapprove_pct: 52, margin: -9, sample_size: 850, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "GA", extracted_at: today } },
     { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - NV", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 42, disapprove_pct: 53, margin: -11, sample_size: 500, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "NV", extracted_at: today } },
     { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - NC", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 44, disapprove_pct: 51, margin: -7, sample_size: 900, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "NC", extracted_at: today } },
-    
-    // Issue polling
     { source: "AP-NORC", source_url: "https://apnorc.org/projects/", poll_type: "issue", question: "Economy Handling", date_conducted: today, candidate_or_topic: "Economy", approve_pct: 38, disapprove_pct: 58, margin: -20, sample_size: 1100, sample_type: "Adults", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: today } },
     { source: "AP-NORC", source_url: "https://apnorc.org/projects/", poll_type: "issue", question: "Immigration Handling", date_conducted: today, candidate_or_topic: "Immigration", approve_pct: 41, disapprove_pct: 55, margin: -14, sample_size: 1100, sample_type: "Adults", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: today } },
     { source: "Gallup", source_url: "https://news.gallup.com/", poll_type: "issue", question: "Healthcare Handling", date_conducted: today, candidate_or_topic: "Healthcare", approve_pct: 35, disapprove_pct: 60, margin: -25, sample_size: 1000, sample_type: "Adults", methodology: "Phone", raw_data: { scope: "national", extracted_at: today } },
@@ -188,7 +154,6 @@ function getDirectPollingData(): PollRecord[] {
   ];
 }
 
-// All scraping sources
 const SCRAPE_SOURCES = [
   { name: "Morning Consult", url: "https://morningconsult.com/tracking-trump-2/", category: "national" },
   { name: "YouGov", url: "https://today.yougov.com/topics/politics/trackers/donald-trump-approval-rating", category: "national" },
@@ -207,14 +172,52 @@ const SEARCH_SOURCES = [
 ];
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // --- Authentication ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const token = authHeader.slice(7).trim();
+    const claims = parseJwtClaims(token);
+
+    // Accept service_role (from scheduled-sync) or admin user
+    if (claims?.role !== "service_role") {
+      const authClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const adminClient = createClient(supabaseUrl, serviceKey);
+      const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      if (!roleCheck) {
+        return new Response(JSON.stringify({ error: "Forbidden: admin role required" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      console.log(`[SECURITY] polling-sync: authenticated as admin user ${user.id}`);
+    } else {
+      console.log("[SECURITY] polling-sync: authenticated as service_role");
+    }
+
+    const supabase = createClient(supabaseUrl, serviceKey);
     const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
 
     let categories: string[] = [];
@@ -222,7 +225,7 @@ Deno.serve(async (req) => {
     try {
       const body = await req.json();
       categories = body?.sources || body?.categories || [];
-      maxSources = body?.maxSources || 6;
+      maxSources = Math.min(body?.maxSources || 6, 10); // Cap at 10
     } catch {}
 
     const results: { source: string; polls_found: number; inserted: number; error?: string }[] = [];
@@ -232,13 +235,9 @@ Deno.serve(async (req) => {
     const directPolls = getDirectPollingData();
     for (const poll of directPolls) {
       const { data: existing } = await supabase
-        .from("polling_data")
-        .select("id")
-        .eq("source", poll.source)
-        .eq("date_conducted", poll.date_conducted)
-        .eq("candidate_or_topic", poll.candidate_or_topic)
-        .maybeSingle();
-
+        .from("polling_data").select("id")
+        .eq("source", poll.source).eq("date_conducted", poll.date_conducted)
+        .eq("candidate_or_topic", poll.candidate_or_topic).maybeSingle();
       if (!existing) {
         const { error } = await supabase.from("polling_data").insert(poll);
         if (!error) totalInserted++;
@@ -250,77 +249,57 @@ Deno.serve(async (req) => {
     if (firecrawlKey) {
       let scrapeSources = [...SCRAPE_SOURCES];
       let searchSources = [...SEARCH_SOURCES];
-
       if (categories.length > 0) {
         scrapeSources = scrapeSources.filter(s => categories.includes(s.category));
         searchSources = searchSources.filter(s => categories.includes(s.category));
       }
-
-      // Limit total sources
       const allSources = [...scrapeSources.slice(0, maxSources), ...searchSources.slice(0, Math.max(0, maxSources - scrapeSources.length))];
 
       for (const src of allSources) {
         try {
           let markdown = "";
           let sourceUrl = "";
-
           if ("url" in src && src.url) {
-            console.log(`Scraping ${src.name} from ${src.url}`);
             markdown = await scrapeWithFirecrawl(src.url, firecrawlKey);
             sourceUrl = src.url;
           } else if ("query" in src && src.query) {
-            console.log(`Searching for ${src.name}: ${src.query}`);
             const searchResults = await searchWithFirecrawl(src.query, firecrawlKey, 3);
             markdown = searchResults.map((r: any) => `## ${r.title || ""}\n${r.markdown || r.description || ""}`).join("\n\n");
             sourceUrl = searchResults[0]?.url || "";
           }
-
           if (!markdown || markdown.length < 50) {
             results.push({ source: src.name, polls_found: 0, inserted: 0, error: "Insufficient content" });
             continue;
           }
-
           const polls = extractPollsFromMarkdown(markdown, src.name, sourceUrl);
           let srcInserted = 0;
-
           for (const poll of polls) {
             const { data: existing } = await supabase
-              .from("polling_data")
-              .select("id")
-              .eq("source", poll.source)
-              .eq("date_conducted", poll.date_conducted)
-              .eq("candidate_or_topic", poll.candidate_or_topic)
-              .maybeSingle();
-
+              .from("polling_data").select("id")
+              .eq("source", poll.source).eq("date_conducted", poll.date_conducted)
+              .eq("candidate_or_topic", poll.candidate_or_topic).maybeSingle();
             if (!existing) {
               const { error } = await supabase.from("polling_data").insert(poll);
               if (!error) { srcInserted++; totalInserted++; }
             }
           }
-
           results.push({ source: src.name, polls_found: polls.length, inserted: srcInserted });
         } catch (e) {
           const msg = e instanceof Error ? e.message : "Unknown error";
-          console.error(`Error processing ${src.name}:`, msg);
           results.push({ source: src.name, polls_found: 0, inserted: 0, error: msg });
         }
       }
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        sources_processed: results.length,
-        total_new_polls: totalInserted,
-        results,
-      }),
+      JSON.stringify({ success: true, sources_processed: results.length, total_new_polls: totalInserted, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Polling sync error:", error);
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...getCorsHeaders(req.headers.get("Origin")), "Content-Type": "application/json" } }
     );
   }
 });
