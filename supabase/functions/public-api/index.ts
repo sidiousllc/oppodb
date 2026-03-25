@@ -16,6 +16,13 @@ const VALID_ENDPOINTS = [
   "narrative-reports",
   "local-impacts",
   "voter-registration-stats",
+  "congress-members",
+  "congress-bills",
+  "campaign-finance",
+  "election-forecasts",
+  "congressional-elections",
+  "state-finance",
+  "mn-finance",
   "search",
 ];
 
@@ -250,6 +257,123 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "congress-members": {
+        let q = supabase
+          .from("congress_members")
+          .select("id,bioguide_id,name,first_name,last_name,party,state,district,chamber,congress,depiction_url,official_url,candidate_slug", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("name");
+        if (stateFilter) q = q.eq("state", stateFilter);
+        if (searchQuery) q = q.or(`name.ilike.%${searchQuery}%,bioguide_id.ilike.%${searchQuery}%,state.ilike.%${searchQuery}%`);
+        if (chamber) q = q.eq("chamber", chamber);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "congress-bills": {
+        let q = supabase
+          .from("congress_bills")
+          .select("id,bill_id,bill_type,bill_number,congress,title,short_title,sponsor_name,sponsor_bioguide_id,status,policy_area,origin_chamber,introduced_date,latest_action_date,latest_action_text,cosponsor_count", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("latest_action_date", { ascending: false });
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,short_title.ilike.%${searchQuery}%,sponsor_name.ilike.%${searchQuery}%,bill_id.ilike.%${searchQuery}%`);
+        const congressParam = url.searchParams.get("congress");
+        if (congressParam) q = q.eq("congress", parseInt(congressParam));
+        const policyArea = url.searchParams.get("policy_area");
+        if (policyArea) q = q.ilike("policy_area", `%${policyArea}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "campaign-finance": {
+        let q = supabase
+          .from("campaign_finance")
+          .select("id,candidate_name,candidate_slug,state_abbr,district,party,office,cycle,total_raised,total_spent,cash_on_hand,total_debt,individual_contributions,pac_contributions,self_funding,small_dollar_pct,large_donor_pct,out_of_state_pct,filing_date", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("total_raised", { ascending: false });
+        if (stateFilter) q = q.eq("state_abbr", stateFilter);
+        if (searchQuery) q = q.or(`candidate_name.ilike.%${searchQuery}%,state_abbr.ilike.%${searchQuery}%,district.ilike.%${searchQuery}%`);
+        const cycleParam = url.searchParams.get("cycle");
+        if (cycleParam) q = q.eq("cycle", parseInt(cycleParam));
+        const officeParam = url.searchParams.get("office");
+        if (officeParam) q = q.eq("office", officeParam);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "election-forecasts": {
+        let q = supabase
+          .from("election_forecasts")
+          .select("id,source,state_abbr,district,race_type,rating,cycle,dem_win_prob,rep_win_prob,dem_vote_share,rep_vote_share,margin,last_updated", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("state_abbr");
+        if (stateFilter) q = q.eq("state_abbr", stateFilter);
+        const raceType = url.searchParams.get("race_type");
+        if (raceType) q = q.eq("race_type", raceType);
+        const forecastCycle = url.searchParams.get("cycle");
+        q = q.eq("cycle", forecastCycle ? parseInt(forecastCycle) : 2026);
+        if (searchQuery) q = q.or(`state_abbr.ilike.%${searchQuery}%,district.ilike.%${searchQuery}%,rating.ilike.%${searchQuery}%`);
+        const forecastSource = url.searchParams.get("source");
+        if (forecastSource) q = q.eq("source", forecastSource);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "congressional-elections": {
+        let q = supabase
+          .from("congressional_election_results")
+          .select("id,candidate_name,state_abbr,district_number,party,election_year,election_type,election_date,votes,vote_pct,total_votes,is_winner,is_incumbent,is_write_in", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("election_year", { ascending: false });
+        if (stateFilter) q = q.eq("state_abbr", stateFilter);
+        if (searchQuery) q = q.or(`candidate_name.ilike.%${searchQuery}%,state_abbr.ilike.%${searchQuery}%`);
+        const congElYear = url.searchParams.get("year");
+        if (congElYear) q = q.eq("election_year", parseInt(congElYear));
+        const congDistrict = url.searchParams.get("district");
+        if (congDistrict) q = q.eq("district_number", congDistrict);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "state-finance": {
+        let q = supabase
+          .from("state_cfb_candidates")
+          .select("id,candidate_name,state_abbr,chamber,party,office,committee_name,reg_num,total_contributions,total_expenditures,net_cash,in_kind_total,contribution_count,expenditure_count,years_active", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("total_contributions", { ascending: false });
+        if (stateFilter) q = q.eq("state_abbr", stateFilter);
+        if (searchQuery) q = q.or(`candidate_name.ilike.%${searchQuery}%,state_abbr.ilike.%${searchQuery}%,committee_name.ilike.%${searchQuery}%`);
+        if (chamber) q = q.eq("chamber", chamber);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "mn-finance": {
+        let q = supabase
+          .from("mn_cfb_candidates")
+          .select("id,candidate_name,chamber,committee_name,reg_num,total_contributions,total_expenditures,net_cash,in_kind_total,contribution_count,expenditure_count,years_active", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("total_contributions", { ascending: false });
+        if (searchQuery) q = q.or(`candidate_name.ilike.%${searchQuery}%,committee_name.ilike.%${searchQuery}%`);
+        if (chamber) q = q.eq("chamber", chamber);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
       case "search": {
         const q = searchQuery;
         if (!q || q.length < 2) {
@@ -434,6 +558,13 @@ function endpointDescription(endpoint: string): string {
     "narrative-reports": "Narrative research reports",
     "local-impacts": "Local impact analyses by state",
     "voter-registration-stats": "State voter registration statistics with registration rates and turnout data",
+    "congress-members": "Current Congress members with party, state, district, and committee data",
+    "congress-bills": "Federal legislation with sponsors, status, and policy areas",
+    "campaign-finance": "Federal campaign finance data from FEC filings",
+    "election-forecasts": "Election race ratings and forecasts from Cook, Sabato, etc.",
+    "congressional-elections": "Congressional election results with vote counts and winners",
+    "state-finance": "State-level campaign finance data across all states",
+    "mn-finance": "Minnesota Campaign Finance Board candidate data",
     search: "Unified search across all databases (requires ?search= param, optional ?categories= filter)",
   };
   return descs[endpoint] || "";
