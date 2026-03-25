@@ -10,7 +10,7 @@ import { syncCongressionalElections } from "@/data/congressionalElections";
 import { fetchStateLegislativeDistricts, syncStateLegislativeData, type StateLegislativeProfile } from "@/data/stateLegislativeIntel";
 import { getCookRating, getCookRatingColor, COOK_RATING_ORDER, type CookRating } from "@/data/cookRatings";
 import { candidateDistrictMap } from "@/data/candidateDistricts";
-import { SearchBar } from "@/components/SearchBar";
+import { MasterSearch } from "@/components/MasterSearch";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
 import { GenericCard } from "@/components/GenericCard";
@@ -718,7 +718,7 @@ export default function Index() {
                         </h2>
                       </div>
                       <div className="mb-3">
-                        <SearchBar value={search} onChange={setSearch} districts={districts} onNavigate={(s, slug) => { setSection(s as Section); setSelectedSlug(slug); }} />
+                        <MasterSearch onNavigate={(s, slug) => { setSection(s as Section); if (slug) setSelectedSlug(slug); }} districts={districts} />
                       </div>
                       {renderList()}
                     </>
