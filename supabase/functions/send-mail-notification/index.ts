@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
 
   // Route through send-transactional-email which handles rendering,
   // suppression checks, unsubscribe tokens, and proper queue enqueuing
-  const { data: sendResult, error: sendError } = await adminClient.functions.invoke(
+  const { error: sendError } = await userClient.functions.invoke(
     'send-transactional-email',
     {
       body: {
