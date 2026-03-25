@@ -16,13 +16,25 @@ interface SyncResult {
 function buildValidatedUrl(baseUrl: string, path: string, apiKey: string, params: Record<string, string> = {}): string {
   try {
     // Minimal path validation (Do this before new URL(baseUrl), as URL() resolves dot-segments.)
-    if (path.includes('/../') || /\/%2e%2e\//i.test(path)) {
+    if (baseUrl.includes('/../') || /\/%2e%2e\//i.test(baseUrl)) {
       throw new Error('Invalid path');
     }
     
     const url = new URL(baseUrl);
     
-    // Validate path parameter
+    // Protocol + host checks
+    const allowedDomains = ['api.congress.gov'];
+    if (!allowedDomains.includes(url.hostname)) {
+      throw new Error('Invalid host');
+    }
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+    
+    // Validate path parameter - reject paths containing '../'
+    if (path.includes('/../') || /\/%2e%2e\//i.test(path)) {
+      throw new Error('Invalid parameter');
+    }
     if (!/^\/[A-Za-z0-9\/_-]*$/.test(path)) {
       throw new Error('Invalid parameter');
     }
