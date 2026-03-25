@@ -1,14 +1,36 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+// Restrict CORS to the application's own origin
+const allowedOrigins = [
+  Deno.env.get("SUPABASE_URL")?.replace(/\/$/, ""), // Remove trailing slash if present
+  "http://localhost:5173", // Local development
+  "http://localhost:3000", // Alternative local port
+];
+
+const corsHeaders = (origin: string | null) => {
+  const isAllowed = origin && allowedOrigins.includes(origin);
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : allowedOrigins[0] || "*",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
 };
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const headers = corsHeaders(origin);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers });
+  }
+
+  // Only allow POST requests
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ success: false, error: "Method not allowed" }),
+      { status: 405, headers: { ...headers, "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -18,6 +40,12 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Unauthorized - Authentication required" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // --- Authentication & Authorization ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized: Missing or invalid Authorization header" }),
+        { status: 401, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
@@ -30,6 +58,14 @@ Deno.serve(async (req) => {
     });
 
     // Verify user is authenticated
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    // Use ANON_KEY with user's auth header to respect RLS policies
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    // Verify the user is authenticated
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
@@ -51,6 +87,24 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Forbidden - Admin role required to seed polling data" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "Unauthorized: Invalid or expired token" }),
+        { status: 401, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify the user has admin role (required by RLS policy for INSERT on polling_data)
+    const { data: roleCheck, error: roleError } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+
+    if (roleError || !roleCheck) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Forbidden: Admin role required to seed polling data" 
+        }),
+        { status: 403, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
@@ -69,8 +123,24 @@ Deno.serve(async (req) => {
     if ((count ?? 0) > 0 && !force) {
       return new Response(
         JSON.stringify({ success: true, message: "Polling data already seeded. Use force:true to refresh.", count }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...headers, "Content-Type": "application/json" } }
       );
+    }
+
+    // If force is true and data exists, delete all existing polling data to prevent duplicates
+    if (force && (count ?? 0) > 0) {
+      const { error: deleteError } = await supabase
+        .from("polling_data")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all rows (neq with impossible UUID)
+      
+      if (deleteError) {
+        console.error("Delete error:", deleteError);
+        return new Response(
+          JSON.stringify({ success: false, error: `Failed to clear existing data: ${deleteError.message}` }),
+          { status: 500, headers: { ...headers, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Latest polling data from all major sources — March 2026
@@ -220,19 +290,19 @@ Deno.serve(async (req) => {
       console.error("Insert error:", error);
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...headers, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
       JSON.stringify({ success: true, inserted: latestPolls.length, sources: ["fivethirtyeight", "ap", "realclear", "gallup", "rasmussen", "cook", "atlas", "cnn", "yougov", "foxnews", "emerson", "ipsos", "monmouth", "quinnipiac", "morningconsult"] }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...headers, "Content-Type": "application/json" } }
     );
   } catch (err) {
     console.error("Error:", err);
     return new Response(
       JSON.stringify({ success: false, error: String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...headers, "Content-Type": "application/json" } }
     );
   }
 });

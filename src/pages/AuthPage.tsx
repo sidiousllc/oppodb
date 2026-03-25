@@ -6,12 +6,43 @@ import { AOLDialUpAnimation } from "@/components/AOLDialUpAnimation";
 
 export default function AuthPage() {
   const [showDialUp, setShowDialUp] = useState(true);
-  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot" | "request">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [inviteToken, setInviteToken] = useState("");
+  const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [inviteInfo, setInviteInfo] = useState<{ email: string; role: string } | null>(null);
+
+  // Check URL for invite token
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("invite");
+    if (token) {
+      setInviteToken(token);
+      setMode("signup");
+      validateInvite(token);
+    }
+  }, []);
+
+  async function validateInvite(token: string) {
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "validate_invite", token },
+      });
+      if (error) throw error;
+      if (data.valid) {
+        setInviteInfo({ email: data.email, role: data.role });
+        setEmail(data.email);
+      } else {
+        setMessage({ type: "error", text: data.error || "Invalid invite" });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Could not validate invite link" });
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,12 +64,57 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
-    const { error } = await supabase.auth.signUp({
+
+    // If no invite token, don't allow direct signup
+    if (!inviteToken) {
+      setMessage({ type: "error", text: "An invitation is required to create an account. You can request access instead." });
+      setLoading(false);
+      return;
+    }
+
+    // Validate token again
+    const { data: validation } = await supabase.functions.invoke("admin-users", {
+      body: { action: "validate_invite", token: inviteToken },
+    });
+    if (!validation?.valid) {
+      setMessage({ type: "error", text: validation?.error || "Invalid or expired invite" });
+      setLoading(false);
+      return;
+    }
+
+    const { data: signupData, error } = await supabase.auth.signUp({
       email, password,
       options: { data: { display_name: displayName }, emailRedirectTo: window.location.origin },
     });
-    if (error) setMessage({ type: "error", text: error.message });
-    else setMessage({ type: "success", text: "Check your email for a confirmation link." });
+
+    if (error) {
+      setMessage({ type: "error", text: error.message });
+    } else {
+      // Mark invite as used
+      if (signupData.user) {
+        await supabase.functions.invoke("admin-users", {
+          body: { action: "use_invite", token: inviteToken, user_id: signupData.user.id },
+        });
+      }
+      setMessage({ type: "success", text: "Account created! Check your email for a confirmation link." });
+    }
+    setLoading(false);
+  };
+
+  const handleRequestAccess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "submit_access_request", email, display_name: displayName, reason },
+      });
+      if (error) throw error;
+      setMessage({ type: "success", text: data.message || "Access request submitted!" });
+    } catch (e: any) {
+      setMessage({ type: "error", text: e.message || "Failed to submit request" });
+    }
     setLoading(false);
   };
 
@@ -54,16 +130,34 @@ export default function AuthPage() {
     setLoading(false);
   };
 
-  const onSubmit = mode === "login" ? handleLogin : mode === "signup" ? handleSignup : handleForgotPassword;
+  const onSubmit =
+    mode === "login" ? handleLogin :
+    mode === "signup" ? handleSignup :
+    mode === "request" ? handleRequestAccess :
+    handleForgotPassword;
 
   if (showDialUp) {
     return <AOLDialUpAnimation onComplete={() => setShowDialUp(false)} />;
   }
 
+  const titles: Record<string, string> = {
+    login: "Sign In",
+    signup: "Create Account",
+    forgot: "Reset Password",
+    request: "Request Access",
+  };
+
+  const descriptions: Record<string, string> = {
+    login: "Enter your credentials to sign in",
+    signup: inviteInfo ? `You've been invited as ${inviteInfo.role}` : "Create a new account with an invitation",
+    forgot: "Reset your password",
+    request: "Request access to the database",
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[hsl(180,50%,50%)] px-4">
       <Win98Window
-        title={`${mode === "login" ? "Sign In" : mode === "signup" ? "Create Account" : "Reset Password"} - Opposition Research Database`}
+        title={`${titles[mode]} - Opposition Research Database`}
         icon={<span className="text-[12px]">🔐</span>}
         className="w-full max-w-[380px]"
       >
@@ -73,17 +167,13 @@ export default function AuthPage() {
             <span className="text-3xl">🌐</span>
             <div>
               <h1 className="text-[13px] font-bold">Opposition Research Database</h1>
-              <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
-                {mode === "login" && "Enter your credentials to sign in"}
-                {mode === "signup" && "Create a new account"}
-                {mode === "forgot" && "Reset your password"}
-              </p>
+              <p className="text-[10px] text-[hsl(var(--muted-foreground))]">{descriptions[mode]}</p>
             </div>
           </div>
 
           <div className="win98-sunken bg-white p-3 mb-3">
             <form onSubmit={onSubmit} className="space-y-3">
-              {mode === "signup" && (
+              {(mode === "signup" || mode === "request") && (
                 <div>
                   <label className="block text-[11px] font-bold mb-1">Display Name:</label>
                   <input
@@ -106,10 +196,39 @@ export default function AuthPage() {
                   placeholder="you@example.com"
                   className="win98-input w-full"
                   required
+                  readOnly={mode === "signup" && !!inviteInfo}
                 />
               </div>
 
-              {mode !== "forgot" && (
+              {mode === "signup" && !inviteToken && (
+                <div>
+                  <label className="block text-[11px] font-bold mb-1">Invite Token:</label>
+                  <input
+                    type="text"
+                    value={inviteToken}
+                    onChange={(e) => setInviteToken(e.target.value)}
+                    placeholder="Paste your invite token"
+                    className="win98-input w-full"
+                    required
+                  />
+                </div>
+              )}
+
+              {mode === "request" && (
+                <div>
+                  <label className="block text-[11px] font-bold mb-1">Reason for Access:</label>
+                  <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Briefly describe why you need access..."
+                    className="win98-input w-full"
+                    rows={3}
+                    maxLength={500}
+                  />
+                </div>
+              )}
+
+              {mode !== "forgot" && mode !== "request" && (
                 <div>
                   <label className="block text-[11px] font-bold mb-1">Password:</label>
                   <input
@@ -140,14 +259,18 @@ export default function AuthPage() {
                   disabled={loading}
                   className="win98-button font-bold text-[11px] px-4 disabled:opacity-50"
                 >
-                  {loading ? "Please wait..." : mode === "login" ? "Sign In" : mode === "signup" ? "Create Account" : "Send Reset Link"}
+                  {loading ? "Please wait..." :
+                    mode === "login" ? "Sign In" :
+                    mode === "signup" ? "Create Account" :
+                    mode === "request" ? "Submit Request" :
+                    "Send Reset Link"}
                 </button>
               </div>
             </form>
           </div>
 
           {/* Google sign-in */}
-          {mode !== "forgot" && (
+          {mode === "login" && (
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex-1 h-[1px] bg-[hsl(var(--win98-shadow))]" />
@@ -189,9 +312,15 @@ export default function AuthPage() {
                   Forgot password?
                 </button>
                 <p>
-                  Don't have an account?{" "}
+                  Have an invite?{" "}
                   <button onClick={() => { setMode("signup"); setMessage(null); }} className="underline font-bold text-[hsl(var(--primary))]">
                     Sign up
+                  </button>
+                </p>
+                <p>
+                  Need access?{" "}
+                  <button onClick={() => { setMode("request"); setMessage(null); }} className="underline font-bold text-[hsl(var(--primary))]">
+                    Request access
                   </button>
                 </p>
               </>
@@ -201,6 +330,23 @@ export default function AuthPage() {
                 Already have an account?{" "}
                 <button onClick={() => { setMode("login"); setMessage(null); }} className="underline font-bold text-[hsl(var(--primary))]">
                   Sign in
+                </button>
+                {" · "}
+                <button onClick={() => { setMode("request"); setMessage(null); }} className="underline text-[hsl(var(--primary))]">
+                  Request access
+                </button>
+              </p>
+            )}
+            {mode === "request" && (
+              <p>
+                Already have an account?{" "}
+                <button onClick={() => { setMode("login"); setMessage(null); }} className="underline font-bold text-[hsl(var(--primary))]">
+                  Sign in
+                </button>
+                {" · "}
+                Have an invite?{" "}
+                <button onClick={() => { setMode("signup"); setMessage(null); }} className="underline text-[hsl(var(--primary))]">
+                  Sign up
                 </button>
               </p>
             )}
