@@ -66,6 +66,21 @@ function buildValidatedUrl(
     // Set the hostname with validated project ID
     url.hostname = `${projectId}.supabase.co`;
     
+    // Domain validation
+    const allowedDomains = ['supabase.co'];
+    const hostname = url.hostname;
+    const isAllowedDomain = allowedDomains.some(domain => 
+      hostname === domain || hostname.endsWith('.' + domain)
+    );
+    if (!isAllowedDomain) {
+      throw new Error('Invalid host');
+    }
+    
+    // Protocol check
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+    
     // Add query parameters
     if (action) url.searchParams.set('action', action);
     if (regNum) url.searchParams.set('reg_num', regNum);
