@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users } from "lucide-react";
+import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users, Filter } from "lucide-react";
 import { exportSearchCSV, exportSearchPDF } from "@/lib/masterSearchExport";
 import { supabase } from "@/integrations/supabase/client";
 import { searchCandidates } from "@/data/candidates";
@@ -442,8 +442,20 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     return groups;
   }, [dbResults]);
 
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategory = useCallback((key: string) => {
+    setHiddenCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
   const allGroups = [...localResults, ...dbGroups];
-  const totalResults = allGroups.reduce((s, g) => s + g.results.length, 0);
+  const filteredGroups = allGroups.filter(g => !hiddenCategories.has(g.key));
+  const totalResults = filteredGroups.reduce((s, g) => s + g.results.length, 0);
 
   const handleClear = () => {
     setQuery("");
@@ -580,11 +592,11 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       {query.trim().length >= 2 && (
         <div className="space-y-2">
           {/* Summary bar */}
-          <div className="flex items-center gap-2 text-[10px]">
+          <div className="flex items-center gap-2 text-[10px] flex-wrap">
             <span className="font-bold">{totalResults} results</span>
             {hasSearched && (
               <span className="text-[hsl(var(--muted-foreground))]">
-                • {allGroups.length} categories searched
+                • {filteredGroups.length}/{allGroups.length} categories
               </span>
             )}
             {isSearching && (
@@ -595,14 +607,14 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
             {totalResults > 0 && (
               <div className="ml-auto flex items-center gap-1">
                 <button
-                  onClick={() => exportSearchCSV(query, allGroups)}
+                  onClick={() => exportSearchCSV(query, filteredGroups)}
                   className="win98-button text-[9px] flex items-center gap-1 px-2 py-0.5"
                   title="Export as CSV"
                 >
                   <Download className="h-3 w-3" /> CSV
                 </button>
                 <button
-                  onClick={() => exportSearchPDF(query, allGroups)}
+                  onClick={() => exportSearchPDF(query, filteredGroups)}
                   className="win98-button text-[9px] flex items-center gap-1 px-2 py-0.5"
                   title="Export as PDF"
                 >
@@ -612,6 +624,40 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
             )}
           </div>
 
+          {/* Category filter chips */}
+          {allGroups.length > 1 && (
+            <div className="flex items-center gap-1 flex-wrap">
+              <Filter className="h-3 w-3 text-[hsl(var(--muted-foreground))] shrink-0" />
+              {allGroups.map(g => {
+                const isHidden = hiddenCategories.has(g.key);
+                return (
+                  <button
+                    key={g.key}
+                    onClick={() => toggleCategory(g.key)}
+                    className={`text-[9px] px-1.5 py-0.5 rounded-sm border flex items-center gap-1 transition-colors ${
+                      isHidden
+                        ? "border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))] text-[hsl(var(--muted-foreground))] opacity-50"
+                        : "border-[hsl(var(--win98-shadow))] bg-white text-[hsl(var(--foreground))] font-medium"
+                    }`}
+                    title={isHidden ? `Show ${g.label}` : `Hide ${g.label}`}
+                  >
+                    {g.icon}
+                    <span>{g.label}</span>
+                    <span className="text-[8px]">({g.results.length})</span>
+                  </button>
+                );
+              })}
+              {hiddenCategories.size > 0 && (
+                <button
+                  onClick={() => setHiddenCategories(new Set())}
+                  className="text-[9px] px-1.5 py-0.5 text-[hsl(var(--win98-titlebar))] hover:underline"
+                >
+                  Show all
+                </button>
+              )}
+            </div>
+          )}
+
           {totalResults === 0 && !isSearching && (
             <div className="win98-sunken bg-white p-4 text-center text-[11px] text-[hsl(var(--muted-foreground))]">
               No results found for "{query}". Try a different search term or press Enter to search databases.
@@ -620,7 +666,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
           {/* Result groups */}
           <div className="grid gap-2 sm:grid-cols-2">
-            {allGroups.map((group) => (
+            {filteredGroups.map((group) => (
               <div key={group.key} className="candidate-card">
                 <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-b-[hsl(var(--win98-shadow))]">
                   <span className="text-[hsl(var(--muted-foreground))]">{group.icon}</span>
