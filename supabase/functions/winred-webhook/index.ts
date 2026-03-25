@@ -6,6 +6,23 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-winred-signature, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function verifySignature(body: string, signature: string | null, secret: string): Promise<boolean> {
+  if (!signature || !secret) return false;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
+  const computed = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+  // Constant-time comparison
+  if (computed.length !== signature.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < computed.length; i++) {
+    mismatch |= computed.charCodeAt(i) ^ signature.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -17,15 +34,31 @@ Deno.serve(async (req) => {
   // POST /winred-webhook — receive webhook from WinRed
   if (req.method === "POST" && (!path || path === "winred-webhook")) {
     try {
+      const webhookSecret = Deno.env.get("WINRED_WEBHOOK_SECRET");
+      const rawBody = await req.text();
+
+      // Verify HMAC signature if webhook secret is configured
+      if (webhookSecret) {
+        const signature = req.headers.get("x-winred-signature");
+        const valid = await verifySignature(rawBody, signature, webhookSecret);
+        if (!valid) {
+          console.error("WinRed webhook signature verification failed");
+          return new Response(JSON.stringify({ error: "Invalid signature" }), {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
+        console.warn("WINRED_WEBHOOK_SECRET not set — skipping signature verification. Set this secret to enable webhook security.");
+      }
+
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, serviceKey);
 
-      const payload = await req.json();
+      const payload = JSON.parse(rawBody);
       console.log("WinRed webhook received:", JSON.stringify(payload).substring(0, 500));
 
-      // WinRed sends donation events - normalize the fields
-      // WinRed webhook payloads can vary; we handle common shapes
       const donations = Array.isArray(payload) ? payload : [payload];
 
       const rows = donations.map((d: any) => ({
@@ -122,7 +155,6 @@ Deno.serve(async (req) => {
       const { data, error } = await query;
       if (error) throw new Error(error.message);
 
-      // Aggregate stats
       const totalAmount = (data || []).reduce((s: number, r: any) => s + (r.amount || 0), 0);
       const uniqueDonors = new Set((data || []).map((r: any) => `${r.donor_first_name}|${r.donor_last_name}|${r.donor_email}`)).size;
 
