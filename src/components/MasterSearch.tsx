@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt } from "lucide-react";
 import { exportSearchCSV, exportSearchPDF } from "@/lib/masterSearchExport";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +37,7 @@ function saveToStorage(key: string, items: string[]) {
 }
 
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [savedSearches, setSavedSearches] = useState<string[]>(() => loadFromStorage(STORAGE_KEY));
@@ -53,6 +54,19 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     winredDonations: any[];
   }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [] });
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Ctrl+K shortcut to focus search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   const isCurrentQuerySaved = savedSearches.includes(query.trim());
 
@@ -402,6 +416,9 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
           Search across all databases & research tools
         </span>
+        <kbd className="ml-auto text-[9px] px-1.5 py-0.5 rounded border border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-light))] text-[hsl(var(--muted-foreground))] font-mono">
+          Ctrl+K
+        </kbd>
       </div>
 
       <div className="win98-sunken bg-white p-2 mb-3">
@@ -413,6 +430,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               className="win98-input w-full pl-7 pr-7"
+              ref={inputRef}
               placeholder="Search candidates, districts, bills, finance, polling, elections..."
               maxLength={500}
             />
