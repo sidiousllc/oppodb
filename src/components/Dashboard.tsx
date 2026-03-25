@@ -137,6 +137,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount }: 
     { label: "District Profiles", value: districtCount, emoji: "🧭", section: "district-intel" },
     { label: "MAGA Files", value: magaFiles.length, emoji: "⚠️", section: "maga-files" },
     { label: "Toss Up Races", value: tossUpDistricts.length, emoji: "🎯", section: "district-intel" },
+    { label: "Research Tools", value: 2, emoji: "🔬", section: "research-tools" },
   ];
 
   return (
