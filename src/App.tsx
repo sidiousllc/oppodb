@@ -13,6 +13,7 @@ import AdminPanel from "./pages/AdminPanel.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
 import ApiPage from "./pages/ApiPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import UnsubscribePage from "./pages/UnsubscribePage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
                 <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/api" element={<ProtectedRoute><ApiPage /></ProtectedRoute>} />
+                <Route path="/unsubscribe" element={<UnsubscribePage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </WindowManagerProvider>
