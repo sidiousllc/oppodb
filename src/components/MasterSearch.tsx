@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt } from "lucide-react";
 import { exportSearchCSV, exportSearchPDF } from "@/lib/masterSearchExport";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +37,7 @@ function saveToStorage(key: string, items: string[]) {
 }
 
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [savedSearches, setSavedSearches] = useState<string[]>(() => loadFromStorage(STORAGE_KEY));
