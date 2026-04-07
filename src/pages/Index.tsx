@@ -64,6 +64,7 @@ export default function Index() {
   const [electionSyncProgress, setElectionSyncProgress] = useState("");
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [researchSubsection, setResearchSubsection] = useState<string | null>(null);
+  const [candidateSubsection, setCandidateSubsection] = useState<"profiles" | "maga-files">("profiles");
   const [compareMode, setCompareMode] = useState(false);
   const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
   const [pviFilter, setPviFilter] = useState<PVIFilter>("all");
@@ -267,7 +268,6 @@ export default function Index() {
   const sectionCounts = useMemo(() => ({
     dashboard: 0,
     candidates: candidates.length,
-    "maga-files": magaFiles.length,
     "local-impact": localImpactReports.length,
     narratives: narrativeReports.length,
     "district-intel": districts.length,
@@ -291,7 +291,6 @@ export default function Index() {
   const sectionLabels: Record<Section, string> = {
     dashboard: "Dashboard",
     candidates: "Candidate Profiles",
-    "maga-files": "MAGA Files",
     "local-impact": "Local Impact by State",
     narratives: "Narrative Reports",
     "district-intel": "District Intelligence",
@@ -308,7 +307,7 @@ export default function Index() {
     if (section === "candidates" && selectedCandidate) {
       return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} onNavigateSlug={navigateBySlug} onEdit={isAdmin ? handleEditCandidate : undefined} />;
     }
-    if (section === "maga-files" && selectedMaga) {
+    if (section === "candidates" && candidateSubsection === "maga-files" && selectedMaga) {
       return (
         <GenericDetail
           icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center text-2xl">⚠️</div>}
@@ -384,56 +383,69 @@ export default function Index() {
     if (section === "candidates") {
       return (
         <>
-          <div className="mt-2 mb-1 flex items-center justify-between">
-            <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
-              {filteredCandidates.length} {filteredCandidates.length === 1 ? "profile" : "profiles"}
-            </p>
-            {isAdmin && (
-              <button
-                onClick={() => { setEditorMode("create"); setEditData(undefined); }}
-                className="win98-button flex items-center gap-1 text-[10px]"
-              >
-                <Plus className="h-3 w-3" />
-                Add Profile
-              </button>
-            )}
+          {/* Subsection tabs */}
+          <div className="flex gap-1 mb-2">
+            <button
+              onClick={() => { setCandidateSubsection("profiles"); setSelectedSlug(null); }}
+              className={`win98-button text-[10px] ${candidateSubsection === "profiles" ? "font-bold" : ""}`}
+            >
+              👥 Profiles ({filteredCandidates.length})
+            </button>
+            <button
+              onClick={() => { setCandidateSubsection("maga-files"); setSelectedSlug(null); }}
+              className={`win98-button text-[10px] ${candidateSubsection === "maga-files" ? "font-bold" : ""}`}
+            >
+              ⚠️ MAGA Files ({filteredMaga.length})
+            </button>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {filteredCandidates.map(c => (
-              <CandidateCard key={c.slug} candidate={c} onClick={setSelectedSlug} onDistrictClick={(districtId) => { setSection("district-intel"); setSelectedSlug(districtId); }} />
-            ))}
-          </div>
-          {filteredCandidates.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No candidates match your search.</p>
-            </div>
-          )}
-        </>
-      );
-    }
 
-    if (section === "maga-files") {
-      return (
-        <>
-          <div className="mt-2 mb-1">
-            <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{filteredMaga.length} appointee files</p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {filteredMaga.map(m => (
-              <GenericCard
-                key={m.slug}
-                icon={<div className="flex h-8 w-8 shrink-0 items-center justify-center text-lg">⚠️</div>}
-                title={m.name}
-                tag={{ label: "MAGA File", className: "bg-destructive/10 text-destructive" }}
-                preview={m.content.split("\n").find(l => l.trim().length > 20)?.trim().slice(0, 140) || ""}
-                onClick={() => setSelectedSlug(m.slug)}
-              />
-            ))}
-          </div>
-          {filteredMaga.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No MAGA files match your search.</p>
-            </div>
+          {candidateSubsection === "maga-files" ? (
+            <>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {filteredMaga.map(m => (
+                  <GenericCard
+                    key={m.slug}
+                    icon={<div className="flex h-8 w-8 shrink-0 items-center justify-center text-lg">⚠️</div>}
+                    title={m.name}
+                    tag={{ label: "MAGA File", className: "bg-destructive/10 text-destructive" }}
+                    preview={m.content.split("\n").find(l => l.trim().length > 20)?.trim().slice(0, 140) || ""}
+                    onClick={() => setSelectedSlug(m.slug)}
+                  />
+                ))}
+              </div>
+              {filteredMaga.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No MAGA files match your search.</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="mt-2 mb-1 flex items-center justify-between">
+                <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                  {filteredCandidates.length} {filteredCandidates.length === 1 ? "profile" : "profiles"}
+                </p>
+                {isAdmin && (
+                  <button
+                    onClick={() => { setEditorMode("create"); setEditData(undefined); }}
+                    className="win98-button flex items-center gap-1 text-[10px]"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add Profile
+                  </button>
+                )}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {filteredCandidates.map(c => (
+                  <CandidateCard key={c.slug} candidate={c} onClick={setSelectedSlug} onDistrictClick={(districtId) => { setSection("district-intel"); setSelectedSlug(districtId); }} />
+                ))}
+              </div>
+              {filteredCandidates.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No candidates match your search.</p>
+                </div>
+              )}
+            </>
           )}
         </>
       );
