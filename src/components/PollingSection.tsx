@@ -1394,6 +1394,529 @@ function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
 
 }
 
+// ─── Pollster Consistency Heatmap ────────────────────────────────────────────
+
+function PollsterHeatmap({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
+
+  const heatData = useMemo(() => {
+    // Group approval polls by source × month
+    const approval = polls.filter(
+      (p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval" && p.approve_pct != null
+    );
+    const sources = new Set<string>();
+    const months = new Set<string>();
+    const map = new Map<string, number>();
+
+    approval.forEach((p) => {
+      const d = new Date(p.date_conducted + "T00:00:00");
+      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      sources.add(p.source);
+      months.add(month);
+      const key = `${p.source}|${month}`;
+      // Average if multiple in same month
+      const existing = map.get(key);
+      if (existing != null) {
+        map.set(key, (existing + (p.approve_pct ?? 0)) / 2);
+      } else {
+        map.set(key, p.approve_pct ?? 0);
+      }
+    });
+
+    const sortedMonths = Array.from(months).sort();
+    const sortedSources = Array.from(sources).sort((a, b) =>
+      getSourceInfo(a).name.localeCompare(getSourceInfo(b).name)
+    );
+
+    return { sortedMonths, sortedSources, map };
+  }, [polls]);
+
+  if (heatData.sortedSources.length < 2 || heatData.sortedMonths.length < 2) return null;
+
+  const cellW = Math.min(60, 600 / heatData.sortedMonths.length);
+  const cellH = 28;
+  const LEFT = 130;
+  const TOP = 30;
+  const W = LEFT + heatData.sortedMonths.length * cellW + 20;
+  const H = TOP + heatData.sortedSources.length * cellH + 10;
+
+  function heatColor(v: number | undefined): string {
+    if (v == null) return "hsl(var(--muted))";
+    if (v >= 50) return `hsl(150, ${Math.min(70, (v - 50) * 5 + 30)}%, ${55 - (v - 50)}%)`;
+    return `hsl(0, ${Math.min(70, (50 - v) * 4 + 20)}%, ${50 + (50 - v) * 0.5}%)`;
+  }
+
+  return (
+    <AnimatedCard>
+      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="font-display text-sm font-semibold text-foreground mb-1">
+          Pollster Approval Heatmap
+        </h3>
+        <p className="text-xs text-muted-foreground mb-3">
+          Monthly approval rating by source — darker green = higher approval, red = lower
+        </p>
+        <div className="overflow-x-auto">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 500, maxHeight: 500 }}>
+            {/* Month headers */}
+            {heatData.sortedMonths.map((m, i) => (
+              <text
+                key={m}
+                x={LEFT + i * cellW + cellW / 2}
+                y={TOP - 8}
+                textAnchor="middle"
+                fontSize={9}
+                fill="hsl(var(--muted-foreground))"
+              >
+                {new Date(m + "-01").toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
+              </text>
+            ))}
+            {/* Rows */}
+            {heatData.sortedSources.map((src, si) => {
+              const srcInfo = getSourceInfo(src);
+              return (
+                <g key={src}>
+                  <text
+                    x={LEFT - 8}
+                    y={TOP + si * cellH + cellH / 2 + 4}
+                    textAnchor="end"
+                    fontSize={10}
+                    fontWeight={500}
+                    fill="hsl(var(--foreground))"
+                  >
+                    {srcInfo.name.length > 16 ? srcInfo.name.slice(0, 15) + "…" : srcInfo.name}
+                  </text>
+                  {heatData.sortedMonths.map((m, mi) => {
+                    const val = heatData.map.get(`${src}|${m}`);
+                    return (
+                      <g key={m}>
+                        <rect
+                          x={LEFT + mi * cellW}
+                          y={TOP + si * cellH}
+                          width={cellW - 2}
+                          height={cellH - 2}
+                          rx={3}
+                          fill={heatColor(val)}
+                          opacity={inView ? 0.85 : 0}
+                          style={{ transition: `opacity 0.5s ease ${(si * heatData.sortedMonths.length + mi) * 20}ms` }}
+                        />
+                        {val != null && (
+                          <text
+                            x={LEFT + mi * cellW + (cellW - 2) / 2}
+                            y={TOP + si * cellH + cellH / 2 + 1}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fontSize={9}
+                            fontWeight={600}
+                            fill={val >= 46 ? "white" : val <= 38 ? "white" : "hsl(var(--foreground))"}
+                            opacity={inView ? 1 : 0}
+                            style={{ transition: `opacity 0.3s ease ${(si * heatData.sortedMonths.length + mi) * 20 + 200}ms` }}
+                          >
+                            {Math.round(val)}
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+        <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-3 w-8 rounded" style={{ background: "linear-gradient(90deg, hsl(0, 50%, 55%), hsl(45, 50%, 70%), hsl(150, 55%, 45%))" }} />
+            Low → High approval
+          </span>
+          <span className="ml-auto">{heatData.sortedSources.length} sources × {heatData.sortedMonths.length} months</span>
+        </div>
+      </div>
+    </AnimatedCard>
+  );
+}
+
+// ─── Rolling Average Trend ──────────────────────────────────────────────────
+
+function RollingAverageTrend({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
+
+  const chartData = useMemo(() => {
+    const approval = polls
+      .filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval" && p.approve_pct != null)
+      .sort((a, b) => a.date_conducted.localeCompare(b.date_conducted));
+    if (approval.length < 5) return [];
+
+    // Compute 7-day rolling average by grouping by date
+    const byDate = new Map<string, number[]>();
+    approval.forEach((p) => {
+      if (!byDate.has(p.date_conducted)) byDate.set(p.date_conducted, []);
+      byDate.get(p.date_conducted)!.push(p.approve_pct!);
+    });
+    const daily = Array.from(byDate.entries())
+      .map(([date, vals]) => ({ date, avg: vals.reduce((a, b) => a + b, 0) / vals.length }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Rolling 7-point average
+    return daily.map((d, i) => {
+      const window = daily.slice(Math.max(0, i - 6), i + 1);
+      const rollingAvg = window.reduce((s, w) => s + w.avg, 0) / window.length;
+      return {
+        date: d.date,
+        dateLabel: new Date(d.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
+        raw: Math.round(d.avg * 10) / 10,
+        rolling: Math.round(rollingAvg * 10) / 10,
+      };
+    });
+  }, [polls]);
+
+  if (chartData.length < 5) return null;
+
+  const latest = chartData[chartData.length - 1];
+  const earliest = chartData[0];
+  const change = Math.round((latest.rolling - earliest.rolling) * 10) / 10;
+
+  return (
+    <AnimatedCard>
+      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              Rolling Average — Approval Trend
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              7-point rolling average across all sources · {chartData.length} data points
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-display font-bold text-foreground">
+              {latest.rolling}%
+            </span>
+            <MarginBadge margin={change} />
+          </div>
+        </div>
+        <div className="w-full" style={{ height: 280 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="rollingGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+              <XAxis
+                dataKey="dateLabel"
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tickLine={false}
+                axisLine={{ stroke: "hsl(var(--border))" }}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                domain={["dataMin - 3", "dataMax + 3"]}
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tickLine={false}
+                axisLine={{ stroke: "hsl(var(--border))" }}
+                tickFormatter={(v: number) => `${v}%`}
+              />
+              <RechartsTooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--popover))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 8,
+                  fontSize: 11,
+                }}
+                formatter={(value: number, name: string) => [
+                  `${value}%`,
+                  name === "rolling" ? "7-pt Rolling Avg" : "Daily Average",
+                ]}
+              />
+              <ReferenceLine y={50} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 3" opacity={0.4} />
+              <Area
+                type="monotone"
+                dataKey="raw"
+                stroke="hsl(var(--muted-foreground))"
+                strokeWidth={1}
+                fill="none"
+                dot={{ r: 2, fill: "hsl(var(--muted-foreground))", strokeWidth: 0 }}
+                opacity={0.4}
+                isAnimationActive={inView}
+                animationDuration={1200}
+              />
+              <Area
+                type="monotone"
+                dataKey="rolling"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2.5}
+                fill="url(#rollingGrad)"
+                dot={false}
+                activeDot={{ r: 5, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                isAnimationActive={inView}
+                animationDuration={1500}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-0.5 w-6 rounded-sm bg-primary" /> Rolling Average
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-0.5 w-6 rounded-sm" style={{ backgroundColor: "hsl(var(--muted-foreground))", opacity: 0.4 }} /> Daily
+          </span>
+          <span className="ml-auto">
+            {earliest.dateLabel} → {latest.dateLabel}
+          </span>
+        </div>
+      </div>
+    </AnimatedCard>
+  );
+}
+
+// ─── Methodology & Sample Distribution ──────────────────────────────────────
+
+function MethodologyBreakdown({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
+
+  const { methods, sampleTypes } = useMemo(() => {
+    const mMap = new Map<string, number>();
+    const sMap = new Map<string, number>();
+    polls.forEach((p) => {
+      const m = p.methodology || "Unknown";
+      mMap.set(m, (mMap.get(m) || 0) + 1);
+      const s = p.sample_type || "Unknown";
+      sMap.set(s, (sMap.get(s) || 0) + 1);
+    });
+    return {
+      methods: Array.from(mMap.entries()).sort((a, b) => b[1] - a[1]),
+      sampleTypes: Array.from(sMap.entries()).sort((a, b) => b[1] - a[1]),
+    };
+  }, [polls]);
+
+  const { avgSampleSize, medianMoE } = useMemo(() => {
+    const sizes = polls.filter((p) => p.sample_size != null).map((p) => p.sample_size!);
+    const moes = polls.filter((p) => p.margin_of_error != null).map((p) => p.margin_of_error!);
+    return {
+      avgSampleSize: sizes.length ? Math.round(sizes.reduce((a, b) => a + b, 0) / sizes.length) : null,
+      medianMoE: moes.length ? Math.round(moes.sort((a, b) => a - b)[Math.floor(moes.length / 2)] * 10) / 10 : null,
+    };
+  }, [polls]);
+
+  const METH_COLORS = [
+    "hsl(210, 70%, 50%)", "hsl(150, 55%, 45%)", "hsl(30, 80%, 50%)",
+    "hsl(280, 55%, 50%)", "hsl(350, 60%, 50%)", "hsl(180, 55%, 42%)",
+    "hsl(45, 70%, 48%)", "hsl(0, 50%, 55%)",
+  ];
+
+  return (
+    <AnimatedCard>
+      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="font-display text-sm font-semibold text-foreground mb-1">
+          Methodology & Sample Quality
+        </h3>
+        <p className="text-xs text-muted-foreground mb-4">
+          How polls are conducted and who is sampled
+        </p>
+
+        {/* Key stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="rounded-lg bg-muted/30 p-3 text-center">
+            <p className="text-lg font-display font-bold text-foreground">{polls.length}</p>
+            <p className="text-[10px] text-muted-foreground uppercase">Total Polls</p>
+          </div>
+          <div className="rounded-lg bg-muted/30 p-3 text-center">
+            <p className="text-lg font-display font-bold text-foreground">{methods.length}</p>
+            <p className="text-[10px] text-muted-foreground uppercase">Methods</p>
+          </div>
+          <div className="rounded-lg bg-muted/30 p-3 text-center">
+            <p className="text-lg font-display font-bold text-foreground">{avgSampleSize ? avgSampleSize.toLocaleString() : "—"}</p>
+            <p className="text-[10px] text-muted-foreground uppercase">Avg Sample</p>
+          </div>
+          <div className="rounded-lg bg-muted/30 p-3 text-center">
+            <p className="text-lg font-display font-bold text-foreground">{medianMoE ? `±${medianMoE}%` : "—"}</p>
+            <p className="text-[10px] text-muted-foreground uppercase">Median MoE</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Methodology */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">By Methodology</p>
+            <div className="space-y-2">
+              {methods.map(([method, count], i) => {
+                const pct = (count / polls.length) * 100;
+                return (
+                  <div key={method}>
+                    <div className="flex justify-between text-xs mb-0.5">
+                      <span className="font-medium text-foreground">{method}</span>
+                      <span className="text-muted-foreground">{count} ({Math.round(pct)}%)</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: inView ? `${pct}%` : "0%",
+                          backgroundColor: METH_COLORS[i % METH_COLORS.length],
+                          transitionDelay: `${i * 80}ms`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {/* Sample Type */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">By Sample Type</p>
+            <div className="space-y-2">
+              {sampleTypes.map(([type, count], i) => {
+                const pct = (count / polls.length) * 100;
+                return (
+                  <div key={type}>
+                    <div className="flex justify-between text-xs mb-0.5">
+                      <span className="font-medium text-foreground">{type}</span>
+                      <span className="text-muted-foreground">{count} ({Math.round(pct)}%)</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: inView ? `${pct}%` : "0%",
+                          backgroundColor: METH_COLORS[(i + 3) % METH_COLORS.length],
+                          transitionDelay: `${i * 80}ms`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </AnimatedCard>
+  );
+}
+
+// ─── Pollster Spread / Outlier Detection ────────────────────────────────────
+
+function PollsterSpreadChart({ polls }: { polls: PollEntry[] }) {
+  const { ref, inView } = useInView();
+
+  const spreadData = useMemo(() => {
+    const approval = polls.filter(
+      (p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval" && p.approve_pct != null
+    );
+    // Group by source — compute avg, min, max, range
+    const bySource = new Map<string, number[]>();
+    approval.forEach((p) => {
+      if (!bySource.has(p.source)) bySource.set(p.source, []);
+      bySource.get(p.source)!.push(p.approve_pct!);
+    });
+
+    return Array.from(bySource.entries())
+      .filter(([, vals]) => vals.length >= 2)
+      .map(([source, vals]) => {
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+        const min = Math.min(...vals);
+        const max = Math.max(...vals);
+        return {
+          source,
+          name: getSourceInfo(source).name,
+          color: getSourceInfo(source).color,
+          avg: Math.round(avg * 10) / 10,
+          min,
+          max,
+          range: max - min,
+          count: vals.length,
+        };
+      })
+      .sort((a, b) => a.avg - b.avg);
+  }, [polls]);
+
+  if (spreadData.length < 3) return null;
+
+  const globalAvg = spreadData.reduce((s, d) => s + d.avg, 0) / spreadData.length;
+  const barH = 32;
+  const W = 550;
+  const LEFT = 130;
+  const RIGHT = 40;
+  const TOP = 20;
+  const H = TOP + spreadData.length * barH + 20;
+  const plotW = W - LEFT - RIGHT;
+  const allVals = spreadData.flatMap((d) => [d.min, d.max]);
+  const minPct = Math.floor(Math.min(...allVals) - 2);
+  const maxPct = Math.ceil(Math.max(...allVals) + 2);
+  const range = maxPct - minPct || 1;
+  const toX = (v: number) => LEFT + ((v - minPct) / range) * plotW;
+
+  return (
+    <AnimatedCard>
+      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="font-display text-sm font-semibold text-foreground mb-1">
+          Pollster Variability & Spread
+        </h3>
+        <p className="text-xs text-muted-foreground mb-3">
+          Range of approval readings per pollster — wider bars indicate more variation
+        </p>
+        <div className="overflow-x-auto">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 450, maxHeight: 500 }}>
+            {/* Grid */}
+            {[35, 40, 45, 50].filter((v) => v >= minPct && v <= maxPct).map((v) => (
+              <g key={v}>
+                <line x1={toX(v)} y1={TOP} x2={toX(v)} y2={H - 15} stroke="hsl(var(--border))" strokeWidth={0.5} />
+                <text x={toX(v)} y={H - 3} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
+              </g>
+            ))}
+            {/* Global average line */}
+            <line x1={toX(globalAvg)} y1={TOP} x2={toX(globalAvg)} y2={H - 15} stroke="hsl(var(--primary))" strokeWidth={1.5} strokeDasharray="4 3" opacity={0.6} />
+            <text x={toX(globalAvg)} y={TOP - 4} textAnchor="middle" fontSize={9} fontWeight={600} fill="hsl(var(--primary))">Avg {Math.round(globalAvg * 10) / 10}%</text>
+
+            {spreadData.map((d, i) => {
+              const y = TOP + i * barH + barH / 2;
+              return (
+                <g key={d.source} opacity={inView ? 1 : 0} style={{ transition: `opacity 0.5s ease ${i * 60}ms` }}>
+                  <text x={LEFT - 8} y={y + 4} textAnchor="end" fontSize={10} fontWeight={500} fill="hsl(var(--foreground))">
+                    {d.name.length > 16 ? d.name.slice(0, 15) + "…" : d.name}
+                  </text>
+                  {/* Range bar */}
+                  <rect
+                    x={toX(d.min)}
+                    y={y - 5}
+                    width={Math.max(2, toX(d.max) - toX(d.min))}
+                    height={10}
+                    rx={3}
+                    fill={`hsl(${d.color})`}
+                    opacity={0.25}
+                  />
+                  {/* Min dot */}
+                  <circle cx={toX(d.min)} cy={y} r={4} fill={`hsl(${d.color})`} stroke="hsl(var(--card))" strokeWidth={1.5} />
+                  {/* Max dot */}
+                  <circle cx={toX(d.max)} cy={y} r={4} fill={`hsl(${d.color})`} stroke="hsl(var(--card))" strokeWidth={1.5} />
+                  {/* Avg dot */}
+                  <circle cx={toX(d.avg)} cy={y} r={5} fill={`hsl(${d.color})`} stroke="white" strokeWidth={2} />
+                  {/* Label */}
+                  <text x={toX(d.max) + 8} y={y + 4} fontSize={9} fill="hsl(var(--muted-foreground))">
+                    {d.avg}% (±{d.range})
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+        <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1">● Average</span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-2 w-6 rounded-sm bg-primary/25" /> Range (min–max)
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-0.5 w-6 rounded-sm bg-primary" style={{ opacity: 0.6 }} /> Overall Avg
+          </span>
+        </div>
+      </div>
+    </AnimatedCard>
+  );
+}
+
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 export function PollingSection() {
