@@ -1402,6 +1402,7 @@ export function PollingSection() {
   const [seeding, setSeeding] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<"polling" | "markets">("polling");
 
   useEffect(() => {
     loadPolls();
