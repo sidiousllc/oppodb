@@ -325,8 +325,7 @@ async function handlePolymarket(
     if (!resp.ok) return json({ error: "Order failed", details: data }, resp.status);
 
     // Log trade to history
-    const adminClient2 = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    await logTrade(adminClient2, body._user_id || "", "polymarket", {
+    await logTrade(adminClient, userId, "polymarket", {
       market_id: body.tokenID,
       market_title: body.tokenID,
       side: body.side,
@@ -402,8 +401,7 @@ async function handlePredictIt(
     if (!resp.ok) return json({ error: "Order failed", details: data }, resp.status);
 
     // Log trade to history
-    const adminClient3 = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    await logTrade(adminClient3, body._user_id || "", "predictit", {
+    await logTrade(adminClient, userId, "predictit", {
       market_id: body.contractId?.toString(),
       market_title: body.contractId?.toString(),
       side: body.tradeType === 1 ? "buy_yes" : body.tradeType === 2 ? "buy_no" : "sell",
