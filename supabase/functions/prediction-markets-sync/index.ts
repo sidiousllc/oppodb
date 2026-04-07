@@ -97,25 +97,36 @@ async function fetchKalshiData() {
 
 async function fetchMetaculusData() {
   const markets: any[] = [];
+  const apiToken = Deno.env.get("METACULUS_API_TOKEN");
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (apiToken) headers["Authorization"] = `Token ${apiToken}`;
+
   const searchTerms = [
     "US congress 2026", "US senate 2026", "US house 2026",
     "US election 2026", "US midterm", "US governor",
     "republican win", "democrat win", "US president",
   ];
 
+  // Try both API versions
+  const apiPaths = [
+    (term: string) => `https://www.metaculus.com/api/questions/?search=${encodeURIComponent(term)}&status=open&limit=50&order_by=-activity`,
+    (term: string) => `https://www.metaculus.com/api2/questions/?search=${encodeURIComponent(term)}&type=forecast&status=open&limit=50&order_by=-activity`,
+  ];
+
   for (const term of searchTerms) {
-    try {
-      const res = await fetch(
-        `https://www.metaculus.com/api2/questions/?search=${encodeURIComponent(term)}&type=forecast&status=open&limit=50&order_by=-activity`,
-        { headers: { Accept: "application/json" } }
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data?.results) {
-        markets.push(...data.results);
+    for (const pathFn of apiPaths) {
+      try {
+        const res = await fetch(pathFn(term), { headers });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const results = data?.results || (Array.isArray(data) ? data : []);
+        if (results.length > 0) {
+          markets.push(...results);
+          break; // this API path works, skip the other
+        }
+      } catch (e) {
+        console.error(`Metaculus fetch error (${term}):`, e);
       }
-    } catch (e) {
-      console.error(`Metaculus fetch error (${term}):`, e);
     }
   }
 
@@ -358,10 +369,15 @@ function manifoldToRow(m: any) {
   };
 }
 
+function safeTimestamp(v: any): string {
+  if (!v || v === "NA" || v === "N/A") return new Date().toISOString();
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
 function predictitToRow(m: any) {
   const title = m.name || m.shortName || "";
   const { category, state_abbr, district, candidate_name } = classifyMarket(title);
-  // PredictIt has contracts within markets
   const topContract = m.contracts?.[0];
   return {
     market_id: `predictit-${m.id}`,
@@ -375,7 +391,7 @@ function predictitToRow(m: any) {
     no_price: topContract?.bestBuyNoCost ?? null,
     volume: m.contracts?.reduce((sum: number, c: any) => sum + (c.totalSharesTraded ?? 0), 0) ?? 0,
     liquidity: 0,
-    last_traded_at: topContract?.dateEnd || new Date().toISOString(),
+    last_traded_at: safeTimestamp(topContract?.dateEnd),
     market_url: m.url || `https://www.predictit.org/markets/detail/${m.id}`,
     status: m.status === "Open" ? "active" : m.status?.toLowerCase() || "active",
     raw_data: m,
