@@ -401,7 +401,7 @@ function RecordDetail({ record, allRecords, onBack, onNavigateSlug }: {
             </p>
             <div className="space-y-1">
               {uniqueStateCandidates.sort((a, b) => (b.total_raised ?? 0) - (a.total_raised ?? 0)).map(c => (
-                <div key={c.id} className="flex items-center justify-between text-xs rounded-lg border border-border p-2">
+                <div key={c.id} className="flex items-center justify-between text-xs candidate-card p-2">
                   <div>
                     <span className="font-bold">{c.candidate_name}</span>
                     <span className="text-muted-foreground ml-1">({c.party}) {c.district}</span>
