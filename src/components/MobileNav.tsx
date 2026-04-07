@@ -11,7 +11,7 @@ interface MobileNavProps {
 
 const sectionItems: Array<{ id: Section; label: string }> = [
   { id: "candidates", label: "Candidates" },
-  { id: "maga-files", label: "MAGA Files" },
+  { id: "local-impact", label: "Local Impact" },
   { id: "local-impact", label: "Local Impact" },
   { id: "narratives", label: "Narratives" },
   { id: "district-intel", label: "District Intel" },

@@ -22,7 +22,6 @@ export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
 export type Section =
   | "dashboard"
   | "candidates"
-  | "maga-files"
   | "local-impact"
   | "narratives"
   | "district-intel"
@@ -54,7 +53,6 @@ const filters: Array<{ id: FilterCategory; label: string; emoji: string }> = [
 const sections: Array<{ id: Section; label: string; emoji: string }> = [
   { id: "dashboard", label: "Dashboard", emoji: "🏠" },
   { id: "candidates", label: "Candidate Profiles", emoji: "👥" },
-  { id: "maga-files", label: "MAGA Files", emoji: "⚠️" },
   { id: "local-impact", label: "Local Impact", emoji: "🌐" },
   { id: "narratives", label: "Narrative Reports", emoji: "📄" },
   { id: "district-intel", label: "District Intel", emoji: "🧭" },
