@@ -2,7 +2,7 @@
 
 ## Description
 
-Candidate Profiles form the core content of OppoDB. Each profile contains opposition research on a political candidate — opposition research notes, issue positions, voting records, scandal information, and biographical data.
+Candidate Profiles form the core content of OppoDB. Each profile contains opposition research on a political candidate — opposition research notes, issue positions, voting records, scandal information, and biographical data. The section includes two subsection tabs: **Profiles** (candidate research) and **MAGA Files** (Trump administration appointee vetting reports).
 
 ## Supported Candidate Types
 
@@ -119,4 +119,26 @@ In the **Admin Panel → Candidates tab**, moderators can:
 - **Candidate profiles**: GitHub-synced markdown files via `githubSync.ts`
 - **Polling data**: Seeded from538, RCP, Trafalgar, Remington, InsiderAdvantage, SoCal, Trafalgar, Quinnipiac, Emerson, Susquehanna, Datr
 
-[t]{float:right}
+---
+
+## MAGA Files Subsection
+
+MAGA Files are accessible as the second tab within the Candidate Profiles section (previously a standalone sidebar section). They document Trump administration appointees and their backgrounds, controversies, and relevant opposition research.
+
+### Navigation
+
+The Candidate Profiles section uses a tab-based subsection system:
+
+| Tab | Description |
+|-----|-------------|
+| 👥 Profiles | Standard candidate research profiles |
+| ⚠️ MAGA Files | Trump appointee vetting reports |
+
+### Features
+- Full-text search via `searchMagaFiles()`
+- Content displayed in `GenericDetail` component
+- Warning emoji icon (⚠️) for visual distinction
+- Tag: "MAGA File" with destructive red styling
+- Internal link resolution for cross-references
+
+See [Additional Features](Additional-Features) for the full MAGA Files data model and admin management details.

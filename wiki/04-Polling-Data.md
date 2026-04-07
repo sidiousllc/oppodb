@@ -1,6 +1,12 @@
-# Feature: Polling Data
+# Feature: DataHub (Polling Data, Prediction Markets & Campaign Finance)
 
 ## Description
+
+The DataHub is the central intelligence section of OppoDB, consolidating three major data categories into tabbed subsections:
+
+1. **Polling Data** — Presidential approval, generic ballot, issue polling, favorability, and demographic cross-tabs from 30+ sources
+2. **Prediction Markets** — Real-time probability data and trading integration for Polymarket, Kalshi, PredictIt, Manifold Markets, and Metaculus
+3. **Campaign Finance** — FEC federal filings and state-level campaign finance data (previously a standalone sidebar section, now integrated into DataHub)
 
 OppoDB maintains a comprehensive polling database covering presidential approval, generic congressional ballot, issue polling, candidate favorability, and demographic cross-tabs. Data is visualized through multiple chart types including trend lines, bar charts, butterfly charts, dot plots, and gauge visualizations.
 
@@ -142,3 +148,23 @@ Two export utilities are available:
 ## Supabase Table
 
 All polling data is stored in the `polling_data` Supabase table and queried via `fetchPollingData()` from `pollingData.ts`.
+
+---
+
+## Campaign Finance Tab
+
+Campaign Finance is now accessible as the third tab in the DataHub section. It provides comprehensive fundraising analysis including total raised, spending, cash on hand, donor composition, and industry/corporate giving patterns. See [Campaign Finance](Campaign-Finance) for full documentation.
+
+## Prediction Markets Tab
+
+The Prediction Markets tab provides real-time probability data from multiple platforms and integrated trading capabilities. See [Prediction Market Trading](Prediction-Market-Trading) for full documentation.
+
+## Navigation
+
+The DataHub uses a tab-based navigation system:
+
+| Tab | Component | Description |
+|-----|-----------|-------------|
+| 📊 Polling Data | `PollingSection` (inline) | All polling visualizations and tables |
+| 📈 Prediction Markets | `PredictionMarketsPanel` (lazy-loaded) | Market data, trading, and portfolio |
+| 💰 Campaign Finance | `CampaignFinanceSection` | FEC filings and state finance data |

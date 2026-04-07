@@ -37,8 +37,8 @@ src/
 │   ├── AOL*.tsx              # AOL browser chrome components
 │   ├── Candidate*.tsx        # Candidate-related components
 │   ├── District*.tsx         # District-related components
-│   ├── PollingSection.tsx    # Polling visualization
-│   ├── CampaignFinancePanel  # FEC finance data
+│   ├── PollingSection.tsx    # DataHub (polling, prediction markets, campaign finance)
+│   ├── CampaignFinanceSection # Campaign finance (DataHub tab)
 │   ├── DocumentationSection  # In-app wiki reader
 │   ├── AccessControlTab.tsx  # Admin invite/request management
 │   ├── ChatPanel.tsx         # Real-time chat

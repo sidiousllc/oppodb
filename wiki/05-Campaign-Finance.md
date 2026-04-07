@@ -4,6 +4,8 @@
 
 Campaign Finance tracks FEC (Federal Election Commission) filings for federal candidates and state-level finance data from FollowTheMoney.org. It provides comprehensive fundraising analysis including total raised, spending, cash on hand, donor composition, and industry/corporate giving patterns.
 
+> **Note**: Campaign Finance is now accessible as a tab within the **DataHub** section (alongside Polling Data and Prediction Markets). It was previously a standalone sidebar section.
+
 ## Federal Campaign Finance (FEC)
 
 ### Data Model
