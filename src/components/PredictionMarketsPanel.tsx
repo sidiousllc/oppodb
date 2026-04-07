@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { MarketTradingPanel } from "@/components/MarketTradingPanel";
+import { TradeHistoryPanel } from "@/components/TradeHistoryPanel";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart3, TrendingUp, TrendingDown, ExternalLink, Filter, RefreshCw,
@@ -496,6 +497,9 @@ export default function PredictionMarketsPanel() {
           ))}
         </div>
       </div>
+
+      {/* Trade History */}
+      <TradeHistoryPanel />
 
       {/* Trading Panel */}
       <div className="mt-4">

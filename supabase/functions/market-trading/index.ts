@@ -46,6 +46,31 @@ function json(data: unknown, status = 200) {
   });
 }
 
+// deno-lint-ignore no-explicit-any
+async function logTrade(adminClient: any, userId: string, platform: string, trade: {
+  market_id?: string; market_title?: string; side: string; price?: number;
+  quantity?: number; total_cost?: number; order_id?: string; status: string;
+  raw_response?: unknown;
+}) {
+  try {
+    await adminClient.from("trade_history").insert({
+      user_id: userId,
+      platform,
+      market_id: trade.market_id,
+      market_title: trade.market_title,
+      side: trade.side,
+      price: trade.price,
+      quantity: trade.quantity,
+      total_cost: trade.total_cost,
+      order_id: trade.order_id,
+      status: trade.status,
+      raw_response: trade.raw_response || {},
+    });
+  } catch (e) {
+    console.error("Failed to log trade:", e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -128,6 +153,31 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // ========== TRADE HISTORY ==========
+    if (action === "trade-history") {
+      const { data, error } = await supabase
+        .from("trade_history")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) return json({ error: error.message }, 500);
+      return json({ trades: data });
+    }
+
+    if (action === "public-trade-feed") {
+      const marketId = url.searchParams.get("market_id");
+      let query = supabase
+        .from("trade_history")
+        .select("id, platform, market_id, market_title, side, price, quantity, total_cost, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (marketId) query = query.eq("market_id", marketId);
+      const { data, error } = await query;
+      if (error) return json({ error: error.message }, 500);
+      return json({ trades: data });
+    }
+
     // ========== TRADING OPERATIONS ==========
     if (action === "portfolio" || action === "orders" || action === "place-order" || action === "cancel-order") {
       const platform = url.searchParams.get("platform");
@@ -155,11 +205,11 @@ Deno.serve(async (req) => {
 
       // Route to platform-specific handler
       if (platform === "kalshi") {
-        return await handleKalshi(action, apiKey, apiSecret, req, url);
+        return await handleKalshi(action, apiKey, apiSecret, req, url, adminClient, userId);
       } else if (platform === "polymarket") {
-        return await handlePolymarket(action, apiKey, apiSecret, passphrase, req, url);
+        return await handlePolymarket(action, apiKey, apiSecret, passphrase, req, url, adminClient, userId);
       } else if (platform === "predictit") {
-        return await handlePredictIt(action, apiKey, req, url);
+        return await handlePredictIt(action, apiKey, req, url, adminClient, userId);
       }
     }
 
@@ -176,7 +226,10 @@ async function handleKalshi(
   apiKey: string,
   apiSecret: string | null,
   req: Request,
-  url: URL
+  url: URL,
+  // deno-lint-ignore no-explicit-any
+  adminClient: any,
+  userId: string,
 ) {
   const baseUrl = "https://api.elections.kalshi.com/trade-api/v2";
 
@@ -216,6 +269,20 @@ async function handleKalshi(
     });
     const data = await resp.json();
     if (!resp.ok) return json({ error: "Order failed", details: data }, resp.status);
+
+    // Log trade to history
+    await logTrade(adminClient, userId, "kalshi", {
+      market_id: body.ticker,
+      market_title: body.ticker,
+      side: `${body.action}_${body.side}`,
+      price: body.yes_price ?? body.no_price,
+      quantity: body.count,
+      total_cost: (body.yes_price ?? body.no_price ?? 0) * (body.count ?? 0),
+      order_id: data.order?.order_id,
+      status: data.order?.status || "submitted",
+      raw_response: data,
+    });
+
     return json({ order: data.order });
   }
 
@@ -243,7 +310,10 @@ async function handlePolymarket(
   _apiSecret: string | null,
   _passphrase: string | null,
   req: Request,
-  url: URL
+  url: URL,
+  // deno-lint-ignore no-explicit-any
+  adminClient: any,
+  userId: string,
 ) {
   // Polymarket uses CLOB API
   const baseUrl = "https://clob.polymarket.com";
@@ -278,6 +348,20 @@ async function handlePolymarket(
     });
     const data = await resp.json();
     if (!resp.ok) return json({ error: "Order failed", details: data }, resp.status);
+
+    // Log trade to history
+    await logTrade(adminClient, userId, "polymarket", {
+      market_id: body.tokenID,
+      market_title: body.tokenID,
+      side: body.side,
+      price: body.price,
+      quantity: body.size,
+      total_cost: (body.price ?? 0) * (body.size ?? 0),
+      order_id: data.orderID || data.id,
+      status: "submitted",
+      raw_response: data,
+    });
+
     return json({ order: data });
   }
 
@@ -301,9 +385,12 @@ async function handlePolymarket(
 // ========== PREDICTIT ==========
 async function handlePredictIt(
   action: string,
-  apiKey: string, // cookie/session token
+  apiKey: string,
   req: Request,
-  url: URL
+  url: URL,
+  // deno-lint-ignore no-explicit-any
+  adminClient: any,
+  userId: string,
 ) {
   // PredictIt doesn't have a public trading API — use their internal endpoints
   const baseUrl = "https://www.predictit.org/api";
@@ -337,6 +424,20 @@ async function handlePredictIt(
     });
     const data = await resp.json();
     if (!resp.ok) return json({ error: "Order failed", details: data }, resp.status);
+
+    // Log trade to history
+    await logTrade(adminClient, userId, "predictit", {
+      market_id: body.contractId?.toString(),
+      market_title: body.contractId?.toString(),
+      side: body.tradeType === 1 ? "buy_yes" : body.tradeType === 2 ? "buy_no" : "sell",
+      price: body.pricePerShare,
+      quantity: body.quantity,
+      total_cost: (body.pricePerShare ?? 0) * (body.quantity ?? 0),
+      order_id: data.offerId?.toString(),
+      status: "submitted",
+      raw_response: data,
+    });
+
     return json({ order: data });
   }
 

@@ -243,9 +243,56 @@ Embedded at the bottom of the Prediction Markets panel, below the market data ta
 5. Decrypts API key and secret using AES-256-GCM
 6. Authenticates with platform API (e.g., Kalshi login)
 7. Submits order to platform API
-8. Returns order confirmation or error to client
-9. Credentials are never cached — decrypted fresh per request
+8. Logs trade to `trade_history` table (service role insert)
+9. Returns order confirmation or error to client
+10. Credentials are never cached — decrypted fresh per request
 ```
+
+---
+
+## Trade History & P&L Tracking
+
+### Database: `trade_history`
+
+Stores every trade placed through the platform for auditing and P&L tracking.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key |
+| `user_id` | UUID | Trader |
+| `platform` | TEXT | `polymarket`, `kalshi`, or `predictit` |
+| `market_id` | TEXT | Platform-specific market identifier |
+| `market_title` | TEXT | Human-readable market name |
+| `side` | TEXT | Trade direction (buy_yes, buy_no, sell, etc.) |
+| `price` | NUMERIC | Price per contract/share |
+| `quantity` | NUMERIC | Number of contracts |
+| `total_cost` | NUMERIC | price × quantity |
+| `order_type` | TEXT | `limit` (default) or `market` |
+| `order_id` | TEXT | Platform-assigned order ID |
+| `status` | TEXT | `submitted`, `filled`, `cancelled` |
+| `pnl` | NUMERIC | Realized profit/loss (updated on settlement) |
+| `fees` | NUMERIC | Platform fees |
+| `raw_response` | JSONB | Full API response from platform |
+| `created_at` | TIMESTAMPTZ | When the trade was placed |
+| `settled_at` | TIMESTAMPTZ | When the trade settled (nullable) |
+
+### Row-Level Security
+
+- **SELECT**: All authenticated users can read all trades (public trade feed)
+- **INSERT/UPDATE**: Service role only — trades are logged server-side by the edge function
+
+### UI: `TradeHistoryPanel`
+
+Embedded in the Prediction Markets section with two viewing modes:
+- **All Trades**: Public feed showing recent trades across all users (anonymized)
+- **My Trades**: Filtered to show only the current user's trade history
+
+### Edge Function Actions
+
+| Action | Method | Description |
+|--------|--------|-------------|
+| `trade-history` | GET | Fetch authenticated user's own trades |
+| `public-trade-feed` | GET | Fetch recent trades (all users, limited fields) |
 
 ---
 
