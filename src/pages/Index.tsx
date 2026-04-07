@@ -299,7 +299,7 @@ export default function Index() {
     narratives: "Narrative Reports",
     "district-intel": "District Intelligence",
     "state-legislative": "State Legislative Districts",
-    polling: "Polling Data",
+    polling: "DataHub",
     "campaign-finance": "Campaign Finance",
     "research-tools": "Research Tools",
     "live-elections": "Live Elections",

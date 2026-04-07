@@ -166,7 +166,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
             onClick={() => onNavigateSection("polling")}
             className="ml-auto win98-button text-[10px]"
           >
-            View All Polling →
+            View DataHub →
           </button>
         </div>
 
@@ -386,7 +386,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
             { label: "Narrative Reports", emoji: "📄", section: "narratives" },
             { label: "District Intel", emoji: "🧭", section: "district-intel" },
             { label: "State Legislatures", emoji: "⚖️", section: "state-legislative" },
-            { label: "Polling Data", emoji: "📊", section: "polling" },
+            { label: "DataHub", emoji: "📊", section: "polling" },
             { label: "Campaign Finance", emoji: "💰", section: "campaign-finance" },
             { label: "Research Tools", emoji: "🔬", section: "research-tools" },
             { label: "Live Elections", emoji: "🏛️", section: "live-elections" },
