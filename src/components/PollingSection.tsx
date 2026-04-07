@@ -2471,7 +2471,6 @@ export function PollingSection() {
                         </a>
                       )}
                     </td>
-                    </td>
                   </tr>);
 
               })}
