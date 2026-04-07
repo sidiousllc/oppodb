@@ -172,13 +172,28 @@ Activity types tracked:
 - **Authenticated users**: Can insert their own activity logs
 - **Service role**: Full access for backend tracking
 
+### Filtering & Search
+Admins can narrow down logs using the filter bar:
+
+| Filter | Control | Description |
+|--------|---------|-------------|
+| **User** | Dropdown | Filter by specific user (populated from all unique user IDs in logs) |
+| **Search** | Text input | Case-insensitive search across message content, endpoints, activity details, and user names |
+| **Date From** | Date picker | Show only logs on or after this date |
+| **Date To** | Date picker | Show only logs on or before this date |
+
+- **Clear button** appears when any filter is active, resets all filters
+- **Results counter** displays "Showing X of Y logs" when filters are applied
+- Filters work across all log types simultaneously via a unified internal data model (`UnifiedLog`)
+- User filter also matches chat message recipients and content change authors
+
 ### Log Display
 Each log category shows a table with:
 - **User** — Display name resolved from profiles table
 - **Type/Details** — Color-coded badges and formatted detail strings
 - **Timestamp** — Localized date/time display
 - Refresh button for real-time updates
-- Up to 200 entries per category (100 for content changes)
+- Up to 500 entries per category (200 for content changes)
 
 ---
 
