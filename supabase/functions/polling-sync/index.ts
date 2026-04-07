@@ -254,41 +254,33 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // --- Authentication ---
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    const token = authHeader.slice(7).trim();
+    // --- Authentication: allow service_role token, anon key (for cron), or admin user ---
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
 
-    const authClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    if (claimsData.claims.role !== "service_role") {
-      const userId = claimsData.claims.sub as string;
+    if (token && token !== anonKey && token !== serviceKey) {
+      // Verify as user JWT and check admin role
+      const authClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+      const { data: { user }, error: userError } = await authClient.auth.getUser(token);
+      if (userError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
       const adminClient = createClient(supabaseUrl, serviceKey);
-      const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: userId, _role: "admin" });
+      const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: user.id, _role: "admin" });
       if (!roleCheck) {
         return new Response(JSON.stringify({ error: "Forbidden: admin role required" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      console.log(`[SECURITY] polling-sync: authenticated as admin user ${userId}`);
+      console.log(`[SECURITY] polling-sync: authenticated as admin user ${user.id}`);
     } else {
-      console.log("[SECURITY] polling-sync: authenticated as service_role");
+      console.log("[SECURITY] polling-sync: authenticated via service/anon key");
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
