@@ -38,18 +38,22 @@ Deno.serve(async (req) => {
       const rawBody = await req.text();
 
       // Verify HMAC signature if webhook secret is configured
-      if (webhookSecret) {
-        const signature = req.headers.get("x-winred-signature");
-        const valid = await verifySignature(rawBody, signature, webhookSecret);
-        if (!valid) {
-          console.error("WinRed webhook signature verification failed");
-          return new Response(JSON.stringify({ error: "Invalid signature" }), {
-            status: 401,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-      } else {
-        console.warn("WINRED_WEBHOOK_SECRET not set — skipping signature verification. Set this secret to enable webhook security.");
+      if (!webhookSecret) {
+        console.error("WINRED_WEBHOOK_SECRET not configured — rejecting request");
+        return new Response(JSON.stringify({ error: "Webhook not configured" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const signature = req.headers.get("x-winred-signature");
+      const valid = await verifySignature(rawBody, signature, webhookSecret);
+      if (!valid) {
+        console.error("WinRed webhook signature verification failed");
+        return new Response(JSON.stringify({ error: "Invalid signature" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
