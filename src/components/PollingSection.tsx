@@ -2043,15 +2043,16 @@ export function PollingSection() {
   return (
     <div className="space-y-3">
       {/* DataHub Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-sm font-bold text-foreground">📊 DataHub</h1>
-          <p className="text-xs text-muted-foreground">Polling data &amp; prediction markets aggregated from 30+ sources</p>
+      <div className="win98-sunken bg-[hsl(var(--win98-light))] px-3 py-2 mb-1">
+        <div className="flex items-center gap-2 text-[11px]">
+          <BarChart3 className="h-4 w-4" />
+          <span className="font-bold">DataHub</span>
+          <span className="text-[hsl(var(--muted-foreground))]">— Polling data &amp; prediction markets aggregated from 30+ sources</span>
         </div>
       </div>
 
       {/* Main Tabs */}
-      <div className="flex gap-1 win98-sunken bg-[hsl(var(--win98-light))] p-1 w-fit">
+      <div className="flex gap-0.5 mb-1">
         <button
           onClick={() => setActiveTab("polling")}
           className={`win98-button text-[10px] px-3 py-1 ${activeTab === "polling" ? "font-bold bg-white" : ""}`}
