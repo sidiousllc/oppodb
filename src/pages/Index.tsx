@@ -231,7 +231,7 @@ export default function Index() {
     const candidateMatch = getCandidateBySlug(slug);
     if (candidateMatch) { setSection("candidates"); setSelectedSlug(candidateMatch.slug); return true; }
     const magaMatch = magaFiles.find(m => m.slug.toLowerCase() === slug);
-    if (magaMatch) { setSection("maga-files"); setSelectedSlug(magaMatch.slug); return true; }
+    if (magaMatch) { setSection("candidates"); setCandidateSubsection("maga-files"); setSelectedSlug(magaMatch.slug); return true; }
     const localMatch = getLocalImpactBySlug(slug);
     if (localMatch) { setSection("local-impact"); setSelectedSlug(localMatch.slug); return true; }
     const narrativeMatch = narrativeReports.find(n => n.slug.toLowerCase() === slug);
