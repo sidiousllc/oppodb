@@ -1521,17 +1521,25 @@ export function PollingSection() {
 
   return (
     <div className="space-y-6">
-      {/* Tab Toggle */}
+      {/* DataHub Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-xl font-bold text-foreground">DataHub</h1>
+          <p className="text-xs text-muted-foreground">Polling data &amp; prediction markets aggregated from 30+ sources</p>
+        </div>
+      </div>
+
+      {/* Main Tabs */}
       <div className="flex gap-1 rounded-lg border border-border bg-muted/30 p-1 w-fit">
         <button
           onClick={() => setActiveTab("polling")}
-          className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-colors ${activeTab === "polling" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          className={`px-5 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === "polling" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
         >
           📊 Polling Data
         </button>
         <button
           onClick={() => setActiveTab("markets")}
-          className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-colors ${activeTab === "markets" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          className={`px-5 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === "markets" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
         >
           📈 Prediction Markets
         </button>
