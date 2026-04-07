@@ -2403,7 +2403,7 @@ export function PollingSection() {
             Refresh
           </button>
         </div>
-        <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-card z-10">
               <tr className="border-b border-border bg-muted/30">
@@ -2412,7 +2412,11 @@ export function PollingSection() {
                 <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                 <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Result</th>
                 <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Margin</th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sample</th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">MoE</th>
+                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Method</th>
                 <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
+                <th className="py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider"></th>
               </tr>
             </thead>
             <tbody>
@@ -2428,7 +2432,7 @@ export function PollingSection() {
                         <span className="text-xs font-medium text-foreground">{src.name}</span>
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 text-xs text-foreground">{poll.candidate_or_topic}</td>
+                    <td className="py-2.5 px-3 text-xs text-foreground max-w-[160px] truncate" title={poll.candidate_or_topic}>{poll.candidate_or_topic}</td>
                     <td className="py-2.5 px-3">
                       <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                         {POLL_TYPES.find((t) => t.id === poll.poll_type)?.label ?? poll.poll_type}
@@ -2442,8 +2446,31 @@ export function PollingSection() {
                     <td className="py-2.5 px-3 text-center">
                       <MarginBadge margin={poll.margin} />
                     </td>
+                    <td className="py-2.5 px-3 text-center text-xs text-muted-foreground whitespace-nowrap">
+                      {poll.sample_size ? `n=${poll.sample_size.toLocaleString()}` : "—"}
+                      {poll.sample_type && poll.sample_type !== "Unknown" && (
+                        <span className="ml-0.5 text-muted-foreground/60">({poll.sample_type})</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
+                      {poll.margin_of_error ? `±${poll.margin_of_error}%` : "—"}
+                    </td>
+                    <td className="py-2.5 px-3 text-xs text-muted-foreground whitespace-nowrap">
+                      {poll.methodology || "—"}
+                    </td>
                     <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
                       {formatDate(poll.date_conducted)}
+                      {poll.end_date && poll.end_date !== poll.date_conducted && (
+                        <span className="text-muted-foreground/50"> – {formatDate(poll.end_date)}</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      {poll.source_url && (
+                        <a href={poll.source_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </td>
                     </td>
                   </tr>);
 
