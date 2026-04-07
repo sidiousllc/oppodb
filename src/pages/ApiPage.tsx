@@ -16,6 +16,8 @@ export default function ApiPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
+  const [customKeyValue, setCustomKeyValue] = useState("");
+  const [useCustomKey, setUseCustomKey] = useState(false);
   const [showNewKey, setShowNewKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -50,11 +52,12 @@ export default function ApiPage() {
 
   const handleCreate = async () => {
     if (!newKeyName.trim()) { toast.error("Enter a key name"); return; }
+    if (useCustomKey && !customKeyValue.trim()) { toast.error("Enter your custom key value"); return; }
     setCreating(true);
-    const result = await createApiKey(newKeyName.trim());
+    const result = await createApiKey(newKeyName.trim(), useCustomKey ? customKeyValue.trim() : undefined);
     if (result) {
       setShowNewKey(result.key);
-      setNewKeyName(""); setShowCreateForm(false);
+      setNewKeyName(""); setCustomKeyValue(""); setUseCustomKey(false); setShowCreateForm(false);
       await loadKeys();
       toast.success("API key created!");
     } else { toast.error("Failed to create"); }
@@ -109,10 +112,24 @@ export default function ApiPage() {
         ) : (
           <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
             <p className="text-[11px] font-bold mb-2">Create API Key</p>
+            <div className="flex gap-1 mb-2">
+              <input type="text" value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)} placeholder="Key name" className="win98-input flex-1" maxLength={100} onKeyDown={(e) => e.key === "Enter" && !useCustomKey && handleCreate()} />
+            </div>
+            <div className="mb-2">
+              <label className="flex items-center gap-1 text-[10px] cursor-pointer">
+                <input type="checkbox" checked={useCustomKey} onChange={(e) => setUseCustomKey(e.target.checked)} />
+                Use my own key value
+              </label>
+            </div>
+            {useCustomKey && (
+              <div className="mb-2">
+                <input type="text" value={customKeyValue} onChange={(e) => setCustomKeyValue(e.target.value)} placeholder="Enter your custom API key" className="win98-input w-full font-mono text-[10px]" onKeyDown={(e) => e.key === "Enter" && handleCreate()} />
+                <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-0.5">Your key will be hashed and stored securely. Keep it safe!</p>
+              </div>
+            )}
             <div className="flex gap-1">
-              <input type="text" value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)} placeholder="Key name" className="win98-input flex-1" maxLength={100} onKeyDown={(e) => e.key === "Enter" && handleCreate()} />
-              <button onClick={handleCreate} disabled={creating} className="win98-button text-[10px] font-bold disabled:opacity-50">{creating ? "..." : "Create"}</button>
-              <button onClick={() => { setShowCreateForm(false); setNewKeyName(""); }} className="win98-button text-[10px]">✕</button>
+              <button onClick={handleCreate} disabled={creating} className="win98-button text-[10px] font-bold disabled:opacity-50">{creating ? "..." : useCustomKey ? "Save Custom Key" : "Generate Key"}</button>
+              <button onClick={() => { setShowCreateForm(false); setNewKeyName(""); setCustomKeyValue(""); setUseCustomKey(false); }} className="win98-button text-[10px]">✕</button>
             </div>
           </div>
         )}

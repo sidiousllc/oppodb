@@ -32,11 +32,12 @@ function generateApiKey(): string {
 
 export async function createApiKey(
   name: string,
+  customKey?: string,
 ): Promise<{ key: string; id: string } | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const rawKey = generateApiKey();
+  const rawKey = customKey || generateApiKey();
   const keyHash = await hashKey(rawKey);
   const keyPrefix = rawKey.substring(0, 12) + "...";
 
