@@ -83,7 +83,17 @@ export default function Index() {
       .filter((id): id is string => id !== null)
   ), []);
 
+  // Track section changes
   useEffect(() => {
+    trackPageView(section);
+  }, [section, trackPageView]);
+
+  // Track map views
+  useEffect(() => {
+    if (section === "districts") trackMapView("congressional_districts");
+    if (section === "state-leg") trackMapView("state_legislative");
+  }, [section, trackMapView]);
+
     loadCandidateData();
     setLoaded(true);
     fetchCandidatesFromDB().then((dbCandidates) => {
