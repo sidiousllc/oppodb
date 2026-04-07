@@ -278,7 +278,7 @@ export default function Index() {
     "live-elections": 0,
     legislation: 0,
     documentation: 13,
-  }), [dataVersion, districts, stateLegDistricts, pollingCount, financeCount]);
+  }), [dataVersion, districts, stateLegDistricts, pollingCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
