@@ -2275,11 +2275,17 @@ export function PollingSection() {
       {/* ─── Multi-Source Trend Chart ─────────────────────────────────────── */}
       <MultiSourceTrendChart polls={polls} />
 
+      {/* ─── Rolling Average Trend ────────────────────────────────────────── */}
+      <RollingAverageTrend polls={polls} />
+
       {/* ─── Charts Row: Dot Plot + Issue Butterfly ────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
         <SourceDotPlot latestBySource={latestBySource} />
         <IssueButterflyChart polls={issuePolls} />
       </div>
+
+      {/* ─── Pollster Heatmap ─────────────────────────────────────────────── */}
+      <PollsterHeatmap polls={polls} />
 
       {/* ─── Generic Ballot + Favorability ────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -2289,6 +2295,12 @@ export function PollingSection() {
 
       {/* ─── Generic Ballot Trend ─────────────────────────────────────────── */}
       <GenericBallotTrendChart polls={genericBallotPolls} />
+
+      {/* ─── Pollster Variability + Methodology ───────────────────────────── */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <PollsterSpreadChart polls={polls} />
+        <MethodologyBreakdown polls={polls} />
+      </div>
 
       {/* ─── Demographic Breakdown ───────────────────────────────────────── */}
       <DemographicBreakdownChart polls={polls} />
