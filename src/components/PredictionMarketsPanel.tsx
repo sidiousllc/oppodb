@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { MarketTradingPanel } from "@/components/MarketTradingPanel";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart3, TrendingUp, TrendingDown, ExternalLink, Filter, RefreshCw,
@@ -494,6 +495,14 @@ export default function PredictionMarketsPanel() {
             </a>
           ))}
         </div>
+      </div>
+
+      {/* Trading Panel */}
+      <div className="mt-4">
+        <h3 className="text-sm font-bold mb-2 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4" /> Trade & Portfolio
+        </h3>
+        <MarketTradingPanel />
       </div>
     </div>
   );

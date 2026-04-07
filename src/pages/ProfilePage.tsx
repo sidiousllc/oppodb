@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 import { IntegrationSettings } from "@/components/IntegrationSettings";
+import { MarketCredentialsManager } from "@/components/MarketCredentialsManager";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -188,6 +189,11 @@ export default function ProfilePage() {
             {ssoMessage.text}
           </div>
         )}
+      </div>
+
+      {/* Prediction Market API Keys */}
+      <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mt-3">
+        <MarketCredentialsManager />
       </div>
 
       {/* Voter Data Integrations */}
