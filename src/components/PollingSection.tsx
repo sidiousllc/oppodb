@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from "react";
 import { fetchPollingData, getSourceInfo, POLLING_SOURCES, POLL_TYPES, type PollEntry } from "@/data/pollingData";
 import IssuePollingSection from "@/components/IssuePollingSection";
+const PredictionMarketsPanel = lazy(() => import("@/components/PredictionMarketsPanel"));
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, ExternalLink, TrendingDown, TrendingUp, Minus, Filter, RefreshCw, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { exportPollingCSV, exportPollingPDF } from "@/lib/pollingExport";
@@ -1401,6 +1402,7 @@ export function PollingSection() {
   const [seeding, setSeeding] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<"polling" | "markets">("polling");
 
   useEffect(() => {
     loadPolls();
@@ -1519,6 +1521,28 @@ export function PollingSection() {
 
   return (
     <div className="space-y-6">
+      {/* Tab Toggle */}
+      <div className="flex gap-1 rounded-lg border border-border bg-muted/30 p-1 w-fit">
+        <button
+          onClick={() => setActiveTab("polling")}
+          className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-colors ${activeTab === "polling" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          📊 Polling Data
+        </button>
+        <button
+          onClick={() => setActiveTab("markets")}
+          className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-colors ${activeTab === "markets" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          📈 Prediction Markets
+        </button>
+      </div>
+
+      {activeTab === "markets" ? (
+        <Suspense fallback={<div className="flex items-center justify-center py-20"><span className="text-sm text-muted-foreground">Loading prediction markets…</span></div>}>
+          <PredictionMarketsPanel />
+        </Suspense>
+      ) : (
+      <>
       {/* Filters + Export */}
       <div className="flex flex-wrap gap-4 items-center justify-between">
        <div className="flex flex-wrap gap-4 items-center flex-1">
@@ -1907,6 +1931,8 @@ export function PollingSection() {
           )}
         </div>
       </div>
+    </>
+      )}
     </div>);
 
 }

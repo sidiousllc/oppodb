@@ -1186,6 +1186,69 @@ export type Database = {
         }
         Relationships: []
       }
+      prediction_markets: {
+        Row: {
+          candidate_name: string | null
+          category: string
+          created_at: string
+          district: string | null
+          id: string
+          last_traded_at: string | null
+          liquidity: number | null
+          market_id: string
+          market_url: string | null
+          no_price: number | null
+          raw_data: Json | null
+          source: string
+          state_abbr: string | null
+          status: string
+          title: string
+          updated_at: string
+          volume: number | null
+          yes_price: number | null
+        }
+        Insert: {
+          candidate_name?: string | null
+          category?: string
+          created_at?: string
+          district?: string | null
+          id?: string
+          last_traded_at?: string | null
+          liquidity?: number | null
+          market_id: string
+          market_url?: string | null
+          no_price?: number | null
+          raw_data?: Json | null
+          source?: string
+          state_abbr?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          volume?: number | null
+          yes_price?: number | null
+        }
+        Update: {
+          candidate_name?: string | null
+          category?: string
+          created_at?: string
+          district?: string | null
+          id?: string
+          last_traded_at?: string | null
+          liquidity?: number | null
+          market_id?: string
+          market_url?: string | null
+          no_price?: number | null
+          raw_data?: Json | null
+          source?: string
+          state_abbr?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          volume?: number | null
+          yes_price?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
