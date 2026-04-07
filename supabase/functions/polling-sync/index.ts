@@ -1,10 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+const TRUSTED_ORIGINS = [
+  "https://oppodb.com", "https://db.oppodb.com", "https://ordb.lovable.app",
+  "http://localhost:5173", "http://localhost:3000",
+];
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed = origin && (
+    TRUSTED_ORIGINS.includes(origin) || origin.endsWith(".lovableproject.com") || origin.endsWith(".lovable.app")
+  );
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : TRUSTED_ORIGINS[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Vary": "Origin",
+  };
+}
 
 /* ── types ─────────────────────────────────────────────────────── */
 
@@ -294,11 +303,45 @@ function formatDate(dateStr: string): string {
 /* ── main handler ──────────────────────────────────────────────── */
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // --- Authentication ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const token = authHeader.slice(7).trim();
+
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (claimsData.claims.role !== "service_role") {
+      const userId = claimsData.claims.sub as string;
+      const adminClient = createClient(supabaseUrl, serviceKey);
+      const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: userId, _role: "admin" });
+      if (!roleCheck) {
+        return new Response(JSON.stringify({ error: "Forbidden: admin role required" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     console.log("Starting polling sync...");
 
     // Fetch from all sources in parallel
