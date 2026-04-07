@@ -214,9 +214,9 @@ function DemographicBreakdown({ group, label }: { group: TopicGroup; label: stri
   const { ref, inView } = useInView();
   const demos = useMemo(() => getDemographicData(label), [label]);
   return (
-    <div ref={ref} className="px-5 pb-5">
-      <div className="rounded-lg border border-border overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-border flex items-center gap-2" style={{ backgroundColor: `hsl(${group.color} / 0.06)` }}>
+    <div ref={ref} className="px-3 pb-3">
+      <div className="win98-sunken overflow-hidden">
+        <div className="px-3 py-2 border-b border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))] flex items-center gap-2" style={{ backgroundColor: `hsl(${group.color} / 0.06)` }}>
           <Users className="h-4 w-4" />
           <span className="text-sm font-bold text-foreground">{label} — Demographic Breakdown</span>
         </div>
@@ -250,7 +250,7 @@ function DemographicBreakdown({ group, label }: { group: TopicGroup; label: stri
             </div>
           ))}
         </div>
-        <div className="px-4 py-2 border-t border-border bg-muted/20">
+        <div className="px-3 py-1.5 border-t border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))]">
           <p className="text-[9px] text-muted-foreground">Demographic cross-tabs aggregated from Pew Research, Gallup, YouGov, and AP-NORC surveys.</p>
         </div>
       </div>
@@ -335,7 +335,7 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
       </div>
 
       {/* Topic selector pills */}
-      <div className="px-5 pt-4 pb-2 flex flex-wrap gap-2">
+      <div className="px-3 pt-2 pb-1 flex flex-wrap gap-2">
         <button
           onClick={() => setSelectedGroup(null)}
           className={`win98-button text-[10px] ${
@@ -368,7 +368,7 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
       </div>
 
       {/* Summary cards grid */}
-      <div className="px-5 py-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="px-3 py-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {(selectedGroup ? summaries.filter((s) => s.label === selectedGroup) : summaries).map(
           ({ label, group, avgApprove, avgDisapprove, margin, latest }, idx) => {
             const Icon = group.icon;
@@ -439,10 +439,10 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
 
       {/* Detailed source breakdown */}
       {active && (
-        <div className="px-5 pb-5">
-          <div className="rounded-lg border border-border overflow-hidden">
+        <div className="px-3 pb-3">
+          <div className="win98-sunken overflow-hidden">
             <div
-              className="px-4 py-2.5 border-b border-border flex items-center gap-2"
+              className="px-3 py-2 border-b border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))] flex items-center gap-2"
               style={{ backgroundColor: `hsl(${active.group.color} / 0.06)` }}
             >
               <active.group.icon className="h-4 w-4" />
@@ -512,7 +512,7 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
       {/* Demographic Breakdown */}
       {active && <DemographicBreakdown group={active.group} label={active.label} />}
 
-      <div className="px-5 pb-4 flex items-center gap-4 text-[10px] text-muted-foreground">
+      <div className="px-3 pb-3 flex items-center gap-4 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1">
           <span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Approve / Favor
         </span>

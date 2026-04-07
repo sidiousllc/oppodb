@@ -433,7 +433,7 @@ export default function PredictionMarketsPanel() {
                 <tr key={m.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] transition-colors">
                   <td className="py-2 px-2">
                     <span
-                      className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold text-white"
+                      className="inline-block px-1 py-0 win98-raised text-[9px] font-bold text-white"
                       style={{ backgroundColor: sourceColor(m.source) }}
                     >
                       {SOURCE_LABELS[m.source] || m.source.slice(0, 2).toUpperCase()}
@@ -475,7 +475,7 @@ export default function PredictionMarketsPanel() {
       {/* ── Source Attribution ─────────────────────────────────────────── */}
       <div className="candidate-card p-4">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Data Sources</h3>
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-1.5 sm:grid-cols-3">
           {[
             { name: "Polymarket", url: "https://polymarket.com", color: SOURCE_COLORS.polymarket },
             { name: "Kalshi", url: "https://kalshi.com", color: SOURCE_COLORS.kalshi },

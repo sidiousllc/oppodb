@@ -147,8 +147,7 @@ export function PollPickerButton({ showPicker, setShowPicker, isAll, count }: {s
   return (
     <button
       onClick={() => setShowPicker(!showPicker)}
-      className={`win98-button text-[9px] flex items-center gap-1 ${
-      showPicker ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+      className={`win98-button text-[9px] flex items-center gap-1 ${showPicker ? "font-bold bg-white" : ""}`
       }>
       
       <Filter className="h-3 w-3" />
@@ -169,7 +168,7 @@ export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, se
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Polls</span>
         <div className="flex gap-2">
-          <button onClick={() => setSelectedIds(new Set())} className={`win98-button text-[9px] ${isAll ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>All</button>
+          <button onClick={() => setSelectedIds(new Set())} className={`win98-button text-[9px] ${isAll ? "font-bold bg-white" : ""}`}>All</button>
           <button onClick={() => setSelectedIds(new Set(uniquePolls.map((p) => p.id)))} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Select All</button>
           <button onClick={() => setSelectedIds(new Set())} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Clear</button>
         </div>
@@ -178,7 +177,7 @@ export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, se
         {uniquePolls.map((poll) => {
           const checked = isAll || selectedIds.has(poll.id);
           return (
-            <label key={poll.id} className={`flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer transition-colors text-xs ${checked && !isAll ? "bg-primary/10 border border-primary/30" : "bg-card border border-border hover:bg-muted/50"}`}>
+            <label key={poll.id} className={`flex items-center gap-2 px-1.5 py-1 cursor-pointer text-[10px] ${checked && !isAll ? "bg-white win98-sunken" : "bg-[hsl(var(--win98-face))] win98-raised hover:bg-[hsl(var(--win98-light))]"}`}>
               <input type="checkbox" checked={checked} onChange={() => toggle(poll.id)} className="accent-[hsl(var(--primary))] h-3 w-3 shrink-0" />
               <div className="min-w-0 flex-1">
                 <span className="font-semibold text-foreground">{getSourceInfo(poll.source).name}</span>
@@ -346,9 +345,9 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
           </p>
         </div>
         <div className="flex items-center gap-1 flex-wrap">
-          <div className="flex rounded-lg border border-border overflow-hidden mr-1">
-            <button onClick={() => setViewMode("bars")} className={`px-2 py-0.5 text-[10px] font-bold transition-colors ${viewMode === "bars" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>By Source</button>
-            <button onClick={() => setViewMode("trend")} className={`px-2 py-0.5 text-[10px] font-bold transition-colors ${viewMode === "trend" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>Trend</button>
+          <div className="flex gap-0.5 mr-1">
+            <button onClick={() => setViewMode("bars")} className={`win98-button text-[9px] ${viewMode === "bars" ? "font-bold bg-white" : ""}`}>By Source</button>
+            <button onClick={() => setViewMode("trend")} className={`win98-button text-[9px] ${viewMode === "trend" ? "font-bold bg-white" : ""}`}>Trend</button>
           </div>
           <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
           {viewMode === "bars" && sortOptions.map((opt) =>
@@ -378,7 +377,7 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
               const src = getSourceInfo(id);
               const active = !hiddenSources.has(id);
               return (
-                <button key={id} onClick={() => toggleSource(id)} className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all ${active ? "bg-card border border-border shadow-sm" : "opacity-40 bg-transparent border border-transparent"}`}>
+                <button key={id} onClick={() => toggleSource(id)} className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all ${active ? "bg-white border-2 border-[hsl(var(--win98-shadow))]" : "opacity-40 bg-[hsl(var(--win98-face))]"}`}>
                   <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
                   {src.name}
                 </button>);
@@ -617,7 +616,7 @@ function GenericBallotChart({ polls }: {polls: PollEntry[];}) {
       {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
 
       {/* Average headline bar */}
-      <div className="mb-4 win98-sunken bg-[hsl(var(--win98-light))] p-3">
+      <div className="mb-3 win98-sunken bg-[hsl(var(--win98-light))] p-2">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Polling Average</span>
           <MarginBadge margin={avgMargin} />
@@ -1278,14 +1277,13 @@ function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
 
         {/* Poll picker */}
         {showPollPicker &&
-        <div className="mb-4 win98-sunken bg-[hsl(var(--win98-light))] p-3">
+        <div className="mb-3 win98-sunken bg-[hsl(var(--win98-light))] p-2">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Polls</span>
               <div className="flex gap-2">
                 <button
                 onClick={() => setSelectedPollIds(new Set())}
-                className={`win98-button text-[9px] ${
-                isAllSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`
+                className={`win98-button text-[9px] ${isAllSelected ? "font-bold bg-white" : ""}`
                 }>
                 
                   All
@@ -1310,8 +1308,7 @@ function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
               return (
                 <label
                   key={poll.id}
-                  className={`flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer transition-colors text-xs ${
-                  checked && !isAllSelected ? "bg-primary/10 border border-primary/30" : "bg-card border border-border hover:bg-muted/50"}`
+                  className={`flex items-center gap-2 px-1.5 py-1 cursor-pointer text-[10px] ${checked && !isAllSelected ? "bg-white win98-sunken" : "bg-[hsl(var(--win98-face))] win98-raised hover:bg-[hsl(var(--win98-light))]"}`
                   }>
                   
                     <input
@@ -2414,7 +2411,7 @@ export function PollingSection() {
         </div>
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-card z-10">
+            <thead className="sticky top-0 bg-[hsl(var(--win98-face))] z-10">
               <tr className="border-b border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))]">
                 <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
                 <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Topic</th>
@@ -2443,7 +2440,7 @@ export function PollingSection() {
                     </td>
                     <td className="py-2.5 px-3 text-xs text-foreground max-w-[160px] truncate" title={poll.candidate_or_topic}>{poll.candidate_or_topic}</td>
                     <td className="py-2.5 px-3">
-                      <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      <span className="inline-block win98-sunken px-1 py-0 text-[8px] font-medium text-muted-foreground">
                         {POLL_TYPES.find((t) => t.id === poll.poll_type)?.label ?? poll.poll_type}
                       </span>
                     </td>
@@ -2493,7 +2490,7 @@ export function PollingSection() {
         <h3 className="font-display text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Data Sources
         </h3>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
           {POLLING_SOURCES.map((s) =>
           <a
             key={s.id}
