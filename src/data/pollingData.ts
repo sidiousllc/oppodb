@@ -77,22 +77,35 @@ export async function fetchPollingData(filters?: {
   dateFrom?: string;
   dateTo?: string;
 }): Promise<PollEntry[]> {
-  let query = supabase
-    .from("polling_data")
-    .select("*")
-    .order("date_conducted", { ascending: false });
+  const PAGE_SIZE = 1000;
+  let allData: PollEntry[] = [];
+  let from = 0;
+  let hasMore = true;
 
-  if (filters?.source) query = query.eq("source", filters.source);
-  if (filters?.pollType) query = query.eq("poll_type", filters.pollType);
-  if (filters?.dateFrom) query = query.gte("date_conducted", filters.dateFrom);
-  if (filters?.dateTo) query = query.lte("date_conducted", filters.dateTo);
+  while (hasMore) {
+    let query = supabase
+      .from("polling_data")
+      .select("*")
+      .order("date_conducted", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
 
-  const { data, error } = await query;
-  if (error) {
-    console.error("Error fetching polling data:", error);
-    return [];
+    if (filters?.source) query = query.eq("source", filters.source);
+    if (filters?.pollType) query = query.eq("poll_type", filters.pollType);
+    if (filters?.dateFrom) query = query.gte("date_conducted", filters.dateFrom);
+    if (filters?.dateTo) query = query.lte("date_conducted", filters.dateTo);
+
+    const { data, error } = await query;
+    if (error) {
+      console.error("Error fetching polling data:", error);
+      break;
+    }
+    const batch = (data || []) as unknown as PollEntry[];
+    allData = allData.concat(batch);
+    hasMore = batch.length === PAGE_SIZE;
+    from += PAGE_SIZE;
   }
-  return (data || []) as unknown as PollEntry[];
+
+  return allData;
 }
 
 /** Comprehensive polling dataset from all 8 sources — seeded into DB */
