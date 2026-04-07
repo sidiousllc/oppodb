@@ -90,8 +90,8 @@ export default function Index() {
 
   // Track map views
   useEffect(() => {
-    if (section === "districts") trackMapView("congressional_districts");
-    if (section === "state-leg") trackMapView("state_legislative");
+    if (section === "district-intel") trackMapView("congressional_districts");
+    if (section === "state-legislative") trackMapView("state_legislative");
   }, [section, trackMapView]);
 
   useEffect(() => {
