@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Search, X } from "lucide-react";
 
 type LogCategory = "all" | "page_view" | "map_view" | "api" | "content" | "chat";
 
@@ -37,6 +37,15 @@ interface ChatMsg {
   created_at: string;
 }
 
+type UnifiedLog = {
+  id: string;
+  kind: "activity" | "api" | "content" | "chat";
+  userId: string;
+  date: string;
+  searchText: string;
+  raw: ActivityLog | ApiLog | ContentVersion | ChatMsg;
+};
+
 export function ActivityLogsTab() {
   const [category, setCategory] = useState<LogCategory>("all");
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
@@ -46,10 +55,15 @@ export function ActivityLogsTab() {
   const [loading, setLoading] = useState(true);
   const [profileMap, setProfileMap] = useState<Record<string, string>>({});
 
+  // Filters
+  const [filterUser, setFilterUser] = useState("");
+  const [filterSearch, setFilterSearch] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+
   const loadData = useCallback(async () => {
     setLoading(true);
 
-    // Load profiles for user display names
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, display_name");
@@ -62,7 +76,6 @@ export function ActivityLogsTab() {
 
     const promises: Promise<unknown>[] = [];
 
-    // Activity logs (page views, map views)
     if (category === "all" || category === "page_view" || category === "map_view") {
       promises.push(
         Promise.resolve(
@@ -70,7 +83,7 @@ export function ActivityLogsTab() {
             .from("user_activity_logs" as any)
             .select("*")
             .order("created_at", { ascending: false })
-            .limit(200)
+            .limit(500)
         ).then(({ data }) => {
           let logs = (data || []) as unknown as ActivityLog[];
           if (category === "page_view") logs = logs.filter(l => l.activity_type === "page_view");
@@ -82,7 +95,6 @@ export function ActivityLogsTab() {
       setActivityLogs([]);
     }
 
-    // API logs
     if (category === "all" || category === "api") {
       promises.push(
         Promise.resolve(
@@ -90,14 +102,13 @@ export function ActivityLogsTab() {
             .from("api_request_logs")
             .select("*")
             .order("created_at", { ascending: false })
-            .limit(200)
+            .limit(500)
         ).then(({ data }) => setApiLogs((data || []) as ApiLog[]))
       );
     } else {
       setApiLogs([]);
     }
 
-    // Content change history
     if (category === "all" || category === "content") {
       promises.push(
         Promise.resolve(
@@ -105,14 +116,13 @@ export function ActivityLogsTab() {
             .from("candidate_versions")
             .select("id, github_path, author, commit_message, commit_date")
             .order("commit_date", { ascending: false })
-            .limit(100)
+            .limit(200)
         ).then(({ data }) => setContentVersions((data || []) as ContentVersion[]))
       );
     } else {
       setContentVersions([]);
     }
 
-    // Chat logs
     if (category === "all" || category === "chat") {
       promises.push(
         Promise.resolve(
@@ -120,7 +130,7 @@ export function ActivityLogsTab() {
             .from("chat_messages")
             .select("id, sender_id, receiver_id, content, created_at")
             .order("created_at", { ascending: false })
-            .limit(200)
+            .limit(500)
         ).then(({ data }) => setChatLogs((data || []) as ChatMsg[]))
       );
     } else {
@@ -136,6 +146,89 @@ export function ActivityLogsTab() {
   const userName = (id: string) => profileMap[id] || id.slice(0, 8) + "…";
   const fmtDate = (d: string) => new Date(d).toLocaleString();
 
+  // Build unified list for filtering
+  const allUnified = useMemo<UnifiedLog[]>(() => {
+    const list: UnifiedLog[] = [];
+    for (const l of activityLogs) {
+      list.push({
+        id: l.id, kind: "activity", userId: l.user_id, date: l.created_at,
+        searchText: `${formatDetails(l.details)} ${l.activity_type}`,
+        raw: l,
+      });
+    }
+    for (const l of apiLogs) {
+      list.push({
+        id: l.id, kind: "api", userId: l.user_id, date: l.created_at,
+        searchText: `${l.endpoint} ${l.status_code}`,
+        raw: l,
+      });
+    }
+    for (const v of contentVersions) {
+      list.push({
+        id: v.id, kind: "content", userId: "", date: v.commit_date,
+        searchText: `${v.author} ${v.github_path} ${v.commit_message}`,
+        raw: v,
+      });
+    }
+    for (const m of chatLogs) {
+      list.push({
+        id: m.id, kind: "chat", userId: m.sender_id, date: m.created_at,
+        searchText: `${m.content}`,
+        raw: m,
+      });
+    }
+    return list;
+  }, [activityLogs, apiLogs, contentVersions, chatLogs]);
+
+  // Unique users for dropdown
+  const uniqueUsers = useMemo(() => {
+    const ids = new Set<string>();
+    for (const l of allUnified) {
+      if (l.userId) ids.add(l.userId);
+      if (l.kind === "chat") ids.add((l.raw as ChatMsg).receiver_id);
+    }
+    // Also add content authors mapped by name
+    return Array.from(ids)
+      .map(id => ({ id, name: profileMap[id] || id.slice(0, 8) }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [allUnified, profileMap]);
+
+  // Apply filters
+  const filtered = useMemo(() => {
+    const lowerSearch = filterSearch.toLowerCase();
+    const fromDate = filterDateFrom ? new Date(filterDateFrom + "T00:00:00") : null;
+    const toDate = filterDateTo ? new Date(filterDateTo + "T23:59:59") : null;
+
+    return allUnified.filter(l => {
+      // User filter
+      if (filterUser) {
+        const matchesUser = l.userId === filterUser;
+        const matchesChatReceiver = l.kind === "chat" && (l.raw as ChatMsg).receiver_id === filterUser;
+        const matchesContentAuthor = l.kind === "content" && (l.raw as ContentVersion).author.toLowerCase().includes((profileMap[filterUser] || "").toLowerCase());
+        if (!matchesUser && !matchesChatReceiver && !matchesContentAuthor) return false;
+      }
+      // Text search
+      if (lowerSearch) {
+        const userNameStr = userName(l.userId).toLowerCase();
+        if (!l.searchText.toLowerCase().includes(lowerSearch) && !userNameStr.includes(lowerSearch)) return false;
+      }
+      // Date range
+      const logDate = new Date(l.date);
+      if (fromDate && logDate < fromDate) return false;
+      if (toDate && logDate > toDate) return false;
+      return true;
+    });
+  }, [allUnified, filterUser, filterSearch, filterDateFrom, filterDateTo, profileMap]);
+
+  // Split filtered back into categories for rendering
+  const fActivity = filtered.filter(l => l.kind === "activity").map(l => l.raw as ActivityLog);
+  const fApi = filtered.filter(l => l.kind === "api").map(l => l.raw as ApiLog);
+  const fContent = filtered.filter(l => l.kind === "content").map(l => l.raw as ContentVersion);
+  const fChat = filtered.filter(l => l.kind === "chat").map(l => l.raw as ChatMsg);
+
+  const hasFilters = filterUser || filterSearch || filterDateFrom || filterDateTo;
+  const clearFilters = () => { setFilterUser(""); setFilterSearch(""); setFilterDateFrom(""); setFilterDateTo(""); };
+
   const categories: Array<{ id: LogCategory; label: string; emoji: string }> = [
     { id: "all", label: "All", emoji: "📋" },
     { id: "page_view", label: "Page Views", emoji: "👁️" },
@@ -148,7 +241,7 @@ export function ActivityLogsTab() {
   return (
     <div>
       {/* Category filters */}
-      <div className="flex gap-0.5 mb-3 flex-wrap">
+      <div className="flex gap-0.5 mb-2 flex-wrap">
         {categories.map(c => (
           <button
             key={c.id}
@@ -163,15 +256,82 @@ export function ActivityLogsTab() {
         </button>
       </div>
 
+      {/* Filter bar */}
+      <div className="win98-sunken bg-[hsl(var(--win98-light))] p-2 mb-3">
+        <div className="flex gap-2 flex-wrap items-end">
+          {/* User filter */}
+          <div className="flex flex-col gap-0.5">
+            <label className="text-[9px] font-bold">👤 User</label>
+            <select
+              value={filterUser}
+              onChange={e => setFilterUser(e.target.value)}
+              className="win98-input text-[9px] w-[140px]"
+            >
+              <option value="">All users</option>
+              {uniqueUsers.map(u => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Text search */}
+          <div className="flex flex-col gap-0.5">
+            <label className="text-[9px] font-bold">🔍 Search</label>
+            <div className="flex items-center gap-0.5">
+              <input
+                type="text"
+                value={filterSearch}
+                onChange={e => setFilterSearch(e.target.value)}
+                placeholder="Filter by message, endpoint..."
+                className="win98-input text-[9px] w-[180px]"
+              />
+            </div>
+          </div>
+
+          {/* Date from */}
+          <div className="flex flex-col gap-0.5">
+            <label className="text-[9px] font-bold">📅 From</label>
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={e => setFilterDateFrom(e.target.value)}
+              className="win98-input text-[9px] w-[110px]"
+            />
+          </div>
+
+          {/* Date to */}
+          <div className="flex flex-col gap-0.5">
+            <label className="text-[9px] font-bold">📅 To</label>
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={e => setFilterDateTo(e.target.value)}
+              className="win98-input text-[9px] w-[110px]"
+            />
+          </div>
+
+          {/* Clear */}
+          {hasFilters && (
+            <button onClick={clearFilters} className="win98-button text-[9px] px-2 py-0.5 flex items-center gap-0.5" title="Clear filters">
+              <X className="h-2.5 w-2.5" /> Clear
+            </button>
+          )}
+        </div>
+        {hasFilters && (
+          <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
+            Showing {filtered.length} of {allUnified.length} logs
+          </div>
+        )}
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-8 gap-2 text-[10px]">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading logs...
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Activity logs (page views / map views) */}
-          {activityLogs.length > 0 && (
-            <LogSection title={category === "map_view" ? "🗺️ Map Access" : category === "page_view" ? "👁️ Page Views" : "👁️ Page & Map Activity"} count={activityLogs.length}>
+          {fActivity.length > 0 && (
+            <LogSection title={category === "map_view" ? "🗺️ Map Access" : category === "page_view" ? "👁️ Page Views" : "👁️ Page & Map Activity"} count={fActivity.length}>
               <table className="w-full text-[9px]">
                 <thead>
                   <tr className="bg-[hsl(var(--win98-face))] border-b border-[hsl(var(--win98-shadow))]">
@@ -182,7 +342,7 @@ export function ActivityLogsTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {activityLogs.map(log => (
+                  {fActivity.map(log => (
                     <tr key={log.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))]">
                       <td className="px-2 py-1 font-bold">{userName(log.user_id)}</td>
                       <td className="px-2 py-1">
@@ -201,9 +361,8 @@ export function ActivityLogsTab() {
             </LogSection>
           )}
 
-          {/* API logs */}
-          {apiLogs.length > 0 && (
-            <LogSection title="🔑 API Request Logs" count={apiLogs.length}>
+          {fApi.length > 0 && (
+            <LogSection title="🔑 API Request Logs" count={fApi.length}>
               <table className="w-full text-[9px]">
                 <thead>
                   <tr className="bg-[hsl(var(--win98-face))] border-b border-[hsl(var(--win98-shadow))]">
@@ -214,7 +373,7 @@ export function ActivityLogsTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {apiLogs.map(log => (
+                  {fApi.map(log => (
                     <tr key={log.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))]">
                       <td className="px-2 py-1 font-bold">{userName(log.user_id)}</td>
                       <td className="px-2 py-1 font-mono">{log.endpoint}</td>
@@ -231,9 +390,8 @@ export function ActivityLogsTab() {
             </LogSection>
           )}
 
-          {/* Content changes */}
-          {contentVersions.length > 0 && (
-            <LogSection title="📝 Content Change History" count={contentVersions.length}>
+          {fContent.length > 0 && (
+            <LogSection title="📝 Content Change History" count={fContent.length}>
               <table className="w-full text-[9px]">
                 <thead>
                   <tr className="bg-[hsl(var(--win98-face))] border-b border-[hsl(var(--win98-shadow))]">
@@ -244,7 +402,7 @@ export function ActivityLogsTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {contentVersions.map(v => (
+                  {fContent.map(v => (
                     <tr key={v.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))]">
                       <td className="px-2 py-1 font-bold">{v.author}</td>
                       <td className="px-2 py-1 font-mono">{v.github_path.split("/").pop()}</td>
@@ -257,9 +415,8 @@ export function ActivityLogsTab() {
             </LogSection>
           )}
 
-          {/* Chat logs */}
-          {chatLogs.length > 0 && (
-            <LogSection title="💬 Chat Logs" count={chatLogs.length}>
+          {fChat.length > 0 && (
+            <LogSection title="💬 Chat Logs" count={fChat.length}>
               <table className="w-full text-[9px]">
                 <thead>
                   <tr className="bg-[hsl(var(--win98-face))] border-b border-[hsl(var(--win98-shadow))]">
@@ -270,7 +427,7 @@ export function ActivityLogsTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {chatLogs.map(msg => (
+                  {fChat.map(msg => (
                     <tr key={msg.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))]">
                       <td className="px-2 py-1 font-bold">{userName(msg.sender_id)}</td>
                       <td className="px-2 py-1">{userName(msg.receiver_id)}</td>
@@ -283,10 +440,9 @@ export function ActivityLogsTab() {
             </LogSection>
           )}
 
-          {/* Empty state */}
-          {activityLogs.length === 0 && apiLogs.length === 0 && contentVersions.length === 0 && chatLogs.length === 0 && (
+          {fActivity.length === 0 && fApi.length === 0 && fContent.length === 0 && fChat.length === 0 && (
             <div className="text-center py-8 text-[10px] text-[hsl(var(--muted-foreground))]">
-              📭 No logs found for this category.
+              📭 No logs found{hasFilters ? " matching your filters" : " for this category"}.
             </div>
           )}
         </div>
