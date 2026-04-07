@@ -94,6 +94,7 @@ export default function Index() {
     if (section === "state-leg") trackMapView("state_legislative");
   }, [section, trackMapView]);
 
+  useEffect(() => {
     loadCandidateData();
     setLoaded(true);
     fetchCandidatesFromDB().then((dbCandidates) => {
