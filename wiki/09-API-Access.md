@@ -13,12 +13,24 @@ OppoDB provides a comprehensive public REST API and MCP (Model Context Protocol)
 - **Premium+**: Full API access with key generation
 
 ### Create API Key
-Users can generate named API keys:
+Users can generate named API keys with two options:
+
+#### Auto-Generated Key
 1. Click "Generate New API Key"
 2. Enter a descriptive key name (e.g., "Production Bot", "Claude Desktop")
-3. Click "Create"
-4. **Critical**: The full key is shown ONCE — users must copy it immediately (yellow warning banner)
-5. Key is stored hashed in the database (only prefix visible afterward)
+3. Leave "Use my own key value" unchecked
+4. Click "Generate Key"
+5. **Critical**: The full key is shown ONCE — users must copy it immediately (yellow warning banner)
+6. Key is stored hashed in the database (only prefix visible afterward)
+
+#### Custom Key (Bring Your Own)
+1. Click "Generate New API Key"
+2. Enter a descriptive key name
+3. Check "Use my own key value"
+4. Enter your custom API key string
+5. Click "Save Custom Key"
+6. The custom key is hashed and stored identically to auto-generated keys
+7. **Note**: The key is shown once for confirmation — it should already be saved by the user
 
 ### Key Management
 For each key, users can:
@@ -64,8 +76,8 @@ log_api_request(p_key_id uuid, p_user_id uuid, p_endpoint text, p_status integer
 ### Key Generation Flow (Client-Side)
 ```typescript
 // lib/apiKeys.ts
-createApiKey(name: string): Promise<{ id: string; key: string }>
-// 1. Generates cryptographically random key with "ordb_" prefix
+createApiKey(name: string, customKey?: string): Promise<{ id: string; key: string }>
+// 1. Uses customKey if provided, otherwise generates cryptographically random key with "ordb_" prefix
 // 2. Computes SHA-256 hash
 // 3. Stores hash + prefix in api_keys table via RLS INSERT policy
 // 4. Returns plaintext key ONCE to caller
