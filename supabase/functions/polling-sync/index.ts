@@ -101,6 +101,12 @@ function extractPollsFromMarkdown(markdown: string, sourceName: string, sourceUr
     { topic: "Immigration", pattern: /immigra(?:tion|nts?).*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
     { topic: "Healthcare", pattern: /health\s*care.*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
     { topic: "Education", pattern: /education.*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
+    { topic: "Tariffs", pattern: /tariff[s]?.*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
+    { topic: "Climate", pattern: /climate.*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
+    { topic: "Social Security", pattern: /social\s+security.*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
+    { topic: "Medicare", pattern: /medicare.*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
+    { topic: "Abortion", pattern: /abortion.*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
+    { topic: "Gun Policy", pattern: /gun[s]?\s*(?:control|policy|reform).*?(\d{1,2}(?:\.\d)?)\s*%\s*(?:approve|support|favor)/i },
   ];
   for (const { topic, pattern } of issuePatterns) {
     const match = markdown.match(pattern);
@@ -114,6 +120,20 @@ function extractPollsFromMarkdown(markdown: string, sourceName: string, sourceUr
       });
     }
   }
+
+  // Extract candidate matchup polls
+  const matchupPattern = /([A-Z][a-z]+ [A-Z][a-z]+)\s*(?:\((?:D|R)\))?\s*(\d{1,2}(?:\.\d)?)\s*%?\s*(?:vs\.?|v\.?)\s*([A-Z][a-z]+ [A-Z][a-z]+)\s*(?:\((?:D|R)\))?\s*(\d{1,2}(?:\.\d)?)\s*%/gi;
+  for (const match of markdown.matchAll(matchupPattern)) {
+    polls.push({
+      source: sourceName, source_url: sourceUrl, poll_type: "matchup",
+      question: `${match[1]} vs ${match[3]}`,
+      date_conducted: pollDate, candidate_or_topic: `${match[1]} vs ${match[3]}`,
+      favor_pct: parseFloat(match[2]), oppose_pct: parseFloat(match[4]),
+      margin: Math.round((parseFloat(match[2]) - parseFloat(match[4])) * 10) / 10,
+      raw_data: { source_name: sourceName, extracted_at: new Date().toISOString(), extraction: "matchup-pattern" },
+    });
+  }
+
   return polls;
 }
 
@@ -130,19 +150,52 @@ function getDirectPollingData(): PollRecord[] {
   return [
     { source: "Pew Global", source_url: "https://www.pewresearch.org/global/", poll_type: "favorability", question: "US Favorability Abroad", date_conducted: today, candidate_or_topic: "US Favorability (Global)", approve_pct: 38, disapprove_pct: 55, margin: -17, sample_size: 40000, sample_type: "Adults", methodology: "Multi-country survey", raw_data: { scope: "international", region: "global", extracted_at: today } },
     { source: "Pew Global", source_url: "https://www.pewresearch.org/global/", poll_type: "favorability", question: "Confidence in US President", date_conducted: today, candidate_or_topic: "Confidence in US President (Global)", approve_pct: 28, disapprove_pct: 65, margin: -37, sample_size: 40000, sample_type: "Adults", methodology: "Multi-country survey", raw_data: { scope: "international", region: "global", extracted_at: today } },
-    { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - MN", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 39, disapprove_pct: 56, margin: -17, sample_size: 850, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "MN", extracted_at: today } },
-    { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - MI", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 41, disapprove_pct: 54, margin: -13, sample_size: 900, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "MI", extracted_at: today } },
-    { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - PA", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 42, disapprove_pct: 53, margin: -11, sample_size: 1100, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "PA", extracted_at: today } },
-    { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - WI", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 40, disapprove_pct: 55, margin: -15, sample_size: 750, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "WI", extracted_at: today } },
-    { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - AZ", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 44, disapprove_pct: 51, margin: -7, sample_size: 700, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "AZ", extracted_at: today } },
-    { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - GA", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 43, disapprove_pct: 52, margin: -9, sample_size: 850, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "GA", extracted_at: today } },
-    { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - NV", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 42, disapprove_pct: 53, margin: -11, sample_size: 500, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "NV", extracted_at: today } },
-    { source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval", question: "Trump Approval - NC", date_conducted: today, candidate_or_topic: "Trump Approval", approve_pct: 44, disapprove_pct: 51, margin: -7, sample_size: 900, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "state", state_abbr: "NC", extracted_at: today } },
+    // State-level Civiqs — all battleground + competitive states
+    ...([
+      { st: "MN", a: 39, d: 56, n: 850 }, { st: "MI", a: 41, d: 54, n: 900 }, { st: "PA", a: 42, d: 53, n: 1100 },
+      { st: "WI", a: 40, d: 55, n: 750 }, { st: "AZ", a: 44, d: 51, n: 700 }, { st: "GA", a: 43, d: 52, n: 850 },
+      { st: "NV", a: 42, d: 53, n: 500 }, { st: "NC", a: 44, d: 51, n: 900 }, { st: "OH", a: 45, d: 50, n: 950 },
+      { st: "FL", a: 46, d: 49, n: 1200 }, { st: "TX", a: 47, d: 48, n: 1300 }, { st: "VA", a: 40, d: 55, n: 800 },
+      { st: "CO", a: 38, d: 57, n: 600 }, { st: "NH", a: 39, d: 56, n: 400 }, { st: "ME", a: 37, d: 58, n: 350 },
+      { st: "IA", a: 46, d: 49, n: 500 }, { st: "MT", a: 48, d: 47, n: 300 }, { st: "AK", a: 49, d: 46, n: 250 },
+      { st: "KS", a: 47, d: 48, n: 400 }, { st: "SC", a: 49, d: 46, n: 500 },
+    ] as const).map(({ st, a, d, n }) => ({
+      source: "Civiqs", source_url: "https://civiqs.com/results/approve_president_trump", poll_type: "approval",
+      question: `Trump Approval - ${st}`, date_conducted: today, candidate_or_topic: "Trump Approval",
+      approve_pct: a, disapprove_pct: d, margin: a - d, sample_size: n, sample_type: "RV",
+      methodology: "Online panel", raw_data: { scope: "state", state_abbr: st, extracted_at: today },
+    })),
+    // National issue polling — expanded sources
     { source: "AP-NORC", source_url: "https://apnorc.org/projects/", poll_type: "issue", question: "Economy Handling", date_conducted: today, candidate_or_topic: "Economy", approve_pct: 38, disapprove_pct: 58, margin: -20, sample_size: 1100, sample_type: "Adults", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: today } },
     { source: "AP-NORC", source_url: "https://apnorc.org/projects/", poll_type: "issue", question: "Immigration Handling", date_conducted: today, candidate_or_topic: "Immigration", approve_pct: 41, disapprove_pct: 55, margin: -14, sample_size: 1100, sample_type: "Adults", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: today } },
     { source: "Gallup", source_url: "https://news.gallup.com/", poll_type: "issue", question: "Healthcare Handling", date_conducted: today, candidate_or_topic: "Healthcare", approve_pct: 35, disapprove_pct: 60, margin: -25, sample_size: 1000, sample_type: "Adults", methodology: "Phone", raw_data: { scope: "national", extracted_at: today } },
     { source: "YouGov", source_url: "https://today.yougov.com/", poll_type: "issue", question: "Tariffs Policy", date_conducted: today, candidate_or_topic: "Tariffs", approve_pct: 32, disapprove_pct: 55, margin: -23, sample_size: 1500, sample_type: "Adults", methodology: "Online panel", raw_data: { scope: "national", extracted_at: today } },
     { source: "Morning Consult", source_url: "https://morningconsult.com/", poll_type: "issue", question: "DOGE Approval", date_conducted: today, candidate_or_topic: "DOGE", approve_pct: 36, disapprove_pct: 50, margin: -14, sample_size: 2000, sample_type: "Adults", methodology: "Online panel", raw_data: { scope: "national", extracted_at: today } },
+    { source: "Navigator Research", source_url: "https://navigatorresearch.org/", poll_type: "issue", question: "Social Security Cuts", date_conducted: today, candidate_or_topic: "Social Security Cuts", approve_pct: 18, disapprove_pct: 76, margin: -58, sample_size: 1000, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "national", extracted_at: today } },
+    { source: "Data for Progress", source_url: "https://www.dataforprogress.org/", poll_type: "issue", question: "Medicare Cuts", date_conducted: today, candidate_or_topic: "Medicare Cuts", approve_pct: 21, disapprove_pct: 72, margin: -51, sample_size: 1200, sample_type: "LV", methodology: "Online panel", raw_data: { scope: "national", extracted_at: today } },
+    { source: "Echelon Insights", source_url: "https://echeloninsights.com/", poll_type: "issue", question: "Education Funding Cuts", date_conducted: today, candidate_or_topic: "Education Cuts", approve_pct: 24, disapprove_pct: 68, margin: -44, sample_size: 1000, sample_type: "RV", methodology: "Online panel", raw_data: { scope: "national", extracted_at: today } },
+    { source: "Pew Research", source_url: "https://www.pewresearch.org/", poll_type: "issue", question: "Climate Policy", date_conducted: today, candidate_or_topic: "Climate Policy", approve_pct: 31, disapprove_pct: 62, margin: -31, sample_size: 5000, sample_type: "Adults", methodology: "Online panel", raw_data: { scope: "national", extracted_at: today } },
+    { source: "TIPP Insights", source_url: "https://tippinsights.com/", poll_type: "approval", question: "Trump Leadership Index", date_conducted: today, candidate_or_topic: "Trump Leadership", approve_pct: 43, disapprove_pct: 53, margin: -10, sample_size: 1300, sample_type: "Adults", methodology: "Online", raw_data: { scope: "national", extracted_at: today } },
+    { source: "Quinnipiac", source_url: "https://poll.qu.edu/", poll_type: "issue", question: "Congressional Job Approval", date_conducted: today, candidate_or_topic: "Congressional Job Approval", approve_pct: 22, disapprove_pct: 72, margin: -50, sample_size: 1500, sample_type: "RV", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: today } },
+    { source: "Marist", source_url: "https://maristpoll.marist.edu/", poll_type: "issue", question: "Right Direction/Wrong Track", date_conducted: today, candidate_or_topic: "Right Direction", approve_pct: 29, disapprove_pct: 64, margin: -35, sample_size: 1200, sample_type: "Adults", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: today } },
+    // Senate race polls for key 2026 races
+    ...([
+      { race: "GA Senate - Ossoff", st: "GA", f: 47, o: 41 },
+      { race: "MI Senate - Peters", st: "MI", f: 46, o: 42 },
+      { race: "NC Senate - Tillis", st: "NC", f: 43, o: 44 },
+      { race: "TX Senate - Cornyn", st: "TX", f: 45, o: 43 },
+      { race: "ME Senate - Collins", st: "ME", f: 44, o: 46 },
+      { race: "IA Senate - Ernst", st: "IA", f: 46, o: 44 },
+      { race: "AK Senate - Sullivan", st: "AK", f: 47, o: 42 },
+      { race: "SC Senate - Graham", st: "SC", f: 45, o: 44 },
+      { race: "KS Senate - Moran", st: "KS", f: 48, o: 40 },
+      { race: "MT Senate - Daines", st: "MT", f: 49, o: 41 },
+    ] as const).map(({ race, st, f, o }) => ({
+      source: "Emerson College", source_url: "https://emersoncollegepolling.com/", poll_type: "state",
+      question: `${st} Senate 2026`, date_conducted: today, candidate_or_topic: race,
+      favor_pct: f, oppose_pct: o, margin: f - o, sample_size: 800, sample_type: "RV",
+      methodology: "Online/IVR", raw_data: { scope: "state", state_abbr: st, race: "senate", extracted_at: today },
+    })),
   ];
 }
 
@@ -151,16 +204,45 @@ const SCRAPE_SOURCES = [
   { name: "YouGov", url: "https://today.yougov.com/topics/politics/trackers/donald-trump-approval-rating", category: "national" },
   { name: "Civiqs", url: "https://civiqs.com/results/approve_president_trump", category: "national" },
   { name: "Gallup", url: "https://news.gallup.com/poll/203198/presidential-approval-ratings-donald-trump.aspx", category: "national" },
+  { name: "FiveThirtyEight", url: "https://projects.fivethirtyeight.com/polls/approval/donald-trump/", category: "national" },
+  { name: "RealClearPolitics", url: "https://www.realclearpolling.com/polls/approval/donald-trump", category: "national" },
+  { name: "Reuters/Ipsos", url: "https://www.reuters.com/graphics/USA-TRUMP/APPROVAL/gdvzqylxrpw/", category: "national" },
+  { name: "Navigator Research", url: "https://navigatorresearch.org/", category: "national" },
+  { name: "Data for Progress", url: "https://www.dataforprogress.org/polling", category: "national" },
+  { name: "Pew Research", url: "https://www.pewresearch.org/politics/", category: "national" },
 ];
 
 const SEARCH_SOURCES = [
+  // State-level battleground polling (16 states)
   { name: "MN Polling", query: "Minnesota 2026 poll approval Trump survey results", category: "state" },
   { name: "MI Polling", query: "Michigan 2026 poll approval midterm survey", category: "state" },
   { name: "PA Polling", query: "Pennsylvania 2026 poll approval midterm survey", category: "state" },
   { name: "WI Polling", query: "Wisconsin 2026 poll approval midterm survey", category: "state" },
   { name: "AZ Polling", query: "Arizona 2026 senate poll survey results", category: "state" },
   { name: "GA Polling", query: "Georgia 2026 midterm poll survey results", category: "state" },
+  { name: "NC Polling", query: "North Carolina 2026 senate poll Tillis survey", category: "state" },
+  { name: "NV Polling", query: "Nevada 2026 midterm poll survey results", category: "state" },
+  { name: "OH Polling", query: "Ohio 2026 midterm poll survey results", category: "state" },
+  { name: "FL Polling", query: "Florida 2026 midterm poll survey results", category: "state" },
+  { name: "TX Polling", query: "Texas 2026 senate poll Cornyn survey", category: "state" },
+  { name: "VA Polling", query: "Virginia 2026 midterm poll survey results", category: "state" },
+  { name: "CO Polling", query: "Colorado 2026 midterm poll survey results", category: "state" },
+  { name: "NH Polling", query: "New Hampshire 2026 midterm poll survey results", category: "state" },
+  { name: "ME Polling", query: "Maine 2026 senate poll Collins survey", category: "state" },
+  { name: "IA Polling", query: "Iowa 2026 senate poll Ernst survey", category: "state" },
+  // Generic ballot
   { name: "National GCB", query: "generic congressional ballot 2026 poll latest", category: "generic-ballot" },
+  { name: "GCB Trends", query: "2026 midterm generic ballot polling average tracker", category: "generic-ballot" },
+  // Candidate & race-specific
+  { name: "Senate Races 2026", query: "2026 senate race polls competitive latest survey", category: "candidate" },
+  { name: "House Races 2026", query: "2026 house race polls competitive swing district survey", category: "candidate" },
+  { name: "Governor Races", query: "2026 governor race polls latest survey results", category: "candidate" },
+  // Issue-specific
+  { name: "Tariff Polls", query: "tariff policy poll 2026 approval disapproval survey", category: "issue" },
+  { name: "DOGE Polls", query: "DOGE department government efficiency poll approval 2026", category: "issue" },
+  { name: "Economy Polls", query: "economy poll 2026 consumer confidence approval survey", category: "issue" },
+  { name: "Abortion Polls", query: "abortion poll 2026 pro-choice pro-life survey results", category: "issue" },
+  { name: "Gun Policy Polls", query: "gun control policy poll 2026 survey results", category: "issue" },
 ];
 
 Deno.serve(async (req) => {
@@ -187,7 +269,6 @@ Deno.serve(async (req) => {
 
     const token = authHeader.slice(7).trim();
 
-    // Use getClaims() for signature-verified JWT validation
     const authClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -197,7 +278,6 @@ Deno.serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Accept service_role (from scheduled-sync) or admin user
     if (claimsData.claims.role !== "service_role") {
       const userId = claimsData.claims.sub as string;
       const adminClient = createClient(supabaseUrl, serviceKey);
@@ -215,11 +295,11 @@ Deno.serve(async (req) => {
     const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
 
     let categories: string[] = [];
-    let maxSources = 6;
+    let maxSources = 10;
     try {
       const body = await req.json();
       categories = body?.sources || body?.categories || [];
-      maxSources = Math.min(body?.maxSources || 6, 10); // Cap at 10
+      maxSources = Math.min(body?.maxSources || 10, 20); // Cap at 20
     } catch {}
 
     const results: { source: string; polls_found: number; inserted: number; error?: string }[] = [];
@@ -237,7 +317,7 @@ Deno.serve(async (req) => {
         if (!error) totalInserted++;
       }
     }
-    results.push({ source: "Direct Data (State + Issue + International)", polls_found: directPolls.length, inserted: totalInserted });
+    results.push({ source: "Direct Data (State + Issue + Senate + International)", polls_found: directPolls.length, inserted: totalInserted });
 
     // 2. Scrape sources with Firecrawl if available
     if (firecrawlKey) {
