@@ -369,10 +369,15 @@ function manifoldToRow(m: any) {
   };
 }
 
+function safeTimestamp(v: any): string {
+  if (!v || v === "NA" || v === "N/A") return new Date().toISOString();
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
 function predictitToRow(m: any) {
   const title = m.name || m.shortName || "";
   const { category, state_abbr, district, candidate_name } = classifyMarket(title);
-  // PredictIt has contracts within markets
   const topContract = m.contracts?.[0];
   return {
     market_id: `predictit-${m.id}`,
@@ -386,7 +391,7 @@ function predictitToRow(m: any) {
     no_price: topContract?.bestBuyNoCost ?? null,
     volume: m.contracts?.reduce((sum: number, c: any) => sum + (c.totalSharesTraded ?? 0), 0) ?? 0,
     liquidity: 0,
-    last_traded_at: topContract?.dateEnd || new Date().toISOString(),
+    last_traded_at: safeTimestamp(topContract?.dateEnd),
     market_url: m.url || `https://www.predictit.org/markets/detail/${m.id}`,
     status: m.status === "Open" ? "active" : m.status?.toLowerCase() || "active",
     raw_data: m,
