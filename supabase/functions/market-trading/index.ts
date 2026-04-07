@@ -153,6 +153,31 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // ========== TRADE HISTORY ==========
+    if (action === "trade-history") {
+      const { data, error } = await supabase
+        .from("trade_history")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) return json({ error: error.message }, 500);
+      return json({ trades: data });
+    }
+
+    if (action === "public-trade-feed") {
+      const marketId = url.searchParams.get("market_id");
+      let query = supabase
+        .from("trade_history")
+        .select("id, platform, market_id, market_title, side, price, quantity, total_cost, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (marketId) query = query.eq("market_id", marketId);
+      const { data, error } = await query;
+      if (error) return json({ error: error.message }, 500);
+      return json({ trades: data });
+    }
+
     // ========== TRADING OPERATIONS ==========
     if (action === "portfolio" || action === "orders" || action === "place-order" || action === "cancel-order") {
       const platform = url.searchParams.get("platform");
