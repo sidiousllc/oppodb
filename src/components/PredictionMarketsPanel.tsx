@@ -45,6 +45,9 @@ const SOURCES = [
   { value: "all", label: "All Sources" },
   { value: "polymarket", label: "Polymarket" },
   { value: "kalshi", label: "Kalshi" },
+  { value: "metaculus", label: "Metaculus" },
+  { value: "manifold", label: "Manifold" },
+  { value: "predictit", label: "PredictIt" },
 ];
 
 /* ── helpers ─────────────────────────────────────────────────────────── */
@@ -66,8 +69,18 @@ function formatDate(d: string | null) {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+const SOURCE_COLORS: Record<string, string> = {
+  polymarket: "hsl(260, 60%, 55%)",
+  kalshi: "hsl(200, 70%, 50%)",
+  metaculus: "hsl(150, 60%, 45%)",
+  manifold: "hsl(340, 65%, 50%)",
+  predictit: "hsl(30, 80%, 50%)",
+};
+const SOURCE_LABELS: Record<string, string> = {
+  polymarket: "PM", kalshi: "KA", metaculus: "MC", manifold: "MF", predictit: "PI",
+};
 function sourceColor(s: string) {
-  return s === "polymarket" ? "hsl(260, 60%, 55%)" : "hsl(200, 70%, 50%)";
+  return SOURCE_COLORS[s] || "hsl(var(--muted-foreground))";
 }
 
 function probColor(p: number | null) {
@@ -172,12 +185,17 @@ export default function PredictionMarketsPanel() {
   );
 
   const sourceBreakdown = useMemo(() => {
-    const poly = markets.filter((m) => m.source === "polymarket");
-    const kal = markets.filter((m) => m.source === "kalshi");
-    return [
-      { name: "Polymarket", count: poly.length, avgProb: poly.length ? poly.reduce((s, m) => s + (m.yes_price ?? 0), 0) / poly.length * 100 : 0 },
-      { name: "Kalshi", count: kal.length, avgProb: kal.length ? kal.reduce((s, m) => s + (m.yes_price ?? 0), 0) / kal.length * 100 : 0 },
-    ];
+    const sources = ["polymarket", "kalshi", "metaculus", "manifold", "predictit"];
+    const labels: Record<string, string> = { polymarket: "Polymarket", kalshi: "Kalshi", metaculus: "Metaculus", manifold: "Manifold", predictit: "PredictIt" };
+    return sources.map(src => {
+      const items = markets.filter(m => m.source === src);
+      return {
+        name: labels[src] || src,
+        source: src,
+        count: items.length,
+        avgProb: items.length ? items.reduce((s, m) => s + (m.yes_price ?? 0), 0) / items.length * 100 : 0,
+      };
+    }).filter(s => s.count > 0);
   }, [markets]);
 
   const categoryBreakdown = useMemo(() => {
@@ -220,7 +238,7 @@ export default function PredictionMarketsPanel() {
             Prediction Markets
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Real-time odds from Polymarket &amp; Kalshi
+            Real-time odds from Polymarket, Kalshi, Metaculus, Manifold &amp; PredictIt
           </p>
         </div>
         <button
@@ -237,9 +255,9 @@ export default function PredictionMarketsPanel() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total Markets", value: markets.length },
-          { label: "Polymarket", value: markets.filter((m) => m.source === "polymarket").length },
-          { label: "Kalshi", value: markets.filter((m) => m.source === "kalshi").length },
+          { label: "Sources", value: new Set(markets.map(m => m.source)).size },
           { label: "With State", value: markets.filter((m) => m.state_abbr).length },
+          { label: "Active", value: markets.filter((m) => m.status === "active").length },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-4 text-center">
             <p className="text-2xl font-display font-bold text-foreground">{s.value}</p>
@@ -347,7 +365,7 @@ export default function PredictionMarketsPanel() {
                     className="h-full rounded-full"
                     style={{
                       width: `${markets.length ? (s.count / markets.length) * 100 : 0}%`,
-                      backgroundColor: s.name === "Polymarket" ? "hsl(260, 60%, 55%)" : "hsl(200, 70%, 50%)",
+                      backgroundColor: SOURCE_COLORS[s.source] || "hsl(var(--muted-foreground))",
                     }}
                   />
                 </div>
@@ -416,7 +434,7 @@ export default function PredictionMarketsPanel() {
                       className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold text-white"
                       style={{ backgroundColor: sourceColor(m.source) }}
                     >
-                      {m.source === "polymarket" ? "PM" : "KA"}
+                      {SOURCE_LABELS[m.source] || m.source.slice(0, 2).toUpperCase()}
                     </span>
                   </td>
                   <td className="py-2 px-2 max-w-[300px]">
@@ -455,27 +473,26 @@ export default function PredictionMarketsPanel() {
       {/* ── Source Attribution ─────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card p-4">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Data Sources</h3>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <a
-            href="https://polymarket.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-lg border border-border p-2.5 hover:bg-muted/50 transition-colors group"
-          >
-            <span className="inline-block h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: "hsl(260, 60%, 55%)" }} />
-            <span className="text-xs font-medium text-foreground group-hover:text-primary">Polymarket</span>
-            <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground/40 group-hover:text-muted-foreground" />
-          </a>
-          <a
-            href="https://kalshi.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-lg border border-border p-2.5 hover:bg-muted/50 transition-colors group"
-          >
-            <span className="inline-block h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: "hsl(200, 70%, 50%)" }} />
-            <span className="text-xs font-medium text-foreground group-hover:text-primary">Kalshi</span>
-            <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground/40 group-hover:text-muted-foreground" />
-          </a>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {[
+            { name: "Polymarket", url: "https://polymarket.com", color: SOURCE_COLORS.polymarket },
+            { name: "Kalshi", url: "https://kalshi.com", color: SOURCE_COLORS.kalshi },
+            { name: "Metaculus", url: "https://www.metaculus.com", color: SOURCE_COLORS.metaculus },
+            { name: "Manifold", url: "https://manifold.markets", color: SOURCE_COLORS.manifold },
+            { name: "PredictIt", url: "https://www.predictit.org", color: SOURCE_COLORS.predictit },
+          ].map((src) => (
+            <a
+              key={src.name}
+              href={src.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-lg border border-border p-2.5 hover:bg-muted/50 transition-colors group"
+            >
+              <span className="inline-block h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: src.color }} />
+              <span className="text-xs font-medium text-foreground group-hover:text-primary">{src.name}</span>
+              <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground/40 group-hover:text-muted-foreground" />
+            </a>
+          ))}
         </div>
       </div>
     </div>
