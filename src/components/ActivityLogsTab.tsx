@@ -60,7 +60,7 @@ export function ActivityLogsTab() {
     }
     setProfileMap(pMap);
 
-    const promises: Promise<void>[] = [];
+    const promises: Promise<unknown>[] = [];
 
     // Activity logs (page views, map views)
     if (category === "all" || category === "page_view" || category === "map_view") {
