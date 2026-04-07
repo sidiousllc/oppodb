@@ -1698,6 +1698,66 @@ export type Database = {
         }
         Relationships: []
       }
+      trade_history: {
+        Row: {
+          created_at: string
+          fees: number | null
+          id: string
+          market_id: string | null
+          market_title: string | null
+          order_id: string | null
+          order_type: string | null
+          platform: string
+          pnl: number | null
+          price: number | null
+          quantity: number | null
+          raw_response: Json | null
+          settled_at: string | null
+          side: string
+          status: string
+          total_cost: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fees?: number | null
+          id?: string
+          market_id?: string | null
+          market_title?: string | null
+          order_id?: string | null
+          order_type?: string | null
+          platform: string
+          pnl?: number | null
+          price?: number | null
+          quantity?: number | null
+          raw_response?: Json | null
+          settled_at?: string | null
+          side: string
+          status?: string
+          total_cost?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fees?: number | null
+          id?: string
+          market_id?: string | null
+          market_title?: string | null
+          order_id?: string | null
+          order_type?: string | null
+          platform?: string
+          pnl?: number | null
+          price?: number | null
+          quantity?: number | null
+          raw_response?: Json | null
+          settled_at?: string | null
+          side?: string
+          status?: string
+          total_cost?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_integrations: {
         Row: {
           api_key: string
