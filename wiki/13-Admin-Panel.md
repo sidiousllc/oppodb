@@ -14,6 +14,7 @@ The Admin Panel provides administrative oversight and management capabilities fo
 | Users | ✓ | ✗ |
 | Role Groups | ✓ | ✗ |
 | Access Control | ✓ | ✗ |
+| Activity Logs | ✓ | ✗ |
 | Candidates | ✓ | ✓ |
 | MAGA Files | ✓ | ✓ |
 | Local Impact | ✓ | ✓ |
@@ -125,6 +126,59 @@ Manage public access requests:
 - **Deny Button**: Marks as denied, sends denial notification email
 - **Delete Processed Requests**: Trash button appears for non-pending requests (approved or denied)
 - **Backend Safety Check**: The `delete_access_request` action verifies the request is not pending before allowing deletion
+
+---
+
+## Activity Logs Tab (`ActivityLogsTab`)
+
+### Purpose
+Provides administrators with a centralized audit trail of all user activity across the platform. Tracks page navigation, map access, API usage, content changes, and internal communications.
+
+### Category Filters
+Admins can filter logs by type using toggle buttons:
+
+| Category | Emoji | Data Source | Description |
+|----------|-------|-------------|-------------|
+| All | 📋 | All sources | Combined view of all activity |
+| Page Views | 👁️ | `user_activity_logs` | Which sections each user visited |
+| Map Access | 🗺️ | `user_activity_logs` | Congressional district and state legislative map views |
+| API Calls | 🔑 | `api_request_logs` | API request logs with endpoints and HTTP status codes |
+| Content Changes | 📝 | `candidate_versions` | Git-backed content edit history (author, file, commit message) |
+| Chat Logs | 💬 | `chat_messages` | All internal IM conversations between users |
+
+### Activity Tracking (`useActivityTracker` hook)
+Client-side tracking is implemented via the `useActivityTracker` hook in `src/hooks/useActivityTracker.ts`:
+- **Debounced**: Identical events within 2 seconds are suppressed
+- **Silent failures**: Logging never breaks the user experience
+- **Automatic**: Page views and map views are tracked on section navigation in `Index.tsx`
+
+Activity types tracked:
+- `page_view` — Section navigation (dashboard, candidates, district-intel, etc.)
+- `map_view` — Congressional district map or state legislative map views
+- `content_edit` — Content modifications (available for future use)
+- `chat_send` — Chat messages (available for future use)
+
+### Database Table: `user_activity_logs`
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid | Primary key |
+| `user_id` | uuid | User who performed the action |
+| `activity_type` | text | Type of activity |
+| `details` | jsonb | Contextual data (page name, map type, etc.) |
+| `created_at` | timestamptz | When the activity occurred |
+
+### RLS Policies
+- **Admins**: Can read all activity logs
+- **Authenticated users**: Can insert their own activity logs
+- **Service role**: Full access for backend tracking
+
+### Log Display
+Each log category shows a table with:
+- **User** — Display name resolved from profiles table
+- **Type/Details** — Color-coded badges and formatted detail strings
+- **Timestamp** — Localized date/time display
+- Refresh button for real-time updates
+- Up to 200 entries per category (100 for content changes)
 
 ---
 
