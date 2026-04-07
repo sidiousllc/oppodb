@@ -46,6 +46,31 @@ function json(data: unknown, status = 200) {
   });
 }
 
+// deno-lint-ignore no-explicit-any
+async function logTrade(adminClient: any, userId: string, platform: string, trade: {
+  market_id?: string; market_title?: string; side: string; price?: number;
+  quantity?: number; total_cost?: number; order_id?: string; status: string;
+  raw_response?: unknown;
+}) {
+  try {
+    await adminClient.from("trade_history").insert({
+      user_id: userId,
+      platform,
+      market_id: trade.market_id,
+      market_title: trade.market_title,
+      side: trade.side,
+      price: trade.price,
+      quantity: trade.quantity,
+      total_cost: trade.total_cost,
+      order_id: trade.order_id,
+      status: trade.status,
+      raw_response: trade.raw_response || {},
+    });
+  } catch (e) {
+    console.error("Failed to log trade:", e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -155,11 +180,11 @@ Deno.serve(async (req) => {
 
       // Route to platform-specific handler
       if (platform === "kalshi") {
-        return await handleKalshi(action, apiKey, apiSecret, req, url);
+        return await handleKalshi(action, apiKey, apiSecret, req, url, adminClient, userId);
       } else if (platform === "polymarket") {
-        return await handlePolymarket(action, apiKey, apiSecret, passphrase, req, url);
+        return await handlePolymarket(action, apiKey, apiSecret, passphrase, req, url, adminClient, userId);
       } else if (platform === "predictit") {
-        return await handlePredictIt(action, apiKey, req, url);
+        return await handlePredictIt(action, apiKey, req, url, adminClient, userId);
       }
     }
 
