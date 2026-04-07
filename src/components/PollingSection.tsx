@@ -1931,6 +1931,8 @@ export function PollingSection() {
           )}
         </div>
       </div>
+    </>
+      )}
     </div>);
 
 }
