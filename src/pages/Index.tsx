@@ -42,11 +42,13 @@ import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { LegislationSection } from "@/components/LegislationSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
+import { useActivityTracker } from "@/hooks/useActivityTracker";
 
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
   const { isMailOpen, closeMail } = useMail();
+  const { trackPageView, trackMapView } = useActivityTracker();
   const [loaded, setLoaded] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [search, setSearch] = useState("");
