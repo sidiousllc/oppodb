@@ -97,25 +97,36 @@ async function fetchKalshiData() {
 
 async function fetchMetaculusData() {
   const markets: any[] = [];
+  const apiToken = Deno.env.get("METACULUS_API_TOKEN");
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (apiToken) headers["Authorization"] = `Token ${apiToken}`;
+
   const searchTerms = [
     "US congress 2026", "US senate 2026", "US house 2026",
     "US election 2026", "US midterm", "US governor",
     "republican win", "democrat win", "US president",
   ];
 
+  // Try both API versions
+  const apiPaths = [
+    (term: string) => `https://www.metaculus.com/api/questions/?search=${encodeURIComponent(term)}&status=open&limit=50&order_by=-activity`,
+    (term: string) => `https://www.metaculus.com/api2/questions/?search=${encodeURIComponent(term)}&type=forecast&status=open&limit=50&order_by=-activity`,
+  ];
+
   for (const term of searchTerms) {
-    try {
-      const res = await fetch(
-        `https://www.metaculus.com/api2/questions/?search=${encodeURIComponent(term)}&type=forecast&status=open&limit=50&order_by=-activity`,
-        { headers: { Accept: "application/json" } }
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data?.results) {
-        markets.push(...data.results);
+    for (const pathFn of apiPaths) {
+      try {
+        const res = await fetch(pathFn(term), { headers });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const results = data?.results || (Array.isArray(data) ? data : []);
+        if (results.length > 0) {
+          markets.push(...results);
+          break; // this API path works, skip the other
+        }
+      } catch (e) {
+        console.error(`Metaculus fetch error (${term}):`, e);
       }
-    } catch (e) {
-      console.error(`Metaculus fetch error (${term}):`, e);
     }
   }
 
