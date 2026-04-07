@@ -65,17 +65,18 @@ export function ActivityLogsTab() {
     // Activity logs (page views, map views)
     if (category === "all" || category === "page_view" || category === "map_view") {
       promises.push(
-        supabase
-          .from("user_activity_logs" as any)
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(200)
-          .then(({ data }) => {
-            let logs = (data || []) as unknown as ActivityLog[];
-            if (category === "page_view") logs = logs.filter(l => l.activity_type === "page_view");
-            if (category === "map_view") logs = logs.filter(l => l.activity_type === "map_view");
-            setActivityLogs(logs);
-          })
+        Promise.resolve(
+          supabase
+            .from("user_activity_logs" as any)
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(200)
+        ).then(({ data }) => {
+          let logs = (data || []) as unknown as ActivityLog[];
+          if (category === "page_view") logs = logs.filter(l => l.activity_type === "page_view");
+          if (category === "map_view") logs = logs.filter(l => l.activity_type === "map_view");
+          setActivityLogs(logs);
+        })
       );
     } else {
       setActivityLogs([]);
@@ -84,12 +85,13 @@ export function ActivityLogsTab() {
     // API logs
     if (category === "all" || category === "api") {
       promises.push(
-        supabase
-          .from("api_request_logs")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(200)
-          .then(({ data }) => setApiLogs((data || []) as ApiLog[]))
+        Promise.resolve(
+          supabase
+            .from("api_request_logs")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(200)
+        ).then(({ data }) => setApiLogs((data || []) as ApiLog[]))
       );
     } else {
       setApiLogs([]);
@@ -98,12 +100,13 @@ export function ActivityLogsTab() {
     // Content change history
     if (category === "all" || category === "content") {
       promises.push(
-        supabase
-          .from("candidate_versions")
-          .select("id, github_path, author, commit_message, commit_date")
-          .order("commit_date", { ascending: false })
-          .limit(100)
-          .then(({ data }) => setContentVersions((data || []) as ContentVersion[]))
+        Promise.resolve(
+          supabase
+            .from("candidate_versions")
+            .select("id, github_path, author, commit_message, commit_date")
+            .order("commit_date", { ascending: false })
+            .limit(100)
+        ).then(({ data }) => setContentVersions((data || []) as ContentVersion[]))
       );
     } else {
       setContentVersions([]);
@@ -112,12 +115,13 @@ export function ActivityLogsTab() {
     // Chat logs
     if (category === "all" || category === "chat") {
       promises.push(
-        supabase
-          .from("chat_messages")
-          .select("id, sender_id, receiver_id, content, created_at")
-          .order("created_at", { ascending: false })
-          .limit(200)
-          .then(({ data }) => setChatLogs((data || []) as ChatMsg[]))
+        Promise.resolve(
+          supabase
+            .from("chat_messages")
+            .select("id, sender_id, receiver_id, content, created_at")
+            .order("created_at", { ascending: false })
+            .limit(200)
+        ).then(({ data }) => setChatLogs((data || []) as ChatMsg[]))
       );
     } else {
       setChatLogs([]);
