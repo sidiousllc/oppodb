@@ -1521,6 +1521,28 @@ export function PollingSection() {
 
   return (
     <div className="space-y-6">
+      {/* Tab Toggle */}
+      <div className="flex gap-1 rounded-lg border border-border bg-muted/30 p-1 w-fit">
+        <button
+          onClick={() => setActiveTab("polling")}
+          className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-colors ${activeTab === "polling" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          📊 Polling Data
+        </button>
+        <button
+          onClick={() => setActiveTab("markets")}
+          className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-colors ${activeTab === "markets" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          📈 Prediction Markets
+        </button>
+      </div>
+
+      {activeTab === "markets" ? (
+        <Suspense fallback={<div className="flex items-center justify-center py-20"><span className="text-sm text-muted-foreground">Loading prediction markets…</span></div>}>
+          <PredictionMarketsPanel />
+        </Suspense>
+      ) : (
+      <>
       {/* Filters + Export */}
       <div className="flex flex-wrap gap-4 items-center justify-between">
        <div className="flex flex-wrap gap-4 items-center flex-1">
