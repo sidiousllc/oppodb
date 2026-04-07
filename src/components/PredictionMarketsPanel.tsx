@@ -221,7 +221,7 @@ export default function PredictionMarketsPanel() {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl border border-border bg-card p-6 animate-pulse">
+          <div key={i} className="candidate-card p-6 animate-pulse">
             <div className="h-4 w-48 bg-muted rounded mb-3" />
             <div className="h-32 bg-muted rounded" />
           </div>
@@ -231,7 +231,7 @@ export default function PredictionMarketsPanel() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* ── Header ────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -246,7 +246,7 @@ export default function PredictionMarketsPanel() {
         <button
           onClick={handleSync}
           disabled={syncing}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50"
+          className="win98-button text-[9px] disabled:opacity-50"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
           {syncing ? "Syncing…" : "Sync Markets"}
@@ -261,7 +261,7 @@ export default function PredictionMarketsPanel() {
           { label: "With State", value: markets.filter((m) => m.state_abbr).length },
           { label: "Active", value: markets.filter((m) => m.status === "active").length },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4 text-center">
+          <div key={s.label} className="candidate-card p-4 text-center">
             <p className="text-2xl font-display font-bold text-foreground">{s.value}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</p>
           </div>
@@ -269,7 +269,7 @@ export default function PredictionMarketsPanel() {
       </div>
 
       {/* ── Filters ───────────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="candidate-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Filters</span>
@@ -283,14 +283,14 @@ export default function PredictionMarketsPanel() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search markets…"
-              className="text-xs pl-8 pr-3 py-1.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground w-48 focus:outline-none focus:ring-1 focus:ring-primary"
+              className="win98-input text-[10px] pl-8 pr-3 w-48"
             />
           </div>
           {/* Category */}
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="text-xs px-3 py-1.5 rounded-lg border border-border bg-background text-foreground"
+            className="win98-input text-[10px]"
           >
             {CATEGORIES.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
@@ -300,7 +300,7 @@ export default function PredictionMarketsPanel() {
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="text-xs px-3 py-1.5 rounded-lg border border-border bg-background text-foreground"
+            className="win98-input text-[10px]"
           >
             {SOURCES.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
@@ -310,7 +310,7 @@ export default function PredictionMarketsPanel() {
           <select
             value={stateFilter}
             onChange={(e) => setStateFilter(e.target.value)}
-            className="text-xs px-3 py-1.5 rounded-lg border border-border bg-background text-foreground"
+            className="win98-input text-[10px]"
           >
             {states.map((s) => (
               <option key={s} value={s}>{s === "all" ? "All States" : s}</option>
@@ -324,7 +324,7 @@ export default function PredictionMarketsPanel() {
 
       {/* ── Probability Bar Chart ─────────────────────────────────────── */}
       {topMarkets.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="candidate-card p-4">
           <h3 className="font-display text-sm font-bold text-foreground mb-3 flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" />
             Top Markets by Probability
@@ -351,7 +351,7 @@ export default function PredictionMarketsPanel() {
 
       {/* ── Source & Category Breakdown ────────────────────────────────── */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="candidate-card p-4">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
             Source Breakdown
           </h3>
@@ -375,7 +375,7 @@ export default function PredictionMarketsPanel() {
             ))}
           </div>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="candidate-card p-4">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
             Category Breakdown
           </h3>
@@ -394,7 +394,7 @@ export default function PredictionMarketsPanel() {
       </div>
 
       {/* ── Markets Table ─────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="candidate-card p-4">
         <h3 className="font-display text-sm font-bold text-foreground mb-3">
           All Markets ({filtered.length})
         </h3>
@@ -430,7 +430,7 @@ export default function PredictionMarketsPanel() {
             </thead>
             <tbody>
               {filtered.slice(0, 100).map((m) => (
-                <tr key={m.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                <tr key={m.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] transition-colors">
                   <td className="py-2 px-2">
                     <span
                       className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold text-white"
@@ -473,7 +473,7 @@ export default function PredictionMarketsPanel() {
       </div>
 
       {/* ── Source Attribution ─────────────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="candidate-card p-4">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Data Sources</h3>
         <div className="grid gap-2 sm:grid-cols-3">
           {[
@@ -488,7 +488,7 @@ export default function PredictionMarketsPanel() {
               href={src.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-lg border border-border p-2.5 hover:bg-muted/50 transition-colors group"
+              className="candidate-card p-2 flex items-center gap-2 hover:bg-[hsl(var(--win98-light))] group"
             >
               <span className="inline-block h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: src.color }} />
               <span className="text-xs font-medium text-foreground group-hover:text-primary">{src.name}</span>

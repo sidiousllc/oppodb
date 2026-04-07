@@ -147,7 +147,7 @@ export function PollPickerButton({ showPicker, setShowPicker, isAll, count }: {s
   return (
     <button
       onClick={() => setShowPicker(!showPicker)}
-      className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors flex items-center gap-1 ${
+      className={`win98-button text-[9px] flex items-center gap-1 ${
       showPicker ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
       }>
       
@@ -165,11 +165,11 @@ export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, se
 
 }: {uniquePolls: {id: string;source: string;date: string;topic: string;}[];selectedIds: Set<string>;isAll: boolean;toggle: (id: string) => void;setSelectedIds: (v: Set<string>) => void;}) {
   return (
-    <div className="mb-3 rounded-lg border border-border bg-muted/30 p-3">
+    <div className="mb-3 win98-sunken bg-[hsl(var(--win98-light))] p-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Polls</span>
         <div className="flex gap-2">
-          <button onClick={() => setSelectedIds(new Set())} className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors ${isAll ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>All</button>
+          <button onClick={() => setSelectedIds(new Set())} className={`win98-button text-[9px] ${isAll ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>All</button>
           <button onClick={() => setSelectedIds(new Set(uniquePolls.map((p) => p.id)))} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Select All</button>
           <button onClick={() => setSelectedIds(new Set())} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Clear</button>
         </div>
@@ -333,7 +333,7 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
   ];
 
   return (
-    <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div ref={ref} className="candidate-card p-4">
       <div className="flex items-start justify-between mb-1">
         <div>
           <h3 className="font-display text-sm font-semibold text-foreground">
@@ -352,10 +352,10 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
           </div>
           <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
           {viewMode === "bars" && sortOptions.map((opt) =>
-            <button key={opt.value} onClick={() => setSortBy(opt.value)} className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${sortBy === opt.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>{opt.label}</button>
+            <button key={opt.value} onClick={() => setSortBy(opt.value)} className={`win98-button text-[9px] ${sortBy === opt.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>{opt.label}</button>
           )}
           {viewMode === "trend" && zoomOptions.map((opt) =>
-            <button key={opt.value} onClick={() => setZoomMonths(opt.value)} className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${zoomMonths === opt.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>{opt.label}</button>
+            <button key={opt.value} onClick={() => setZoomMonths(opt.value)} className={`win98-button text-[9px] ${zoomMonths === opt.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>{opt.label}</button>
           )}
           <button onClick={() => setShowFilters(!showFilters)} className={`ml-1 p-1 rounded transition-colors ${showFilters ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`} title="Filter sources">
             <Filter className="h-3.5 w-3.5" />
@@ -366,7 +366,7 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
       {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
 
       {showFilters &&
-        <div className="mb-3 p-2 rounded-lg border border-border bg-muted/30">
+        <div className="mb-3 p-2 win98-sunken bg-[hsl(var(--win98-light))]">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] font-bold text-muted-foreground">FILTER SOURCES</span>
             <button onClick={selectAll} className="text-[9px] text-primary hover:underline">Select All</button>
@@ -524,7 +524,7 @@ function SourceDotPlot({ latestBySource }: {latestBySource: PollEntry[];}) {
   const pctToX = (v: number) => LEFT + (v - minPct) / range * plotW;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div className="candidate-card p-4">
       <h3 className="font-display text-sm font-semibold text-foreground mb-1">
         Source-by-Source Approval Comparison
       </h3>
@@ -604,7 +604,7 @@ function GenericBallotChart({ polls }: {polls: PollEntry[];}) {
   const avgTotal = avgDem + avgRep || 100;
 
   return (
-    <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div ref={ref} className="candidate-card p-4">
       <div className="flex items-center justify-between mb-1">
         <h3 className="font-display text-sm font-semibold text-foreground">
           Generic Congressional Ballot
@@ -617,7 +617,7 @@ function GenericBallotChart({ polls }: {polls: PollEntry[];}) {
       {picker.showPicker && <PollPickerDropdown uniquePolls={picker.uniquePolls} selectedIds={picker.selectedIds} isAll={picker.isAll} toggle={picker.toggle} setSelectedIds={picker.setSelectedIds} />}
 
       {/* Average headline bar */}
-      <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
+      <div className="mb-4 win98-sunken bg-[hsl(var(--win98-light))] p-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Polling Average</span>
           <MarginBadge margin={avgMargin} />
@@ -748,7 +748,7 @@ function GenericBallotTrendChart({ polls }: {polls: PollEntry[];}) {
 
   return (
     <AnimatedCard>
-      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div ref={ref} className="candidate-card p-5">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">Generic Ballot Trend</h3>
@@ -832,7 +832,7 @@ function IssueButterflyChart({ polls }: {polls: PollEntry[];}) {
   });
 
   return (
-    <div ref={ref} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div ref={ref} className="candidate-card p-4">
       <div className="flex items-center justify-between mb-1">
         <h3 className="font-display text-sm font-semibold text-foreground">
           Issue Polling Overview
@@ -1022,7 +1022,7 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
 
   return (
     <AnimatedCard>
-      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm text-left h-full">
+      <div ref={ref} className="candidate-card p-5 text-left h-full">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">Favorability Tracking</h3>
@@ -1045,7 +1045,7 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
             <button
               key={opt.value}
               onClick={() => setZoomMonths(opt.value)}
-              className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
+              className={`win98-button text-[9px] ${
                 zoomMonths === opt.value
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-accent"
@@ -1096,7 +1096,7 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
                 contentStyle={{
                   backgroundColor: "hsl(var(--popover))",
                   border: "1px solid hsl(var(--border))",
-                  borderRadius: 8,
+                  borderRadius: 0,
                   fontSize: 11,
                   color: "hsl(var(--popover-foreground))",
                 }}
@@ -1236,7 +1236,7 @@ function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
 
   return (
     <AnimatedCard>
-      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div ref={ref} className="candidate-card p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">
@@ -1249,7 +1249,7 @@ function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setShowPollPicker(!showPollPicker)}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors flex items-center gap-1 ${
+              className={`win98-button text-[9px] flex items-center gap-1 ${
               showPollPicker ?
               "bg-primary text-primary-foreground border-primary" :
               "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
@@ -1263,7 +1263,7 @@ function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
               <button
                 key={g.id}
                 onClick={() => setActiveGroup(g.id)}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                className={`win98-button px-2.5 py-1 text-[9px] ${
                 activeGroup === g.id ?
                 "bg-foreground text-background border-foreground" :
                 "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
@@ -1278,13 +1278,13 @@ function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
 
         {/* Poll picker */}
         {showPollPicker &&
-        <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
+        <div className="mb-4 win98-sunken bg-[hsl(var(--win98-light))] p-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Polls</span>
               <div className="flex gap-2">
                 <button
                 onClick={() => setSelectedPollIds(new Set())}
-                className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors ${
+                className={`win98-button text-[9px] ${
                 isAllSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`
                 }>
                 
@@ -1449,7 +1449,7 @@ function PollsterHeatmap({ polls }: { polls: PollEntry[] }) {
 
   return (
     <AnimatedCard>
-      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div ref={ref} className="candidate-card p-5">
         <h3 className="font-display text-sm font-semibold text-foreground mb-1">
           Pollster Approval Heatmap
         </h3>
@@ -1577,7 +1577,7 @@ function RollingAverageTrend({ polls }: { polls: PollEntry[] }) {
 
   return (
     <AnimatedCard>
-      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div ref={ref} className="candidate-card p-5">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">
@@ -1622,7 +1622,7 @@ function RollingAverageTrend({ polls }: { polls: PollEntry[] }) {
                 contentStyle={{
                   backgroundColor: "hsl(var(--popover))",
                   border: "1px solid hsl(var(--border))",
-                  borderRadius: 8,
+                  borderRadius: 0,
                   fontSize: 11,
                 }}
                 formatter={(value: number, name: string) => [
@@ -1709,7 +1709,7 @@ function MethodologyBreakdown({ polls }: { polls: PollEntry[] }) {
 
   return (
     <AnimatedCard>
-      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div ref={ref} className="candidate-card p-5">
         <h3 className="font-display text-sm font-semibold text-foreground mb-1">
           Methodology & Sample Quality
         </h3>
@@ -1719,19 +1719,19 @@ function MethodologyBreakdown({ polls }: { polls: PollEntry[] }) {
 
         {/* Key stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <div className="rounded-lg bg-muted/30 p-3 text-center">
+          <div className="win98-sunken bg-[hsl(var(--win98-light))] p-3 text-center">
             <p className="text-lg font-display font-bold text-foreground">{polls.length}</p>
             <p className="text-[10px] text-muted-foreground uppercase">Total Polls</p>
           </div>
-          <div className="rounded-lg bg-muted/30 p-3 text-center">
+          <div className="win98-sunken bg-[hsl(var(--win98-light))] p-3 text-center">
             <p className="text-lg font-display font-bold text-foreground">{methods.length}</p>
             <p className="text-[10px] text-muted-foreground uppercase">Methods</p>
           </div>
-          <div className="rounded-lg bg-muted/30 p-3 text-center">
+          <div className="win98-sunken bg-[hsl(var(--win98-light))] p-3 text-center">
             <p className="text-lg font-display font-bold text-foreground">{avgSampleSize ? avgSampleSize.toLocaleString() : "—"}</p>
             <p className="text-[10px] text-muted-foreground uppercase">Avg Sample</p>
           </div>
-          <div className="rounded-lg bg-muted/30 p-3 text-center">
+          <div className="win98-sunken bg-[hsl(var(--win98-light))] p-3 text-center">
             <p className="text-lg font-display font-bold text-foreground">{medianMoE ? `±${medianMoE}%` : "—"}</p>
             <p className="text-[10px] text-muted-foreground uppercase">Median MoE</p>
           </div>
@@ -1852,7 +1852,7 @@ function PollsterSpreadChart({ polls }: { polls: PollEntry[] }) {
 
   return (
     <AnimatedCard>
-      <div ref={ref} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div ref={ref} className="candidate-card p-5">
         <h3 className="font-display text-sm font-semibold text-foreground mb-1">
           Pollster Variability & Spread
         </h3>
@@ -2025,7 +2025,7 @@ export function PollingSection() {
         <button
           onClick={seedData}
           disabled={seeding}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
+          className="win98-button px-3 py-1 text-[10px] disabled:opacity-50">
           
           {seeding ?
           <>
@@ -2044,32 +2044,32 @@ export function PollingSection() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* DataHub Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-xl font-bold text-foreground">DataHub</h1>
+          <h1 className="font-display text-sm font-bold text-foreground">📊 DataHub</h1>
           <p className="text-xs text-muted-foreground">Polling data &amp; prediction markets aggregated from 30+ sources</p>
         </div>
       </div>
 
       {/* Main Tabs */}
-      <div className="flex gap-1 rounded-lg border border-border bg-muted/30 p-1 w-fit">
+      <div className="flex gap-1 win98-sunken bg-[hsl(var(--win98-light))] p-1 w-fit">
         <button
           onClick={() => setActiveTab("polling")}
-          className={`px-5 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === "polling" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          className={`win98-button text-[10px] px-3 py-1 ${activeTab === "polling" ? "font-bold bg-white" : ""}`}
         >
           📊 Polling Data
         </button>
         <button
           onClick={() => setActiveTab("markets")}
-          className={`px-5 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === "markets" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          className={`win98-button text-[10px] px-3 py-1 ${activeTab === "markets" ? "font-bold bg-white" : ""}`}
         >
           📈 Prediction Markets
         </button>
         <button
           onClick={() => setActiveTab("finance")}
-          className={`px-5 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === "finance" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          className={`win98-button text-[10px] px-3 py-1 ${activeTab === "finance" ? "font-bold bg-white" : ""}`}
         >
           💰 Campaign Finance
         </button>
@@ -2092,7 +2092,7 @@ export function PollingSection() {
           <div className="flex flex-wrap gap-1">
             <button
                 onClick={() => setSourceFilter("all")}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                className={`win98-button px-2.5 py-1 text-[9px] ${
                 sourceFilter === "all" ?
                 "bg-foreground text-background border-foreground" :
                 "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
@@ -2106,7 +2106,7 @@ export function PollingSection() {
                   <button
                     key={s.id}
                     onClick={() => setSourceFilter(isActive ? "all" : s.id)}
-                    className="rounded-full px-2.5 py-1 text-[10px] font-bold border transition-all"
+                    className="win98-button text-[9px]"
                     style={{
                       backgroundColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.08)`,
                       color: isActive ? "white" : `hsl(${s.color})`,
@@ -2124,7 +2124,7 @@ export function PollingSection() {
           <div className="flex flex-wrap gap-1">
             <button
                 onClick={() => setTypeFilter("all")}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                className={`win98-button px-2.5 py-1 text-[9px] ${
                 typeFilter === "all" ?
                 "bg-foreground text-background border-foreground" :
                 "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
@@ -2136,7 +2136,7 @@ export function PollingSection() {
               <button
                 key={t.id}
                 onClick={() => setTypeFilter(typeFilter === t.id ? "all" : t.id)}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                className={`win98-button px-2.5 py-1 text-[9px] ${
                 typeFilter === t.id ?
                 "bg-foreground text-background border-foreground" :
                 "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
@@ -2153,7 +2153,7 @@ export function PollingSection() {
          <button
             onClick={syncLiveSources}
             disabled={syncing || seeding}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent/10 transition-colors shadow-sm disabled:opacity-50"
+            className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50"
             title="Scrape live polling data from 20+ sources">
             
            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
@@ -2162,7 +2162,7 @@ export function PollingSection() {
          <button
             onClick={seedData}
             disabled={seeding || syncing}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors shadow-sm disabled:opacity-50"
+            className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50"
             title="Update polling data from all sources">
             
            <RefreshCw className={`h-3.5 w-3.5 ${seeding ? "animate-spin" : ""}`} />
@@ -2192,7 +2192,7 @@ export function PollingSection() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Approval Gauge */}
           <AnimatedCard delay={0}>
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col items-center justify-center">
+          <div className="candidate-card p-4 flex flex-col items-center justify-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Cross-Source Average
             </p>
@@ -2241,7 +2241,7 @@ export function PollingSection() {
 
           {/* Source count */}
           <AnimatedCard delay={200}>
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="candidate-card p-4">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Data Coverage
             </p>
@@ -2254,7 +2254,7 @@ export function PollingSection() {
 
           {/* Poll types breakdown */}
           <AnimatedCard delay={300}>
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="candidate-card p-4">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Polls by Type
             </p>
@@ -2319,7 +2319,7 @@ export function PollingSection() {
 
       {/* ─── Source Comparison Table ──────────────────────────────────────── */}
       {latestBySource.length > 0 &&
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="candidate-card overflow-hidden">
           <div className="p-4 border-b border-border">
             <h3 className="font-display text-sm font-semibold text-foreground">
               Latest Presidential Approval by Source
@@ -2331,7 +2331,7 @@ export function PollingSection() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))]">
                   <th className="text-left py-2.5 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
                   <th className="text-center py-2.5 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "hsl(150, 55%, 45%)" }}>Approve</th>
                   <th className="text-center py-2.5 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "hsl(0, 65%, 50%)" }}>Disapprove</th>
@@ -2345,7 +2345,7 @@ export function PollingSection() {
                 {latestBySource.map((poll) => {
                 const src = getSourceInfo(poll.source);
                 return (
-                  <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-[hsl(var(--win98-light))] transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
@@ -2393,7 +2393,7 @@ export function PollingSection() {
       }
 
       {/* ─── All Polls Table ─────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="candidate-card overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">
@@ -2406,7 +2406,7 @@ export function PollingSection() {
           <button
             onClick={seedData}
             disabled={seeding}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-50 transition-colors">
+            className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50">
             
             <RefreshCw className={`h-3 w-3 ${seeding ? "animate-spin" : ""}`} />
             Refresh
@@ -2415,7 +2415,7 @@ export function PollingSection() {
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-card z-10">
-              <tr className="border-b border-border bg-muted/30">
+              <tr className="border-b border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))]">
                 <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
                 <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Topic</th>
                 <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
@@ -2434,7 +2434,7 @@ export function PollingSection() {
                 const primaryPct = poll.approve_pct ?? poll.favor_pct;
                 const secondaryPct = poll.disapprove_pct ?? poll.oppose_pct;
                 return (
-                  <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-[hsl(var(--win98-light))] transition-colors">
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-2">
                         <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
@@ -2489,7 +2489,7 @@ export function PollingSection() {
       </div>
 
       {/* ─── Source Attribution ───────────────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className="candidate-card p-4">
         <h3 className="font-display text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Data Sources
         </h3>
@@ -2500,7 +2500,7 @@ export function PollingSection() {
             href={s.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-lg border border-border p-2.5 hover:bg-muted/50 transition-colors group">
+            className="candidate-card p-2 flex items-center gap-2 hover:bg-[hsl(var(--win98-light))] group">
             
               <span className="inline-block h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: `hsl(${s.color})` }} />
               <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors">{s.name}</span>

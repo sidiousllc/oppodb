@@ -118,7 +118,7 @@ export function CampaignFinanceSection({ onNavigateSlug }: { onNavigateSlug?: (s
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
-          <div key={i} className="rounded-xl border border-border bg-card p-4 animate-pulse">
+          <div key={i} className="candidate-card p-4 animate-pulse">
             <div className="h-4 w-40 bg-muted rounded mb-2" />
             <div className="h-16 bg-muted rounded" />
           </div>
@@ -135,22 +135,22 @@ export function CampaignFinanceSection({ onNavigateSlug }: { onNavigateSlug?: (s
     <div>
       {/* Summary cards */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-4">
-        <div className="rounded-xl border border-border bg-card p-3 text-center">
+        <div className="candidate-card p-3 text-center">
           <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Total Tracked</p>
           <p className="text-2xl font-display font-bold text-foreground">{uniqueCandidates.length}</p>
           <p className="text-[10px] text-muted-foreground">candidates</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3 text-center">
+        <div className="candidate-card p-3 text-center">
           <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Total Raised</p>
           <p className="text-2xl font-display font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>{formatMoney(totalRaised)}</p>
           <p className="text-[10px] text-muted-foreground">all candidates</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3 text-center">
+        <div className="candidate-card p-3 text-center">
           <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Avg Raised</p>
           <p className="text-2xl font-display font-bold" style={{ color: "hsl(210, 80%, 50%)" }}>{formatMoney(avgRaised)}</p>
           <p className="text-[10px] text-muted-foreground">per candidate</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3 text-center">
+        <div className="candidate-card p-3 text-center">
           <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">States Tracked</p>
           <p className="text-2xl font-display font-bold text-foreground">{stateRecords.length}</p>
           <p className="text-[10px] text-muted-foreground">state aggregates</p>
@@ -166,7 +166,7 @@ export function CampaignFinanceSection({ onNavigateSlug }: { onNavigateSlug?: (s
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search candidates, states, districts…"
-            className="w-full pl-8 pr-3 py-1.5 text-xs border border-border rounded-lg bg-background"
+            className="win98-input text-[10px] w-full pl-8 pr-3"
           />
         </div>
         <div className="flex gap-1">
@@ -189,7 +189,7 @@ export function CampaignFinanceSection({ onNavigateSlug }: { onNavigateSlug?: (s
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value as SortKey)}
-          className="text-[10px] border border-border rounded px-2 py-1 bg-background"
+          className="win98-input text-[10px] px-2 py-1"
         >
           <option value="total_raised">Sort: Raised ↓</option>
           <option value="total_spent">Sort: Spent ↓</option>
@@ -209,7 +209,7 @@ export function CampaignFinanceSection({ onNavigateSlug }: { onNavigateSlug?: (s
             <button
               key={r.id}
               onClick={() => setSelectedRecord(r)}
-              className="w-full text-left rounded-lg border border-border bg-card p-3 hover:bg-muted/30 transition-colors"
+              className="w-full text-left candidate-card p-3 hover:bg-[hsl(var(--win98-light))] transition-colors"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -275,12 +275,12 @@ function RecordDetail({ record, allRecords, onBack, onNavigateSlug }: {
 
   return (
     <div className="animate-fade-in">
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
+      <button onClick={onBack} className="win98-button text-[10px] mb-3 flex items-center gap-1">
         <ArrowLeft className="h-4 w-4" />
         Back to all finance data
       </button>
 
-      <div className="rounded-xl border border-border bg-card p-6 mb-4">
+      <div className="candidate-card p-6 mb-4">
         <h2 className="font-display text-lg font-bold text-foreground mb-1 flex items-center gap-2">
           <DollarSign className="h-5 w-5 text-primary" />
           {isState ? `${record.state_abbr} — Statewide Finance Summary` : record.candidate_name}
@@ -313,7 +313,7 @@ function RecordDetail({ record, allRecords, onBack, onNavigateSlug }: {
             { label: "Cash on Hand", value: record.cash_on_hand, color: "hsl(210, 80%, 50%)" },
             { label: "Total Debt", value: record.total_debt, color: "hsl(30, 80%, 50%)" },
           ].map((item) => (
-            <div key={item.label} className="rounded-lg border border-border bg-muted/20 p-3 text-center">
+            <div key={item.label} className="win98-sunken bg-[hsl(var(--win98-light))] p-3 text-center">
               <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">{item.label}</p>
               <p className="text-xl font-display font-bold" style={{ color: item.color }}>{formatMoney(item.value)}</p>
             </div>
@@ -323,7 +323,7 @@ function RecordDetail({ record, allRecords, onBack, onNavigateSlug }: {
         {/* Funding breakdown (only for candidates) */}
         {!isState && (
           <div className="grid gap-4 sm:grid-cols-2 mb-4">
-            <div className="rounded-lg border border-border bg-muted/20 p-4">
+            <div className="win98-sunken bg-[hsl(var(--win98-light))] p-4">
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Funding Sources</p>
               {[
                 { label: "Individual", value: record.individual_contributions },
@@ -336,7 +336,7 @@ function RecordDetail({ record, allRecords, onBack, onNavigateSlug }: {
                 </div>
               ))}
             </div>
-            <div className="rounded-lg border border-border bg-muted/20 p-4">
+            <div className="win98-sunken bg-[hsl(var(--win98-light))] p-4">
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Donor Profile</p>
               <div className="space-y-2">
                 {[
@@ -360,7 +360,7 @@ function RecordDetail({ record, allRecords, onBack, onNavigateSlug }: {
         {/* Industries & Contributors */}
         <div className="grid gap-4 sm:grid-cols-2">
           {industries.length > 0 && (
-            <div className="rounded-lg border border-border bg-muted/20 p-4">
+            <div className="win98-sunken bg-[hsl(var(--win98-light))] p-4">
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                 <Building2 className="inline h-3 w-3 mr-1" />Top Industries
               </p>
@@ -381,7 +381,7 @@ function RecordDetail({ record, allRecords, onBack, onNavigateSlug }: {
             </div>
           )}
           {contributors.length > 0 && (
-            <div className="rounded-lg border border-border bg-muted/20 p-4">
+            <div className="win98-sunken bg-[hsl(var(--win98-light))] p-4">
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Top Contributors</p>
               {contributors.slice(0, 5).map((c: any, i: number) => (
                 <div key={i} className="flex justify-between text-xs mb-1">
