@@ -201,7 +201,10 @@ async function handleKalshi(
   apiKey: string,
   apiSecret: string | null,
   req: Request,
-  url: URL
+  url: URL,
+  // deno-lint-ignore no-explicit-any
+  adminClient: any,
+  userId: string,
 ) {
   const baseUrl = "https://api.elections.kalshi.com/trade-api/v2";
 
@@ -282,7 +285,10 @@ async function handlePolymarket(
   _apiSecret: string | null,
   _passphrase: string | null,
   req: Request,
-  url: URL
+  url: URL,
+  // deno-lint-ignore no-explicit-any
+  adminClient: any,
+  userId: string,
 ) {
   // Polymarket uses CLOB API
   const baseUrl = "https://clob.polymarket.com";
@@ -355,9 +361,12 @@ async function handlePolymarket(
 // ========== PREDICTIT ==========
 async function handlePredictIt(
   action: string,
-  apiKey: string, // cookie/session token
+  apiKey: string,
   req: Request,
-  url: URL
+  url: URL,
+  // deno-lint-ignore no-explicit-any
+  adminClient: any,
+  userId: string,
 ) {
   // PredictIt doesn't have a public trading API — use their internal endpoints
   const baseUrl = "https://www.predictit.org/api";
