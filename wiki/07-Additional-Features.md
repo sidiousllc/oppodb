@@ -6,10 +6,10 @@ OppoDB includes several additional content sections beyond candidate profiles, d
 
 ---
 
-## MAGA Files
+## MAGA Files (Subsection of Candidate Profiles)
 
 ### Description
-MAGA Files document Trump administration appointees and their backgrounds, controversies, and relevant opposition research.
+MAGA Files document Trump administration appointees and their backgrounds, controversies, and relevant opposition research. They are now accessible as a subsection tab within the **Candidate Profiles** section (previously a standalone sidebar section).
 
 ### Data Model
 ```typescript

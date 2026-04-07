@@ -7,10 +7,10 @@ Welcome to the OppoDB documentation wiki.
 - [Overview](Overview) — Architecture, tech stack, data models, and security
 - [Candidate Profiles](Candidate-Profiles) — Research profiles, subpages, and voting records
 - [District Intelligence](District-Intelligence) — Congressional district demographics and maps
-- [Polling Data](Polling-Data) — Multi-source polling visualization and analysis
-- [Campaign Finance](Campaign-Finance) — FEC and state-level finance tracking
+- [Polling Data / DataHub](Polling-Data) — Polling visualization, prediction markets, and campaign finance
+- [Campaign Finance](Campaign-Finance) — FEC and state-level finance tracking (accessed via DataHub)
 - [State Legislative Districts](State-Legislative-Districts) — State legislature coverage
-- [Additional Features](Additional-Features) — MAGA files, narratives, in-app mail, documentation wiki, email pipeline
+- [Additional Features](Additional-Features) — MAGA files (under Candidate Profiles), narratives, in-app mail, documentation wiki, email pipeline
 - [Authentication & User Management](Authentication-and-User-Management) — Auth flows, RBAC, invites, access requests
 - [API Access](API-Access) — REST API, MCP server, API key management
 - [UI Design System](UI-Design-System) — Win98/AOL theme, components, and styling
