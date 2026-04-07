@@ -216,6 +216,20 @@ async function handleKalshi(
     });
     const data = await resp.json();
     if (!resp.ok) return json({ error: "Order failed", details: data }, resp.status);
+
+    // Log trade to history
+    await logTrade(adminClient, userId, "kalshi", {
+      market_id: body.ticker,
+      market_title: body.ticker,
+      side: `${body.action}_${body.side}`,
+      price: body.yes_price ?? body.no_price,
+      quantity: body.count,
+      total_cost: (body.yes_price ?? body.no_price ?? 0) * (body.count ?? 0),
+      order_id: data.order?.order_id,
+      status: data.order?.status || "submitted",
+      raw_response: data,
+    });
+
     return json({ order: data.order });
   }
 
@@ -278,6 +292,21 @@ async function handlePolymarket(
     });
     const data = await resp.json();
     if (!resp.ok) return json({ error: "Order failed", details: data }, resp.status);
+
+    // Log trade to history
+    const adminClient2 = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    await logTrade(adminClient2, body._user_id || "", "polymarket", {
+      market_id: body.tokenID,
+      market_title: body.tokenID,
+      side: body.side,
+      price: body.price,
+      quantity: body.size,
+      total_cost: (body.price ?? 0) * (body.size ?? 0),
+      order_id: data.orderID || data.id,
+      status: "submitted",
+      raw_response: data,
+    });
+
     return json({ order: data });
   }
 
@@ -337,6 +366,21 @@ async function handlePredictIt(
     });
     const data = await resp.json();
     if (!resp.ok) return json({ error: "Order failed", details: data }, resp.status);
+
+    // Log trade to history
+    const adminClient3 = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    await logTrade(adminClient3, body._user_id || "", "predictit", {
+      market_id: body.contractId?.toString(),
+      market_title: body.contractId?.toString(),
+      side: body.tradeType === 1 ? "buy_yes" : body.tradeType === 2 ? "buy_no" : "sell",
+      price: body.pricePerShare,
+      quantity: body.quantity,
+      total_cost: (body.pricePerShare ?? 0) * (body.quantity ?? 0),
+      order_id: data.offerId?.toString(),
+      status: "submitted",
+      raw_response: data,
+    });
+
     return json({ order: data });
   }
 
