@@ -18,6 +18,7 @@ Welcome to the OppoDB documentation wiki.
 - [Cook Ratings & Forecasting](Cook-Ratings-and-Forecasting) — PVI, ratings, forecast models
 - [Admin Panel](Admin-Panel) — User management, content CRUD, role groups, access control
 - [Research Tools](Research-Tools) — Court records search, voter data, and investigative tools
+- [Prediction Market Trading](Prediction-Market-Trading) — Trading integration, API key management, portfolio & orders
 - [Android App](Android-App) — Download APKs, build instructions, and version history
 
 ## About
@@ -32,6 +33,7 @@ OppoDB is a comprehensive opposition research database for political campaigns, 
 - **Invite & Access Request** workflows for controlled onboarding
 - **Transactional Email Pipeline** with queue, suppression, and unsubscribe support
 - **Public REST API** with 17 endpoints covering all data sources
+- **Prediction Market Trading** with encrypted credential storage for Kalshi, Polymarket, and PredictIt
 - **MCP Server** with 18 tools for AI agent access (Claude, GPT, etc.)
 - **Unified Master Search** across 13 data categories via API and web UI
 - **In-App Mail & Chat** with real email notification delivery
