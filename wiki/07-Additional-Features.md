@@ -271,6 +271,21 @@ User-configurable third-party API key management:
 
 ---
 
+## Prediction Market Trading (`MarketTradingPanel`)
+
+### Description
+Users can connect their prediction market accounts and trade directly from OppoDB:
+- **Supported Platforms**: Kalshi, Polymarket, PredictIt
+- **Credential Storage**: AES-256-GCM encrypted in `user_market_credentials` table
+- **Credential Management**: Add/remove API keys per platform via `MarketCredentialsManager` (Profile page)
+- **Trading Features**: View portfolio positions, manage open orders, place buy/sell orders
+- **Edge Function**: `market-trading` handles all credential decryption and API proxying server-side
+- **Security**: Credentials never returned to client; RLS ensures user isolation
+
+See [Prediction Market Trading](Prediction-Market-Trading) for full technical documentation.
+
+---
+
 ## WinRed Donations (`WinRedPanel`)
 
 ### Description
