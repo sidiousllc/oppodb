@@ -8,10 +8,11 @@ import { listUsers, setUserRole, deleteUser, createUser, updateUser, resetUserPa
 import { Users, FileText, Globe, AlertTriangle, BookOpen, Shield, Trash2, Plus, Save, X, Edit3, Loader2, KeyRound, Pencil, Ban, ShieldCheck } from "lucide-react";
 import { RoleGroupsTab } from "@/components/RoleGroupsTab";
 import { AccessControlTab } from "@/components/AccessControlTab";
+import { ActivityLogsTab } from "@/components/ActivityLogsTab";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "roles" | "access" | "candidates" | "maga" | "local" | "narratives";
+type Tab = "users" | "roles" | "access" | "logs" | "candidates" | "maga" | "local" | "narratives";
 
 interface ContentItem {
   id: string;
@@ -53,6 +54,7 @@ export default function AdminPanel() {
     { id: "users", label: "Users", emoji: "👥", adminOnly: true },
     { id: "roles", label: "Role Groups", emoji: "🛡️", adminOnly: true },
     { id: "access", label: "Access Control", emoji: "🔑", adminOnly: true },
+    { id: "logs", label: "Activity Logs", emoji: "📊", adminOnly: true },
     { id: "candidates", label: "Candidates", emoji: "📋" },
     { id: "maga", label: "MAGA Files", emoji: "⚠️" },
     { id: "local", label: "Local Impact", emoji: "🌐" },
@@ -97,6 +99,7 @@ export default function AdminPanel() {
         {tab === "users" && isAdmin && <UsersTab />}
         {tab === "roles" && isAdmin && <RoleGroupsTab />}
         {tab === "access" && isAdmin && <AccessControlTab />}
+        {tab === "logs" && isAdmin && <ActivityLogsTab />}
         {tab === "candidates" && <CandidatesTab />}
         {tab === "maga" && <ContentTab table="maga_files" nameField="name" />}
         {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
