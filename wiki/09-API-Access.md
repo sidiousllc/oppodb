@@ -229,7 +229,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/polling?search=trump&limit=20"
 
 ### 6. `/maga-files` — MAGA Files
 
-Vetting reports on Trump administration executive branch appointees.
+Vetting reports on Trump administration executive branch appointees. (In the web UI, MAGA Files are accessed as a subsection of Candidate Profiles.)
 
 | Parameter | Description |
 |-----------|-------------|
