@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { candidates, searchCandidates, getCandidateBySlug, getCandidatesByCategory, initCandidates } from "@/data/candidates";
 import { loadCandidateData } from "@/data/candidateContent";
 import { magaFiles, searchMagaFiles, mergeMagaFilesFromDB } from "@/data/magaFiles";
@@ -42,11 +42,13 @@ import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { LegislationSection } from "@/components/LegislationSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
+import { useActivityTracker } from "@/hooks/useActivityTracker";
 
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
   const { isMailOpen, closeMail } = useMail();
+  const { trackPageView, trackMapView } = useActivityTracker();
   const [loaded, setLoaded] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [search, setSearch] = useState("");
@@ -80,6 +82,17 @@ export default function Index() {
       .map(v => v.district_id)
       .filter((id): id is string => id !== null)
   ), []);
+
+  // Track section changes
+  useEffect(() => {
+    trackPageView(section);
+  }, [section, trackPageView]);
+
+  // Track map views
+  useEffect(() => {
+    if (section === "district-intel") trackMapView("congressional_districts");
+    if (section === "state-legislative") trackMapView("state_legislative");
+  }, [section, trackMapView]);
 
   useEffect(() => {
     loadCandidateData();
