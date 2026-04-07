@@ -60,7 +60,7 @@ const sections: Array<{ id: Section; label: string; emoji: string }> = [
   { id: "narratives", label: "Narrative Reports", emoji: "📄" },
   { id: "district-intel", label: "District Intel", emoji: "🧭" },
   { id: "state-legislative", label: "State Legislatures", emoji: "⚖️" },
-  { id: "polling", label: "Polling Data", emoji: "📊" },
+  { id: "polling", label: "DataHub", emoji: "📊" },
   { id: "campaign-finance", label: "Campaign Finance", emoji: "💰" },
   { id: "research-tools", label: "Research Tools", emoji: "🔬" },
   { id: "live-elections", label: "Live Elections", emoji: "🏛️" },
