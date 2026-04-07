@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } fro
 import { fetchPollingData, getSourceInfo, POLLING_SOURCES, POLL_TYPES, type PollEntry } from "@/data/pollingData";
 import IssuePollingSection from "@/components/IssuePollingSection";
 const PredictionMarketsPanel = lazy(() => import("@/components/PredictionMarketsPanel"));
+import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, ExternalLink, TrendingDown, TrendingUp, Minus, Filter, RefreshCw, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { exportPollingCSV, exportPollingPDF } from "@/lib/pollingExport";
@@ -1925,7 +1926,7 @@ export function PollingSection() {
   const [seeding, setSeeding] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"polling" | "markets">("polling");
+  const [activeTab, setActiveTab] = useState<"polling" | "markets" | "finance">("polling");
 
   useEffect(() => {
     loadPolls();
@@ -2066,9 +2067,17 @@ export function PollingSection() {
         >
           📈 Prediction Markets
         </button>
+        <button
+          onClick={() => setActiveTab("finance")}
+          className={`px-5 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === "finance" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          💰 Campaign Finance
+        </button>
       </div>
 
-      {activeTab === "markets" ? (
+      {activeTab === "finance" ? (
+        <CampaignFinanceSection />
+      ) : activeTab === "markets" ? (
         <Suspense fallback={<div className="flex items-center justify-center py-20"><span className="text-sm text-muted-foreground">Loading prediction markets…</span></div>}>
           <PredictionMarketsPanel />
         </Suspense>
