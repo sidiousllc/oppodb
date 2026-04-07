@@ -28,7 +28,6 @@ export type Section =
   | "district-intel"
   | "state-legislative"
   | "polling"
-  | "campaign-finance"
   | "research-tools"
   | "live-elections"
   | "legislation"
@@ -61,7 +60,6 @@ const sections: Array<{ id: Section; label: string; emoji: string }> = [
   { id: "district-intel", label: "District Intel", emoji: "🧭" },
   { id: "state-legislative", label: "State Legislatures", emoji: "⚖️" },
   { id: "polling", label: "DataHub", emoji: "📊" },
-  { id: "campaign-finance", label: "Campaign Finance", emoji: "💰" },
   { id: "research-tools", label: "Research Tools", emoji: "🔬" },
   { id: "live-elections", label: "Live Elections", emoji: "🏛️" },
   { id: "legislation", label: "Legislation", emoji: "📜" },
