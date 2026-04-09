@@ -2,7 +2,7 @@
 
 ## Description
 
-OppoDB Search is the unified search interface that queries across all 14+ data categories simultaneously. It combines instant local/static search with auto-debounced database queries, delivering results in under 500ms for most searches.
+OppoDB Search is the unified search interface that queries across all 15+ data categories simultaneously. It combines instant local/static search with auto-debounced database queries, delivering results in under 500ms for most searches.
 
 ---
 
@@ -21,12 +21,12 @@ Rendered on the Dashboard section only. Accessible globally via **Ctrl+K** (or *
 ```
 User types query (≥2 chars)
 ├── Instant: Local/static data search (candidates, districts, MAGA files, local impact, narratives)
-├── 400ms debounce: Auto-triggered database search (14 parallel Supabase queries)
+├── 400ms debounce: Auto-triggered database search (15 parallel Supabase queries)
 └── Results rendered in categorized cards with filter chips
 ```
 
 ### Speed Optimizations
-1. **Parallel queries**: All 14 database queries execute via `Promise.all()` simultaneously
+1. **Parallel queries**: All 15 database queries execute via `Promise.all()` simultaneously
 2. **Auto-debounce**: DB search triggers automatically after 400ms of inactivity (no Enter required)
 3. **Local-first**: Static data results appear instantly while DB queries load
 4. **Limit capping**: Each query limited to 10 results to minimize payload size
@@ -64,6 +64,7 @@ User types query (≥2 chars)
 | State Legislative | `state_legislative_profiles` | state, state_abbr, district_id | leghub |
 | MIT Election History | `mit_election_results` | candidate, state, state_po | live-elections |
 | Tracked Bills | `tracked_bills` | title, bill_number, state | leghub |
+| Messaging Guidance | `messaging_guidance` | title, summary | messaging |
 
 ---
 
@@ -132,6 +133,7 @@ interface DbResults {
   stateLeg: any[];
   mitElections: any[];
   trackedBills: any[];
+  messagingGuidance: any[];
 }
 ```
 
