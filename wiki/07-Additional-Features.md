@@ -120,14 +120,16 @@ Real-time election results and returns for ongoing elections.
 
 ---
 
-## Legislation (`LegislationSection`)
+## Legislation (Now in LegHub)
 
 ### Description
-Tracks legislation relevant to tracked candidates and districts.
+Legislation tracking has been consolidated into the **LegHub** section alongside State Legislatures. See [LegHub](LegHub) for full documentation.
 
 ### Features
 - **Federal Bills Tab** (`FederalBillsTab`): Congress.gov bill tracking via `congress_bills` table
 - **Bill Tracking**: Users can track specific bills via `tracked_bills` table (LegiScan integration)
+- **Auto-Matching**: Links candidate profiles to LegiScan records using name heuristics
+- **PDF Viewer**: Integrated document viewer for bill text via `pdfjs-dist`
 - Bill sponsorship lookup
 - Key vote tracking
 - Legislative scorecards
