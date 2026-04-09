@@ -21,7 +21,7 @@ MessagingHub is a dedicated section for polling-based message guidance and commu
 | `published_date` | date | null | Publication date |
 | `summary` | text | `''` | Short description/preview |
 | `content` | text | `''` | Full markdown content |
-| `issue_areas` | text[] | `'{}'` | Array of issue tags (e.g., "Immigration", "Tariffs") |
+| `issue_areas` | text[] | `'{}'` | Array of issue/party tags (e.g., "Immigration", "Tariffs", "Democrat", "Republican") |
 | `research_type` | text | `'message-guidance'` | Type of research |
 | `created_at` | timestamptz | `now()` | Creation timestamp |
 | `updated_at` | timestamptz | `now()` | Last update timestamp |
@@ -94,13 +94,15 @@ Navigator Research is a project of Global Strategy Group and GS Strategy Group f
 
 | Title | Published | Issue Areas |
 |-------|-----------|-------------|
-| The More Americans Learn About the SAVE Act... | 2026-03-19 | Election Integrity, Elections, Congress |
-| Perceptions And Concerns About Trump's War Against Iran | 2026-03-18 | Foreign Policy, Trump, National Security |
-| Message Guidance on Tariff SCOTUS Ruling | 2026-02-20 | Tariffs, Supreme Court, Economy |
-| Do's and Don'ts about Discussing ICE and Immigration | 2026-02-09 | Immigration, Trump |
-| All eyes are on ICE | 2026-02-05 | Immigration, Trump |
-| State of the Shutdown: Families are Paying the Price... | 2025-10-31 | Shutdown, Budget, Congress, Republicans |
-| Winning Messages on Reproductive Rights Post-Dobbs | 2025-09-15 | Abortion, Reproductive Rights, Health Care |
+| The More Americans Learn About the SAVE Act... | 2026-03-19 | Election Integrity, Elections, Congress, Democrat, Republican |
+| Perceptions And Concerns About Trump's War Against Iran | 2026-03-18 | Foreign Policy, Trump, National Security, Democrat |
+| Message Guidance on Tariff SCOTUS Ruling | 2026-02-20 | Tariffs, Supreme Court, Economy, Democrat |
+| Do's and Don'ts about Discussing ICE and Immigration | 2026-02-09 | Immigration, Trump, Democrat |
+| All eyes are on ICE | 2026-02-05 | Immigration, Trump, Democrat |
+| State of the Shutdown: Families are Paying the Price... | 2025-10-31 | Shutdown, Budget, Congress, Republicans, Democrat, Republican |
+| Winning Messages on Reproductive Rights Post-Dobbs | 2025-09-15 | Abortion, Reproductive Rights, Health Care, Democrat |
+
+**Party Tags**: Reports are tagged with `Democrat` and/or `Republican` to indicate which party's messaging strategy they address. All Navigator Research reports include `Democrat`; reports directly addressing GOP policy positions also include `Republican`.
 
 ### Adding New Sources
 

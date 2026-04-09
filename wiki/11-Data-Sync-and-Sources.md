@@ -37,7 +37,8 @@ OppoDB integrates with multiple external data sources to keep its database curre
 | `version-history` | Git version history | Yes |
 | `prediction-markets-sync` | Polymarket, Kalshi, PredictIt, Manifold, Metaculus data | Yes |
 | `market-trading` | User trading proxy (portfolio, orders, trade) | Yes (JWT) |
-| `version-history` | Git version history | Yes |
+| `civic-api-proxy` | Proxy for CivicAPI.org (Live Elections) | No |
+| `winred-webhook` | WinRed donation webhook receiver | HMAC signature |
 
 ---
 

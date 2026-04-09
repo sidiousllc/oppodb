@@ -102,24 +102,74 @@ Voted [YES](/joni-ernst-immigration) on H.R. 2 (2023).
 
 ### Internal Link Resolver
 
-The `researchLinkResolver.ts` library parses internal links in format `/slug` or `/slug/subpage`:
-- Extracts slug from markdown links
-- Routes to subpages if available
-- Opens external links in new tabs
-- Handles cross-candidate navigation
+The `researchLinkResolver.ts` library parses internal links using a multi-format link extraction system:
+
+#### `extractInternalLink(href)` → `InternalLink | null`
+
+Returns a structured link object with:
+- **`slug`** — The final path segment (used for matching)
+- **`parentSlug`** — The parent slug if this is a subpage link (e.g., `/andy-ogles/health-care` → parent: `andy-ogles`, slug: `health-care`)
+- **`segments`** — All path segments for complex multi-level links
+
+#### Supported Link Formats
+| Format | Example | Behavior |
+|--------|---------|----------|
+| Relative path | `/joni-ernst` | Resolves to candidate slug `joni-ernst` |
+| Subpage path | `/andy-ogles/health-care-backup` | Resolves parent `andy-ogles` + subpage `health-care-backup` |
+| Internal host | `research-books.com/en/nick-begich` | Strips host, extracts slug `nick-begich` |
+| Bare slug | `health-care-backup` | Matches as relative slug |
+| External URL | `https://nytimes.com/...` | Opens in new tab (not intercepted) |
+
+#### Navigation Flow
+1. Try matching slug against candidate subpages (direct match, suffix match, github_path match)
+2. If parent slug present, try combined parent+child lookup
+3. Fall back to `navigateBySlug()` which checks: candidates → MAGA files → local impacts → narratives → districts
+4. If slug matches content within a candidate profile (subpage heuristic), navigate to that parent candidate
+5. If no match found and link is external, open in new tab
+
+#### Legacy API
+`extractInternalSlug(href)` is maintained for backward compatibility — returns just the slug string.
+
+## Tags System
+
+All content types support a `tags` text array column for categorization and filtering:
+
+### Database Schema
+```sql
+-- Tags column on all content tables
+tags text[] NOT NULL DEFAULT '{}'
+-- GIN index for efficient tag-based queries
+CREATE INDEX idx_candidate_profiles_tags ON candidate_profiles USING GIN(tags);
+CREATE INDEX idx_maga_files_tags ON maga_files USING GIN(tags);
+CREATE INDEX idx_local_impacts_tags ON local_impacts USING GIN(tags);
+CREATE INDEX idx_narrative_reports_tags ON narrative_reports USING GIN(tags);
+```
+
+### Tagged Tables
+| Table | Tag Examples |
+|-------|-------------|
+| `candidate_profiles` | `Republican`, `House`, `Senate`, `Healthcare`, `Scandal` |
+| `maga_files` | `Cabinet`, `Appointee`, `Controversial` |
+| `local_impacts` | `Economy`, `Environment`, `Infrastructure` |
+| `narrative_reports` | `Immigration`, `Budget`, `Election Integrity` |
+| `messaging_guidance` | `Democrat`, `Republican`, `Immigration`, `Tariffs` (stored in `issue_areas`) |
+
+### Admin Panel Tag Editing
+Tags are editable via a comma-separated input field in the Content Editor for all content types. Tags are displayed in the content list view alongside slug and character count.
 
 ## Admin Content Management
 
 In the **Admin Panel → Candidates tab**, moderators can:
 - **Create** new candidate profiles
-- **edit_file** existing profiles (name, slug, content)
+- **Edit** existing profiles (name, slug, tags, content)
 - **Delete** profiles
+- **Tag** profiles with comma-separated labels for categorization
 - Content is edited as raw Markdown with a monospace textarea
 
 ## Data Sources
 
 - **Candidate profiles**: GitHub-synced markdown files via `githubSync.ts`
-- **Polling data**: Seeded from538, RCP, Trafalgar, Remington, InsiderAdvantage, SoCal, Trafalgar, Quinnipiac, Emerson, Susquehanna, Datr
+- **Polling data**: Seeded from 538, RCP, Trafalgar, Remington, InsiderAdvantage, SoCal, Quinnipiac, Emerson, Susquehanna, Datr
 
 ---
 
@@ -142,5 +192,6 @@ The Candidate Profiles section uses a tab-based subsection system:
 - Warning emoji icon (⚠️) for visual distinction
 - Tag: "MAGA File" with destructive red styling
 - Internal link resolution for cross-references
+- **Tags**: Editable via admin panel for categorization
 
 See [Additional Features](Additional-Features) for the full MAGA Files data model and admin management details.

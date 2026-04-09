@@ -121,14 +121,24 @@ type Section =
 
 ### Cross-Section Navigation
 
-The `navigateBySlug()` function in `Index.tsx` was updated to route candidate, MAGA file, local impact, and narrative matches to the `oppohub` section:
+The `navigateBySlug()` function in `Index.tsx` routes matches to the `oppohub` section with a multi-step resolution strategy:
 
 ```typescript
+// 1. Check top-level content types
 if (candidateMatch) { setSection("oppohub"); setSelectedSlug(candidateMatch.slug); }
 if (magaMatch) { setSection("oppohub"); setSelectedSlug(magaMatch.slug); }
 if (localMatch) { setSection("oppohub"); setSelectedSlug(localMatch.slug); }
 if (narrativeMatch) { setSection("oppohub"); setSelectedSlug(narrativeMatch.slug); }
+
+// 2. Subpage fallback: if slug isn't a top-level item, check if it's a subpage
+//    by scanning candidate content for references to this slug
+const parentCandidate = candidates.find(c =>
+  c.content.toLowerCase().includes(`/${slug}`)
+);
+if (parentCandidate) { setSection("oppohub"); setSelectedSlug(parentCandidate.slug); }
 ```
+
+This subpage fallback ensures that links to subpages like `/andy-ogles/health-care-backup` correctly navigate to the parent candidate profile even when clicked from outside the candidate detail view.
 
 ---
 

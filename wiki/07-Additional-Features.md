@@ -19,6 +19,7 @@ interface MagaFile {
   slug: string;
   name: string;
   content: string;   // Markdown research content
+  tags: string[];    // Categorization tags (e.g., "Cabinet", "Appointee")
 }
 ```
 
@@ -28,11 +29,12 @@ interface MagaFile {
 - Warning emoji icon (⚠️) for visual distinction
 - Tag: "MAGA File" with destructive red styling
 - Internal link resolution for cross-references
+- **Tags**: Editable via admin panel, stored as PostgreSQL text array with GIN index
 
 ### Admin Management
 In **Admin Panel → MAGA Files tab**, moderators can:
 - Create new MAGA files
-- Edit name, slug, and content
+- Edit name, slug, tags, and content
 - Delete existing files
 
 ---
@@ -49,6 +51,7 @@ interface LocalImpact {
   state: string;      // Full state name
   summary: string;   // Brief description
   content: string;   // Markdown report
+  tags: string[];    // Categorization tags (e.g., "Economy", "Infrastructure")
 }
 ```
 
@@ -57,11 +60,12 @@ interface LocalImpact {
 - Globe emoji icon (🌐) 
 - Summary displayed on list cards
 - Full report in detail view
+- **Tags**: Editable via admin panel, stored as PostgreSQL text array with GIN index
 
 ### Admin Management
 In **Admin Panel → Local Impact tab**, moderators can:
 - Create new reports
-- Edit state, slug, summary, and content
+- Edit state, slug, summary, tags, and content
 - Delete reports
 
 ---
@@ -77,6 +81,7 @@ interface NarrativeReport {
   slug: string;
   name: string;
   content: string;   // Markdown report
+  tags: string[];    // Categorization tags (e.g., "Immigration", "Budget")
 }
 ```
 
@@ -85,11 +90,12 @@ interface NarrativeReport {
 - Document emoji icon (📄)
 - Senate-colored tag
 - Used for long-form research narratives
+- **Tags**: Editable via admin panel, stored as PostgreSQL text array with GIN index
 
 ### Admin Management
 In **Admin Panel → Narratives tab**, moderators can:
 - Create new narrative reports
-- Edit name, slug, and content
+- Edit name, slug, tags, and content
 - Delete reports
 
 ---
@@ -277,7 +283,11 @@ A contextual search bar available within individual sections:
 - Navigates directly to search result
 
 ### Cross-Section Navigation
-The `researchLinkResolver.ts` system allows content in any section to link to any other section via slug resolution.
+The `researchLinkResolver.ts` system allows content in any section to link to any other section via structured link extraction. The enhanced `extractInternalLink()` function returns slug, parent slug, and all path segments, enabling:
+- Direct subpage navigation (e.g., `/andy-ogles/health-care-backup`)
+- Parent candidate resolution for orphaned subpage slugs
+- Internal host recognition (e.g., `research-books.com`)
+- Fallback to external URL opening for non-matching links
 
 ---
 
