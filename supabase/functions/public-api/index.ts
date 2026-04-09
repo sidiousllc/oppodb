@@ -639,6 +639,7 @@ Deno.serve(async (req) => {
           "campaign_finance", "state_finance", "election_results",
           "forecasts", "maga_files", "narrative_reports",
           "local_impacts", "voter_stats", "mn_finance",
+          "prediction_markets",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
