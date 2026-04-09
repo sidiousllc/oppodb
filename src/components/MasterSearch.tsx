@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users, Filter } from "lucide-react";
+import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users, Filter, TrendingUp, Building2, History } from "lucide-react";
 import { exportSearchCSV, exportSearchPDF } from "@/lib/masterSearchExport";
 import { supabase } from "@/integrations/supabase/client";
 import { searchCandidates } from "@/data/candidates";
@@ -36,6 +36,9 @@ function saveToStorage(key: string, items: string[]) {
   localStorage.setItem(key, JSON.stringify(items));
 }
 
+const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [] };
+
+
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -53,7 +56,11 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     mnFinance: any[];
     winredDonations: any[];
     voterStats: any[];
-  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
+    predictionMarkets: any[];
+    stateLeg: any[];
+    mitElections: any[];
+    trackedBills: any[];
+  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [] });
   const [hasSearched, setHasSearched] = useState(false);
 
   // Ctrl+K shortcut to focus search
@@ -187,7 +194,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -233,6 +240,26 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .order("transaction_date", { ascending: false })
         .limit(10),
       fetchVoterStats(),
+      supabase.from("prediction_markets")
+        .select("id, title, source, category, state_abbr, district, yes_price, no_price, volume, status, market_url")
+        .or(`title.ilike.${likeQ},state_abbr.ilike.${likeQ},candidate_name.ilike.${likeQ}`)
+        .eq("status", "active")
+        .order("volume", { ascending: false })
+        .limit(10),
+      supabase.from("state_legislative_profiles")
+        .select("id, district_id, state, state_abbr, chamber, district_number, population, median_income")
+        .or(`state.ilike.${likeQ},state_abbr.ilike.${likeQ},district_id.ilike.${likeQ}`)
+        .limit(10),
+      supabase.from("mit_election_results")
+        .select("id, candidate, state, state_po, office, year, party, candidatevotes, totalvotes, district")
+        .or(`candidate.ilike.${likeQ},state.ilike.${likeQ},state_po.ilike.${likeQ}`)
+        .order("year", { ascending: false })
+        .limit(10),
+      supabase.from("tracked_bills")
+        .select("id, bill_number, title, state, status_desc, last_action, last_action_date")
+        .or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},state.ilike.${likeQ}`)
+        .order("last_action_date", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
@@ -246,6 +273,10 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       mnFinance: mnFinRes.data || [],
       winredDonations: winredRes.data || [],
       voterStats: voterStatsRes || [],
+      predictionMarkets: predMarketsRes.data || [],
+      stateLeg: stateLegRes.data || [],
+      mitElections: mitElRes.data || [],
+      trackedBills: trackedBillsRes.data || [],
     });
     setIsSearching(false);
 
@@ -256,6 +287,15 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       return updated;
     });
   }, [query]);
+
+  // Auto-trigger DB search with debounce for speed
+  useEffect(() => {
+    if (query.trim().length < 2) return;
+    const timer = setTimeout(() => {
+      runDbSearch();
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleBookmark = useCallback(() => {
     const q = query.trim();
@@ -294,7 +334,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     if (e.key === "Escape") {
       if (query.trim()) {
         setQuery("");
-        setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
+        setDbResults(EMPTY_DB as any);
         setHasSearched(false);
       }
       inputRef.current?.blur();
@@ -381,7 +421,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         key: "legislation",
         label: "Legislation",
         icon: <Scale className="h-3.5 w-3.5" />,
-        section: "legislation",
+        section: "leghub",
         results: dbResults.bills.map((b: any) => ({
           id: b.id,
           title: b.short_title || b.title,
@@ -447,6 +487,63 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    if (dbResults.predictionMarkets.length > 0) {
+      groups.push({
+        key: "prediction-markets",
+        label: "Prediction Markets",
+        icon: <TrendingUp className="h-3.5 w-3.5" />,
+        section: "polling",
+        results: dbResults.predictionMarkets.map((m: any) => ({
+          id: m.id,
+          title: m.title,
+          subtitle: `${m.source} • Yes: ${m.yes_price != null ? `${(m.yes_price * 100).toFixed(0)}¢` : "N/A"} • Vol: $${(m.volume || 0).toLocaleString()}${m.state_abbr ? ` • ${m.state_abbr}` : ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.stateLeg.length > 0) {
+      groups.push({
+        key: "state-legislative",
+        label: "State Legislative Districts",
+        icon: <Building2 className="h-3.5 w-3.5" />,
+        section: "leghub",
+        results: dbResults.stateLeg.map((d: any) => ({
+          id: d.id,
+          title: d.district_id,
+          subtitle: `${d.state || d.state_abbr} • ${d.chamber} • Pop: ${(d.population || 0).toLocaleString()} • Income: $${(d.median_income || 0).toLocaleString()}`,
+          slug: d.district_id,
+        })),
+      });
+    }
+
+    if (dbResults.mitElections.length > 0) {
+      groups.push({
+        key: "mit-elections",
+        label: "MIT Election History",
+        icon: <History className="h-3.5 w-3.5" />,
+        section: "live-elections",
+        results: dbResults.mitElections.map((e: any) => ({
+          id: e.id,
+          title: e.candidate,
+          subtitle: `${e.state_po} • ${e.office} • ${e.year} • ${e.party || ""} • ${(e.candidatevotes || 0).toLocaleString()} votes`,
+        })),
+      });
+    }
+
+    if (dbResults.trackedBills.length > 0) {
+      groups.push({
+        key: "tracked-bills",
+        label: "Tracked Bills (LegHub)",
+        icon: <Scale className="h-3.5 w-3.5" />,
+        section: "leghub",
+        results: dbResults.trackedBills.map((b: any) => ({
+          id: b.id,
+          title: `${b.bill_number} — ${b.title}`,
+          subtitle: `${b.state} • ${b.status_desc || ""} • ${b.last_action_date || ""}`,
+        })),
+      });
+    }
+
     return groups;
   }, [dbResults]);
 
@@ -467,7 +564,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
   const handleClear = () => {
     setQuery("");
-    setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
+    setDbResults(EMPTY_DB as any);
     setHasSearched(false);
   };
 
@@ -494,7 +591,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
               onKeyDown={handleKeyDown}
               className="win98-input w-full pl-7 pr-7"
               ref={inputRef}
-              placeholder="Search candidates, districts, bills, finance, polling, elections..."
+              placeholder="Search candidates, districts, bills, finance, polling, markets, state leg, elections..."
               maxLength={500}
             />
             {query && (
@@ -527,7 +624,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           </button>
         </div>
         <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
-          Type to see instant results • Press Enter or click "Search All" to query databases • ⭐ Bookmark to save
+          Type to see instant results — database search auto-triggers after 400ms • ⭐ Bookmark to save
         </p>
       </div>
 
