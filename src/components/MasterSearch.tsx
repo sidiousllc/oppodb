@@ -288,6 +288,15 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     });
   }, [query]);
 
+  // Auto-trigger DB search with debounce for speed
+  useEffect(() => {
+    if (query.trim().length < 2) return;
+    const timer = setTimeout(() => {
+      runDbSearch();
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const toggleBookmark = useCallback(() => {
     const q = query.trim();
     if (!q) return;
