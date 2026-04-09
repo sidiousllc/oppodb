@@ -955,6 +955,54 @@ export type Database = {
         }
         Relationships: []
       }
+      messaging_guidance: {
+        Row: {
+          author: string | null
+          content: string
+          created_at: string
+          id: string
+          issue_areas: string[]
+          published_date: string | null
+          research_type: string
+          slug: string
+          source: string
+          source_url: string | null
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          issue_areas?: string[]
+          published_date?: string | null
+          research_type?: string
+          slug: string
+          source?: string
+          source_url?: string | null
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          issue_areas?: string[]
+          published_date?: string | null
+          research_type?: string
+          slug?: string
+          source?: string
+          source_url?: string | null
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mit_election_results: {
         Row: {
           candidate: string
