@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { MarketTradingPanel } from "@/components/MarketTradingPanel";
 import { TradeHistoryPanel } from "@/components/TradeHistoryPanel";
+import { MarketDetailWindow } from "@/components/MarketDetailWindow";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart3, TrendingUp, TrendingDown, ExternalLink, Filter, RefreshCw,
