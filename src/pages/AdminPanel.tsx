@@ -810,7 +810,7 @@ function ContentList({ items, onEdit, onDelete, nameField }: { items: ContentIte
 function ContentEditor({ item, nameLabel, hasState, hasSummary, onSave, onCancel }: {
   item: ContentItem; nameLabel: string; hasState?: boolean; hasSummary?: boolean; onSave: (item: ContentItem) => void; onCancel: () => void;
 }) {
-  const [form, setForm] = useState({ ...item });
+  const [form, setForm] = useState({ ...item, tagsText: item.tags?.join(", ") || "" });
   const isNew = !item.id;
 
   return (
@@ -832,6 +832,10 @@ function ContentEditor({ item, nameLabel, hasState, hasSummary, onSave, onCancel
             <input value={form.slug} onChange={(e) => setForm(f => ({ ...f, slug: e.target.value }))} className="win98-input w-full" placeholder="url-slug" />
           </div>
         </div>
+        <div>
+          <label className="block text-[10px] font-bold mb-1">Tags (comma-separated):</label>
+          <input value={form.tagsText} onChange={(e) => setForm(f => ({ ...f, tagsText: e.target.value }))} className="win98-input w-full" placeholder="Republican, Healthcare, Economy" />
+        </div>
         {hasSummary && (
           <div>
             <label className="block text-[10px] font-bold mb-1">Summary:</label>
@@ -844,7 +848,7 @@ function ContentEditor({ item, nameLabel, hasState, hasSummary, onSave, onCancel
             className="win98-input w-full font-[monospace] text-[10px]" placeholder="# Title..." />
         </div>
         <div className="flex gap-2 pt-1">
-          <button onClick={() => onSave(form)} className="win98-button text-[10px] font-bold">
+          <button onClick={() => onSave({ ...form, tags: form.tagsText.split(",").map(s => s.trim()).filter(Boolean) })} className="win98-button text-[10px] font-bold">
             <Save className="h-3 w-3 inline mr-1" />{isNew ? "Create" : "Save"}
           </button>
           <button onClick={onCancel} className="win98-button text-[10px]">Cancel</button>
@@ -852,4 +856,5 @@ function ContentEditor({ item, nameLabel, hasState, hasSummary, onSave, onCancel
       </div>
     </div>
   );
+}
 }
