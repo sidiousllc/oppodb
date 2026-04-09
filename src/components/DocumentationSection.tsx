@@ -27,6 +27,8 @@ const wikiPages: WikiPage[] = [
   { slug: "prediction-market-trading", title: "Prediction Market Trading", content: "" },
   { slug: "leghub", title: "LegHub", content: "" },
   { slug: "oppodb-search", title: "OppoDB Search", content: "" },
+  { slug: "oppohub", title: "OppoHub", content: "" },
+  { slug: "messaginghub", title: "MessagingHub", content: "" },
 ];
 
 // Lazy-load wiki content via raw imports
@@ -49,6 +51,8 @@ const wikiImports: Record<string, () => Promise<string>> = {
   "prediction-market-trading": () => import("../../wiki/16-Prediction-Market-Trading.md?raw").then(m => m.default),
   "leghub": () => import("../../wiki/17-LegHub.md?raw").then(m => m.default),
   "oppodb-search": () => import("../../wiki/18-OppoDB-Search.md?raw").then(m => m.default),
+  "oppohub": () => import("../../wiki/19-OppoHub.md?raw").then(m => m.default),
+  "messaginghub": () => import("../../wiki/20-MessagingHub.md?raw").then(m => m.default),
 };
 
 export function DocumentationSection() {

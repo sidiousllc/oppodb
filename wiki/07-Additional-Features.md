@@ -2,7 +2,9 @@
 
 ## Description
 
-OppoDB includes several additional content sections beyond candidate profiles, district intelligence, polling, and campaign finance. These sections provide supplementary research data.
+OppoDB includes several additional content sections beyond the main hubs (OppoHub, DataHub, LegHub, MessagingHub). These sections provide supplementary research data, communication tools, and export capabilities.
+
+> **Note**: Candidate Profiles, Local Impact Reports, and Narrative Reports have been consolidated into **[OppoHub](OppoHub)**. MAGA Files are accessible as a sub-tab within OppoHub's Candidates tab. Messaging Guidance is now in **[MessagingHub](MessagingHub)**.
 
 ---
 
@@ -216,7 +218,7 @@ The landing page when users log in, providing an overview of the entire database
 An in-app documentation reader that provides access to all OppoDB wiki documentation directly within the application.
 
 ### Features
-- **Table of Contents Index**: Grid view of all 13 documentation pages with numbered entries
+- **Table of Contents Index**: Grid view of all 20 documentation pages with numbered entries
 - **Search**: Filter documentation pages by title
 - **Lazy Loading**: Wiki content loaded on-demand via Vite dynamic imports (`?raw` suffix)
 - **Markdown Rendering**: Full markdown support with Win98-styled components (tables, code blocks, blockquotes)
@@ -233,7 +235,7 @@ const wikiImports: Record<string, () => Promise<string>> = {
 };
 ```
 
-### Wiki Sections (18 pages)
+### Wiki Sections (20 pages)
 1. Overview
 2. Candidate Profiles
 3. District Intelligence
@@ -252,6 +254,8 @@ const wikiImports: Record<string, () => Promise<string>> = {
 16. Prediction Market Trading
 17. LegHub
 18. OppoDB Search
+19. OppoHub
+20. MessagingHub
 
 ---
 

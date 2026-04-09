@@ -2,7 +2,9 @@
 
 ## Description
 
-Candidate Profiles form the core content of OppoDB. Each profile contains opposition research on a political candidate — opposition research notes, issue positions, voting records, scandal information, and biographical data. The section includes two subsection tabs: **Profiles** (candidate research) and **MAGA Files** (Trump administration appointee vetting reports).
+Candidate Profiles form the core content of OppoDB. Each profile contains opposition research on a political candidate — opposition research notes, issue positions, voting records, scandal information, and biographical data.
+
+> **Note**: Candidate Profiles are now accessed through **[OppoHub](OppoHub)**, which consolidates Candidates (with MAGA Files sub-tab), Local Impact Reports, and Narrative Reports into a single tabbed interface.
 
 ## Supported Candidate Types
 
