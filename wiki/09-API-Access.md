@@ -2,7 +2,7 @@
 
 ## Description
 
-OppoDB provides a comprehensive public REST API and MCP (Model Context Protocol) server that allow authenticated users to programmatically access the entire database. API access is available to premium users and above, enabling integration with external tools, scripts, and AI agents. The API exposes **21 REST endpoints** (including 2 chart-data endpoints) and **18 MCP tools** covering all data sources available in the web application.
+OppoDB provides a comprehensive public REST API and MCP (Model Context Protocol) server that allow authenticated users to programmatically access the entire database. API access is available to premium users and above, enabling integration with external tools, scripts, and AI agents. The API exposes **22 REST endpoints** (including 2 chart-data endpoints) and **18 MCP tools** covering all data sources available in the web application.
 
 ---
 
