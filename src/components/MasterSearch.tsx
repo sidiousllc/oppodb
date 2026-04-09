@@ -92,7 +92,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         key: "candidates",
         label: "Candidate Profiles",
         icon: <User className="h-3.5 w-3.5" />,
-        section: "candidates",
+        section: "oppohub",
         results: cands.map(c => ({
           id: c.slug,
           title: c.name,
@@ -124,7 +124,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         key: "maga",
         label: "MAGA Files",
         icon: <AlertTriangle className="h-3.5 w-3.5" />,
-        section: "maga-files",
+        section: "oppohub",
         results: maga.map(m => ({ id: m.slug, title: m.name, slug: m.slug })),
       });
     }
@@ -135,7 +135,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         key: "local",
         label: "Local Impact Reports",
         icon: <Globe className="h-3.5 w-3.5" />,
-        section: "local-impact",
+        section: "oppohub",
         results: local.map(r => ({
           id: r.slug,
           title: r.state,
@@ -151,7 +151,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         key: "narratives",
         label: "Narrative Reports",
         icon: <FileText className="h-3.5 w-3.5" />,
-        section: "narratives",
+        section: "oppohub",
         results: narr.map(n => ({ id: n.slug, title: n.name, slug: n.slug })),
       });
     }
