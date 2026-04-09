@@ -53,7 +53,11 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     mnFinance: any[];
     winredDonations: any[];
     voterStats: any[];
-  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
+    predictionMarkets: any[];
+    stateLeg: any[];
+    mitElections: any[];
+    trackedBills: any[];
+  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [] });
   const [hasSearched, setHasSearched] = useState(false);
 
   // Ctrl+K shortcut to focus search
