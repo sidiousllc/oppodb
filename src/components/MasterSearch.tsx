@@ -36,6 +36,9 @@ function saveToStorage(key: string, items: string[]) {
   localStorage.setItem(key, JSON.stringify(items));
 }
 
+const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [] };
+
+
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
