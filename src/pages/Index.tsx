@@ -33,7 +33,6 @@ import { useMail } from "@/contexts/MailContext";
 import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
-import { StateLegislativeSection } from "@/components/StateLegislativeSection";
 import { LegHub } from "@/components/LegHub";
 
 import { Dashboard } from "@/components/Dashboard";
