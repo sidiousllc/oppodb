@@ -25,6 +25,8 @@ const wikiPages: WikiPage[] = [
   { slug: "research-tools", title: "Research Tools", content: "" },
   { slug: "android-app", title: "Android App", content: "" },
   { slug: "prediction-market-trading", title: "Prediction Market Trading", content: "" },
+  { slug: "leghub", title: "LegHub", content: "" },
+  { slug: "oppodb-search", title: "OppoDB Search", content: "" },
 ];
 
 // Lazy-load wiki content via raw imports
@@ -45,6 +47,8 @@ const wikiImports: Record<string, () => Promise<string>> = {
   "research-tools": () => import("../../wiki/14-Research-Tools.md?raw").then(m => m.default),
   "android-app": () => import("../../wiki/15-Android-App.md?raw").then(m => m.default),
   "prediction-market-trading": () => import("../../wiki/16-Prediction-Market-Trading.md?raw").then(m => m.default),
+  "leghub": () => import("../../wiki/17-LegHub.md?raw").then(m => m.default),
+  "oppodb-search": () => import("../../wiki/18-OppoDB-Search.md?raw").then(m => m.default),
 };
 
 export function DocumentationSection() {

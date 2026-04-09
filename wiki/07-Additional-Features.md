@@ -120,14 +120,16 @@ Real-time election results and returns for ongoing elections.
 
 ---
 
-## Legislation (`LegislationSection`)
+## Legislation (Now in LegHub)
 
 ### Description
-Tracks legislation relevant to tracked candidates and districts.
+Legislation tracking has been consolidated into the **LegHub** section alongside State Legislatures. See [LegHub](LegHub) for full documentation.
 
 ### Features
 - **Federal Bills Tab** (`FederalBillsTab`): Congress.gov bill tracking via `congress_bills` table
 - **Bill Tracking**: Users can track specific bills via `tracked_bills` table (LegiScan integration)
+- **Auto-Matching**: Links candidate profiles to LegiScan records using name heuristics
+- **PDF Viewer**: Integrated document viewer for bill text via `pdfjs-dist`
 - Bill sponsorship lookup
 - Key vote tracking
 - Legislative scorecards
@@ -231,7 +233,7 @@ const wikiImports: Record<string, () => Promise<string>> = {
 };
 ```
 
-### Wiki Sections (13 pages)
+### Wiki Sections (18 pages)
 1. Overview
 2. Candidate Profiles
 3. District Intelligence
@@ -245,14 +247,28 @@ const wikiImports: Record<string, () => Promise<string>> = {
 11. Data Sync & Sources
 12. Cook Ratings & Forecasting
 13. Admin Panel
+14. Research Tools
+15. Android App
+16. Prediction Market Trading
+17. LegHub
+18. OppoDB Search
 
 ---
 
 ## Search
 
-### Global Search (`SearchBar`)
-A unified search bar available across all sections:
-- Searches candidates, districts, MAGA files, local impact reports, and narratives simultaneously
+### OppoDB Master Search (`MasterSearch`)
+The unified master search interface on the Dashboard, querying across **14+ data categories** simultaneously:
+- **Instant local search**: Candidates, districts, MAGA files, local impact, narratives
+- **Auto-debounced DB search (400ms)**: Polling, finance (federal + state + MN), Congress members, bills, forecasts, election results, prediction markets, state legislative districts, MIT election history, tracked bills, WinRed donations, voter stats
+- All 14 DB queries execute in parallel via `Promise.all()`
+- Category filter chips, saved/recent searches, CSV/PDF export
+- Global Ctrl+K / Cmd+K shortcut
+- See [OppoDB Search](OppoDB-Search) for full technical documentation
+
+### Section Search (`SearchBar`)
+A contextual search bar available within individual sections:
+- Searches candidates, districts, MAGA files, local impact reports, and narratives
 - Auto-complete suggestions as user types
 - Navigates directly to search result
 

@@ -288,7 +288,7 @@ export default function Index() {
     
     "research-tools": 0,
     "live-elections": 0,
-    documentation: 13,
+    documentation: 18,
   }), [dataVersion, districts, stateLegDistricts, pollingCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;

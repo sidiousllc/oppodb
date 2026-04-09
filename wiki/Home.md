@@ -9,8 +9,8 @@ Welcome to the OppoDB documentation wiki.
 - [District Intelligence](District-Intelligence) — Congressional district demographics and maps
 - [Polling Data / DataHub](Polling-Data) — Polling visualization, prediction markets, and campaign finance
 - [Campaign Finance](Campaign-Finance) — FEC and state-level finance tracking (accessed via DataHub)
-- [State Legislative Districts](State-Legislative-Districts) — State legislature coverage
-- [Additional Features](Additional-Features) — MAGA files (under Candidate Profiles), narratives, in-app mail, documentation wiki, email pipeline
+- [LegHub](LegHub) — Consolidated legislative hub (State Legislatures + Legislation)
+- [Additional Features](Additional-Features) — MAGA files, narratives, in-app mail, documentation wiki, email pipeline
 - [Authentication & User Management](Authentication-and-User-Management) — Auth flows, RBAC, invites, access requests
 - [API Access](API-Access) — REST API, MCP server, API key management
 - [UI Design System](UI-Design-System) — Win98/AOL theme, components, and styling
@@ -20,6 +20,8 @@ Welcome to the OppoDB documentation wiki.
 - [Research Tools](Research-Tools) — Court records search, voter data, and investigative tools
 - [Prediction Market Trading](Prediction-Market-Trading) — Trading integration, API key management, portfolio & orders
 - [Android App](Android-App) — Download APKs, build instructions, and version history
+- [LegHub](LegHub) — State Legislatures + Legislation in a unified tabbed interface
+- [OppoDB Search](OppoDB-Search) — Unified master search across 14+ data categories
 
 ## About
 
@@ -35,7 +37,10 @@ OppoDB is a comprehensive opposition research database for political campaigns, 
 - **Public REST API** with 17 endpoints covering all data sources
 - **Prediction Market Trading** with encrypted credential storage for Kalshi, Polymarket, and PredictIt
 - **MCP Server** with 18 tools for AI agent access (Claude, GPT, etc.)
-- **Unified Master Search** across 13 data categories via API and web UI
+- **Unified Master Search** across 14+ data categories with auto-debounced DB queries
+- **LegHub** — Consolidated State Legislatures + Legislation in tabbed interface
+- **Poll Detail Windows** — Click any poll row for deep-dive analysis with charts
+- **Market Detail Windows** — Click any prediction market for probability gauges and cross-platform comparison
 - **In-App Mail & Chat** with real email notification delivery
 - **Real-Time Presence** via AOL Buddy List
-- **Documentation Wiki** accessible directly within the application
+- **Documentation Wiki** accessible directly within the application (18 pages)
