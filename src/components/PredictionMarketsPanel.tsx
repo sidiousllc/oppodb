@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { MarketTradingPanel } from "@/components/MarketTradingPanel";
 import { TradeHistoryPanel } from "@/components/TradeHistoryPanel";
+import { MarketDetailWindow } from "@/components/MarketDetailWindow";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart3, TrendingUp, TrendingDown, ExternalLink, Filter, RefreshCw,
@@ -106,6 +107,7 @@ export default function PredictionMarketsPanel() {
   const [sortField, setSortField] = useState<"yes_price" | "volume" | "title">("volume");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [stateFilter, setStateFilter] = useState("all");
+  const [selectedMarket, setSelectedMarket] = useState<MarketRow | null>(null);
 
   /* ── load data ─────────────────────────────────────────────────────── */
 
@@ -793,7 +795,7 @@ export default function PredictionMarketsPanel() {
             </thead>
             <tbody>
               {filtered.slice(0, 100).map((m) => (
-                <tr key={m.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] transition-colors">
+                <tr key={m.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] transition-colors cursor-pointer" onClick={() => setSelectedMarket(m)}>
                   <td className="py-2 px-2">
                     <span
                       className="inline-block px-1 py-0 win98-raised text-[9px] font-bold text-white"
@@ -871,6 +873,15 @@ export default function PredictionMarketsPanel() {
         </h3>
         <MarketTradingPanel />
       </div>
+
+      {/* Market Detail Window */}
+      {selectedMarket && (
+        <MarketDetailWindow
+          market={selectedMarket}
+          allMarkets={markets}
+          onClose={() => setSelectedMarket(null)}
+        />
+      )}
     </div>
   );
 }
