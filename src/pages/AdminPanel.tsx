@@ -549,6 +549,183 @@ function CandidatesTab() {
   );
 }
 
+// ============== MessagingGuidanceTab ==============
+interface MessagingItem {
+  id: string;
+  title: string;
+  slug: string;
+  source: string;
+  source_url: string | null;
+  author: string | null;
+  published_date: string | null;
+  summary: string;
+  content: string;
+  issue_areas: string[];
+  research_type: string;
+}
+
+function MessagingGuidanceTab() {
+  const { isAdmin } = useUserRole();
+  const [items, setItems] = useState<MessagingItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<MessagingItem | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from("messaging_guidance").select("*").order("published_date", { ascending: false });
+    setItems((data || []) as MessagingItem[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSave = async (item: MessagingItem) => {
+    const record: Record<string, unknown> = {
+      title: item.title,
+      slug: item.slug,
+      source: item.source || "Navigator Research",
+      source_url: item.source_url || null,
+      author: item.author || null,
+      published_date: item.published_date || null,
+      summary: item.summary,
+      content: item.content,
+      issue_areas: item.issue_areas,
+      research_type: item.research_type || "message-guidance",
+    };
+    try {
+      if (item.id) {
+        await updateContent("messaging_guidance", item.id, record);
+        toast.success("Updated");
+      } else {
+        await insertContent("messaging_guidance", record);
+        toast.success("Created");
+      }
+      setEditing(null); setCreating(false); load();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this messaging guidance?")) return;
+    try {
+      await deleteContent("messaging_guidance", id);
+      toast.success("Deleted"); load();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  if (loading) return <div className="text-center py-8 text-[10px]">Loading...</div>;
+
+  if (editing || creating) {
+    const empty: MessagingItem = { id: "", title: "", slug: "", source: "Navigator Research", source_url: null, author: null, published_date: null, summary: "", content: "", issue_areas: [], research_type: "message-guidance" };
+    return <MessagingEditor item={editing || empty} onSave={handleSave} onCancel={() => { setEditing(null); setCreating(false); }} />;
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{items.length} reports</span>
+        <button onClick={() => setCreating(true)} className="win98-button text-[10px] flex items-center gap-1"><Plus className="h-3 w-3" /> Add</button>
+      </div>
+      <div className="win98-sunken bg-white">
+        {items.map(item => (
+          <div key={item.id} className="flex items-center justify-between px-2 py-1.5 border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] text-[10px]">
+            <div className="min-w-0">
+              <div className="font-bold truncate">{item.title}</div>
+              <div className="text-[9px] text-[hsl(var(--muted-foreground))] truncate">
+                {item.source} · {item.published_date ? new Date(item.published_date).toLocaleDateString() : "No date"} · {item.issue_areas?.join(", ") || "No tags"}
+              </div>
+            </div>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button onClick={() => setEditing(item)} className="win98-button px-1 py-0 text-[9px]"><Edit3 className="h-2.5 w-2.5" /></button>
+              {isAdmin && <button onClick={() => handleDelete(item.id)} className="win98-button px-1 py-0 text-[9px]"><Trash2 className="h-2.5 w-2.5" /></button>}
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="px-2 py-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">No messaging guidance yet.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MessagingEditor({ item, onSave, onCancel }: { item: MessagingItem; onSave: (item: MessagingItem) => void; onCancel: () => void }) {
+  const [form, setForm] = useState({ ...item, issueAreasText: item.issue_areas?.join(", ") || "" });
+  const isNew = !item.id;
+
+  const autoSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80);
+
+  return (
+    <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[11px] font-bold">{isNew ? "Create New" : "Edit"} Messaging Guidance</span>
+        <button onClick={onCancel} className="win98-titlebar-btn">✕</button>
+      </div>
+      <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Title:</label>
+            <input value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value, slug: isNew ? autoSlug(e.target.value) : f.slug }))} className="win98-input w-full" placeholder="Report title" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Slug:</label>
+            <input value={form.slug} onChange={(e) => setForm(f => ({ ...f, slug: e.target.value }))} className="win98-input w-full" placeholder="url-slug" />
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Source:</label>
+            <input value={form.source} onChange={(e) => setForm(f => ({ ...f, source: e.target.value }))} className="win98-input w-full" placeholder="Navigator Research" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Author:</label>
+            <input value={form.author || ""} onChange={(e) => setForm(f => ({ ...f, author: e.target.value }))} className="win98-input w-full" placeholder="Author name" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Published Date:</label>
+            <input type="date" value={form.published_date || ""} onChange={(e) => setForm(f => ({ ...f, published_date: e.target.value }))} className="win98-input w-full" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Source URL:</label>
+            <input value={form.source_url || ""} onChange={(e) => setForm(f => ({ ...f, source_url: e.target.value }))} className="win98-input w-full" placeholder="https://..." />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Issue Areas (comma-separated):</label>
+            <input value={form.issueAreasText} onChange={(e) => setForm(f => ({ ...f, issueAreasText: e.target.value }))} className="win98-input w-full" placeholder="Immigration, Tariffs, Economy" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Research Type:</label>
+            <select value={form.research_type} onChange={(e) => setForm(f => ({ ...f, research_type: e.target.value }))} className="win98-input w-full">
+              <option value="message-guidance">Message Guidance</option>
+              <option value="national-survey">National Survey</option>
+              <option value="memo">Memo</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold mb-1">Summary:</label>
+          <input value={form.summary} onChange={(e) => setForm(f => ({ ...f, summary: e.target.value }))} className="win98-input w-full" placeholder="Brief summary" />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold mb-1">Content (Markdown):</label>
+          <textarea value={form.content} onChange={(e) => setForm(f => ({ ...f, content: e.target.value }))} rows={16} className="win98-input w-full font-[monospace] text-[10px]" placeholder="## Big Takeaways..." />
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button onClick={() => onSave({ ...form, issue_areas: form.issueAreasText.split(",").map(s => s.trim()).filter(Boolean) })} className="win98-button text-[10px] font-bold">
+            <Save className="h-3 w-3 inline mr-1" />{isNew ? "Create" : "Save"}
+          </button>
+          <button onClick={onCancel} className="win98-button text-[10px]">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ============== ContentTab ==============
 function ContentTab({ table, nameField, hasState, hasSummary }: { table: string; nameField: string; hasState?: boolean; hasSummary?: boolean }) {
   const [items, setItems] = useState<ContentItem[]>([]);
