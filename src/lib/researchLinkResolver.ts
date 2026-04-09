@@ -21,7 +21,16 @@ function normalizeSlug(value: string): string {
     .toLowerCase();
 }
 
-export function extractInternalSlug(href: string | undefined): string | null {
+export interface InternalLink {
+  /** The final slug segment (used for matching) */
+  slug: string;
+  /** The parent slug if this is a subpage link like /andy-ogles/health-care */
+  parentSlug: string | null;
+  /** All segments of the path */
+  segments: string[];
+}
+
+export function extractInternalLink(href: string | undefined): InternalLink | null {
   if (!href) return null;
 
   const raw = href.trim();
@@ -45,23 +54,37 @@ export function extractInternalSlug(href: string | undefined): string | null {
 
     pathname = parsed.pathname;
   } else if (!raw.startsWith("/")) {
-    // Relative path without leading slash — treat as internal if it looks like a slug path
-    // e.g. "health-care-backup" or "andy-ogles/health-care-backup"
-    if (/^[a-zA-Z0-9][\w-]*(?:\/[\w-]+)*$/.test(raw.split("#")[0]?.split("?")[0] ?? "")) {
-      const segments = raw.split("#")[0]?.split("?")[0]?.split("/").filter(Boolean) ?? [];
+    // Relative path without leading slash
+    // Match slug-like paths: "health-care-backup" or "andy-ogles/health-care-backup"
+    const clean = raw.split("#")[0]?.split("?")[0] ?? "";
+    if (/^[a-zA-Z0-9][\w-]*(?:\/[\w-]+)*$/.test(clean)) {
+      const segments = clean.split("/").filter(Boolean).map(normalizeSlug);
       if (segments.length > 0) {
-        return normalizeSlug(segments[segments.length - 1]);
+        return {
+          slug: segments[segments.length - 1],
+          parentSlug: segments.length > 1 ? segments[0] : null,
+          segments,
+        };
       }
     }
     return null;
   }
 
-  // Handle absolute paths starting with "/" — these are internal wiki-style links
-  // e.g. /andy-ogles/health-care-backup or /en/some-page
+  // Handle absolute paths starting with "/"
   const pathOnly = pathname.split("#")[0]?.split("?")[0] ?? "";
   const normalizedPath = pathOnly.replace(/^\/+/, "").replace(/^en\//i, "");
-  const segments = normalizedPath.split("/").filter(Boolean);
+  const segments = normalizedPath.split("/").filter(Boolean).map(normalizeSlug);
   if (segments.length === 0) return null;
 
-  return normalizeSlug(segments[segments.length - 1]);
+  return {
+    slug: segments[segments.length - 1],
+    parentSlug: segments.length > 1 ? segments[0] : null,
+    segments,
+  };
+}
+
+/** Legacy API — returns just the slug string for backward compatibility */
+export function extractInternalSlug(href: string | undefined): string | null {
+  const link = extractInternalLink(href);
+  return link?.slug ?? null;
 }
