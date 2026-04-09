@@ -625,9 +625,27 @@ curl -H "X-API-Key: KEY" "https://.../public-api/mn-finance?search=walz"
 
 ---
 
-### 20. `/search` — Unified Master Search
+### 20. `/messaging-guidance` — Messaging Guidance
 
-Searches across **13 categories** simultaneously. This mirrors the web application's Master Search functionality.
+Polling-based message guidance and communications strategy reports from Navigator Research and other sources.
+
+| Parameter | Description |
+|-----------|-------------|
+| `search` | Search by title or summary (case-insensitive) |
+| `issue_area` | Filter by issue area tag (e.g., `Immigration`, `Tariffs`) |
+
+**Selected Fields**: `id, title, slug, source, source_url, author, published_date, summary, content, issue_areas, research_type, created_at, updated_at`
+
+```bash
+curl -H "X-API-Key: KEY" "https://.../public-api/messaging-guidance?search=tariff"
+curl -H "X-API-Key: KEY" "https://.../public-api/messaging-guidance?issue_area=Immigration"
+```
+
+---
+
+### 21. `/search` — Unified Master Search
+
+Searches across **14 categories** simultaneously. This mirrors the web application's Master Search functionality.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -636,14 +654,14 @@ Searches across **13 categories** simultaneously. This mirrors the web applicati
 | `limit` | Max results per category (default 100, max 1000 — capped at 20 per category internally) |
 
 **Available Categories**:
-`candidates`, `congress_members`, `bills`, `polling`, `campaign_finance`, `state_finance`, `election_results`, `forecasts`, `maga_files`, `narrative_reports`, `local_impacts`, `voter_stats`, `mn_finance`
+`candidates`, `congress_members`, `bills`, `polling`, `campaign_finance`, `state_finance`, `election_results`, `forecasts`, `maga_files`, `narrative_reports`, `local_impacts`, `voter_stats`, `mn_finance`, `messaging_guidance`
 
 **Response Format** (different from standard endpoints):
 ```json
 {
   "query": "smith",
   "total_results": 47,
-  "categories_searched": 13,
+  "categories_searched": 14,
   "categories_with_results": 5,
   "available_categories": ["candidates", "congress_members", ...],
   "categories": {
@@ -666,7 +684,7 @@ Searches across **13 categories** simultaneously. This mirrors the web applicati
 curl -H "X-API-Key: KEY" "https://.../public-api/search?search=smith"
 
 # Search specific categories only
-curl -H "X-API-Key: KEY" "https://.../public-api/search?search=smith&categories=candidates,polling,bills"
+curl -H "X-API-Key: KEY" "https://.../public-api/search?search=smith&categories=candidates,polling,bills,messaging_guidance"
 ```
 
 ### Search Category → Table Mapping
@@ -686,6 +704,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/search?search=smith&categories=
 | `local_impacts` | `local_impacts` | state |
 | `voter_stats` | `state_voter_stats` | state |
 | `mn_finance` | `mn_cfb_candidates` | candidate_name, committee_name |
+| `messaging_guidance` | `messaging_guidance` | title, summary |
 
 ---
 

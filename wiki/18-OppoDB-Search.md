@@ -2,7 +2,7 @@
 
 ## Description
 
-OppoDB Search is the unified search interface that queries across all 14+ data categories simultaneously. It combines instant local/static search with auto-debounced database queries, delivering results in under 500ms for most searches.
+OppoDB Search is the unified search interface that queries across all 15+ data categories simultaneously. It combines instant local/static search with auto-debounced database queries, delivering results in under 500ms for most searches.
 
 ---
 
