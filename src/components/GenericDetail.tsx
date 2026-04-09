@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { ArrowLeft, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver";
+import { extractInternalLink, isInternalHost } from "@/lib/researchLinkResolver";
 import { exportContentPDF } from "@/lib/contentExport";
 
 interface GenericDetailProps {
@@ -78,13 +78,13 @@ export function GenericDetail({
           <ReactMarkdown
             components={{
               a: ({ href, children }) => {
-                const slug = extractInternalSlug(href);
+                const link = extractInternalLink(href);
 
-                if (slug) {
+                if (link) {
                   return (
                     <a
                       href={href ?? "#"}
-                      onClick={(e) => handleLinkClick(e, href, slug)}
+                      onClick={(e) => handleLinkClick(e, href, link.slug)}
                       className="text-primary hover:underline cursor-pointer"
                     >
                       {children}
