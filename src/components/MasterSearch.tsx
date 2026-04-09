@@ -325,7 +325,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     if (e.key === "Escape") {
       if (query.trim()) {
         setQuery("");
-        setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
+        setDbResults(EMPTY_DB as any);
         setHasSearched(false);
       }
       inputRef.current?.blur();
@@ -498,7 +498,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
 
   const handleClear = () => {
     setQuery("");
-    setDbResults({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [] });
+    setDbResults(EMPTY_DB as any);
     setHasSearched(false);
   };
 
