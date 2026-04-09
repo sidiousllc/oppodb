@@ -21,12 +21,11 @@ import { toast } from "sonner";
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
 export type Section =
   | "dashboard"
-  | "candidates"
-  | "local-impact"
-  | "narratives"
+  | "oppohub"
   | "district-intel"
   | "leghub"
   | "polling"
+  | "messaging"
   | "research-tools"
   | "live-elections"
   | "documentation";
@@ -51,12 +50,11 @@ const filters: Array<{ id: FilterCategory; label: string; emoji: string }> = [
 
 const sections: Array<{ id: Section; label: string; emoji: string }> = [
   { id: "dashboard", label: "Dashboard", emoji: "🏠" },
-  { id: "candidates", label: "Candidate Profiles", emoji: "👥" },
-  { id: "local-impact", label: "Local Impact", emoji: "🌐" },
-  { id: "narratives", label: "Narrative Reports", emoji: "📄" },
+  { id: "oppohub", label: "OppoHub", emoji: "🎯" },
   { id: "district-intel", label: "District Intel", emoji: "🧭" },
   { id: "leghub", label: "LegHub", emoji: "⚖️" },
   { id: "polling", label: "DataHub", emoji: "📊" },
+  { id: "messaging", label: "MessagingHub", emoji: "📢" },
   { id: "research-tools", label: "Research Tools", emoji: "🔬" },
   { id: "live-elections", label: "Live Elections", emoji: "🏛️" },
   { id: "documentation", label: "Documentation", emoji: "📖" },
@@ -148,7 +146,7 @@ export function AppSidebar({
                 </button>
 
                 {/* Sub-tree for race type filters */}
-                {activeSection === "candidates" && s.id === "candidates" && (
+                {activeSection === "oppohub" && s.id === "oppohub" && (
                   <div className="ml-4 border-l border-l-[hsl(var(--win98-shadow))]">
                     {filters.map((f) => (
                       <button

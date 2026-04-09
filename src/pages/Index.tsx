@@ -34,6 +34,8 @@ import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-r
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
 import { LegHub } from "@/components/LegHub";
+import { OppoHub } from "@/components/OppoHub";
+import { MessagingHub } from "@/components/MessagingHub";
 
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
@@ -241,13 +243,13 @@ export default function Index() {
     const slug = rawSlug.trim().toLowerCase();
     if (!slug) return false;
     const candidateMatch = getCandidateBySlug(slug);
-    if (candidateMatch) { setSection("candidates"); setSelectedSlug(candidateMatch.slug); return true; }
+    if (candidateMatch) { setSection("oppohub"); setSelectedSlug(candidateMatch.slug); return true; }
     const magaMatch = magaFiles.find(m => m.slug.toLowerCase() === slug);
-    if (magaMatch) { setSection("candidates"); setCandidateSubsection("maga-files"); setSelectedSlug(magaMatch.slug); return true; }
+    if (magaMatch) { setSection("oppohub"); setSelectedSlug(magaMatch.slug); return true; }
     const localMatch = getLocalImpactBySlug(slug);
-    if (localMatch) { setSection("local-impact"); setSelectedSlug(localMatch.slug); return true; }
+    if (localMatch) { setSection("oppohub"); setSelectedSlug(localMatch.slug); return true; }
     const narrativeMatch = narrativeReports.find(n => n.slug.toLowerCase() === slug);
-    if (narrativeMatch) { setSection("narratives"); setSelectedSlug(narrativeMatch.slug); return true; }
+    if (narrativeMatch) { setSection("oppohub"); setSelectedSlug(narrativeMatch.slug); return true; }
     const districtMatch = districts.find(d => d.district_id.toLowerCase() === slug);
     if (districtMatch) { setSection("district-intel"); setSelectedSlug(districtMatch.district_id); return true; }
     return false;
@@ -279,13 +281,11 @@ export default function Index() {
 
   const sectionCounts = useMemo(() => ({
     dashboard: 0,
-    candidates: candidates.length,
-    "local-impact": localImpactReports.length,
-    narratives: narrativeReports.length,
+    oppohub: candidates.length + localImpactReports.length + narrativeReports.length,
     "district-intel": districts.length,
     leghub: stateLegDistricts.length,
     polling: pollingCount,
-    
+    messaging: 0,
     "research-tools": 0,
     "live-elections": 0,
     documentation: 18,
@@ -301,65 +301,17 @@ export default function Index() {
 
   const sectionLabels: Record<Section, string> = {
     dashboard: "Dashboard",
-    candidates: "Candidate Profiles",
-    "local-impact": "Local Impact by State",
-    narratives: "Narrative Reports",
+    oppohub: "OppoHub",
     "district-intel": "District Intelligence",
     leghub: "LegHub",
     polling: "DataHub",
-    
+    messaging: "MessagingHub",
     "research-tools": "Research Tools",
     "live-elections": "Live Elections",
     documentation: "Documentation",
   };
 
   function renderDetail() {
-    if (section === "candidates" && selectedCandidate) {
-      return <CandidateDetail candidate={selectedCandidate} onBack={() => setSelectedSlug(null)} onNavigateSlug={navigateBySlug} onEdit={isAdmin ? handleEditCandidate : undefined} />;
-    }
-    if (section === "candidates" && candidateSubsection === "maga-files" && selectedMaga) {
-      return (
-        <GenericDetail
-          icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center text-2xl">⚠️</div>}
-          title={selectedMaga.name}
-          tag={{ label: "MAGA File", className: "bg-destructive/10 text-destructive" }}
-          content={selectedMaga.content}
-          sectionLabel="MAGA File"
-          onBack={() => setSelectedSlug(null)}
-          onNavigateSlug={navigateBySlug}
-          backLabel="Back to MAGA Files"
-        />
-      );
-    }
-    if (section === "local-impact" && selectedLocal) {
-      return (
-        <GenericDetail
-          icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center text-2xl">🌐</div>}
-          title={selectedLocal.state}
-          subtitle={selectedLocal.summary}
-          tag={{ label: "Local Impact", className: "bg-accent/10 text-accent" }}
-          content={selectedLocal.content}
-          sectionLabel="Local Impact"
-          onBack={() => setSelectedSlug(null)}
-          onNavigateSlug={navigateBySlug}
-          backLabel="Back to Local Impact"
-        />
-      );
-    }
-    if (section === "narratives" && selectedNarrative) {
-      return (
-        <GenericDetail
-          icon={<div className="flex h-10 w-10 shrink-0 items-center justify-center text-2xl">📄</div>}
-          title={selectedNarrative.name}
-          tag={{ label: "Narrative Report", className: "tag-senate" }}
-          content={selectedNarrative.content}
-          sectionLabel="Narrative Report"
-          onBack={() => setSelectedSlug(null)}
-          onNavigateSlug={navigateBySlug}
-          backLabel="Back to Narrative Reports"
-        />
-      );
-    }
     if (section === "district-intel" && compareMode) {
       return <DistrictCompare districts={districts} onBack={() => setCompareMode(false)} />;
     }
@@ -368,7 +320,7 @@ export default function Index() {
         <DistrictDetail
           district={selectedDistrict}
           onBack={() => setSelectedSlug(null)}
-          onSelectCandidate={(slug) => { setSection("candidates"); setSelectedSlug(slug); }}
+          onSelectCandidate={(slug) => { setSection("oppohub"); setSelectedSlug(slug); }}
         />
       );
     }
@@ -390,127 +342,20 @@ export default function Index() {
       );
     }
 
-    if (section === "candidates") {
+    if (section === "oppohub") {
       return (
-        <>
-          {/* Subsection tabs */}
-          <div className="flex gap-1 mb-2">
-            <button
-              onClick={() => { setCandidateSubsection("profiles"); setSelectedSlug(null); }}
-              className={`win98-button text-[10px] ${candidateSubsection === "profiles" ? "font-bold" : ""}`}
-            >
-              👥 Profiles ({filteredCandidates.length})
-            </button>
-            <button
-              onClick={() => { setCandidateSubsection("maga-files"); setSelectedSlug(null); }}
-              className={`win98-button text-[10px] ${candidateSubsection === "maga-files" ? "font-bold" : ""}`}
-            >
-              ⚠️ MAGA Files ({filteredMaga.length})
-            </button>
-          </div>
-
-          {candidateSubsection === "maga-files" ? (
-            <>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {filteredMaga.map(m => (
-                  <GenericCard
-                    key={m.slug}
-                    icon={<div className="flex h-8 w-8 shrink-0 items-center justify-center text-lg">⚠️</div>}
-                    title={m.name}
-                    tag={{ label: "MAGA File", className: "bg-destructive/10 text-destructive" }}
-                    preview={m.content.split("\n").find(l => l.trim().length > 20)?.trim().slice(0, 140) || ""}
-                    onClick={() => setSelectedSlug(m.slug)}
-                  />
-                ))}
-              </div>
-              {filteredMaga.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No MAGA files match your search.</p>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="mt-2 mb-1 flex items-center justify-between">
-                <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
-                  {filteredCandidates.length} {filteredCandidates.length === 1 ? "profile" : "profiles"}
-                </p>
-                {isAdmin && (
-                  <button
-                    onClick={() => { setEditorMode("create"); setEditData(undefined); }}
-                    className="win98-button flex items-center gap-1 text-[10px]"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Add Profile
-                  </button>
-                )}
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {filteredCandidates.map(c => (
-                  <CandidateCard key={c.slug} candidate={c} onClick={setSelectedSlug} onDistrictClick={(districtId) => { setSection("district-intel"); setSelectedSlug(districtId); }} />
-                ))}
-              </div>
-              {filteredCandidates.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No candidates match your search.</p>
-                </div>
-              )}
-            </>
-          )}
-        </>
-      );
-    }
-
-    if (section === "local-impact") {
-      return (
-        <>
-          <div className="mt-2 mb-1">
-            <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{filteredLocal.length} state reports</p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {filteredLocal.map(r => (
-              <GenericCard
-                key={r.slug}
-                icon={<div className="flex h-8 w-8 shrink-0 items-center justify-center text-lg">🌐</div>}
-                title={r.state}
-                preview={r.summary}
-                onClick={() => setSelectedSlug(r.slug)}
-              />
-            ))}
-          </div>
-          {filteredLocal.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No state reports match your search.</p>
-            </div>
-          )}
-        </>
-      );
-    }
-
-    if (section === "narratives") {
-      return (
-        <>
-          <div className="mt-2 mb-1">
-            <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{filteredNarratives.length} narrative reports</p>
-          </div>
-          <div className="grid gap-2">
-            {filteredNarratives.map(n => (
-              <GenericCard
-                key={n.slug}
-                icon={<div className="flex h-8 w-8 shrink-0 items-center justify-center text-lg">📄</div>}
-                title={n.name}
-                tag={{ label: "Narrative", className: "tag-senate" }}
-                preview={n.content.split("\n").find(l => l.trim().length > 20)?.trim().slice(0, 160) || ""}
-                onClick={() => setSelectedSlug(n.slug)}
-              />
-            ))}
-          </div>
-          {filteredNarratives.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No narrative reports match your search.</p>
-            </div>
-          )}
-        </>
+        <OppoHub
+          search={search}
+          filter={filter}
+          dataVersion={dataVersion}
+          isAdmin={isAdmin}
+          onSelectSlug={setSelectedSlug}
+          selectedSlug={selectedSlug}
+          onNavigateSlug={navigateBySlug}
+          onEditCandidate={handleEditCandidate}
+          onCreateCandidate={() => { setEditorMode("create"); setEditData(undefined); }}
+          onSetSection={(s) => setSection(s as Section)}
+        />
       );
     }
 
