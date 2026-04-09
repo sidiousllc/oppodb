@@ -21,6 +21,7 @@ interface ContentItem {
   slug: string;
   content: string;
   summary?: string;
+  tags?: string[];
 }
 
 export default function AdminPanel() {
