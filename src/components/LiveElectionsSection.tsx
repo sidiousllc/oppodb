@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Search, Loader2, Trophy, Calendar, MapPin, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { toast } from "sonner";
 
 const US_STATES = [
