@@ -792,7 +792,7 @@ function ContentList({ items, onEdit, onDelete, nameField }: { items: ContentIte
         <div key={item.id} className="flex items-center justify-between px-2 py-1.5 border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] text-[10px]">
           <div className="min-w-0">
             <div className="font-bold truncate">{(item as any)[nameField] || item.slug}</div>
-            <div className="text-[9px] text-[hsl(var(--muted-foreground))] truncate">/{item.slug} · {item.content.length} chars</div>
+            <div className="text-[9px] text-[hsl(var(--muted-foreground))] truncate">/{item.slug} · {item.content.length} chars{item.tags && item.tags.length > 0 ? ` · ${item.tags.join(", ")}` : ""}</div>
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
             <button onClick={() => onEdit(item)} className="win98-button px-1 py-0 text-[9px]"><Edit3 className="h-2.5 w-2.5" /></button>
