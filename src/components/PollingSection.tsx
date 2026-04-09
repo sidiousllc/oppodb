@@ -1145,25 +1145,93 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
 // ─── Demographic Breakdown Chart ────────────────────────────────────────────
 
 const DEMO_GROUPS = [
-{ id: "party", label: "Party ID", colors: { Republican: "hsl(0, 75%, 50%)", Independent: "hsl(45, 80%, 50%)", Democrat: "hsl(210, 80%, 50%)" } },
-{ id: "age", label: "Age", colors: {} },
-{ id: "gender", label: "Gender", colors: {} },
-{ id: "race", label: "Race/Ethnicity", colors: {} },
-{ id: "education", label: "Education", colors: {} },
-{ id: "region", label: "Region", colors: {} }] as
-const;
+  { id: "party", label: "Party ID", colors: { Republican: "hsl(0, 75%, 50%)", Independent: "hsl(45, 80%, 50%)", Democrat: "hsl(210, 80%, 50%)" } },
+  { id: "age", label: "Age", colors: { "18-29": "hsl(200, 70%, 50%)", "30-49": "hsl(160, 60%, 45%)", "50-64": "hsl(35, 70%, 50%)", "65+": "hsl(0, 55%, 50%)" } },
+  { id: "gender", label: "Gender", colors: { Men: "hsl(210, 65%, 50%)", Women: "hsl(330, 65%, 50%)" } },
+  { id: "race", label: "Race/Ethnicity", colors: { White: "hsl(30, 40%, 55%)", Black: "hsl(260, 55%, 50%)", "Hispanic/Latino": "hsl(15, 70%, 50%)", Asian: "hsl(180, 55%, 45%)" } },
+  { id: "education", label: "Education", colors: { "College Grad+": "hsl(220, 65%, 50%)", "Some College": "hsl(150, 50%, 45%)", "No College": "hsl(35, 60%, 50%)" } },
+  { id: "region", label: "Region", colors: { Northeast: "hsl(210, 70%, 50%)", Midwest: "hsl(150, 55%, 45%)", South: "hsl(0, 60%, 50%)", West: "hsl(45, 70%, 50%)" } },
+] as const;
 
-type DemoEntry = {demographic: string;approve: number;disapprove: number;margin: number;count: number;};
+type DemoEntry = { demographic: string; approve: number; disapprove: number; margin: number; count: number };
 
-function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
+function DemoRingChart({ entries, groupColors }: { entries: DemoEntry[]; groupColors: Record<string, string> }) {
+  if (entries.length === 0) return null;
+  const cx = 70, cy = 70, r = 55, strokeW = 14;
+  const circumference = 2 * Math.PI * r;
+  const total = entries.length;
+  const segmentArc = circumference / total;
+  const gap = 4;
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg width={140} height={140} viewBox="0 0 140 140">
+        {entries.map((entry, i) => {
+          const color = groupColors[entry.demographic] || `hsl(${210 + i * 50}, 60%, 50%)`;
+          const approveRatio = entry.approve / 100;
+          const arcLen = (segmentArc - gap) * approveRatio;
+          const offset = i * segmentArc + gap / 2;
+          const rotation = -90 + (offset / circumference) * 360;
+          return (
+            <g key={entry.demographic}>
+              {/* Background arc */}
+              <circle
+                cx={cx} cy={cy} r={r}
+                fill="none"
+                stroke="hsl(var(--muted))"
+                strokeWidth={strokeW}
+                strokeDasharray={`${segmentArc - gap} ${circumference - segmentArc + gap}`}
+                strokeDashoffset={-offset}
+                transform={`rotate(-90 ${cx} ${cy})`}
+                opacity={0.3}
+              />
+              {/* Filled arc */}
+              <circle
+                cx={cx} cy={cy} r={r}
+                fill="none"
+                stroke={color}
+                strokeWidth={strokeW}
+                strokeDasharray={`${arcLen} ${circumference - arcLen}`}
+                strokeDashoffset={-offset}
+                transform={`rotate(-90 ${cx} ${cy})`}
+                strokeLinecap="round"
+                style={{ transition: "stroke-dasharray 0.8s ease" }}
+              />
+            </g>
+          );
+        })}
+        {/* Center label */}
+        <text x={cx} y={cy - 6} textAnchor="middle" fontSize={18} fontWeight={800} fill="hsl(var(--foreground))">
+          {Math.round(entries.reduce((s, e) => s + e.approve, 0) / entries.length)}%
+        </text>
+        <text x={cx} y={cy + 10} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">
+          avg approve
+        </text>
+      </svg>
+      {/* Mini legend */}
+      <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center mt-2">
+        {entries.map((entry, i) => {
+          const color = groupColors[entry.demographic] || `hsl(${210 + i * 50}, 60%, 50%)`;
+          return (
+            <span key={entry.demographic} className="flex items-center gap-1 text-[9px] text-muted-foreground">
+              <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+              {entry.demographic}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
   const { ref, inView } = useInView();
   const [activeGroup, setActiveGroup] = useState<string>("party");
-  const [selectedPollIds, setSelectedPollIds] = useState<Set<string>>(new Set()); // empty = all
+  const [selectedPollIds, setSelectedPollIds] = useState<Set<string>>(new Set());
   const [showPollPicker, setShowPollPicker] = useState(false);
 
-  // Get all polls that have demographic data
   const demoPollsList = useMemo(() => {
-    const seen = new Map<string, {id: string;source: string;date: string;topic: string;}>();
+    const seen = new Map<string, { id: string; source: string; date: string; topic: string }>();
     polls.forEach((p) => {
       const rd = p.raw_data as any;
       if (!rd || !rd.demographic || !rd.group_type) return;
@@ -1188,15 +1256,13 @@ function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
   const togglePoll = (id: string) => {
     setSelectedPollIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);else
-      next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
 
-  // Extract polls that have demographic raw_data
   const demoData = useMemo(() => {
-    const map = new Map<string, Map<string, {totalApprove: number;totalDisapprove: number;count: number;}>>();
+    const map = new Map<string, Map<string, { totalApprove: number; totalDisapprove: number; count: number }>>();
     filteredPolls.forEach((p) => {
       const rd = p.raw_data as any;
       if (!rd || !rd.demographic || !rd.group_type) return;
@@ -1227,154 +1293,139 @@ function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
 
   const maxVal = Math.max(...entries.flatMap((e) => [e.approve, e.disapprove]), 100);
   const groupConfig = DEMO_GROUPS.find((g) => g.id === activeGroup);
+  const groupColors = (groupConfig as any)?.colors ?? {};
 
   const activeSourceCount = new Set(filteredPolls.filter((p) => {
     const rd = p.raw_data as any;
     return rd?.group_type === activeGroup;
   }).map((p) => p.source)).size;
 
+  // Compute the widest margin gap for the summary
+  const biggestGap = entries.length > 0 ? entries.reduce((max, e) => Math.abs(e.margin) > Math.abs(max.margin) ? e : max, entries[0]) : null;
+
   return (
     <AnimatedCard>
       <div ref={ref} className="candidate-card p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
-            <h3 className="font-display text-sm font-semibold text-foreground">
-              Demographic Breakdown — Approval
+            <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
+              📊 Demographic Breakdown — Approval
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {isAllSelected ? "Cross-source average" : `${selectedPollIds.size} poll${selectedPollIds.size !== 1 ? "s" : ""} selected`} by demographic group
+              {isAllSelected ? `Cross-source average from ${activeSourceCount} source${activeSourceCount !== 1 ? "s" : ""}` : `${selectedPollIds.size} poll${selectedPollIds.size !== 1 ? "s" : ""} selected`} by demographic group
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setShowPollPicker(!showPollPicker)}
-              className={`win98-button text-[9px] flex items-center gap-1 ${
-              showPollPicker ?
-              "bg-primary text-primary-foreground border-primary" :
-              "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
-              }>
-              
+              className={`win98-button text-[9px] flex items-center gap-1 ${showPollPicker ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`}
+            >
               <Filter className="h-3 w-3" />
               Polls {!isAllSelected && `(${selectedPollIds.size})`}
             </button>
             <div className="flex flex-wrap gap-1">
-              {DEMO_GROUPS.filter((g) => demoData.has(g.id)).map((g) =>
-              <button
-                key={g.id}
-                onClick={() => setActiveGroup(g.id)}
-                className={`win98-button px-2.5 py-1 text-[9px] ${
-                activeGroup === g.id ?
-                "bg-foreground text-background border-foreground" :
-                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
-                }>
-                
+              {DEMO_GROUPS.filter((g) => demoData.has(g.id)).map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => setActiveGroup(g.id)}
+                  className={`win98-button px-2.5 py-1 text-[9px] ${activeGroup === g.id ? "bg-foreground text-background border-foreground" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`}
+                >
                   {g.label}
                 </button>
-              )}
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Poll picker */}
-        {showPollPicker &&
-        <div className="mb-3 win98-sunken bg-[hsl(var(--win98-light))] p-2">
+        {showPollPicker && (
+          <div className="mb-3 win98-sunken bg-[hsl(var(--win98-light))] p-2">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Polls</span>
               <div className="flex gap-2">
-                <button
-                onClick={() => setSelectedPollIds(new Set())}
-                className={`win98-button text-[9px] ${isAllSelected ? "font-bold bg-white" : ""}`
-                }>
-                
-                  All
-                </button>
-                <button
-                onClick={() => setSelectedPollIds(new Set(demoPollsList.map((p) => p.id)))}
-                className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">
-                
-                  Select All
-                </button>
-                <button
-                onClick={() => setSelectedPollIds(new Set())}
-                className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">
-                
-                  Clear
-                </button>
+                <button onClick={() => setSelectedPollIds(new Set())} className={`win98-button text-[9px] ${isAllSelected ? "font-bold bg-white" : ""}`}>All</button>
+                <button onClick={() => setSelectedPollIds(new Set(demoPollsList.map((p) => p.id)))} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Select All</button>
+                <button onClick={() => setSelectedPollIds(new Set())} className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent transition-colors">Clear</button>
               </div>
             </div>
             <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 max-h-40 overflow-y-auto">
               {demoPollsList.map((poll) => {
-              const checked = isAllSelected || selectedPollIds.has(poll.id);
-              return (
-                <label
-                  key={poll.id}
-                  className={`flex items-center gap-2 px-1.5 py-1 cursor-pointer text-[10px] ${checked && !isAllSelected ? "bg-white win98-sunken" : "bg-[hsl(var(--win98-face))] win98-raised hover:bg-[hsl(var(--win98-light))]"}`
-                  }>
-                  
-                    <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => togglePoll(poll.id)}
-                    className="accent-[hsl(var(--primary))] h-3 w-3 shrink-0" />
-                  
+                const checked = isAllSelected || selectedPollIds.has(poll.id);
+                return (
+                  <label key={poll.id} className={`flex items-center gap-2 px-1.5 py-1 cursor-pointer text-[10px] ${checked && !isAllSelected ? "bg-white win98-sunken" : "bg-[hsl(var(--win98-face))] win98-raised hover:bg-[hsl(var(--win98-light))]"}`}>
+                    <input type="checkbox" checked={checked} onChange={() => togglePoll(poll.id)} className="accent-[hsl(var(--primary))] h-3 w-3 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <span className="font-semibold text-foreground">{getSourceInfo(poll.source).name}</span>
                       <span className="text-muted-foreground ml-1">{formatDate(poll.date)}</span>
                     </div>
-                  </label>);
-
-            })}
+                  </label>
+                );
+              })}
             </div>
           </div>
-        }
+        )}
 
-        {entries.length === 0 ?
-        <p className="text-xs text-muted-foreground text-center py-6">No demographic data for selected polls in this group.</p> :
+        {entries.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-6">No demographic data for selected polls in this group.</p>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-[1fr_160px]">
+            {/* Bar chart */}
+            <div className="space-y-2">
+              {entries.map((entry, i) => {
+                const color = groupColors[entry.demographic] ?? `hsl(${210 + i * 40}, 60%, 50%)`;
+                const approveW = entry.approve / maxVal * 100;
+                const disapproveW = entry.disapprove / maxVal * 100;
 
-        <div className="space-y-2">
-            {entries.map((entry, i) => {
-            const partyColors = (groupConfig as any)?.colors ?? {};
-            const barColor = partyColors[entry.demographic] ?? `hsl(${210 + i * 40}, 60%, 50%)`;
-            const approveW = entry.approve / maxVal * 100;
-            const disapproveW = entry.disapprove / maxVal * 100;
-
-            return (
-              <div
-                key={entry.demographic}
-                className="transition-all duration-500"
-                style={{
-                  opacity: inView ? 1 : 0,
-                  transform: inView ? "translateX(0)" : "translateX(-20px)",
-                  transitionDelay: `${i * 60}ms`
-                }}>
-                
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-foreground w-28 shrink-0 text-right">
-                      {entry.demographic}
-                    </span>
-                    <div className="flex-1 flex items-center gap-1">
-                      <div className="flex h-5 flex-1 overflow-hidden rounded bg-muted/40">
-                        <div
-                        className="h-full rounded-l transition-all duration-700 flex items-center justify-end pr-1"
-                        style={{ width: `${approveW}%`, backgroundColor: "hsl(150, 55%, 45%)" }}>
-                        
-                          {approveW > 12 && <span className="text-[9px] font-bold text-white">{entry.approve}%</span>}
+                return (
+                  <div
+                    key={entry.demographic}
+                    className="transition-all duration-500"
+                    style={{
+                      opacity: inView ? 1 : 0,
+                      transform: inView ? "translateX(0)" : "translateX(-20px)",
+                      transitionDelay: `${i * 60}ms`,
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-semibold text-foreground w-28 shrink-0 text-right flex items-center justify-end gap-1.5">
+                        <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                        {entry.demographic}
+                      </span>
+                      <div className="flex-1 flex items-center gap-1">
+                        <div className="flex h-6 flex-1 overflow-hidden rounded bg-muted/40">
+                          <div
+                            className="h-full rounded-l transition-all duration-700 flex items-center justify-end pr-1"
+                            style={{ width: `${approveW}%`, backgroundColor: "hsl(150, 55%, 45%)" }}
+                          >
+                            {approveW > 12 && <span className="text-[9px] font-bold text-white">{entry.approve}%</span>}
+                          </div>
+                          <div
+                            className="h-full rounded-r transition-all duration-700 flex items-center pl-1"
+                            style={{ width: `${disapproveW}%`, backgroundColor: "hsl(0, 65%, 50%)" }}
+                          >
+                            {disapproveW > 12 && <span className="text-[9px] font-bold text-white">{entry.disapprove}%</span>}
+                          </div>
                         </div>
-                        <div
-                        className="h-full rounded-r transition-all duration-700 flex items-center pl-1"
-                        style={{ width: `${disapproveW}%`, backgroundColor: "hsl(0, 65%, 50%)" }}>
-                        
-                          {disapproveW > 12 && <span className="text-[9px] font-bold text-white">{entry.disapprove}%</span>}
-                        </div>
+                        <MarginBadge margin={entry.margin} />
                       </div>
-                      <MarginBadge margin={entry.margin} />
                     </div>
                   </div>
-                </div>);
+                );
+              })}
+            </div>
 
-          })}
+            {/* Ring summary chart */}
+            <div className="hidden lg:flex flex-col items-center justify-center">
+              <DemoRingChart entries={entries} groupColors={groupColors} />
+            </div>
           </div>
-        }
+        )}
+
+        {/* Key insight callout */}
+        {biggestGap && entries.length > 1 && (
+          <div className="mt-3 win98-sunken bg-[hsl(var(--win98-light))] px-3 py-2 text-[10px] text-foreground">
+            <span className="font-bold">Key gap:</span> {biggestGap.demographic} shows {biggestGap.margin > 0 ? "+" : ""}{biggestGap.margin}pt margin ({biggestGap.approve}% approve / {biggestGap.disapprove}% disapprove) — the widest split in {groupConfig?.label ?? "this group"}.
+          </div>
+        )}
 
         <div className="flex items-center gap-4 mt-4 text-[10px] text-muted-foreground border-t border-border pt-3">
           <span className="flex items-center gap-1">
@@ -1388,8 +1439,8 @@ function DemographicBreakdownChart({ polls }: {polls: PollEntry[];}) {
           </span>
         </div>
       </div>
-    </AnimatedCard>);
-
+    </AnimatedCard>
+  );
 }
 
 // ─── Pollster Consistency Heatmap ────────────────────────────────────────────
@@ -2285,6 +2336,9 @@ export function PollingSection() {
       {/* ─── Rolling Average Trend ────────────────────────────────────────── */}
       <RollingAverageTrend polls={polls} />
 
+      {/* ─── Demographic Breakdown ───────────────────────────────────────── */}
+      <DemographicBreakdownChart polls={polls} />
+
       {/* ─── Charts Row: Dot Plot + Issue Butterfly ────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
         <SourceDotPlot latestBySource={latestBySource} />
@@ -2308,9 +2362,6 @@ export function PollingSection() {
         <PollsterSpreadChart polls={polls} />
         <MethodologyBreakdown polls={polls} />
       </div>
-
-      {/* ─── Demographic Breakdown ───────────────────────────────────────── */}
-      <DemographicBreakdownChart polls={polls} />
 
       {/* ─── Issue Polling Deep Dive ──────────────────────────────────────── */}
       <IssuePollingSection polls={polls} />
