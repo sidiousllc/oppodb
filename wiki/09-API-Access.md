@@ -446,7 +446,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/maga-files?search=hegseth"
 
 ---
 
-### 7. `/narrative-reports` — Narrative Reports
+### 10. `/narrative-reports` — Narrative Reports
 
 Issue-based policy reports synthesizing Trump administration impacts (housing, healthcare, education, etc.).
 
@@ -462,7 +462,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/narrative-reports"
 
 ---
 
-### 8. `/local-impacts` — Local Impact Reports
+### 11. `/local-impacts` — Local Impact Reports
 
 State-specific analyses of federal policy impacts across all 50 states.
 
@@ -479,7 +479,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/local-impacts?state=OH"
 
 ---
 
-### 9. `/voter-registration-stats` — Voter Registration Statistics
+### 12. `/voter-registration-stats` — Voter Registration Statistics
 
 State-level voter registration data including total registered, eligible voters, registration rates, and 2024 general election turnout.
 
@@ -496,7 +496,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/voter-registration-stats?state=
 
 ---
 
-### 10. `/congress-members` — Congress Members
+### 13. `/congress-members` — Congress Members
 
 Current members of Congress from Congress.gov with party, state, district, chamber, and biographical data.
 
@@ -514,7 +514,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/congress-members?state=CA&chamb
 
 ---
 
-### 11. `/congress-bills` — Federal Legislation
+### 14. `/congress-bills` — Federal Legislation
 
 Federal bills and resolutions with sponsors, status, policy areas, and action history.
 
@@ -532,7 +532,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/congress-bills?search=veterans&
 
 ---
 
-### 12. `/campaign-finance` — Federal Campaign Finance
+### 15. `/campaign-finance` — Federal Campaign Finance
 
 FEC campaign finance filings with fundraising totals, donor composition, and spending data.
 
@@ -551,7 +551,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/campaign-finance?state=IA&offic
 
 ---
 
-### 13. `/election-forecasts` — Election Forecasts & Race Ratings
+### 16. `/election-forecasts` — Election Forecasts & Race Ratings
 
 Race ratings from Cook Political Report, Sabato's Crystal Ball, Inside Elections, and other forecasters.
 
@@ -571,7 +571,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/election-forecasts?race_type=ho
 
 ---
 
-### 14. `/congressional-elections` — Congressional Election Results
+### 17. `/congressional-elections` — Congressional Election Results
 
 Historical U.S. House and Senate election results with vote counts, percentages, and winner/incumbent flags.
 
@@ -590,7 +590,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/congressional-elections?state=P
 
 ---
 
-### 15. `/state-finance` — State Campaign Finance
+### 18. `/state-finance` — State Campaign Finance
 
 State-level campaign finance data from Campaign Finance Board filings across all states.
 
@@ -608,7 +608,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/state-finance?state=PA&chamber=
 
 ---
 
-### 16. `/mn-finance` — Minnesota Campaign Finance
+### 19. `/mn-finance` — Minnesota Campaign Finance
 
 Minnesota Campaign Finance Board (CFB) candidate data with detailed contribution and expenditure breakdowns.
 
@@ -625,7 +625,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/mn-finance?search=walz"
 
 ---
 
-### 17. `/search` — Unified Master Search
+### 20. `/search` — Unified Master Search
 
 Searches across **13 categories** simultaneously. This mirrors the web application's Master Search functionality.
 
