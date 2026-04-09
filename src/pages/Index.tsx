@@ -33,14 +33,13 @@ import { useMail } from "@/contexts/MailContext";
 import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
-import { StateLegislativeSection } from "@/components/StateLegislativeSection";
+import { LegHub } from "@/components/LegHub";
 
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
 import { ResearchToolsDashboard } from "@/components/ResearchToolsDashboard";
 import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
-import { LegislationSection } from "@/components/LegislationSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
 
@@ -91,7 +90,7 @@ export default function Index() {
   // Track map views
   useEffect(() => {
     if (section === "district-intel") trackMapView("congressional_districts");
-    if (section === "state-legislative") trackMapView("state_legislative");
+    if (section === "leghub") trackMapView("state_legislative");
   }, [section, trackMapView]);
 
   useEffect(() => {
@@ -284,12 +283,11 @@ export default function Index() {
     "local-impact": localImpactReports.length,
     narratives: narrativeReports.length,
     "district-intel": districts.length,
-    "state-legislative": stateLegDistricts.length,
+    leghub: stateLegDistricts.length,
     polling: pollingCount,
     
     "research-tools": 0,
     "live-elections": 0,
-    legislation: 0,
     documentation: 13,
   }), [dataVersion, districts, stateLegDistricts, pollingCount]);
 
@@ -307,12 +305,11 @@ export default function Index() {
     "local-impact": "Local Impact by State",
     narratives: "Narrative Reports",
     "district-intel": "District Intelligence",
-    "state-legislative": "State Legislative Districts",
+    leghub: "LegHub",
     polling: "DataHub",
     
     "research-tools": "Research Tools",
     "live-elections": "Live Elections",
-    legislation: "Legislation",
     documentation: "Documentation",
   };
 
@@ -630,13 +627,13 @@ export default function Index() {
       );
     }
 
-    if (section === "state-legislative") {
+    if (section === "leghub") {
       return (
-        <StateLegislativeSection
-          districts={stateLegDistricts}
-          loading={stateLegLoading}
-          onSync={handleStateLegSync}
-          syncing={stateLegSyncing}
+        <LegHub
+          stateLegDistricts={stateLegDistricts}
+          stateLegLoading={stateLegLoading}
+          onStateLegSync={handleStateLegSync}
+          stateLegSyncing={stateLegSyncing}
         />
       );
     }
@@ -664,9 +661,6 @@ export default function Index() {
       return <LiveElectionsSection />;
     }
 
-    if (section === "legislation") {
-      return <LegislationSection />;
-    }
 
     if (section === "documentation") {
       return <DocumentationSection />;

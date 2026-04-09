@@ -385,12 +385,11 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
             { label: "Local Impact", emoji: "🌐", section: "local-impact" },
             { label: "Narrative Reports", emoji: "📄", section: "narratives" },
             { label: "District Intel", emoji: "🧭", section: "district-intel" },
-            { label: "State Legislatures", emoji: "⚖️", section: "state-legislative" },
+            { label: "LegHub", emoji: "⚖️", section: "leghub" },
             { label: "DataHub", emoji: "📊", section: "polling" },
             { label: "Campaign Finance", emoji: "💰", section: "campaign-finance" },
             { label: "Research Tools", emoji: "🔬", section: "research-tools" },
             { label: "Live Elections", emoji: "🏛️", section: "live-elections" },
-            { label: "Legislation", emoji: "📜", section: "legislation" },
             { label: "Voter Data", emoji: "🗳️", section: "voter-data" },
             { label: "Documentation", emoji: "📖", section: "documentation" },
           ].map((item) => (
