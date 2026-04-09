@@ -107,6 +107,7 @@ export default function PredictionMarketsPanel() {
   const [sortField, setSortField] = useState<"yes_price" | "volume" | "title">("volume");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [stateFilter, setStateFilter] = useState("all");
+  const [selectedMarket, setSelectedMarket] = useState<MarketRow | null>(null);
 
   /* ── load data ─────────────────────────────────────────────────────── */
 
