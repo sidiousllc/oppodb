@@ -873,6 +873,15 @@ export default function PredictionMarketsPanel() {
         </h3>
         <MarketTradingPanel />
       </div>
+
+      {/* Market Detail Window */}
+      {selectedMarket && (
+        <MarketDetailWindow
+          market={selectedMarket}
+          allMarkets={markets}
+          onClose={() => setSelectedMarket(null)}
+        />
+      )}
     </div>
   );
 }
