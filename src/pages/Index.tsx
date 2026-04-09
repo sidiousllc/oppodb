@@ -34,6 +34,8 @@ import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-r
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
 import { LegHub } from "@/components/LegHub";
+import { OppoHub } from "@/components/OppoHub";
+import { MessagingHub } from "@/components/MessagingHub";
 
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
