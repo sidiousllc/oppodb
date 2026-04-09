@@ -88,15 +88,29 @@ export function LiveElectionsSection() {
       if (dateFilter) params.set("election_date", dateFilter);
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
 
-      const response = await fetch(`https://civicapi.org/api/v2/race/search?${params.toString()}`);
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`civicAPI error: ${text.slice(0, 200)}`);
+      const { data, error } = await supabase.functions.invoke("civic-api-proxy", {
+        body: null,
+        headers: {},
+      });
+
+      // supabase.functions.invoke doesn't support query params, so we use fetch directly
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const fnUrl = `https://${projectId}.supabase.co/functions/v1/civic-api-proxy?${params.toString()}`;
+      const response = await fetch(fnUrl, {
+        headers: {
+          "Authorization": `Bearer ${anonKey}`,
+          "apikey": anonKey,
+        },
+      });
+      const result = await response.json();
+
+      if (!result.ok) {
+        throw new Error(result.error || "Failed to fetch races");
       }
 
-      const data = await response.json();
-      setRaces(data.races || []);
-      setTotalCount(data.count || 0);
+      setRaces(result.races || []);
+      setTotalCount(result.count || 0);
 
       if (!isInitial && (data.races || []).length === 0) {
         toast.info("No races found matching your filters");
