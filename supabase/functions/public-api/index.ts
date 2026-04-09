@@ -818,6 +818,9 @@ function endpointDescription(endpoint: string): string {
     "state-legislative": "State legislative district profiles with census data",
     "election-results": "State legislative election results with vote counts",
     polling: "Polling data with approval/favorability ratings",
+    "polling-charts": "Pre-aggregated polling chart data: approval trends, rolling averages, demographic breakdowns, source comparisons, methodology breakdown",
+    "prediction-markets": "Real-time prediction market data from Polymarket, Kalshi, Metaculus, Manifold, PredictIt",
+    "prediction-markets-charts": "Pre-aggregated prediction market chart data: source/category breakdowns, probability distributions, cross-source comparisons, state heatmaps, scatter data",
     "maga-files": "MAGA-related research files",
     "narrative-reports": "Narrative research reports",
     "local-impacts": "Local impact analyses by state",
@@ -829,7 +832,7 @@ function endpointDescription(endpoint: string): string {
     "congressional-elections": "Congressional election results with vote counts and winners",
     "state-finance": "State-level campaign finance data across all states",
     "mn-finance": "Minnesota Campaign Finance Board candidate data",
-    search: "Unified search across all databases (requires ?search= param, optional ?categories= filter)",
+    search: "Unified search across all databases (requires ?search= param, optional ?categories= filter, now includes prediction_markets)",
   };
   return descs[endpoint] || "";
 }
