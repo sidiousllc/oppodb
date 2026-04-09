@@ -195,7 +195,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -261,6 +261,11 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},state.ilike.${likeQ}`)
         .order("last_action_date", { ascending: false })
         .limit(10),
+      supabase.from("messaging_guidance")
+        .select("id, title, slug, source, author, published_date, summary, issue_areas")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},author.ilike.${likeQ}`)
+        .order("published_date", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
@@ -278,6 +283,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       stateLeg: stateLegRes.data || [],
       mitElections: mitElRes.data || [],
       trackedBills: trackedBillsRes.data || [],
+      messagingGuidance: messagingRes.data || [],
     });
     setIsSearching(false);
 
