@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-type ContentTable = "candidate_profiles" | "maga_files" | "local_impacts" | "narrative_reports";
+type ContentTable = "candidate_profiles" | "maga_files" | "local_impacts" | "narrative_reports" | "messaging_guidance";
 
 async function callContentAdmin(payload: {
   action: "insert" | "update" | "delete";

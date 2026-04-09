@@ -12,7 +12,7 @@ import { ActivityLogsTab } from "@/components/ActivityLogsTab";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "roles" | "access" | "logs" | "candidates" | "maga" | "local" | "narratives";
+type Tab = "users" | "roles" | "access" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging";
 
 interface ContentItem {
   id: string;
@@ -59,6 +59,7 @@ export default function AdminPanel() {
     { id: "maga", label: "MAGA Files", emoji: "⚠️" },
     { id: "local", label: "Local Impact", emoji: "🌐" },
     { id: "narratives", label: "Narratives", emoji: "📄" },
+    { id: "messaging", label: "Messaging", emoji: "📢" },
   ];
 
   return (
@@ -104,6 +105,7 @@ export default function AdminPanel() {
         {tab === "maga" && <ContentTab table="maga_files" nameField="name" />}
         {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
         {tab === "narratives" && <ContentTab table="narrative_reports" nameField="name" />}
+        {tab === "messaging" && <MessagingGuidanceTab />}
       </div>
 
       {/* Security Badge */}
