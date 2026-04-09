@@ -4,11 +4,13 @@ import { TradeHistoryPanel } from "@/components/TradeHistoryPanel";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart3, TrendingUp, TrendingDown, ExternalLink, Filter, RefreshCw,
-  Search, ArrowUpDown,
+  Search, ArrowUpDown, PieChart as PieIcon, Activity, Layers, Target,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, Cell, ScatterChart, Scatter, ZAxis,
+  PieChart, Pie, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  AreaChart, Area, LineChart, Line, Legend,
 } from "recharts";
 
 /* ── types ───────────────────────────────────────────────────────────── */
