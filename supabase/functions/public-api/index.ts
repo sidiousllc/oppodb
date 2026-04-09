@@ -655,7 +655,7 @@ Deno.serve(async (req) => {
           "campaign_finance", "state_finance", "election_results",
           "forecasts", "maga_files", "narrative_reports",
           "local_impacts", "voter_stats", "mn_finance",
-          "prediction_markets",
+          "prediction_markets", "messaging_guidance",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
@@ -755,6 +755,13 @@ Deno.serve(async (req) => {
             .or(`title.ilike.${likeQ},candidate_name.ilike.${likeQ}`)
             .order("volume", { ascending: false }).limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "Prediction Markets" }));
+        }
+        if (activeCategories.includes("messaging_guidance")) {
+          categoryQueries.messaging_guidance = supabase.from("messaging_guidance")
+            .select("id,title,slug,source,author,published_date,summary,issue_areas")
+            .or(`title.ilike.${likeQ},summary.ilike.${likeQ},author.ilike.${likeQ}`)
+            .order("published_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Messaging Guidance" }));
         }
 
         const entries = Object.entries(categoryQueries);
