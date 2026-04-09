@@ -2336,6 +2336,9 @@ export function PollingSection() {
       {/* ─── Rolling Average Trend ────────────────────────────────────────── */}
       <RollingAverageTrend polls={polls} />
 
+      {/* ─── Demographic Breakdown ───────────────────────────────────────── */}
+      <DemographicBreakdownChart polls={polls} />
+
       {/* ─── Charts Row: Dot Plot + Issue Butterfly ────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
         <SourceDotPlot latestBySource={latestBySource} />
@@ -2359,9 +2362,6 @@ export function PollingSection() {
         <PollsterSpreadChart polls={polls} />
         <MethodologyBreakdown polls={polls} />
       </div>
-
-      {/* ─── Demographic Breakdown ───────────────────────────────────────── */}
-      <DemographicBreakdownChart polls={polls} />
 
       {/* ─── Issue Polling Deep Dive ──────────────────────────────────────── */}
       <IssuePollingSection polls={polls} />
