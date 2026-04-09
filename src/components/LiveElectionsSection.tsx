@@ -88,12 +88,6 @@ export function LiveElectionsSection() {
       if (dateFilter) params.set("election_date", dateFilter);
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
 
-      const { data, error } = await supabase.functions.invoke("civic-api-proxy", {
-        body: null,
-        headers: {},
-      });
-
-      // supabase.functions.invoke doesn't support query params, so we use fetch directly
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const fnUrl = `https://${projectId}.supabase.co/functions/v1/civic-api-proxy?${params.toString()}`;
