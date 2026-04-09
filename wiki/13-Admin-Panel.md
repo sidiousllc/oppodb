@@ -198,73 +198,60 @@ Each log category shows a table with:
 
 ---
 
-## Candidates Tab (Content Management)
+## Content Management Tabs (Candidates, MAGA Files, Local Impact, Narratives, Messaging Guidance)
 
-Moderators and admins can manage candidate profiles.
+All content management tabs share a unified architecture with the `ContentTab`, `ContentList`, and `ContentEditor` components.
 
-### Content List
-- List of all candidates with slug
-- Character count of content
-- Edit and Delete buttons
+### Shared Features
 
-### Create Candidate
-Form with:
-- Name input
-- Slug input (auto-generated from name)
-- Content textarea (Markdown)
-- github_path field (for GitHub sync reference)
+#### Content List
+- List of all items with slug, character count, and **tags** (comma-separated display)
+- Edit and Delete buttons per item
+- "New" button to create items
 
-### Edit Candidate
-Same form as create, pre-filled with existing data.
+#### Content Editor (`ContentEditor`)
+The editor provides fields for:
 
-### Delete Candidate
-Confirmation required.
+| Field | Type | Present In |
+|-------|------|-----------|
+| Name / State | Text input | All tabs (label varies: "Name" or "State") |
+| Slug | Text input | All tabs |
+| **Tags** | Comma-separated text input | All tabs |
+| Summary | Text input | Local Impact only |
+| Content | Monospace Markdown textarea | All tabs |
 
----
+**Tags Input**: Accepts comma-separated values (e.g., `Republican, Healthcare, Economy`). On save, tags are split, trimmed, and stored as a PostgreSQL text array.
 
-## MAGA Files Tab
+#### Save Flow
+```typescript
+// Tags are parsed from comma-separated string to array on save
+const tags = form.tagsText.split(",").map(s => s.trim()).filter(Boolean);
+// Passed to content-admin edge function with the record
+const record = { slug, content, tags, ...otherFields };
+```
 
-### Content Management
-- List view with name, slug, content preview
-- Create new MAGA file
-- Edit existing files
-- Delete files
+### Tab-Specific Fields
 
-### Fields
-- Name (display title)
-- Slug (URL-safe)
-- Content (Markdown)
+#### Candidates Tab
+- **Name Label**: "Name"
+- **Has Summary**: No
+- **github_path**: For GitHub sync reference
 
----
+#### MAGA Files Tab
+- **Name Label**: "Name"
+- **Has Summary**: No
 
-## Local Impact Tab
+#### Local Impact Tab
+- **Name Label**: "State"
+- **Has Summary**: Yes
 
-### Content Management
-- List view with state, slug, summary preview
-- Create new report
-- Edit existing reports
-- Delete reports
+#### Narratives Tab
+- **Name Label**: "Name"
+- **Has Summary**: No
 
-### Fields
-- State (dropdown or text)
-- Slug
-- Summary (brief description)
-- Content (Markdown)
-
----
-
-## Narratives Tab
-
-### Content Management
-- List view with name, slug
-- Create new narrative
-- Edit existing narratives
-- Delete narratives
-
-### Fields
-- Name
-- Slug
-- Content (Markdown)
+#### Messaging Guidance Tab
+- Uses a separate specialized editor (see [MessagingHub](MessagingHub))
+- Tags stored in `issue_areas` column (same concept, different column name)
 
 ---
 
