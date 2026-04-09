@@ -42,7 +42,6 @@ import { ResearchToolsDashboard } from "@/components/ResearchToolsDashboard";
 import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
-import { DocumentationSection } from "@/components/DocumentationSection";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
 
 
