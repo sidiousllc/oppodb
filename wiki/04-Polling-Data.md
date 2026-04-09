@@ -127,8 +127,19 @@ Interactive chart comparing approval ratings across pollsters:
 - Complete polling data table
 - Columns: Source, Topic, Type, Result, Margin, Date
 - External links to poll sources
+- **Click any row** to open a detailed Poll Detail Window
 
-### 13. Source Attribution
+### 13. Poll Detail Window (`PollDetailWindow`)
+Interactive Win98-style modal for deep-dive poll analysis:
+- **Result Visualization**: Custom progress bar + PieChart showing approve/disapprove/neutral split
+- **Contextual Comparison**: BarChart comparing the poll to other pollsters on the same topic within ±30 days
+- **Historical Trend**: Line chart showing the same source's results over time for the same topic
+- **Metadata Panel**: Sample size, margin of error, methodology, partisan lean, date range
+- **Confidence Assessment**: Calculated High/Medium/Low confidence based on sample size and MoE
+- **Demographic Crosstabs**: Renders demographic breakdowns if available in `raw_data`
+- **Source Link**: Direct link to original poll source
+
+### 14. Source Attribution
 - Grid of all polling sources with links to their websites
 
 ## Poll Picker System
@@ -157,7 +168,14 @@ Campaign Finance is now accessible as the third tab in the DataHub section. It p
 
 ## Prediction Markets Tab
 
-The Prediction Markets tab provides real-time probability data from multiple platforms and integrated trading capabilities. See [Prediction Market Trading](Prediction-Market-Trading) for full documentation.
+The Prediction Markets tab provides real-time probability data from multiple platforms and integrated trading capabilities. **Click any market row** to open a detailed Market Detail Window with:
+- **Probability Gauge**: Color-coded Yes/No price visualization
+- **Outcome PieChart**: Visual split of current probabilities
+- **Cross-Platform Comparison**: BarChart detecting arbitrage across sources
+- **Market Metrics**: Volume, liquidity, category, state, last-traded timestamp
+- **Related Markets**: Filtered list of markets in same category/region
+
+See [Prediction Market Trading](Prediction-Market-Trading) for full documentation.
 
 ## Navigation
 
