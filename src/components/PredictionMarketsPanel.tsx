@@ -198,6 +198,7 @@ export default function PredictionMarketsPanel() {
         source: src,
         count: items.length,
         avgProb: items.length ? items.reduce((s, m) => s + (m.yes_price ?? 0), 0) / items.length * 100 : 0,
+        totalVolume: items.reduce((s, m) => s + (m.volume ?? 0), 0),
       };
     }).filter(s => s.count > 0);
   }, [markets]);
@@ -209,6 +210,129 @@ export default function PredictionMarketsPanel() {
       .map(([cat, count]) => ({ name: cat, count }))
       .sort((a, b) => b.count - a.count);
   }, [markets]);
+
+  /* ── Scatter: Volume vs Probability ──────────────────────────────── */
+  const scatterData = useMemo(() =>
+    filtered
+      .filter(m => m.yes_price != null && m.volume != null && (m.volume ?? 0) > 0)
+      .map(m => ({
+        probability: (m.yes_price ?? 0) * 100,
+        volume: m.volume ?? 0,
+        source: m.source,
+        title: m.title.length > 50 ? m.title.slice(0, 47) + "…" : m.title,
+        liquidity: m.liquidity ?? 0,
+      })),
+    [filtered]
+  );
+
+  /* ── Probability Distribution Histogram ──────────────────────────── */
+  const probDistribution = useMemo(() => {
+    const buckets = Array.from({ length: 10 }, (_, i) => ({
+      range: `${i * 10}-${(i + 1) * 10}%`,
+      count: 0,
+      rangeStart: i * 10,
+    }));
+    filtered.forEach(m => {
+      const p = (m.yes_price ?? 0) * 100;
+      const idx = Math.min(Math.floor(p / 10), 9);
+      buckets[idx].count++;
+    });
+    return buckets;
+  }, [filtered]);
+
+  /* ── Cross-Source Price Comparison ───────────────────────────────── */
+  const crossSourceComparison = useMemo(() => {
+    const titleMap = new Map<string, Map<string, number>>();
+    markets.forEach(m => {
+      if (m.yes_price == null) return;
+      const key = (m.candidate_name || m.title).toLowerCase().trim();
+      if (!titleMap.has(key)) titleMap.set(key, new Map());
+      titleMap.get(key)!.set(m.source, (m.yes_price ?? 0) * 100);
+    });
+    const result: any[] = [];
+    titleMap.forEach((sources, key) => {
+      if (sources.size >= 2) {
+        const entry: any = { name: key.length > 30 ? key.slice(0, 27) + "…" : key };
+        sources.forEach((prob, src) => { entry[src] = prob; });
+        const vals = [...sources.values()];
+        entry.spread = Math.max(...vals) - Math.min(...vals);
+        result.push(entry);
+      }
+    });
+    return result.sort((a, b) => (b.spread ?? 0) - (a.spread ?? 0)).slice(0, 12);
+  }, [markets]);
+
+  /* ── Category Donut Data ─────────────────────────────────────────── */
+  const CAT_COLORS = ["hsl(210, 70%, 50%)", "hsl(0, 65%, 50%)", "hsl(150, 55%, 45%)", "hsl(45, 80%, 50%)", "hsl(280, 55%, 55%)", "hsl(30, 70%, 50%)"];
+  const categoryDonut = useMemo(() =>
+    categoryBreakdown.map((c, i) => ({ ...c, color: CAT_COLORS[i % CAT_COLORS.length] })),
+    [categoryBreakdown]
+  );
+
+  /* ── Source Radar (multi-metric) ─────────────────────────────────── */
+  const sourceRadar = useMemo(() => {
+    const maxCount = Math.max(...sourceBreakdown.map(s => s.count), 1);
+    const maxVol = Math.max(...sourceBreakdown.map(s => s.totalVolume), 1);
+    return sourceBreakdown.map(s => ({
+      source: s.name,
+      markets: (s.count / maxCount) * 100,
+      volume: (s.totalVolume / maxVol) * 100,
+      avgProb: s.avgProb,
+    }));
+  }, [sourceBreakdown]);
+
+  /* ── Highest/Lowest Probability Markets ──────────────────────────── */
+  const extremeMarkets = useMemo(() => {
+    const withPrice = filtered.filter(m => m.yes_price != null && m.yes_price > 0 && m.yes_price < 1);
+    const sorted = [...withPrice].sort((a, b) => (b.yes_price ?? 0) - (a.yes_price ?? 0));
+    const high = sorted.slice(0, 5).map(m => ({
+      name: m.title.length > 45 ? m.title.slice(0, 42) + "…" : m.title,
+      probability: (m.yes_price ?? 0) * 100,
+      source: m.source,
+    }));
+    const low = sorted.slice(-5).reverse().map(m => ({
+      name: m.title.length > 45 ? m.title.slice(0, 42) + "…" : m.title,
+      probability: (m.yes_price ?? 0) * 100,
+      source: m.source,
+    }));
+    return { high, low };
+  }, [filtered]);
+
+  /* ── Volume by Category ──────────────────────────────────────────── */
+  const volumeByCategory = useMemo(() => {
+    const cats: Record<string, number> = {};
+    markets.forEach(m => { cats[m.category] = (cats[m.category] || 0) + (m.volume ?? 0); });
+    return Object.entries(cats)
+      .map(([name, volume]) => ({ name, volume }))
+      .sort((a, b) => b.volume - a.volume);
+  }, [markets]);
+
+  /* ── Source Volume Pie ───────────────────────────────────────────── */
+  const sourceVolumePie = useMemo(() =>
+    sourceBreakdown.map(s => ({
+      name: s.name,
+      value: s.totalVolume,
+      color: SOURCE_COLORS[s.source] || "hsl(var(--muted-foreground))",
+    })).filter(s => s.value > 0),
+    [sourceBreakdown]
+  );
+
+  /* ── Probability Heatmap Grid (state × category) ─────────────────── */
+  const stateHeatmap = useMemo(() => {
+    const stateMap = new Map<string, { count: number; avgProb: number; totalProb: number }>();
+    filtered.forEach(m => {
+      if (!m.state_abbr || m.yes_price == null) return;
+      const entry = stateMap.get(m.state_abbr) || { count: 0, avgProb: 0, totalProb: 0 };
+      entry.count++;
+      entry.totalProb += (m.yes_price ?? 0) * 100;
+      entry.avgProb = entry.totalProb / entry.count;
+      stateMap.set(m.state_abbr, entry);
+    });
+    return [...stateMap.entries()]
+      .map(([state, data]) => ({ state, ...data }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
+  }, [filtered]);
 
   /* ── toggle sort ───────────────────────────────────────────────────── */
 
