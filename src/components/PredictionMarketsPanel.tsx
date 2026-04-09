@@ -4,11 +4,13 @@ import { TradeHistoryPanel } from "@/components/TradeHistoryPanel";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart3, TrendingUp, TrendingDown, ExternalLink, Filter, RefreshCw,
-  Search, ArrowUpDown,
+  Search, ArrowUpDown, PieChart as PieIcon, Activity, Layers, Target,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, Cell, ScatterChart, Scatter, ZAxis,
+  PieChart, Pie, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  AreaChart, Area, LineChart, Line, Legend,
 } from "recharts";
 
 /* ── types ───────────────────────────────────────────────────────────── */
@@ -196,6 +198,7 @@ export default function PredictionMarketsPanel() {
         source: src,
         count: items.length,
         avgProb: items.length ? items.reduce((s, m) => s + (m.yes_price ?? 0), 0) / items.length * 100 : 0,
+        totalVolume: items.reduce((s, m) => s + (m.volume ?? 0), 0),
       };
     }).filter(s => s.count > 0);
   }, [markets]);
@@ -207,6 +210,129 @@ export default function PredictionMarketsPanel() {
       .map(([cat, count]) => ({ name: cat, count }))
       .sort((a, b) => b.count - a.count);
   }, [markets]);
+
+  /* ── Scatter: Volume vs Probability ──────────────────────────────── */
+  const scatterData = useMemo(() =>
+    filtered
+      .filter(m => m.yes_price != null && m.volume != null && (m.volume ?? 0) > 0)
+      .map(m => ({
+        probability: (m.yes_price ?? 0) * 100,
+        volume: m.volume ?? 0,
+        source: m.source,
+        title: m.title.length > 50 ? m.title.slice(0, 47) + "…" : m.title,
+        liquidity: m.liquidity ?? 0,
+      })),
+    [filtered]
+  );
+
+  /* ── Probability Distribution Histogram ──────────────────────────── */
+  const probDistribution = useMemo(() => {
+    const buckets = Array.from({ length: 10 }, (_, i) => ({
+      range: `${i * 10}-${(i + 1) * 10}%`,
+      count: 0,
+      rangeStart: i * 10,
+    }));
+    filtered.forEach(m => {
+      const p = (m.yes_price ?? 0) * 100;
+      const idx = Math.min(Math.floor(p / 10), 9);
+      buckets[idx].count++;
+    });
+    return buckets;
+  }, [filtered]);
+
+  /* ── Cross-Source Price Comparison ───────────────────────────────── */
+  const crossSourceComparison = useMemo(() => {
+    const titleMap = new Map<string, Map<string, number>>();
+    markets.forEach(m => {
+      if (m.yes_price == null) return;
+      const key = (m.candidate_name || m.title).toLowerCase().trim();
+      if (!titleMap.has(key)) titleMap.set(key, new Map());
+      titleMap.get(key)!.set(m.source, (m.yes_price ?? 0) * 100);
+    });
+    const result: any[] = [];
+    titleMap.forEach((sources, key) => {
+      if (sources.size >= 2) {
+        const entry: any = { name: key.length > 30 ? key.slice(0, 27) + "…" : key };
+        sources.forEach((prob, src) => { entry[src] = prob; });
+        const vals = [...sources.values()];
+        entry.spread = Math.max(...vals) - Math.min(...vals);
+        result.push(entry);
+      }
+    });
+    return result.sort((a, b) => (b.spread ?? 0) - (a.spread ?? 0)).slice(0, 12);
+  }, [markets]);
+
+  /* ── Category Donut Data ─────────────────────────────────────────── */
+  const CAT_COLORS = ["hsl(210, 70%, 50%)", "hsl(0, 65%, 50%)", "hsl(150, 55%, 45%)", "hsl(45, 80%, 50%)", "hsl(280, 55%, 55%)", "hsl(30, 70%, 50%)"];
+  const categoryDonut = useMemo(() =>
+    categoryBreakdown.map((c, i) => ({ ...c, color: CAT_COLORS[i % CAT_COLORS.length] })),
+    [categoryBreakdown]
+  );
+
+  /* ── Source Radar (multi-metric) ─────────────────────────────────── */
+  const sourceRadar = useMemo(() => {
+    const maxCount = Math.max(...sourceBreakdown.map(s => s.count), 1);
+    const maxVol = Math.max(...sourceBreakdown.map(s => s.totalVolume), 1);
+    return sourceBreakdown.map(s => ({
+      source: s.name,
+      markets: (s.count / maxCount) * 100,
+      volume: (s.totalVolume / maxVol) * 100,
+      avgProb: s.avgProb,
+    }));
+  }, [sourceBreakdown]);
+
+  /* ── Highest/Lowest Probability Markets ──────────────────────────── */
+  const extremeMarkets = useMemo(() => {
+    const withPrice = filtered.filter(m => m.yes_price != null && m.yes_price > 0 && m.yes_price < 1);
+    const sorted = [...withPrice].sort((a, b) => (b.yes_price ?? 0) - (a.yes_price ?? 0));
+    const high = sorted.slice(0, 5).map(m => ({
+      name: m.title.length > 45 ? m.title.slice(0, 42) + "…" : m.title,
+      probability: (m.yes_price ?? 0) * 100,
+      source: m.source,
+    }));
+    const low = sorted.slice(-5).reverse().map(m => ({
+      name: m.title.length > 45 ? m.title.slice(0, 42) + "…" : m.title,
+      probability: (m.yes_price ?? 0) * 100,
+      source: m.source,
+    }));
+    return { high, low };
+  }, [filtered]);
+
+  /* ── Volume by Category ──────────────────────────────────────────── */
+  const volumeByCategory = useMemo(() => {
+    const cats: Record<string, number> = {};
+    markets.forEach(m => { cats[m.category] = (cats[m.category] || 0) + (m.volume ?? 0); });
+    return Object.entries(cats)
+      .map(([name, volume]) => ({ name, volume }))
+      .sort((a, b) => b.volume - a.volume);
+  }, [markets]);
+
+  /* ── Source Volume Pie ───────────────────────────────────────────── */
+  const sourceVolumePie = useMemo(() =>
+    sourceBreakdown.map(s => ({
+      name: s.name,
+      value: s.totalVolume,
+      color: SOURCE_COLORS[s.source] || "hsl(var(--muted-foreground))",
+    })).filter(s => s.value > 0),
+    [sourceBreakdown]
+  );
+
+  /* ── Probability Heatmap Grid (state × category) ─────────────────── */
+  const stateHeatmap = useMemo(() => {
+    const stateMap = new Map<string, { count: number; avgProb: number; totalProb: number }>();
+    filtered.forEach(m => {
+      if (!m.state_abbr || m.yes_price == null) return;
+      const entry = stateMap.get(m.state_abbr) || { count: 0, avgProb: 0, totalProb: 0 };
+      entry.count++;
+      entry.totalProb += (m.yes_price ?? 0) * 100;
+      entry.avgProb = entry.totalProb / entry.count;
+      stateMap.set(m.state_abbr, entry);
+    });
+    return [...stateMap.entries()]
+      .map(([state, data]) => ({ state, ...data }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
+  }, [filtered]);
 
   /* ── toggle sort ───────────────────────────────────────────────────── */
 
@@ -392,6 +518,243 @@ export default function PredictionMarketsPanel() {
           </div>
         </div>
       </div>
+
+      {/* ── Scatter: Volume vs Probability ────────────────────────────── */}
+      {scatterData.length > 0 && (
+        <div className="candidate-card p-4">
+          <h3 className="font-display text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" />
+            Volume vs. Probability
+          </h3>
+          <p className="text-[10px] text-muted-foreground mb-2">Each dot is a market — size = liquidity, color = platform</p>
+          <ResponsiveContainer width="100%" height={300}>
+            <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis type="number" dataKey="probability" name="Probability" unit="%" tick={{ fontSize: 10 }} domain={[0, 100]} />
+              <YAxis type="number" dataKey="volume" name="Volume" tick={{ fontSize: 10 }} tickFormatter={(v: number) => volLabel(v)} />
+              <ZAxis type="number" dataKey="liquidity" range={[30, 400]} />
+              <RechartsTooltip
+                contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                formatter={(v: any, name: string) => [name === "Volume" ? volLabel(v as number) : `${v}%`, name]}
+                labelFormatter={(_: any, payload: any[]) => payload?.[0]?.payload?.title || ""}
+              />
+              {["polymarket", "kalshi", "metaculus", "manifold", "predictit"].map(src => {
+                const d = scatterData.filter(s => s.source === src);
+                return d.length > 0 ? (
+                  <Scatter key={src} name={src} data={d} fill={SOURCE_COLORS[src] || "hsl(var(--muted-foreground))"} opacity={0.7} />
+                ) : null;
+              })}
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* ── Probability Distribution + Category Donut ─────────────────── */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="candidate-card p-4">
+          <h3 className="font-display text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <Layers className="h-4 w-4 text-primary" />
+            Probability Distribution
+          </h3>
+          <p className="text-[10px] text-muted-foreground mb-2">Markets per probability bucket</p>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={probDistribution} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="range" tick={{ fontSize: 9 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <RechartsTooltip contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} formatter={(v: number) => [v, "Markets"]} />
+              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                {probDistribution.map((b, i) => (
+                  <Cell key={i} fill={probColor(b.rangeStart / 100)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="candidate-card p-4">
+          <h3 className="font-display text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <PieIcon className="h-4 w-4 text-primary" />
+            Markets by Category
+          </h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={categoryDonut} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={80} paddingAngle={2} label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} style={{ fontSize: 9 }}>
+                {categoryDonut.map((c: any, i: number) => (
+                  <Cell key={i} fill={c.color} />
+                ))}
+              </Pie>
+              <RechartsTooltip contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} formatter={(v: number) => [v, "Markets"]} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ── Volume by Category + Source Volume Pie ────────────────────── */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="candidate-card p-4">
+          <h3 className="font-display text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            Volume by Category
+          </h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={volumeByCategory} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="name" tick={{ fontSize: 9 }} />
+              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => volLabel(v)} />
+              <RechartsTooltip contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} formatter={(v: number) => [volLabel(v), "Volume"]} />
+              <Bar dataKey="volume" radius={[4, 4, 0, 0]}>
+                {volumeByCategory.map((_, i) => (
+                  <Cell key={i} fill={CAT_COLORS[i % CAT_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="candidate-card p-4">
+          <h3 className="font-display text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <PieIcon className="h-4 w-4 text-primary" />
+            Volume by Source
+          </h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={sourceVolumePie} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} style={{ fontSize: 9 }}>
+                {sourceVolumePie.map((s: any, i: number) => (
+                  <Cell key={i} fill={s.color} />
+                ))}
+              </Pie>
+              <RechartsTooltip contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} formatter={(v: number) => [volLabel(v), "Volume"]} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ── Source Radar Chart ─────────────────────────────────────────── */}
+      {sourceRadar.length >= 3 && (
+        <div className="candidate-card p-4">
+          <h3 className="font-display text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <Target className="h-4 w-4 text-primary" />
+            Platform Comparison (Radar)
+          </h3>
+          <p className="text-[10px] text-muted-foreground mb-2">Normalized: market count, volume, avg probability</p>
+          <ResponsiveContainer width="100%" height={280}>
+            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={sourceRadar}>
+              <PolarGrid stroke="hsl(var(--border))" />
+              <PolarAngleAxis dataKey="source" tick={{ fontSize: 10 }} />
+              <PolarRadiusAxis tick={{ fontSize: 9 }} domain={[0, 100]} />
+              <Radar name="Markets" dataKey="markets" stroke="hsl(210, 70%, 50%)" fill="hsl(210, 70%, 50%)" fillOpacity={0.15} />
+              <Radar name="Volume" dataKey="volume" stroke="hsl(150, 55%, 45%)" fill="hsl(150, 55%, 45%)" fillOpacity={0.15} />
+              <Radar name="Avg Prob" dataKey="avgProb" stroke="hsl(45, 80%, 50%)" fill="hsl(45, 80%, 50%)" fillOpacity={0.15} />
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 10 }} />
+              <RechartsTooltip contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* ── Cross-Source Price Comparison ──────────────────────────────── */}
+      {crossSourceComparison.length > 0 && (
+        <div className="candidate-card p-4">
+          <h3 className="font-display text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4 text-primary" />
+            Cross-Platform Price Comparison
+          </h3>
+          <p className="text-[10px] text-muted-foreground mb-2">Markets on multiple platforms — sorted by spread</p>
+          <ResponsiveContainer width="100%" height={Math.max(200, crossSourceComparison.length * 32)}>
+            <BarChart data={crossSourceComparison} layout="vertical" margin={{ left: 10, right: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} />
+              <YAxis type="category" dataKey="name" width={180} tick={{ fontSize: 9 }} />
+              <RechartsTooltip contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} formatter={(v: number) => [`${v.toFixed(1)}%`, ""]} />
+              {["polymarket", "kalshi", "metaculus", "manifold", "predictit"].map(src => (
+                <Bar key={src} dataKey={src} name={src.charAt(0).toUpperCase() + src.slice(1)} fill={SOURCE_COLORS[src]} radius={[0, 2, 2, 0]} barSize={8} />
+              ))}
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 10 }} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* ── Highest & Lowest Probability ──────────────────────────────── */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {extremeMarkets.high.length > 0 && (
+          <div className="candidate-card p-4">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+              <TrendingUp className="h-3.5 w-3.5 text-[hsl(150,55%,45%)]" />
+              Highest Probability
+            </h3>
+            <div className="space-y-2">
+              {extremeMarkets.high.map((m, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs font-bold w-6 text-muted-foreground">#{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="h-5 rounded bg-muted/40 overflow-hidden">
+                      <div className="h-full rounded flex items-center px-1.5" style={{ width: `${m.probability}%`, backgroundColor: "hsl(150, 55%, 45%)" }}>
+                        <span className="text-[9px] font-bold text-white truncate">{m.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-foreground w-12 text-right">{m.probability.toFixed(1)}%</span>
+                  <span className="inline-block px-1 py-0 win98-raised text-[8px] font-bold text-white" style={{ backgroundColor: sourceColor(m.source) }}>
+                    {SOURCE_LABELS[m.source] || m.source.slice(0, 2).toUpperCase()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {extremeMarkets.low.length > 0 && (
+          <div className="candidate-card p-4">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+              <TrendingDown className="h-3.5 w-3.5 text-[hsl(0,65%,50%)]" />
+              Lowest Probability
+            </h3>
+            <div className="space-y-2">
+              {extremeMarkets.low.map((m, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs font-bold w-6 text-muted-foreground">#{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="h-5 rounded bg-muted/40 overflow-hidden">
+                      <div className="h-full rounded flex items-center px-1.5" style={{ width: `${Math.max(m.probability, 3)}%`, backgroundColor: "hsl(0, 65%, 50%)" }}>
+                        <span className="text-[9px] font-bold text-white truncate">{m.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-foreground w-12 text-right">{m.probability.toFixed(1)}%</span>
+                  <span className="inline-block px-1 py-0 win98-raised text-[8px] font-bold text-white" style={{ backgroundColor: sourceColor(m.source) }}>
+                    {SOURCE_LABELS[m.source] || m.source.slice(0, 2).toUpperCase()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── State Coverage Heatmap ─────────────────────────────────────── */}
+      {stateHeatmap.length > 0 && (
+        <div className="candidate-card p-4">
+          <h3 className="font-display text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <Target className="h-4 w-4 text-primary" />
+            State Coverage Heatmap
+          </h3>
+          <p className="text-[10px] text-muted-foreground mb-3">States with most active markets — intensity = avg probability</p>
+          <div className="flex flex-wrap gap-1.5">
+            {stateHeatmap.map(s => {
+              const intensity = s.avgProb / 100;
+              const bg = `hsla(210, 70%, ${55 - intensity * 25}%, ${0.3 + intensity * 0.6})`;
+              return (
+                <div key={s.state} className="win98-raised px-2.5 py-2 text-center min-w-[52px]" style={{ backgroundColor: bg }} title={`${s.state}: ${s.count} markets, avg ${s.avgProb.toFixed(1)}%`}>
+                  <span className="text-xs font-bold text-foreground block">{s.state}</span>
+                  <span className="text-[9px] text-muted-foreground">{s.count} mkts</span>
+                  <span className="text-[9px] font-semibold text-foreground block">{s.avgProb.toFixed(0)}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Markets Table ─────────────────────────────────────────────── */}
       <div className="candidate-card p-4">
