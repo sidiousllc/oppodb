@@ -744,7 +744,7 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
   useEffect(() => { load(); }, [load]);
 
   const handleSave = async (item: ContentItem) => {
-    const record: any = { slug: item.slug, content: item.content };
+    const record: any = { slug: item.slug, content: item.content, tags: item.tags || [] };
     if (hasState) { record.state = item.state || item.name; if (hasSummary) record.summary = item.summary || ""; }
     else { record.name = item.name; }
     try {
@@ -770,7 +770,7 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
   if (loading) return <div className="text-center py-8 text-[10px]">Loading...</div>;
 
   if (editing || creating) {
-    return <ContentEditor item={editing || { id: "", name: "", state: "", slug: "", content: "", summary: "" }} nameLabel={hasState ? "State" : "Name"} hasState={hasState} hasSummary={hasSummary} onSave={handleSave} onCancel={() => { setEditing(null); setCreating(false); }} />;
+    return <ContentEditor item={editing || { id: "", name: "", state: "", slug: "", content: "", summary: "", tags: [] }} nameLabel={hasState ? "State" : "Name"} hasState={hasState} hasSummary={hasSummary} onSave={handleSave} onCancel={() => { setEditing(null); setCreating(false); }} />;
   }
 
   return (
