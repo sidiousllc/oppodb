@@ -34,13 +34,14 @@ import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-r
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
 import { StateLegislativeSection } from "@/components/StateLegislativeSection";
+import { LegHub } from "@/components/LegHub";
 
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
 import { ResearchToolsDashboard } from "@/components/ResearchToolsDashboard";
 import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
-import { LegislationSection } from "@/components/LegislationSection";
+import { DocumentationSection } from "@/components/DocumentationSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
 
