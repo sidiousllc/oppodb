@@ -28,28 +28,14 @@ async function streamChat({
   });
 
   if (!resp.ok || !resp.body) {
-    // Try to parse as JSON (non-streaming tool call response)
+    // Try to parse error JSON
     try {
       const data = await resp.json();
-      if (data.choices?.[0]?.message?.content) {
-        onDelta(data.choices[0].message.content);
-        onDone();
-        return;
-      }
-    } catch {}
-    throw new Error("Failed to start stream");
-  }
-
-  const contentType = resp.headers.get("content-type") || "";
-  
-  // Handle non-streaming JSON response (from tool calls)
-  if (contentType.includes("application/json")) {
-    const data = await resp.json();
-    if (data.choices?.[0]?.message?.content) {
-      onDelta(data.choices[0].message.content);
+      if (data.error) throw new Error(data.error);
+    } catch (e) {
+      if (e instanceof Error && e.message !== "Failed to start stream") throw e;
     }
-    onDone();
-    return;
+    throw new Error("Failed to start stream");
   }
 
   const reader = resp.body.getReader();
