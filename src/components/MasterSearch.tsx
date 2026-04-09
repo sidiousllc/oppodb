@@ -194,7 +194,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -240,6 +240,26 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .order("transaction_date", { ascending: false })
         .limit(10),
       fetchVoterStats(),
+      supabase.from("prediction_markets")
+        .select("id, title, source, category, state_abbr, district, yes_price, no_price, volume, status, market_url")
+        .or(`title.ilike.${likeQ},state_abbr.ilike.${likeQ},candidate_name.ilike.${likeQ}`)
+        .eq("status", "active")
+        .order("volume", { ascending: false })
+        .limit(10),
+      supabase.from("state_legislative_profiles")
+        .select("id, district_id, state, state_abbr, chamber, district_number, population, median_income")
+        .or(`state.ilike.${likeQ},state_abbr.ilike.${likeQ},district_id.ilike.${likeQ}`)
+        .limit(10),
+      supabase.from("mit_election_results")
+        .select("id, candidate, state, state_po, office, year, party, candidatevotes, totalvotes, district")
+        .or(`candidate.ilike.${likeQ},state.ilike.${likeQ},state_po.ilike.${likeQ}`)
+        .order("year", { ascending: false })
+        .limit(10),
+      supabase.from("tracked_bills")
+        .select("id, bill_number, title, state, status_desc, last_action, last_action_date")
+        .or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},state.ilike.${likeQ}`)
+        .order("last_action_date", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
@@ -253,6 +273,10 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       mnFinance: mnFinRes.data || [],
       winredDonations: winredRes.data || [],
       voterStats: voterStatsRes || [],
+      predictionMarkets: predMarketsRes.data || [],
+      stateLeg: stateLegRes.data || [],
+      mitElections: mitElRes.data || [],
+      trackedBills: trackedBillsRes.data || [],
     });
     setIsSearching(false);
 
