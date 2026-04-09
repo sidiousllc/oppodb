@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Search, Loader2, Trophy, Calendar, MapPin, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { toast } from "sonner";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS",
@@ -106,7 +105,7 @@ export function LiveElectionsSection() {
       setRaces(result.races || []);
       setTotalCount(result.count || 0);
 
-      if (!isInitial && (data.races || []).length === 0) {
+      if (!isInitial && (result.races || []).length === 0) {
         toast.info("No races found matching your filters");
       }
     } catch (e: any) {
