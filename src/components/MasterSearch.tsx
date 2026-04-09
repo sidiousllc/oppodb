@@ -626,7 +626,6 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
           Type to see instant results — database search auto-triggers after 400ms • ⭐ Bookmark to save
         </p>
-        </p>
       </div>
 
       {/* Saved & Recent Searches (shown when no active query) */}
