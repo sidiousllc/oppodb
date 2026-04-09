@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from "react";
 import { fetchPollingData, getSourceInfo, POLLING_SOURCES, POLL_TYPES, type PollEntry } from "@/data/pollingData";
 import IssuePollingSection from "@/components/IssuePollingSection";
+import { PollDetailWindow } from "@/components/PollDetailWindow";
 const PredictionMarketsPanel = lazy(() => import("@/components/PredictionMarketsPanel"));
 import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { supabase } from "@/integrations/supabase/client";
@@ -1974,6 +1975,7 @@ export function PollingSection() {
   const [seeding, setSeeding] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [selectedPoll, setSelectedPoll] = useState<PollEntry | null>(null);
   const [activeTab, setActiveTab] = useState<"polling" | "markets" | "finance">("polling");
 
   useEffect(() => {
@@ -2483,7 +2485,7 @@ export function PollingSection() {
                 const primaryPct = poll.approve_pct ?? poll.favor_pct;
                 const secondaryPct = poll.disapprove_pct ?? poll.oppose_pct;
                 return (
-                  <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-[hsl(var(--win98-light))] transition-colors">
+                  <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-[hsl(var(--win98-light))] transition-colors cursor-pointer" onClick={() => setSelectedPoll(poll)}>
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-2">
                         <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
@@ -2558,6 +2560,14 @@ export function PollingSection() {
           )}
         </div>
       </div>
+      {selectedPoll && (
+        <PollDetailWindow
+          poll={selectedPoll}
+          allPolls={polls}
+          onClose={() => setSelectedPoll(null)}
+          onSelectPoll={(p) => setSelectedPoll(p)}
+        />
+      )}
     </>
       )}
     </div>);
