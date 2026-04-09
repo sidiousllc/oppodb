@@ -206,6 +206,251 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "polling-charts": {
+        // Fetch all polling data for chart aggregation
+        const pollType = url.searchParams.get("poll_type") || "approval";
+        const topic = url.searchParams.get("topic") || "Trump Approval";
+        
+        // 1. Approval trend data (time series)
+        const { data: trendData } = await supabase
+          .from("polling_data")
+          .select("source,date_conducted,approve_pct,disapprove_pct,margin,sample_size,methodology")
+          .eq("poll_type", pollType)
+          .ilike("candidate_or_topic", `%${topic}%`)
+          .is("raw_data->group_type", null)
+          .order("date_conducted", { ascending: true })
+          .limit(500);
+
+        // 2. Demographic breakdowns
+        const { data: demoData } = await supabase
+          .from("polling_data")
+          .select("source,date_conducted,approve_pct,disapprove_pct,margin,raw_data")
+          .eq("poll_type", pollType)
+          .ilike("candidate_or_topic", `%${topic}%`)
+          .not("raw_data->group_type", "is", null)
+          .order("date_conducted", { ascending: false })
+          .limit(500);
+
+        // 3. Source comparison (latest per source)
+        const sourceMap = new Map<string, any>();
+        (trendData || []).forEach((p: any) => {
+          if (!sourceMap.has(p.source) || p.date_conducted > sourceMap.get(p.source).date_conducted) {
+            sourceMap.set(p.source, p);
+          }
+        });
+        const latestBySource = [...sourceMap.values()];
+
+        // 4. Rolling average (7-point)
+        const sorted = [...(trendData || [])].sort((a: any, b: any) => a.date_conducted.localeCompare(b.date_conducted));
+        const rollingAverage = sorted.map((p: any, i: number) => {
+          const window = sorted.slice(Math.max(0, i - 6), i + 1);
+          const avgApprove = window.reduce((s: number, x: any) => s + (x.approve_pct || 0), 0) / window.length;
+          const avgDisapprove = window.reduce((s: number, x: any) => s + (x.disapprove_pct || 0), 0) / window.length;
+          return { date: p.date_conducted, approve_avg: +avgApprove.toFixed(1), disapprove_avg: +avgDisapprove.toFixed(1), window_size: window.length };
+        });
+
+        // 5. Aggregate demographics by group_type
+        const demoAgg = new Map<string, Map<string, { totalApprove: number; totalDisapprove: number; count: number }>>();
+        (demoData || []).forEach((p: any) => {
+          const rd = p.raw_data;
+          if (!rd?.group_type || !rd?.demographic) return;
+          if (!demoAgg.has(rd.group_type)) demoAgg.set(rd.group_type, new Map());
+          const group = demoAgg.get(rd.group_type)!;
+          if (!group.has(rd.demographic)) group.set(rd.demographic, { totalApprove: 0, totalDisapprove: 0, count: 0 });
+          const entry = group.get(rd.demographic)!;
+          entry.totalApprove += p.approve_pct || 0;
+          entry.totalDisapprove += p.disapprove_pct || 0;
+          entry.count++;
+        });
+        const demographics: Record<string, any[]> = {};
+        demoAgg.forEach((demos, groupType) => {
+          demographics[groupType] = [];
+          demos.forEach((val, demo) => {
+            demographics[groupType].push({
+              demographic: demo,
+              approve: +(val.totalApprove / val.count).toFixed(1),
+              disapprove: +(val.totalDisapprove / val.count).toFixed(1),
+              margin: +((val.totalApprove - val.totalDisapprove) / val.count).toFixed(1),
+              poll_count: val.count,
+            });
+          });
+          demographics[groupType].sort((a: any, b: any) => b.margin - a.margin);
+        });
+
+        // 6. Methodology breakdown
+        const methodCounts: Record<string, number> = {};
+        (trendData || []).forEach((p: any) => {
+          const m = p.methodology || "Unknown";
+          methodCounts[m] = (methodCounts[m] || 0) + 1;
+        });
+        const methodologyBreakdown = Object.entries(methodCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: "polling-charts", p_status: 200 }).then(() => {});
+
+        return new Response(
+          JSON.stringify({
+            charts: {
+              approval_trend: { description: "Approval/disapproval over time by pollster", data: trendData || [] },
+              rolling_average: { description: "7-point rolling average of approve/disapprove", data: rollingAverage },
+              source_comparison: { description: "Latest poll result per source", data: latestBySource },
+              demographic_breakdowns: { description: "Approval by demographic group (party, age, gender, race, education, region)", data: demographics },
+              methodology_breakdown: { description: "Poll count by methodology type", data: methodologyBreakdown },
+            },
+            meta: {
+              poll_type: pollType,
+              topic,
+              total_polls: (trendData || []).length,
+              total_demographic_polls: (demoData || []).length,
+              sources: [...new Set((trendData || []).map((p: any) => p.source))],
+              demographic_groups: Object.keys(demographics),
+            },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      case "prediction-markets": {
+        let q = supabase
+          .from("prediction_markets")
+          .select("id,market_id,source,title,category,state_abbr,district,candidate_name,yes_price,no_price,volume,liquidity,last_traded_at,market_url,status,updated_at", { count: "exact" })
+          .eq("status", "active")
+          .range(offset, offset + limit - 1)
+          .order("volume", { ascending: false });
+        if (stateFilter) q = q.eq("state_abbr", stateFilter);
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,candidate_name.ilike.%${searchQuery}%`);
+        const catParam = url.searchParams.get("category");
+        if (catParam) q = q.eq("category", catParam);
+        const srcParam = url.searchParams.get("source");
+        if (srcParam) q = q.eq("source", srcParam);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "prediction-markets-charts": {
+        // Fetch all active markets for aggregation
+        const { data: allMarkets } = await supabase
+          .from("prediction_markets")
+          .select("id,market_id,source,title,category,state_abbr,district,candidate_name,yes_price,no_price,volume,liquidity,last_traded_at,status")
+          .eq("status", "active")
+          .order("volume", { ascending: false })
+          .limit(1000);
+
+        const mkts = allMarkets || [];
+
+        // 1. Source breakdown
+        const srcBreakdown: Record<string, { count: number; totalProb: number; totalVolume: number }> = {};
+        mkts.forEach((m: any) => {
+          if (!srcBreakdown[m.source]) srcBreakdown[m.source] = { count: 0, totalProb: 0, totalVolume: 0 };
+          srcBreakdown[m.source].count++;
+          srcBreakdown[m.source].totalProb += (m.yes_price || 0) * 100;
+          srcBreakdown[m.source].totalVolume += m.volume || 0;
+        });
+        const sourceBreakdown = Object.entries(srcBreakdown).map(([source, data]) => ({
+          source, count: data.count, avg_probability: +(data.totalProb / data.count).toFixed(1), total_volume: data.totalVolume,
+        })).sort((a, b) => b.count - a.count);
+
+        // 2. Category breakdown
+        const catBreakdown: Record<string, { count: number; totalVolume: number }> = {};
+        mkts.forEach((m: any) => {
+          if (!catBreakdown[m.category]) catBreakdown[m.category] = { count: 0, totalVolume: 0 };
+          catBreakdown[m.category].count++;
+          catBreakdown[m.category].totalVolume += m.volume || 0;
+        });
+        const categoryBreakdown = Object.entries(catBreakdown).map(([category, data]) => ({
+          category, count: data.count, total_volume: data.totalVolume,
+        })).sort((a, b) => b.count - a.count);
+
+        // 3. Probability distribution (10% buckets)
+        const probDist = Array.from({ length: 10 }, (_, i) => ({ range: `${i * 10}-${(i + 1) * 10}%`, count: 0 }));
+        mkts.forEach((m: any) => {
+          const p = (m.yes_price || 0) * 100;
+          const idx = Math.min(Math.floor(p / 10), 9);
+          probDist[idx].count++;
+        });
+
+        // 4. Top markets by probability
+        const topByProb = [...mkts]
+          .filter((m: any) => m.yes_price != null && m.yes_price > 0 && m.yes_price < 1)
+          .sort((a: any, b: any) => (b.yes_price || 0) - (a.yes_price || 0))
+          .slice(0, 15)
+          .map((m: any) => ({ title: m.title, source: m.source, probability: +((m.yes_price || 0) * 100).toFixed(1), volume: m.volume, category: m.category }));
+
+        // 5. Top markets by volume
+        const topByVolume = [...mkts]
+          .sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0))
+          .slice(0, 15)
+          .map((m: any) => ({ title: m.title, source: m.source, probability: +((m.yes_price || 0) * 100).toFixed(1), volume: m.volume, category: m.category }));
+
+        // 6. Cross-source comparison
+        const titleMap = new Map<string, Map<string, number>>();
+        mkts.forEach((m: any) => {
+          if (m.yes_price == null) return;
+          const key = (m.candidate_name || m.title).toLowerCase().trim();
+          if (!titleMap.has(key)) titleMap.set(key, new Map());
+          titleMap.get(key)!.set(m.source, +((m.yes_price || 0) * 100).toFixed(1));
+        });
+        const crossSource: any[] = [];
+        titleMap.forEach((sources, key) => {
+          if (sources.size >= 2) {
+            const entry: any = { market: key, sources: Object.fromEntries(sources) };
+            const vals = [...sources.values()];
+            entry.spread = +(Math.max(...vals) - Math.min(...vals)).toFixed(1);
+            crossSource.push(entry);
+          }
+        });
+        crossSource.sort((a, b) => b.spread - a.spread);
+
+        // 7. State heatmap
+        const stateAgg: Record<string, { count: number; totalProb: number }> = {};
+        mkts.forEach((m: any) => {
+          if (!m.state_abbr || m.yes_price == null) return;
+          if (!stateAgg[m.state_abbr]) stateAgg[m.state_abbr] = { count: 0, totalProb: 0 };
+          stateAgg[m.state_abbr].count++;
+          stateAgg[m.state_abbr].totalProb += (m.yes_price || 0) * 100;
+        });
+        const stateHeatmap = Object.entries(stateAgg)
+          .map(([state, data]) => ({ state, count: data.count, avg_probability: +(data.totalProb / data.count).toFixed(1) }))
+          .sort((a, b) => b.count - a.count);
+
+        // 8. Highest and lowest probability
+        const sorted2 = [...mkts].filter((m: any) => m.yes_price != null && m.yes_price > 0 && m.yes_price < 1)
+          .sort((a: any, b: any) => (b.yes_price || 0) - (a.yes_price || 0));
+        const highest = sorted2.slice(0, 5).map((m: any) => ({ title: m.title, source: m.source, probability: +((m.yes_price || 0) * 100).toFixed(1) }));
+        const lowest = sorted2.slice(-5).reverse().map((m: any) => ({ title: m.title, source: m.source, probability: +((m.yes_price || 0) * 100).toFixed(1) }));
+
+        // 9. Scatter data (volume vs probability)
+        const scatterData = mkts
+          .filter((m: any) => m.yes_price != null && m.volume != null && m.volume > 0)
+          .map((m: any) => ({ probability: +((m.yes_price || 0) * 100).toFixed(1), volume: m.volume, source: m.source, liquidity: m.liquidity || 0 }));
+
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: "prediction-markets-charts", p_status: 200 }).then(() => {});
+
+        return new Response(
+          JSON.stringify({
+            charts: {
+              source_breakdown: { description: "Market count, avg probability, and total volume per platform", data: sourceBreakdown },
+              category_breakdown: { description: "Market count and volume per category (president, senate, house, etc.)", data: categoryBreakdown },
+              probability_distribution: { description: "Number of markets in each 10% probability bucket", data: probDist },
+              top_by_probability: { description: "Top 15 markets by YES probability", data: topByProb },
+              top_by_volume: { description: "Top 15 markets by trading volume", data: topByVolume },
+              cross_source_comparison: { description: "Markets listed on multiple platforms with price spreads (arbitrage opportunities)", data: crossSource.slice(0, 20) },
+              state_heatmap: { description: "Market coverage and avg probability per state", data: stateHeatmap },
+              extremes: { description: "Highest and lowest probability markets", data: { highest, lowest } },
+              scatter: { description: "Volume vs probability for all markets (for scatter plots)", data: scatterData },
+            },
+            meta: {
+              total_markets: mkts.length,
+              total_sources: [...new Set(mkts.map((m: any) => m.source))].length,
+              sources: [...new Set(mkts.map((m: any) => m.source))],
+              categories: [...new Set(mkts.map((m: any) => m.category))],
+            },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
       case "maga-files": {
         let q = supabase
           .from("maga_files")
