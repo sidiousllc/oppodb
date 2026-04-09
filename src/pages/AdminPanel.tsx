@@ -857,4 +857,3 @@ function ContentEditor({ item, nameLabel, hasState, hasSummary, onSave, onCancel
     </div>
   );
 }
-}
