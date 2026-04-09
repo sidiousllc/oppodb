@@ -86,13 +86,13 @@ function MarkdownContent({
     <ReactMarkdown
       components={{
         a: ({ href, children }) => {
-          const matchSlug = extractInternalSlug(href);
+          const link = extractInternalLink(href);
 
-          if (matchSlug) {
+          if (link) {
             return (
               <a
                 href={href ?? "#"}
-                onClick={(e) => handleClick(e, href, matchSlug)}
+                onClick={(e) => handleClick(e, href, link.slug, link.parentSlug)}
                 className="text-primary hover:underline cursor-pointer"
               >
                 {children}
