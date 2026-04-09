@@ -12,6 +12,7 @@ const ALLOWED_TABLES = new Set([
   "maga_files",
   "local_impacts",
   "narrative_reports",
+  "messaging_guidance",
 ]);
 
 serve(async (req) => {
