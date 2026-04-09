@@ -795,7 +795,7 @@ export default function PredictionMarketsPanel() {
             </thead>
             <tbody>
               {filtered.slice(0, 100).map((m) => (
-                <tr key={m.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] transition-colors">
+                <tr key={m.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] transition-colors cursor-pointer" onClick={() => setSelectedMarket(m)}>
                   <td className="py-2 px-2">
                     <span
                       className="inline-block px-1 py-0 win98-raised text-[9px] font-bold text-white"
