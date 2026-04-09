@@ -2,7 +2,7 @@
 
 ## Description
 
-OppoDB provides a comprehensive public REST API and MCP (Model Context Protocol) server that allow authenticated users to programmatically access the entire database. API access is available to premium users and above, enabling integration with external tools, scripts, and AI agents. The API exposes **17 REST endpoints** and **18 MCP tools** covering all data sources available in the web application.
+OppoDB provides a comprehensive public REST API and MCP (Model Context Protocol) server that allow authenticated users to programmatically access the entire database. API access is available to premium users and above, enabling integration with external tools, scripts, and AI agents. The API exposes **21 REST endpoints** (including 2 chart-data endpoints) and **18 MCP tools** covering all data sources available in the web application.
 
 ---
 
@@ -239,7 +239,198 @@ curl -H "X-API-Key: KEY" "https://.../public-api/polling?search=trump&limit=20"
 
 ---
 
-### 6. `/maga-files` — MAGA Files
+### 6. `/polling-charts` — Polling Chart Data (Pre-Aggregated)
+
+Returns pre-computed chart-ready data for rendering polling visualizations. This eliminates the need for clients to aggregate raw polling data themselves.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `poll_type` | string | `approval` | Poll type filter: `approval`, `favorability`, `generic_ballot`, `issue` |
+| `topic` | string | `Trump Approval` | Topic/candidate to filter by (case-insensitive match) |
+
+**Response Structure:**
+```json
+{
+  "charts": {
+    "approval_trend": {
+      "description": "Approval/disapproval over time by pollster",
+      "data": [
+        { "source": "ap", "date_conducted": "2026-04-01", "approve_pct": 43, "disapprove_pct": 52, "margin": -9, "sample_size": 1082, "methodology": "Online/Phone" }
+      ]
+    },
+    "rolling_average": {
+      "description": "7-point rolling average of approve/disapprove",
+      "data": [
+        { "date": "2026-03-15", "approve_avg": 42.3, "disapprove_avg": 53.1, "window_size": 7 }
+      ]
+    },
+    "source_comparison": {
+      "description": "Latest poll result per source",
+      "data": [
+        { "source": "quinnipiac", "date_conducted": "2026-03-31", "approve_pct": 40, "disapprove_pct": 55 }
+      ]
+    },
+    "demographic_breakdowns": {
+      "description": "Approval by demographic group",
+      "data": {
+        "party": [
+          { "demographic": "Republican", "approve": 89, "disapprove": 8, "margin": 81, "poll_count": 4 },
+          { "demographic": "Independent", "approve": 35, "disapprove": 52, "margin": -17, "poll_count": 4 },
+          { "demographic": "Democrat", "approve": 8, "disapprove": 88, "margin": -80, "poll_count": 4 }
+        ],
+        "age": [...],
+        "gender": [...],
+        "race": [...],
+        "education": [...],
+        "region": [...]
+      }
+    },
+    "methodology_breakdown": {
+      "description": "Poll count by methodology type",
+      "data": [ { "name": "Online/Phone", "count": 12 }, { "name": "Phone", "count": 8 } ]
+    }
+  },
+  "meta": {
+    "poll_type": "approval",
+    "topic": "Trump Approval",
+    "total_polls": 45,
+    "total_demographic_polls": 68,
+    "sources": ["ap", "quinnipiac", "foxnews", "emerson"],
+    "demographic_groups": ["party", "age", "gender", "race", "education", "region"]
+  }
+}
+```
+
+**Chart types returned:**
+
+| Chart | Description | Use Case |
+|-------|-------------|----------|
+| `approval_trend` | Raw time-series of approve/disapprove per pollster | Line charts, scatter plots |
+| `rolling_average` | 7-point moving average smoothing noise | Trend line charts |
+| `source_comparison` | Latest result per pollster (deduped) | Bar charts, dot plots |
+| `demographic_breakdowns` | Averaged crosstabs by group type | Horizontal bar charts, heatmaps |
+| `methodology_breakdown` | Count of polls by methodology | Pie/donut charts |
+
+```bash
+curl -H "X-API-Key: KEY" "https://.../public-api/polling-charts?poll_type=approval&topic=Trump+Approval"
+```
+
+---
+
+### 7. `/prediction-markets` — Prediction Market Data
+
+Real-time prediction market odds from Polymarket, Kalshi, Metaculus, Manifold Markets, and PredictIt.
+
+| Parameter | Description |
+|-----------|-------------|
+| `state` | Filter by state abbreviation |
+| `search` | Search by market title or candidate name |
+| `category` | Filter by category: `president`, `senate`, `house`, `governor`, `general` |
+| `source` | Filter by platform: `polymarket`, `kalshi`, `metaculus`, `manifold`, `predictit` |
+
+**Selected Fields**: `id, market_id, source, title, category, state_abbr, district, candidate_name, yes_price, no_price, volume, liquidity, last_traded_at, market_url, status, updated_at`
+
+```bash
+curl -H "X-API-Key: KEY" "https://.../public-api/prediction-markets?category=senate&source=polymarket&limit=20"
+```
+
+---
+
+### 8. `/prediction-markets-charts` — Prediction Market Chart Data (Pre-Aggregated)
+
+Returns pre-computed chart-ready data for rendering prediction market visualizations. Aggregates data across all active markets server-side.
+
+**No query parameters** — returns aggregated data across all active markets.
+
+**Response Structure:**
+```json
+{
+  "charts": {
+    "source_breakdown": {
+      "description": "Market count, avg probability, and total volume per platform",
+      "data": [
+        { "source": "polymarket", "count": 50, "avg_probability": 48.2, "total_volume": 12500000 }
+      ]
+    },
+    "category_breakdown": {
+      "description": "Market count and volume per category",
+      "data": [
+        { "category": "president", "count": 85, "total_volume": 45000000 }
+      ]
+    },
+    "probability_distribution": {
+      "description": "Number of markets in each 10% probability bucket",
+      "data": [
+        { "range": "0-10%", "count": 45 },
+        { "range": "10-20%", "count": 32 }
+      ]
+    },
+    "top_by_probability": {
+      "description": "Top 15 markets by YES probability",
+      "data": [
+        { "title": "Will Trump win 2028?", "source": "polymarket", "probability": 95.2, "volume": 5000000, "category": "president" }
+      ]
+    },
+    "top_by_volume": {
+      "description": "Top 15 markets by trading volume",
+      "data": [...]
+    },
+    "cross_source_comparison": {
+      "description": "Markets listed on multiple platforms with price spreads (arbitrage opportunities)",
+      "data": [
+        { "market": "trump wins 2028", "sources": { "polymarket": 52.3, "kalshi": 48.1 }, "spread": 4.2 }
+      ]
+    },
+    "state_heatmap": {
+      "description": "Market coverage and avg probability per state",
+      "data": [
+        { "state": "PA", "count": 12, "avg_probability": 51.3 }
+      ]
+    },
+    "extremes": {
+      "description": "Highest and lowest probability markets",
+      "data": {
+        "highest": [ { "title": "...", "source": "kalshi", "probability": 98.5 } ],
+        "lowest": [ { "title": "...", "source": "manifold", "probability": 1.2 } ]
+      }
+    },
+    "scatter": {
+      "description": "Volume vs probability for all markets (for scatter plots)",
+      "data": [
+        { "probability": 52.3, "volume": 1200000, "source": "polymarket", "liquidity": 450000 }
+      ]
+    }
+  },
+  "meta": {
+    "total_markets": 748,
+    "total_sources": 5,
+    "sources": ["polymarket", "kalshi", "metaculus", "manifold", "predictit"],
+    "categories": ["president", "senate", "house", "governor", "general"]
+  }
+}
+```
+
+**Chart types returned:**
+
+| Chart | Description | Visualization Type |
+|-------|-------------|-------------------|
+| `source_breakdown` | Market count + avg prob + volume per platform | Stacked bars, radar |
+| `category_breakdown` | Market count + volume per race category | Pie/donut, bars |
+| `probability_distribution` | Markets bucketed by 10% probability ranges | Histogram |
+| `top_by_probability` | 15 highest-probability markets | Horizontal bar chart |
+| `top_by_volume` | 15 highest-volume markets | Horizontal bar chart |
+| `cross_source_comparison` | Same-market prices across platforms (arbitrage) | Grouped bar chart |
+| `state_heatmap` | State-level market density + avg probability | Choropleth, tile grid |
+| `extremes` | Top 5 highest + lowest probability markets | Diverging bar chart |
+| `scatter` | Every market as (probability, volume, source) | Scatter plot |
+
+```bash
+curl -H "X-API-Key: KEY" "https://.../public-api/prediction-markets-charts"
+```
+
+---
+
+### 9. `/maga-files` — MAGA Files
 
 Vetting reports on Trump administration executive branch appointees. (In the web UI, MAGA Files are accessed as a subsection of Candidate Profiles.)
 
@@ -255,7 +446,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/maga-files?search=hegseth"
 
 ---
 
-### 7. `/narrative-reports` — Narrative Reports
+### 10. `/narrative-reports` — Narrative Reports
 
 Issue-based policy reports synthesizing Trump administration impacts (housing, healthcare, education, etc.).
 
@@ -271,7 +462,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/narrative-reports"
 
 ---
 
-### 8. `/local-impacts` — Local Impact Reports
+### 11. `/local-impacts` — Local Impact Reports
 
 State-specific analyses of federal policy impacts across all 50 states.
 
@@ -288,7 +479,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/local-impacts?state=OH"
 
 ---
 
-### 9. `/voter-registration-stats` — Voter Registration Statistics
+### 12. `/voter-registration-stats` — Voter Registration Statistics
 
 State-level voter registration data including total registered, eligible voters, registration rates, and 2024 general election turnout.
 
@@ -305,7 +496,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/voter-registration-stats?state=
 
 ---
 
-### 10. `/congress-members` — Congress Members
+### 13. `/congress-members` — Congress Members
 
 Current members of Congress from Congress.gov with party, state, district, chamber, and biographical data.
 
@@ -323,7 +514,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/congress-members?state=CA&chamb
 
 ---
 
-### 11. `/congress-bills` — Federal Legislation
+### 14. `/congress-bills` — Federal Legislation
 
 Federal bills and resolutions with sponsors, status, policy areas, and action history.
 
@@ -341,7 +532,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/congress-bills?search=veterans&
 
 ---
 
-### 12. `/campaign-finance` — Federal Campaign Finance
+### 15. `/campaign-finance` — Federal Campaign Finance
 
 FEC campaign finance filings with fundraising totals, donor composition, and spending data.
 
@@ -360,7 +551,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/campaign-finance?state=IA&offic
 
 ---
 
-### 13. `/election-forecasts` — Election Forecasts & Race Ratings
+### 16. `/election-forecasts` — Election Forecasts & Race Ratings
 
 Race ratings from Cook Political Report, Sabato's Crystal Ball, Inside Elections, and other forecasters.
 
@@ -380,7 +571,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/election-forecasts?race_type=ho
 
 ---
 
-### 14. `/congressional-elections` — Congressional Election Results
+### 17. `/congressional-elections` — Congressional Election Results
 
 Historical U.S. House and Senate election results with vote counts, percentages, and winner/incumbent flags.
 
@@ -399,7 +590,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/congressional-elections?state=P
 
 ---
 
-### 15. `/state-finance` — State Campaign Finance
+### 18. `/state-finance` — State Campaign Finance
 
 State-level campaign finance data from Campaign Finance Board filings across all states.
 
@@ -417,7 +608,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/state-finance?state=PA&chamber=
 
 ---
 
-### 16. `/mn-finance` — Minnesota Campaign Finance
+### 19. `/mn-finance` — Minnesota Campaign Finance
 
 Minnesota Campaign Finance Board (CFB) candidate data with detailed contribution and expenditure breakdowns.
 
@@ -434,7 +625,7 @@ curl -H "X-API-Key: KEY" "https://.../public-api/mn-finance?search=walz"
 
 ---
 
-### 17. `/search` — Unified Master Search
+### 20. `/search` — Unified Master Search
 
 Searches across **13 categories** simultaneously. This mirrors the web application's Master Search functionality.
 
