@@ -591,7 +591,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
               onKeyDown={handleKeyDown}
               className="win98-input w-full pl-7 pr-7"
               ref={inputRef}
-              placeholder="Search candidates, districts, bills, finance, polling, elections..."
+              placeholder="Search candidates, districts, bills, finance, polling, markets, state leg, elections..."
               maxLength={500}
             />
             {query && (
@@ -624,7 +624,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           </button>
         </div>
         <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
-          Type to see instant results • Press Enter or click "Search All" to query databases • ⭐ Bookmark to save
+          Type to see instant results — database search auto-triggers after 400ms • ⭐ Bookmark to save
+        </p>
         </p>
       </div>
 
