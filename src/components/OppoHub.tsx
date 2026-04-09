@@ -3,7 +3,7 @@ import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
 import { GenericCard } from "@/components/GenericCard";
 import { GenericDetail } from "@/components/GenericDetail";
-import { type Candidate, searchCandidates, getCandidateBySlug, getCandidatesByCategory } from "@/data/candidates";
+import { type Candidate, searchCandidates, getCandidateBySlug, getCandidatesByCategory, candidates } from "@/data/candidates";
 import { type MagaFile, searchMagaFiles, magaFiles } from "@/data/magaFiles";
 import { localImpactReports, searchLocalImpact, getLocalImpactBySlug, type LocalImpactReport } from "@/data/localImpact";
 import { narrativeReports, searchNarrativeReports, type NarrativeReport } from "@/data/narrativeReports";
@@ -45,7 +45,7 @@ export function OppoHub({
   const [candidateSub, setCandidateSub] = useState<"profiles" | "maga-files">("profiles");
 
   const filteredCandidates = (() => {
-    let results = search ? searchCandidates(search) : [...([] as Candidate[])];
+    let results = search ? searchCandidates(search) : [...candidates];
     if (filter !== "all") results = results.filter(c => c.category === filter);
     return results;
   })();
