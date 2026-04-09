@@ -252,6 +252,18 @@ export default function Index() {
     if (narrativeMatch) { setSection("oppohub"); setSelectedSlug(narrativeMatch.slug); return true; }
     const districtMatch = districts.find(d => d.district_id.toLowerCase() === slug);
     if (districtMatch) { setSection("district-intel"); setSelectedSlug(districtMatch.district_id); return true; }
+
+    // Check if this is a subpage slug — find its parent candidate
+    const parentCandidate = candidates.find(c => {
+      // Check if any known candidate has a subpage link containing this slug
+      return c.content.toLowerCase().includes(`/${slug}`) || c.content.toLowerCase().includes(`/${c.slug}/${slug}`);
+    });
+    if (parentCandidate) {
+      setSection("oppohub");
+      setSelectedSlug(parentCandidate.slug);
+      return true;
+    }
+
     return false;
   }, [districts]);
 

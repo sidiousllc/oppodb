@@ -21,6 +21,7 @@ interface ContentItem {
   slug: string;
   content: string;
   summary?: string;
+  tags?: string[];
 }
 
 export default function AdminPanel() {
@@ -743,7 +744,7 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
   useEffect(() => { load(); }, [load]);
 
   const handleSave = async (item: ContentItem) => {
-    const record: any = { slug: item.slug, content: item.content };
+    const record: any = { slug: item.slug, content: item.content, tags: item.tags || [] };
     if (hasState) { record.state = item.state || item.name; if (hasSummary) record.summary = item.summary || ""; }
     else { record.name = item.name; }
     try {
@@ -769,7 +770,7 @@ function ContentTab({ table, nameField, hasState, hasSummary }: { table: string;
   if (loading) return <div className="text-center py-8 text-[10px]">Loading...</div>;
 
   if (editing || creating) {
-    return <ContentEditor item={editing || { id: "", name: "", state: "", slug: "", content: "", summary: "" }} nameLabel={hasState ? "State" : "Name"} hasState={hasState} hasSummary={hasSummary} onSave={handleSave} onCancel={() => { setEditing(null); setCreating(false); }} />;
+    return <ContentEditor item={editing || { id: "", name: "", state: "", slug: "", content: "", summary: "", tags: [] }} nameLabel={hasState ? "State" : "Name"} hasState={hasState} hasSummary={hasSummary} onSave={handleSave} onCancel={() => { setEditing(null); setCreating(false); }} />;
   }
 
   return (
@@ -791,7 +792,7 @@ function ContentList({ items, onEdit, onDelete, nameField }: { items: ContentIte
         <div key={item.id} className="flex items-center justify-between px-2 py-1.5 border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] text-[10px]">
           <div className="min-w-0">
             <div className="font-bold truncate">{(item as any)[nameField] || item.slug}</div>
-            <div className="text-[9px] text-[hsl(var(--muted-foreground))] truncate">/{item.slug} · {item.content.length} chars</div>
+            <div className="text-[9px] text-[hsl(var(--muted-foreground))] truncate">/{item.slug} · {item.content.length} chars{item.tags && item.tags.length > 0 ? ` · ${item.tags.join(", ")}` : ""}</div>
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
             <button onClick={() => onEdit(item)} className="win98-button px-1 py-0 text-[9px]"><Edit3 className="h-2.5 w-2.5" /></button>
@@ -809,7 +810,7 @@ function ContentList({ items, onEdit, onDelete, nameField }: { items: ContentIte
 function ContentEditor({ item, nameLabel, hasState, hasSummary, onSave, onCancel }: {
   item: ContentItem; nameLabel: string; hasState?: boolean; hasSummary?: boolean; onSave: (item: ContentItem) => void; onCancel: () => void;
 }) {
-  const [form, setForm] = useState({ ...item });
+  const [form, setForm] = useState({ ...item, tagsText: item.tags?.join(", ") || "" });
   const isNew = !item.id;
 
   return (
@@ -831,6 +832,10 @@ function ContentEditor({ item, nameLabel, hasState, hasSummary, onSave, onCancel
             <input value={form.slug} onChange={(e) => setForm(f => ({ ...f, slug: e.target.value }))} className="win98-input w-full" placeholder="url-slug" />
           </div>
         </div>
+        <div>
+          <label className="block text-[10px] font-bold mb-1">Tags (comma-separated):</label>
+          <input value={form.tagsText} onChange={(e) => setForm(f => ({ ...f, tagsText: e.target.value }))} className="win98-input w-full" placeholder="Republican, Healthcare, Economy" />
+        </div>
         {hasSummary && (
           <div>
             <label className="block text-[10px] font-bold mb-1">Summary:</label>
@@ -843,7 +848,7 @@ function ContentEditor({ item, nameLabel, hasState, hasSummary, onSave, onCancel
             className="win98-input w-full font-[monospace] text-[10px]" placeholder="# Title..." />
         </div>
         <div className="flex gap-2 pt-1">
-          <button onClick={() => onSave(form)} className="win98-button text-[10px] font-bold">
+          <button onClick={() => onSave({ ...form, tags: form.tagsText.split(",").map(s => s.trim()).filter(Boolean) })} className="win98-button text-[10px] font-bold">
             <Save className="h-3 w-3 inline mr-1" />{isNew ? "Create" : "Save"}
           </button>
           <button onClick={onCancel} className="win98-button text-[10px]">Cancel</button>

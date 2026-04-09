@@ -221,6 +221,7 @@ export type Database = {
           parent_slug: string | null
           slug: string
           subpage_title: string | null
+          tags: string[]
           updated_at: string
         }
         Insert: {
@@ -235,6 +236,7 @@ export type Database = {
           parent_slug?: string | null
           slug: string
           subpage_title?: string | null
+          tags?: string[]
           updated_at?: string
         }
         Update: {
@@ -249,6 +251,7 @@ export type Database = {
           parent_slug?: string | null
           slug?: string
           subpage_title?: string | null
+          tags?: string[]
           updated_at?: string
         }
         Relationships: []
@@ -906,6 +909,7 @@ export type Database = {
           slug: string
           state: string
           summary: string
+          tags: string[]
           updated_at: string
         }
         Insert: {
@@ -915,6 +919,7 @@ export type Database = {
           slug: string
           state: string
           summary?: string
+          tags?: string[]
           updated_at?: string
         }
         Update: {
@@ -924,6 +929,7 @@ export type Database = {
           slug?: string
           state?: string
           summary?: string
+          tags?: string[]
           updated_at?: string
         }
         Relationships: []
@@ -935,6 +941,7 @@ export type Database = {
           id: string
           name: string
           slug: string
+          tags: string[]
           updated_at: string
         }
         Insert: {
@@ -943,6 +950,7 @@ export type Database = {
           id?: string
           name: string
           slug: string
+          tags?: string[]
           updated_at?: string
         }
         Update: {
@@ -951,6 +959,7 @@ export type Database = {
           id?: string
           name?: string
           slug?: string
+          tags?: string[]
           updated_at?: string
         }
         Relationships: []
@@ -1142,6 +1151,7 @@ export type Database = {
           id: string
           name: string
           slug: string
+          tags: string[]
           updated_at: string
         }
         Insert: {
@@ -1150,6 +1160,7 @@ export type Database = {
           id?: string
           name: string
           slug: string
+          tags?: string[]
           updated_at?: string
         }
         Update: {
@@ -1158,6 +1169,7 @@ export type Database = {
           id?: string
           name?: string
           slug?: string
+          tags?: string[]
           updated_at?: string
         }
         Relationships: []

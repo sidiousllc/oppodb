@@ -5,7 +5,7 @@ import { fetchSubpages, type GitHubCandidate } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, User, FileText, ChevronRight, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver";
+import { extractInternalLink, extractInternalSlug, isInternalHost } from "@/lib/researchLinkResolver";
 import { VersionHistory } from "@/components/VersionHistory";
 import { exportContentPDF } from "@/lib/contentExport";
 import { CampaignFinancePanel } from "@/components/CampaignFinancePanel";
@@ -40,10 +40,11 @@ function MarkdownContent({
   onNavigateSlug?: (slug: string) => boolean;
 }) {
   const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>, href: string | undefined, matchSlug: string | null) => {
+    (e: React.MouseEvent<HTMLAnchorElement>, href: string | undefined, matchSlug: string | null, parentSlug: string | null) => {
       if (!matchSlug) return;
       e.preventDefault();
 
+      // Try to match a subpage first
       const match = subpages.find(
         (sp) =>
           sp.slug === matchSlug ||
@@ -56,7 +57,24 @@ function MarkdownContent({
         return;
       }
 
+      // If the link had a parent slug (e.g. /andy-ogles/health-care), try parent + child
+      if (parentSlug) {
+        const parentMatch = subpages.find(
+          (sp) =>
+            sp.slug.includes(parentSlug) && sp.slug.includes(matchSlug)
+        );
+        if (parentMatch) {
+          onNavigateSubpage(parentMatch);
+          return;
+        }
+      }
+
+      // Try top-level navigation
       const handled = onNavigateSlug?.(matchSlug) ?? false;
+      if (!handled && parentSlug) {
+        // Try navigating to the parent slug instead
+        onNavigateSlug?.(parentSlug);
+      }
       if (!handled && href && !isInternalHost(href) && (href.startsWith("http://") || href.startsWith("https://"))) {
         window.open(href, "_blank", "noopener,noreferrer");
       }
@@ -68,13 +86,13 @@ function MarkdownContent({
     <ReactMarkdown
       components={{
         a: ({ href, children }) => {
-          const matchSlug = extractInternalSlug(href);
+          const link = extractInternalLink(href);
 
-          if (matchSlug) {
+          if (link) {
             return (
               <a
                 href={href ?? "#"}
-                onClick={(e) => handleClick(e, href, matchSlug)}
+                onClick={(e) => handleClick(e, href, link.slug, link.parentSlug)}
                 className="text-primary hover:underline cursor-pointer"
               >
                 {children}
