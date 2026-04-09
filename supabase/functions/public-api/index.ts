@@ -18,6 +18,7 @@ const VALID_ENDPOINTS = [
   "maga-files",
   "narrative-reports",
   "local-impacts",
+  "messaging-guidance",
   "voter-registration-stats",
   "congress-members",
   "congress-bills",
@@ -491,6 +492,21 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "messaging-guidance": {
+        let q = supabase
+          .from("messaging_guidance")
+          .select("id,title,slug,source,source_url,author,published_date,summary,content,issue_areas,research_type,created_at,updated_at", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("published_date", { ascending: false });
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,summary.ilike.%${searchQuery}%`);
+        const issueArea = url.searchParams.get("issue_area");
+        if (issueArea) q = q.contains("issue_areas", [issueArea]);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
       case "voter-registration-stats": {
         let q = supabase
           .from("state_voter_stats")
@@ -639,7 +655,7 @@ Deno.serve(async (req) => {
           "campaign_finance", "state_finance", "election_results",
           "forecasts", "maga_files", "narrative_reports",
           "local_impacts", "voter_stats", "mn_finance",
-          "prediction_markets",
+          "prediction_markets", "messaging_guidance",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
@@ -740,6 +756,13 @@ Deno.serve(async (req) => {
             .order("volume", { ascending: false }).limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "Prediction Markets" }));
         }
+        if (activeCategories.includes("messaging_guidance")) {
+          categoryQueries.messaging_guidance = supabase.from("messaging_guidance")
+            .select("id,title,slug,source,author,published_date,summary,issue_areas")
+            .or(`title.ilike.${likeQ},summary.ilike.${likeQ},author.ilike.${likeQ}`)
+            .order("published_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Messaging Guidance" }));
+        }
 
         const entries = Object.entries(categoryQueries);
         const settled = await Promise.all(entries.map(async ([key, promise]) => {
@@ -824,6 +847,7 @@ function endpointDescription(endpoint: string): string {
     "maga-files": "MAGA-related research files",
     "narrative-reports": "Narrative research reports",
     "local-impacts": "Local impact analyses by state",
+    "messaging-guidance": "Polling-based messaging guidance from Navigator Research and other sources (supports ?issue_area= filter)",
     "voter-registration-stats": "State voter registration statistics with registration rates and turnout data",
     "congress-members": "Current Congress members with party, state, district, and committee data",
     "congress-bills": "Federal legislation with sponsors, status, and policy areas",

@@ -36,7 +36,7 @@ function saveToStorage(key: string, items: string[]) {
   localStorage.setItem(key, JSON.stringify(items));
 }
 
-const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [] };
+const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [] };
 
 
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
@@ -60,7 +60,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     stateLeg: any[];
     mitElections: any[];
     trackedBills: any[];
-  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [] });
+    messagingGuidance: any[];
+  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [] });
   const [hasSearched, setHasSearched] = useState(false);
 
   // Ctrl+K shortcut to focus search
@@ -91,7 +92,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         key: "candidates",
         label: "Candidate Profiles",
         icon: <User className="h-3.5 w-3.5" />,
-        section: "candidates",
+        section: "oppohub",
         results: cands.map(c => ({
           id: c.slug,
           title: c.name,
@@ -123,7 +124,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         key: "maga",
         label: "MAGA Files",
         icon: <AlertTriangle className="h-3.5 w-3.5" />,
-        section: "maga-files",
+        section: "oppohub",
         results: maga.map(m => ({ id: m.slug, title: m.name, slug: m.slug })),
       });
     }
@@ -134,7 +135,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         key: "local",
         label: "Local Impact Reports",
         icon: <Globe className="h-3.5 w-3.5" />,
-        section: "local-impact",
+        section: "oppohub",
         results: local.map(r => ({
           id: r.slug,
           title: r.state,
@@ -150,7 +151,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         key: "narratives",
         label: "Narrative Reports",
         icon: <FileText className="h-3.5 w-3.5" />,
-        section: "narratives",
+        section: "oppohub",
         results: narr.map(n => ({ id: n.slug, title: n.name, slug: n.slug })),
       });
     }
@@ -194,7 +195,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -260,6 +261,11 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},state.ilike.${likeQ}`)
         .order("last_action_date", { ascending: false })
         .limit(10),
+      supabase.from("messaging_guidance")
+        .select("id, title, slug, source, author, published_date, summary, issue_areas")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},author.ilike.${likeQ}`)
+        .order("published_date", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
@@ -277,6 +283,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       stateLeg: stateLegRes.data || [],
       mitElections: mitElRes.data || [],
       trackedBills: trackedBillsRes.data || [],
+      messagingGuidance: messagingRes.data || [],
     });
     setIsSearching(false);
 
@@ -540,6 +547,21 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           id: b.id,
           title: `${b.bill_number} — ${b.title}`,
           subtitle: `${b.state} • ${b.status_desc || ""} • ${b.last_action_date || ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.messagingGuidance.length > 0) {
+      groups.push({
+        key: "messaging-guidance",
+        label: "📢 Messaging Guidance",
+        icon: <FileText className="h-3.5 w-3.5" />,
+        section: "messaging",
+        results: dbResults.messagingGuidance.map((g: any) => ({
+          id: g.id,
+          title: g.title,
+          subtitle: `${g.source || "Navigator Research"} • ${g.author || ""} • ${g.published_date || ""}${g.issue_areas?.length ? ` • ${g.issue_areas.join(", ")}` : ""}`,
+          slug: g.slug,
         })),
       });
     }

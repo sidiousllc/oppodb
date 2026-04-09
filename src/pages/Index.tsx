@@ -487,6 +487,9 @@ export default function Index() {
       return <PollingSection />;
     }
 
+    if (section === "messaging") {
+      return <MessagingHub />;
+    }
 
     if (section === "research-tools") {
       if (researchSubsection === "voter-data") {
