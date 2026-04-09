@@ -19,6 +19,7 @@ The Admin Panel provides administrative oversight and management capabilities fo
 | MAGA Files | ✓ | ✓ |
 | Local Impact | ✓ | ✓ |
 | Narratives | ✓ | ✓ |
+| Messaging Guidance | ✓ | ✓ |
 
 ### Access Denied Page
 Users without admin/moderator privileges see an "Access Denied" screen with:

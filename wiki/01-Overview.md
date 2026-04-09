@@ -33,16 +33,18 @@ src/
 │   ├── ResetPassword.tsx     # Password reset flow
 │   └── UnsubscribePage.tsx   # Email unsubscribe
 ├── components/               # Reusable UI components
-│   ├── Win98*.tsx            # Windows 98 chrome components
-│   ├── AOL*.tsx              # AOL browser chrome components
-│   ├── Candidate*.tsx        # Candidate-related components
-│   ├── District*.tsx         # District-related components
-│   ├── PollingSection.tsx    # DataHub (polling, prediction markets, campaign finance)
-│   ├── PollDetailWindow.tsx # Deep-dive poll analysis modal
-│   ├── MarketDetailWindow.tsx # Prediction market detail modal
-│   ├── MasterSearch.tsx     # Unified search across 14+ data sources
-│   ├── LegHub.tsx           # Legislative hub (State Leg + Legislation tabs)
-│   ├── DocumentationSection  # In-app wiki reader (18 pages)
+ │   ├── Win98*.tsx            # Windows 98 chrome components
+ │   ├── AOL*.tsx              # AOL browser chrome components
+ │   ├── Candidate*.tsx        # Candidate-related components
+ │   ├── District*.tsx         # District-related components
+ │   ├── OppoHub.tsx          # Opposition research hub (Candidates + Local Impact + Narratives)
+ │   ├── MessagingHub.tsx     # Messaging guidance section (Navigator Research)
+ │   ├── PollingSection.tsx    # DataHub (polling, prediction markets, campaign finance)
+ │   ├── PollDetailWindow.tsx # Deep-dive poll analysis modal
+ │   ├── MarketDetailWindow.tsx # Prediction market detail modal
+ │   ├── MasterSearch.tsx     # Unified search across 14+ data sources
+ │   ├── LegHub.tsx           # Legislative hub (State Leg + Legislation tabs)
+ │   ├── DocumentationSection  # In-app wiki reader (20 pages)
 │   ├── AccessControlTab.tsx  # Admin invite/request management
 │   ├── ChatPanel.tsx         # Real-time chat
 │   └── ...
@@ -148,6 +150,8 @@ supabase/
 - `election_forecasts` — Multi-source election forecasts
 - `election_forecast_history` — Forecast rating change tracking
 - `state_voter_stats` — State-level voter registration statistics (registered, eligible, turnout)
+- `messaging_guidance` — Polling-based messaging guidance (Navigator Research, etc.)
+- `prediction_markets` — Prediction market data (Polymarket, Kalshi, PredictIt, Manifold, Metaculus)
 - `maga_files` — Trump administration appointee files
 - `narrative_reports` — Thematic narrative reports
 - `local_impacts` — State-level local impact reports
@@ -164,6 +168,8 @@ supabase/
 - `user_presence` — Online/offline status for buddy list
 - `chat_messages` — Real-time instant messaging
 - `user_integrations` — Third-party API key vault (encrypted)
+- `user_market_credentials` — Prediction market API keys (AES-256-GCM encrypted)
+- `trade_history` — Prediction market trade audit log
 - `winred_donations` — WinRed donation webhook data
 - `sync_metadata` — GitHub sync state tracking
 - `suppressed_emails` — Email bounce/complaint suppression list
