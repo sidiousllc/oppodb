@@ -45,7 +45,7 @@ export function OppoHub({
   const [candidateSub, setCandidateSub] = useState<"profiles" | "maga-files">("profiles");
 
   const filteredCandidates = (() => {
-    let results = search ? searchCandidates(search) : [...(getCandidatesByCategory("all") || [])];
+    let results = search ? searchCandidates(search) : [...([] as Candidate[])];
     if (filter !== "all") results = results.filter(c => c.category === filter);
     return results;
   })();
