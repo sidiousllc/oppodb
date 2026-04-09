@@ -10,11 +10,11 @@ interface MobileNavProps {
 }
 
 const sectionItems: Array<{ id: Section; label: string }> = [
-  { id: "candidates", label: "Candidates" },
-  { id: "local-impact", label: "Local Impact" },
-  { id: "local-impact", label: "Local Impact" },
-  { id: "narratives", label: "Narratives" },
+  { id: "oppohub", label: "OppoHub" },
   { id: "district-intel", label: "District Intel" },
+  { id: "leghub", label: "LegHub" },
+  { id: "polling", label: "DataHub" },
+  { id: "messaging", label: "Messaging" },
   { id: "documentation", label: "Docs" },
 ];
 
@@ -43,7 +43,7 @@ export const MobileNav = forwardRef<HTMLDivElement, MobileNavProps>(
             </button>
           ))}
         </div>
-        {activeSection === "candidates" && (
+        {activeSection === "oppohub" && (
           <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
             {filters.map(f => (
               <button
