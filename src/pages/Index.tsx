@@ -281,13 +281,11 @@ export default function Index() {
 
   const sectionCounts = useMemo(() => ({
     dashboard: 0,
-    candidates: candidates.length,
-    "local-impact": localImpactReports.length,
-    narratives: narrativeReports.length,
+    oppohub: candidates.length + localImpactReports.length + narrativeReports.length,
     "district-intel": districts.length,
     leghub: stateLegDistricts.length,
     polling: pollingCount,
-    
+    messaging: 0,
     "research-tools": 0,
     "live-elections": 0,
     documentation: 18,
@@ -303,13 +301,11 @@ export default function Index() {
 
   const sectionLabels: Record<Section, string> = {
     dashboard: "Dashboard",
-    candidates: "Candidate Profiles",
-    "local-impact": "Local Impact by State",
-    narratives: "Narrative Reports",
+    oppohub: "OppoHub",
     "district-intel": "District Intelligence",
     leghub: "LegHub",
     polling: "DataHub",
-    
+    messaging: "MessagingHub",
     "research-tools": "Research Tools",
     "live-elections": "Live Elections",
     documentation: "Documentation",
