@@ -243,13 +243,13 @@ export default function Index() {
     const slug = rawSlug.trim().toLowerCase();
     if (!slug) return false;
     const candidateMatch = getCandidateBySlug(slug);
-    if (candidateMatch) { setSection("candidates"); setSelectedSlug(candidateMatch.slug); return true; }
+    if (candidateMatch) { setSection("oppohub"); setSelectedSlug(candidateMatch.slug); return true; }
     const magaMatch = magaFiles.find(m => m.slug.toLowerCase() === slug);
-    if (magaMatch) { setSection("candidates"); setCandidateSubsection("maga-files"); setSelectedSlug(magaMatch.slug); return true; }
+    if (magaMatch) { setSection("oppohub"); setSelectedSlug(magaMatch.slug); return true; }
     const localMatch = getLocalImpactBySlug(slug);
-    if (localMatch) { setSection("local-impact"); setSelectedSlug(localMatch.slug); return true; }
+    if (localMatch) { setSection("oppohub"); setSelectedSlug(localMatch.slug); return true; }
     const narrativeMatch = narrativeReports.find(n => n.slug.toLowerCase() === slug);
-    if (narrativeMatch) { setSection("narratives"); setSelectedSlug(narrativeMatch.slug); return true; }
+    if (narrativeMatch) { setSection("oppohub"); setSelectedSlug(narrativeMatch.slug); return true; }
     const districtMatch = districts.find(d => d.district_id.toLowerCase() === slug);
     if (districtMatch) { setSection("district-intel"); setSelectedSlug(districtMatch.district_id); return true; }
     return false;
