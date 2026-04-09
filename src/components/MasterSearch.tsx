@@ -551,6 +551,21 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    if (dbResults.messagingGuidance.length > 0) {
+      groups.push({
+        key: "messaging-guidance",
+        label: "📢 Messaging Guidance",
+        icon: <FileText className="h-3.5 w-3.5" />,
+        section: "messaging",
+        results: dbResults.messagingGuidance.map((g: any) => ({
+          id: g.id,
+          title: g.title,
+          subtitle: `${g.source || "Navigator Research"} • ${g.author || ""} • ${g.published_date || ""}${g.issue_areas?.length ? ` • ${g.issue_areas.join(", ")}` : ""}`,
+          slug: g.slug,
+        })),
+      });
+    }
+
     return groups;
   }, [dbResults]);
 
