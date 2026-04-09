@@ -732,6 +732,14 @@ Deno.serve(async (req) => {
             .order("total_contributions", { ascending: false }).limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "MN Campaign Finance" }));
         }
+        if (activeCategories.includes("prediction_markets")) {
+          categoryQueries.prediction_markets = supabase.from("prediction_markets")
+            .select("id,title,source,category,yes_price,volume,state_abbr,candidate_name,status")
+            .eq("status", "active")
+            .or(`title.ilike.${likeQ},candidate_name.ilike.${likeQ}`)
+            .order("volume", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Prediction Markets" }));
+        }
 
         const entries = Object.entries(categoryQueries);
         const settled = await Promise.all(entries.map(async ([key, promise]) => {
