@@ -421,7 +421,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         key: "legislation",
         label: "Legislation",
         icon: <Scale className="h-3.5 w-3.5" />,
-        section: "legislation",
+        section: "leghub",
         results: dbResults.bills.map((b: any) => ({
           id: b.id,
           title: b.short_title || b.title,
