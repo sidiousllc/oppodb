@@ -38,7 +38,7 @@ src/
 │   ├── Candidate*.tsx        # Candidate-related components
 │   ├── District*.tsx         # District-related components
 │   ├── PollingSection.tsx    # DataHub (polling, prediction markets, campaign finance)
-│   ├── CampaignFinanceSection # Campaign finance (DataHub tab)
+│   ├── LegHub.tsx              # Legislative hub (State Leg + Legislation tabs)
 │   ├── DocumentationSection  # In-app wiki reader
 │   ├── AccessControlTab.tsx  # Admin invite/request management
 │   ├── ChatPanel.tsx         # Real-time chat
