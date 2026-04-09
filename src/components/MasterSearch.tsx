@@ -478,6 +478,63 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    if (dbResults.predictionMarkets.length > 0) {
+      groups.push({
+        key: "prediction-markets",
+        label: "Prediction Markets",
+        icon: <TrendingUp className="h-3.5 w-3.5" />,
+        section: "polling",
+        results: dbResults.predictionMarkets.map((m: any) => ({
+          id: m.id,
+          title: m.title,
+          subtitle: `${m.source} • Yes: ${m.yes_price != null ? `${(m.yes_price * 100).toFixed(0)}¢` : "N/A"} • Vol: $${(m.volume || 0).toLocaleString()}${m.state_abbr ? ` • ${m.state_abbr}` : ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.stateLeg.length > 0) {
+      groups.push({
+        key: "state-legislative",
+        label: "State Legislative Districts",
+        icon: <Building2 className="h-3.5 w-3.5" />,
+        section: "leghub",
+        results: dbResults.stateLeg.map((d: any) => ({
+          id: d.id,
+          title: d.district_id,
+          subtitle: `${d.state || d.state_abbr} • ${d.chamber} • Pop: ${(d.population || 0).toLocaleString()} • Income: $${(d.median_income || 0).toLocaleString()}`,
+          slug: d.district_id,
+        })),
+      });
+    }
+
+    if (dbResults.mitElections.length > 0) {
+      groups.push({
+        key: "mit-elections",
+        label: "MIT Election History",
+        icon: <History className="h-3.5 w-3.5" />,
+        section: "live-elections",
+        results: dbResults.mitElections.map((e: any) => ({
+          id: e.id,
+          title: e.candidate,
+          subtitle: `${e.state_po} • ${e.office} • ${e.year} • ${e.party || ""} • ${(e.candidatevotes || 0).toLocaleString()} votes`,
+        })),
+      });
+    }
+
+    if (dbResults.trackedBills.length > 0) {
+      groups.push({
+        key: "tracked-bills",
+        label: "Tracked Bills (LegHub)",
+        icon: <Scale className="h-3.5 w-3.5" />,
+        section: "leghub",
+        results: dbResults.trackedBills.map((b: any) => ({
+          id: b.id,
+          title: `${b.bill_number} — ${b.title}`,
+          subtitle: `${b.state} • ${b.status_desc || ""} • ${b.last_action_date || ""}`,
+        })),
+      });
+    }
+
     return groups;
   }, [dbResults]);
 
