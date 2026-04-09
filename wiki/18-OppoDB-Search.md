@@ -133,6 +133,7 @@ interface DbResults {
   stateLeg: any[];
   mitElections: any[];
   trackedBills: any[];
+  messagingGuidance: any[];
 }
 ```
 
