@@ -631,6 +631,27 @@ export type Database = {
         }
         Relationships: []
       }
+      district_news_cache: {
+        Row: {
+          articles: Json
+          fetched_at: string
+          id: string
+          member_name: string
+        }
+        Insert: {
+          articles?: Json
+          fetched_at?: string
+          id?: string
+          member_name: string
+        }
+        Update: {
+          articles?: Json
+          fetched_at?: string
+          id?: string
+          member_name?: string
+        }
+        Relationships: []
+      }
       district_profiles: {
         Row: {
           asian_pct: number | null

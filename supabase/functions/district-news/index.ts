@@ -1,7 +1,11 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -17,7 +21,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Sanitise: only allow letters, spaces, hyphens, apostrophes, periods
     const safe = memberName.replace(/[^a-zA-Z\s\-'.]/g, "").trim();
     if (!safe) {
       return new Response(
@@ -26,6 +29,28 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check cache first
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sb = createClient(supabaseUrl, serviceRoleKey);
+
+    const { data: cached } = await sb
+      .from("district_news_cache")
+      .select("articles, fetched_at")
+      .eq("member_name", safe)
+      .maybeSingle();
+
+    if (cached) {
+      const age = Date.now() - new Date(cached.fetched_at).getTime();
+      if (age < CACHE_TTL_MS) {
+        return new Response(
+          JSON.stringify({ articles: cached.articles, memberName: safe, cached: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Fetch fresh from Google News RSS
     const query = encodeURIComponent(safe);
     const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=en-US&gl=US&ceid=US:en`;
 
@@ -42,14 +67,7 @@ Deno.serve(async (req) => {
 
     const xml = await rssRes.text();
 
-    // Parse RSS items from XML
-    const items: {
-      title: string;
-      link: string;
-      source: string;
-      pubDate: string;
-    }[] = [];
-
+    const items: { title: string; link: string; source: string; pubDate: string }[] = [];
     const itemRegex = /<item>([\s\S]*?)<\/item>/g;
     let match;
     while ((match = itemRegex.exec(xml)) !== null && items.length < 25) {
@@ -60,7 +78,6 @@ Deno.serve(async (req) => {
       const pubDateMatch = block.match(/<pubDate>(.*?)<\/pubDate>/);
 
       const rawTitle = titleMatch ? (titleMatch[1] || titleMatch[2] || "") : "";
-      // Google News appends " - Source" to titles; split it
       const dashIdx = rawTitle.lastIndexOf(" - ");
       const title = dashIdx > 0 ? rawTitle.substring(0, dashIdx).trim() : rawTitle.trim();
       const fallbackSource = dashIdx > 0 ? rawTitle.substring(dashIdx + 3).trim() : "";
@@ -73,8 +90,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Upsert cache
+    await sb.from("district_news_cache").upsert(
+      { member_name: safe, articles: items, fetched_at: new Date().toISOString() },
+      { onConflict: "member_name" }
+    );
+
     return new Response(
-      JSON.stringify({ articles: items, memberName: safe }),
+      JSON.stringify({ articles: items, memberName: safe, cached: false }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
