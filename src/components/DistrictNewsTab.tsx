@@ -1,7 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Newspaper, ExternalLink, FileText, Loader2, AlertCircle, X } from "lucide-react";
+import { Newspaper, ExternalLink, FileText, Loader2, AlertCircle, Search, X, CalendarDays } from "lucide-react";
 import { Win98Window } from "@/components/Win98Window";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface NewsArticle {
   title: string;
@@ -11,7 +17,7 @@ interface NewsArticle {
 }
 
 interface Props {
-  districtId: string; // e.g. "CA-12"
+  districtId: string;
 }
 
 export function DistrictNewsTab({ districtId }: Props) {
@@ -21,6 +27,11 @@ export function DistrictNewsTab({ districtId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
 
+  // Filters
+  const [keyword, setKeyword] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+
   useEffect(() => {
     let cancelled = false;
 
@@ -29,7 +40,6 @@ export function DistrictNewsTab({ districtId }: Props) {
       setError(null);
 
       try {
-        // 1. Find the current House member for this district
         const [stateAbbr, distNum] = districtId.split("-");
         const districtNumber = distNum === "AL" ? "0" : String(parseInt(distNum, 10));
 
@@ -43,28 +53,18 @@ export function DistrictNewsTab({ districtId }: Props) {
 
         const member = members?.[0];
         if (!member) {
-          if (!cancelled) {
-            setError("No current House member found for this district.");
-            setLoading(false);
-          }
+          if (!cancelled) { setError("No current House member found for this district."); setLoading(false); }
           return;
         }
 
         if (!cancelled) setMemberName(member.name);
 
-        // 2. Fetch news
         const { data, error: fnErr } = await supabase.functions.invoke("district-news", {
           body: { memberName: member.name },
         });
 
         if (cancelled) return;
-
-        if (fnErr) {
-          setError("Failed to fetch news.");
-          setLoading(false);
-          return;
-        }
-
+        if (fnErr) { setError("Failed to fetch news."); setLoading(false); return; }
         setArticles(data?.articles || []);
       } catch {
         if (!cancelled) setError("Failed to load news.");
@@ -77,47 +77,39 @@ export function DistrictNewsTab({ districtId }: Props) {
     return () => { cancelled = true; };
   }, [districtId]);
 
+  const filtered = useMemo(() => {
+    const kw = keyword.toLowerCase().trim();
+    return articles.filter((a) => {
+      if (kw && !a.title.toLowerCase().includes(kw) && !a.source.toLowerCase().includes(kw)) return false;
+      if (dateFrom || dateTo) {
+        const d = new Date(a.pubDate);
+        if (isNaN(d.getTime())) return false;
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo) {
+          const end = new Date(dateTo);
+          end.setHours(23, 59, 59, 999);
+          if (d > end) return false;
+        }
+      }
+      return true;
+    });
+  }, [articles, keyword, dateFrom, dateTo]);
+
+  const hasActiveFilters = keyword || dateFrom || dateTo;
+
+  const clearFilters = () => { setKeyword(""); setDateFrom(undefined); setDateTo(undefined); };
+
   const formatDate = (raw: string) => {
     try {
       const d = new Date(raw);
-      return d.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      });
-    } catch {
-      return raw;
-    }
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+    } catch { return raw; }
   };
 
   const handlePDF = (article: NewsArticle) => {
-    // Open print dialog for the article content which can be saved as PDF
     const printWindow = window.open("", "_blank");
     if (printWindow) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>${article.title}</title>
-          <style>
-            body { font-family: Georgia, serif; max-width: 700px; margin: 40px auto; padding: 0 20px; color: #333; }
-            h1 { font-size: 24px; line-height: 1.3; }
-            .meta { color: #666; font-size: 14px; margin-bottom: 20px; }
-            .link { color: #0066cc; }
-          </style>
-        </head>
-        <body>
-          <h1>${article.title}</h1>
-          <div class="meta">
-            <strong>${article.source}</strong> &bull; ${formatDate(article.pubDate)}<br/>
-            <a class="link" href="${article.link}">${article.link}</a>
-          </div>
-          <p>Full article available at the link above. Use your browser's "Save as PDF" or print function to create a PDF.</p>
-        </body>
-        </html>
-      `);
+      printWindow.document.write(`<!DOCTYPE html><html><head><title>${article.title}</title><style>body{font-family:Georgia,serif;max-width:700px;margin:40px auto;padding:0 20px;color:#333}h1{font-size:24px;line-height:1.3}.meta{color:#666;font-size:14px;margin-bottom:20px}.link{color:#0066cc}</style></head><body><h1>${article.title}</h1><div class="meta"><strong>${article.source}</strong> &bull; ${formatDate(article.pubDate)}<br/><a class="link" href="${article.link}">${article.link}</a></div><p>Full article available at the link above. Use your browser's "Save as PDF" or print function to create a PDF.</p></body></html>`);
       printWindow.document.close();
       setTimeout(() => printWindow.print(), 500);
     }
@@ -153,19 +145,70 @@ export function DistrictNewsTab({ districtId }: Props) {
         </div>
       )}
 
-      {articles.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-8">No recent news found.</p>
+      {/* Search & Date Filters */}
+      <div className="space-y-2 mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Filter by keyword…"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            className="pl-9 h-9 text-sm"
+          />
+          {keyword && (
+            <button onClick={() => setKeyword("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("flex-1 justify-start text-xs h-8", !dateFrom && "text-muted-foreground")}>
+                <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+                {dateFrom ? format(dateFrom, "MMM d, yyyy") : "From date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("flex-1 justify-start text-xs h-8", !dateTo && "text-muted-foreground")}>
+                <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+                {dateTo ? format(dateTo, "MMM d, yyyy") : "To date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {hasActiveFilters && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{filtered.length} of {articles.length} articles</span>
+            <button onClick={clearFilters} className="text-xs text-primary hover:underline">Clear filters</button>
+          </div>
+        )}
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-8">
+          {hasActiveFilters ? "No articles match your filters." : "No recent news found."}
+        </p>
       ) : (
         <div className="space-y-2">
-          {articles.map((article, i) => (
+          {filtered.map((article, i) => (
             <button
               key={i}
               onClick={() => setOpenArticle(article)}
               className="w-full text-left bg-card rounded-xl border border-border p-4 hover:bg-muted/50 transition-colors"
             >
-              <p className="text-sm font-semibold text-foreground leading-snug mb-1">
-                {article.title}
-              </p>
+              <p className="text-sm font-semibold text-foreground leading-snug mb-1">{article.title}</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="font-medium text-primary">{article.source}</span>
                 <span>•</span>
@@ -176,7 +219,6 @@ export function DistrictNewsTab({ districtId }: Props) {
         </div>
       )}
 
-      {/* Article Viewer Window */}
       {openArticle && (
         <Win98Window
           title={`📰 ${openArticle.source}`}
@@ -185,28 +227,18 @@ export function DistrictNewsTab({ districtId }: Props) {
           defaultPosition={{ x: 60, y: 40 }}
         >
           <div className="p-4 space-y-4 overflow-auto h-full">
-            <h2 className="font-display text-lg font-bold text-foreground leading-snug">
-              {openArticle.title}
-            </h2>
+            <h2 className="font-display text-lg font-bold text-foreground leading-snug">{openArticle.title}</h2>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="font-semibold text-primary">{openArticle.source}</span>
               <span>•</span>
               <span>{formatDate(openArticle.pubDate)}</span>
             </div>
             <div className="flex gap-2 pt-2">
-              <a
-                href={openArticle.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="win98-button text-[10px] flex items-center gap-1"
-              >
+              <a href={openArticle.link} target="_blank" rel="noopener noreferrer" className="win98-button text-[10px] flex items-center gap-1">
                 <ExternalLink className="h-3 w-3" />
                 Read Full Article
               </a>
-              <button
-                onClick={() => handlePDF(openArticle)}
-                className="win98-button text-[10px] flex items-center gap-1"
-              >
+              <button onClick={() => handlePDF(openArticle)} className="win98-button text-[10px] flex items-center gap-1">
                 <FileText className="h-3 w-3" />
                 Save as PDF
               </button>
