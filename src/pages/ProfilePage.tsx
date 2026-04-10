@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme, THEME_LABELS, type WindowsTheme } from "@/contexts/ThemeContext";
 import { Loader2 } from "lucide-react";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 import { IntegrationSettings } from "@/components/IntegrationSettings";
@@ -11,6 +12,7 @@ import { MarketCredentialsManager } from "@/components/MarketCredentialsManager"
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -107,6 +109,40 @@ export default function ProfilePage() {
           <button onClick={handleSaveProfile} disabled={saving} className="win98-button text-[10px] font-bold disabled:opacity-50">
             {saving ? "Saving..." : "💾 Save Changes"}
           </button>
+        </div>
+      </div>
+
+      {/* Theme Selector */}
+      <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mb-3">
+        <p className="text-[11px] font-bold mb-2 flex items-center gap-1">🎨 Desktop Theme</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {(Object.entries(THEME_LABELS) as [WindowsTheme, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTheme(key)}
+              className={`win98-button text-[10px] py-2 px-3 text-left flex items-center gap-2 ${
+                theme === key ? "font-bold" : ""
+              }`}
+              style={theme === key ? {
+                borderColor: "hsl(var(--primary))",
+                background: "hsl(var(--accent))",
+              } : {}}
+            >
+              <span className="text-base">{
+                key === "win98" ? "🖥️" :
+                key === "winxp" ? "🌿" :
+                key === "vista" ? "✨" :
+                key === "win7" ? "🏠" :
+                key === "win8" ? "⬛" :
+                key === "win10" ? "🪟" :
+                "☁️"
+              }</span>
+              <div>
+                <div>{label}</div>
+                {theme === key && <div className="text-[8px] text-[hsl(var(--primary))]">Active</div>}
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 
