@@ -303,7 +303,7 @@ serve(async (req) => {
 
         // Fall back to template-based updates
         for (const page of pagesToUpdate) {
-          await upsertPage(supabase, page.slug, page.title, page.existingContent || generateFallbackContent(page), page.sortOrder);
+          await upsertPage(supabase, page.slug, page.title, page.existingContent || generateFallbackContent(page), page.sortOrder, user.id, triggerMethod);
           results.push({ slug: page.slug, status: "fallback" });
         }
       } else {
@@ -314,7 +314,7 @@ serve(async (req) => {
           const parsed = JSON.parse(toolCall.function.arguments);
           for (const page of parsed.pages || []) {
             const meta = FEATURE_REGISTRY[page.slug];
-            await upsertPage(supabase, page.slug, page.title, page.content, meta?.sortOrder ?? 99);
+            await upsertPage(supabase, page.slug, page.title, page.content, meta?.sortOrder ?? 99, user.id, triggerMethod);
             results.push({ slug: page.slug, status: "ai-updated" });
           }
         }
@@ -322,7 +322,7 @@ serve(async (req) => {
     } else {
       // No AI key — use template fallback
       for (const page of pagesToUpdate) {
-        await upsertPage(supabase, page.slug, page.title, generateFallbackContent(page), page.sortOrder);
+        await upsertPage(supabase, page.slug, page.title, generateFallbackContent(page), page.sortOrder, user.id, triggerMethod);
         results.push({ slug: page.slug, status: "template" });
       }
     }
