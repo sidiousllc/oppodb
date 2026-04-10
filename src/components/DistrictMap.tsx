@@ -20,9 +20,7 @@ import {
   type CookRating,
 } from "@/data/cookRatings";
 
-// ─── Data Sources ───────────────────────────────────────────────────────────
-// Use local static file only — no external CDN calls
-const LOCAL_CD_GEO = "/us-cd-118.json";
+// GeoJSON source is now managed by useMapLoader hook
 
 // ─── Types & Exports ────────────────────────────────────────────────────────
 
@@ -185,8 +183,7 @@ interface DistrictGeoJSON {
   }>;
 }
 
-let districtGeoCache: DistrictGeoJSON | null = null;
-
+// GeoJSON cache is managed by useMapLoader
 // ─── Component ──────────────────────────────────────────────────────────────
 
 interface DistrictMapProps {
