@@ -49,4 +49,5 @@ OppoDB is a comprehensive opposition research database for political campaigns, 
 - **Market Detail Windows** — Click any prediction market for probability gauges and cross-platform comparison
 - **In-App Mail & Chat** with real email notification delivery
 - **Real-Time Presence** via AOL Buddy List
-- **Documentation Wiki** accessible directly within the application (20 pages)
+- **Documentation Wiki** accessible directly within the application (20+ pages, admin-editable via database)
+- **Admin Documentation Management** — Create, edit, and publish wiki pages from the Admin Panel
