@@ -777,6 +777,17 @@ function WikiPagesTab() {
 
   useEffect(() => { load(); }, [load]);
 
+  const loadChangelog = async () => {
+    setChangelogLoading(true);
+    const { data } = await supabase
+      .from("wiki_changelog")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setChangelog((data || []) as ChangelogEntry[]);
+    setChangelogLoading(false);
+  };
+
   const handleSave = async (item: WikiPageItem) => {
     const record: Record<string, unknown> = {
       title: item.title,
