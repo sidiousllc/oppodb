@@ -23,6 +23,8 @@ export interface MapDiagnostics {
   totalFeatures: number;
   statesFound: number;
   cacheHit: boolean;
+  offlineReady: boolean;
+  idbCachedAt: string | null;
 }
 
 export interface GeoJSONData {
@@ -57,9 +59,94 @@ const SOURCE_META: Record<MapSource, { label: string; description: string }> = {
 
 export { SOURCE_META };
 
-// ─── Cache ──────────────────────────────────────────────────────────────────
+// ─── In-Memory Cache ────────────────────────────────────────────────────────
 
 const geoCache = new Map<MapSource, GeoJSONData>();
+
+// ─── IndexedDB Offline Cache ────────────────────────────────────────────────
+
+const IDB_NAME = "oppodb-map-cache";
+const IDB_VERSION = 1;
+const IDB_STORE = "geodata";
+
+function openIDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE, { keyPath: "source" });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbGet(source: string): Promise<{ data: GeoJSONData; cachedAt: string } | null> {
+  try {
+    const db = await openIDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const store = tx.objectStore(IDB_STORE);
+      const req = store.get(source);
+      req.onsuccess = () => {
+        const result = req.result;
+        if (result?.data) {
+          resolve({ data: result.data, cachedAt: result.cachedAt || "" });
+        } else {
+          resolve(null);
+        }
+      };
+      req.onerror = () => resolve(null);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function idbPut(source: string, data: GeoJSONData): Promise<void> {
+  try {
+    const db = await openIDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      const store = tx.objectStore(IDB_STORE);
+      store.put({ source, data, cachedAt: new Date().toISOString() });
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  } catch {
+    // IndexedDB unavailable — silently skip
+  }
+}
+
+async function idbClear(): Promise<void> {
+  try {
+    const db = await openIDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  } catch {
+    // ignore
+  }
+}
+
+async function idbHasAny(): Promise<boolean> {
+  try {
+    const db = await openIDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const req = tx.objectStore(IDB_STORE).count();
+      req.onsuccess = () => resolve(req.result > 0);
+      req.onerror = () => resolve(false);
+    });
+  } catch {
+    return false;
+  }
+}
 
 // ─── Fetchers ───────────────────────────────────────────────────────────────
 
@@ -109,7 +196,6 @@ async function fetchCensus(signal: AbortSignal): Promise<GeoJSONData> {
   if (data.error) throw new Error(`Census API: ${data.error.message || "unknown error"}`);
   if (!data?.features?.length) throw new Error("Census API: empty features");
 
-  // Normalize properties to match local format
   data.features = data.features.map((f: { properties: Record<string, unknown>; [key: string]: unknown }) => ({
     ...f,
     properties: {
@@ -145,19 +231,28 @@ function validateGeoData(data: GeoJSONData): { valid: boolean; issues: string[] 
     issues.push(`Only ${data.features.length} features (expected ~436). Some districts may be missing.`);
   }
 
-  // Check for missing geometries
   const missingGeom = data.features.filter(f => !f.geometry).length;
   if (missingGeom > 0) {
     issues.push(`${missingGeom} features have no geometry`);
   }
 
-  // Check state coverage
   const states = new Set(data.features.map(f => f.properties?.STATE_ABBR).filter(Boolean));
   if (states.size < 45) {
     issues.push(`Only ${states.size} states represented (expected 50+)`);
   }
 
   return { valid: issues.length === 0 || data.features.length > 100, issues };
+}
+
+function cleanGeoData(data: GeoJSONData): GeoJSONData {
+  return {
+    ...data,
+    features: data.features.filter(f => f.geometry != null),
+  };
+}
+
+function countStates(data: GeoJSONData): number {
+  return new Set(data.features.map(f => f.properties?.STATE_ABBR).filter(Boolean)).size;
 }
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
@@ -179,6 +274,8 @@ export function useMapLoader(): MapLoadResult {
     totalFeatures: 0,
     statesFound: 0,
     cacheHit: false,
+    offlineReady: false,
+    idbCachedAt: null,
   });
 
   const abortRef = useRef<AbortController | null>(null);
@@ -187,6 +284,31 @@ export function useMapLoader(): MapLoadResult {
   const setPreferredSource = useCallback((s: MapSource) => {
     localStorage.setItem("map-source-pref", s);
     setPreferredSourceState(s);
+  }, []);
+
+  const applyData = useCallback((
+    data: GeoJSONData,
+    src: MapSource,
+    elapsed: number,
+    attempts: MapDiagnostics["attempts"],
+    cacheHit: boolean,
+    idbCachedAt: string | null,
+  ) => {
+    const clean = cleanGeoData(data);
+    const states = countStates(clean);
+    setGeoData(clean);
+    setActiveSource(src);
+    setLoadTimeMs(elapsed);
+    setDiagnostics({
+      attempts,
+      selectedSource: src,
+      totalFeatures: clean.features.length,
+      statesFound: states,
+      cacheHit,
+      offlineReady: true,
+      idbCachedAt,
+    });
+    setLoading(false);
   }, []);
 
   const loadMap = useCallback(async () => {
@@ -201,27 +323,38 @@ export function useMapLoader(): MapLoadResult {
     const attempts: MapDiagnostics["attempts"] = [];
     const sources = preferredSource === "auto" ? AUTO_ORDER : [preferredSource];
 
+    // Step 1: Check in-memory cache
     for (const src of sources) {
-      if (controller.signal.aborted) break;
-
-      // Check cache
       if (geoCache.has(src)) {
         const cached = geoCache.get(src)!;
-        const states = new Set(cached.features.map(f => f.properties?.STATE_ABBR).filter(Boolean));
         attempts.push({ source: src, success: true, timeMs: 0 });
-        setGeoData(cached);
-        setActiveSource(src);
-        setLoadTimeMs(0);
-        setDiagnostics({
-          attempts,
-          selectedSource: src,
-          totalFeatures: cached.features.length,
-          statesFound: states.size,
-          cacheHit: true,
-        });
-        setLoading(false);
+        // Check IDB timestamp
+        const idbEntry = await idbGet(src);
+        applyData(cached, src, 0, attempts, true, idbEntry?.cachedAt || null);
         return;
       }
+    }
+
+    // Step 2: Check IndexedDB (offline cache)
+    for (const src of sources) {
+      if (controller.signal.aborted) break;
+      const idbEntry = await idbGet(src);
+      if (idbEntry) {
+        const validation = validateGeoData(idbEntry.data);
+        if (validation.valid) {
+          geoCache.set(src, idbEntry.data);
+          attempts.push({ source: src, success: true, timeMs: 0, error: undefined });
+          applyData(idbEntry.data, src, 0, attempts, true, idbEntry.cachedAt);
+          // Background refresh from network (don't block UI)
+          refreshInBackground(src, controller.signal);
+          return;
+        }
+      }
+    }
+
+    // Step 3: Fetch from network
+    for (const src of sources) {
+      if (controller.signal.aborted) break;
 
       const start = performance.now();
       try {
@@ -237,26 +370,17 @@ export function useMapLoader(): MapLoadResult {
 
         if (validation.valid) {
           geoCache.set(src, data);
-          const states = new Set(data.features.map(f => f.properties?.STATE_ABBR).filter(Boolean));
           attempts.push({ source: src, success: true, timeMs: elapsed });
+          applyData(data, src, elapsed, attempts, false, null);
 
-          // Auto-fix: filter out features with null geometry
-          const cleanData = {
-            ...data,
-            features: data.features.filter(f => f.geometry != null),
-          };
-
-          setGeoData(cleanData);
-          setActiveSource(src);
-          setLoadTimeMs(elapsed);
-          setDiagnostics({
-            attempts,
-            selectedSource: src,
-            totalFeatures: cleanData.features.length,
-            statesFound: states.size,
-            cacheHit: false,
+          // Persist to IndexedDB for offline use
+          idbPut(src, data).then(() => {
+            setDiagnostics(prev => ({
+              ...prev,
+              offlineReady: true,
+              idbCachedAt: new Date().toISOString(),
+            }));
           });
-          setLoading(false);
           return;
         } else {
           attempts.push({
@@ -273,29 +397,56 @@ export function useMapLoader(): MapLoadResult {
       }
     }
 
-    // All sources failed
+    // All sources failed — last resort: try any IDB entry
+    for (const src of (["local", "esri", "census"] as const)) {
+      const idbEntry = await idbGet(src);
+      if (idbEntry && idbEntry.data?.features?.length > 0) {
+        geoCache.set(src, idbEntry.data);
+        attempts.push({ source: src, success: true, timeMs: 0, error: "offline fallback" });
+        applyData(idbEntry.data, src, 0, attempts, true, idbEntry.cachedAt);
+        return;
+      }
+    }
+
+    const offlineReady = await idbHasAny();
     setDiagnostics({
       attempts,
       selectedSource: null,
       totalFeatures: 0,
       statesFound: 0,
       cacheHit: false,
+      offlineReady,
+      idbCachedAt: null,
     });
     setError(
       `All map sources failed. ${attempts.map(a => `${a.source}: ${a.error}`).join(" | ")}`
     );
     setLoading(false);
-  }, [preferredSource]);
+  }, [preferredSource, applyData]);
+
+  // Background refresh: silently update IDB with fresh data
+  const refreshInBackground = useCallback(async (src: Exclude<MapSource, "auto">, signal: AbortSignal) => {
+    try {
+      const data = await FETCHERS[src](signal);
+      const validation = validateGeoData(data);
+      if (validation.valid) {
+        geoCache.set(src, data);
+        await idbPut(src, data);
+      }
+    } catch {
+      // Background refresh failed — no problem, we have cached data
+    }
+  }, []);
 
   const retry = useCallback(() => {
     retryCount.current += 1;
-    // Clear cache for current source on retry
     if (preferredSource !== "auto") {
       geoCache.delete(preferredSource);
     } else {
       geoCache.clear();
     }
-    loadMap();
+    // Also clear IDB on explicit retry
+    idbClear().then(() => loadMap());
   }, [loadMap, preferredSource]);
 
   useEffect(() => {
