@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { MailProvider } from "@/contexts/MailContext";
 import { WindowManagerProvider } from "@/contexts/WindowManagerContext";
 import Index from "./pages/Index.tsx";
@@ -50,6 +51,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ThemeProvider>
           <MailProvider>
             <WindowManagerProvider>
               <Routes>
@@ -64,6 +66,7 @@ const App = () => (
               </Routes>
             </WindowManagerProvider>
           </MailProvider>
+          </ThemeProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

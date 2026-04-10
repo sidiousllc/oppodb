@@ -1,0 +1,495 @@
+/* =============================================
+   Windows Theme Variants
+   Applied via .theme-{name} on <html>
+   Win98 is the default (defined in index.css :root)
+   ============================================= */
+
+/* -------- Windows XP -------- */
+.theme-winxp {
+  --background: 213 71% 53%;
+  --foreground: 0 0% 0%;
+  --card: 40 40% 96%;
+  --card-foreground: 0 0% 0%;
+  --popover: 40 40% 96%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 213 71% 43%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 120 40% 45%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 40 20% 88%;
+  --muted-foreground: 0 0% 35%;
+  --accent: 40 40% 93%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 213 30% 65%;
+  --input: 0 0% 100%;
+  --ring: 213 71% 43%;
+  --radius: 3px;
+
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 40 30% 92%;
+  --win98-face: 40 30% 90%;
+  --win98-shadow: 213 20% 60%;
+  --win98-dark-shadow: 213 30% 30%;
+  --win98-titlebar: 213 71% 43%;
+  --win98-titlebar-inactive: 213 15% 60%;
+
+  --font-body: 'Tahoma', 'Trebuchet MS', sans-serif;
+  --font-display: 'Trebuchet MS', 'Tahoma', sans-serif;
+}
+
+/* XP overrides for rounded look */
+.theme-winxp .win98-raised,
+.theme-winxp .win98-button,
+.theme-winxp .candidate-card {
+  border-radius: 3px;
+}
+
+.theme-winxp .win98-titlebar {
+  background: linear-gradient(180deg, hsl(213 80% 55%), hsl(213 71% 43%), hsl(213 65% 35%));
+  border-radius: 6px 6px 0 0;
+  padding: 4px 6px;
+}
+
+.theme-winxp .win98-titlebar-btn {
+  border-radius: 2px;
+}
+
+.theme-winxp .win98-button {
+  background: linear-gradient(180deg, hsl(40 40% 96%), hsl(40 25% 85%));
+  border: 1px solid hsl(213 20% 60%);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.5);
+  border-radius: 3px;
+}
+
+.theme-winxp .win98-button:active {
+  background: linear-gradient(180deg, hsl(40 25% 85%), hsl(40 40% 96%));
+  box-shadow: inset 0 1px 2px hsl(0 0% 0% / 0.15);
+  padding: 2px 8px;
+}
+
+.theme-winxp ::-webkit-scrollbar { width: 17px; }
+.theme-winxp ::-webkit-scrollbar-track { background: hsl(40 20% 92%); }
+.theme-winxp ::-webkit-scrollbar-thumb { background: linear-gradient(90deg, hsl(40 30% 90%), hsl(40 20% 82%)); border: 1px solid hsl(213 20% 65%); border-radius: 2px; }
+
+
+/* -------- Windows Vista -------- */
+.theme-vista {
+  --background: 210 15% 25%;
+  --foreground: 0 0% 0%;
+  --card: 210 10% 95%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 210 60% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 10% 80%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 210 10% 85%;
+  --muted-foreground: 0 0% 35%;
+  --accent: 210 15% 92%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 75% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 10% 70%;
+  --input: 0 0% 100%;
+  --ring: 210 60% 45%;
+  --radius: 4px;
+
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 210 10% 93%;
+  --win98-face: 210 10% 90%;
+  --win98-shadow: 210 10% 60%;
+  --win98-dark-shadow: 210 15% 25%;
+  --win98-titlebar: 210 50% 20%;
+  --win98-titlebar-inactive: 210 5% 55%;
+
+  --font-body: 'Segoe UI', 'Tahoma', sans-serif;
+  --font-display: 'Segoe UI', 'Tahoma', sans-serif;
+}
+
+.theme-vista .win98-raised,
+.theme-vista .win98-button,
+.theme-vista .candidate-card {
+  border-radius: 4px;
+}
+
+.theme-vista .win98-titlebar {
+  background: linear-gradient(180deg, hsl(210 30% 35% / 0.9), hsl(210 25% 18% / 0.95));
+  border-radius: 6px 6px 0 0;
+  padding: 6px 8px;
+  backdrop-filter: blur(10px);
+}
+
+.theme-vista .win98-button {
+  background: linear-gradient(180deg, hsl(0 0% 100% / 0.9), hsl(210 10% 88%));
+  border: 1px solid hsl(210 10% 65%);
+  box-shadow: 0 1px 2px hsl(0 0% 0% / 0.1);
+  border-radius: 3px;
+}
+
+.theme-vista .win98-button:active {
+  background: linear-gradient(180deg, hsl(210 10% 85%), hsl(210 10% 90%));
+  box-shadow: inset 0 1px 2px hsl(0 0% 0% / 0.15);
+  padding: 2px 8px;
+}
+
+.theme-vista .win98-sunken {
+  border-radius: 3px;
+  border: 1px solid hsl(210 10% 70%);
+  box-shadow: inset 0 1px 3px hsl(0 0% 0% / 0.08);
+}
+
+
+/* -------- Windows 7 -------- */
+.theme-win7 {
+  --background: 210 30% 30%;
+  --foreground: 0 0% 0%;
+  --card: 210 15% 97%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 200 70% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 200 15% 82%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 200 10% 88%;
+  --muted-foreground: 0 0% 35%;
+  --accent: 200 15% 94%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 75% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 200 10% 72%;
+  --input: 0 0% 100%;
+  --ring: 200 70% 45%;
+  --radius: 4px;
+
+  --win98-highlight: 200 20% 98%;
+  --win98-light: 200 12% 94%;
+  --win98-face: 200 12% 92%;
+  --win98-shadow: 200 10% 62%;
+  --win98-dark-shadow: 200 15% 30%;
+  --win98-titlebar: 200 65% 40%;
+  --win98-titlebar-inactive: 200 5% 60%;
+
+  --font-body: 'Segoe UI', sans-serif;
+  --font-display: 'Segoe UI', sans-serif;
+}
+
+.theme-win7 .win98-raised,
+.theme-win7 .win98-button,
+.theme-win7 .candidate-card {
+  border-radius: 4px;
+}
+
+.theme-win7 .win98-titlebar {
+  background: linear-gradient(180deg, hsl(200 50% 55% / 0.8), hsl(200 55% 35% / 0.9));
+  border-radius: 6px 6px 0 0;
+  padding: 6px 8px;
+  backdrop-filter: blur(12px);
+}
+
+.theme-win7 .win98-button {
+  background: linear-gradient(180deg, hsl(0 0% 100%), hsl(200 8% 90%));
+  border: 1px solid hsl(200 10% 68%);
+  box-shadow: 0 1px 1px hsl(0 0% 0% / 0.08);
+  border-radius: 3px;
+}
+
+.theme-win7 .win98-button:active {
+  background: linear-gradient(180deg, hsl(200 8% 88%), hsl(200 8% 92%));
+  box-shadow: inset 0 1px 2px hsl(0 0% 0% / 0.12);
+  padding: 2px 8px;
+}
+
+
+/* -------- Windows 8 -------- */
+.theme-win8 {
+  --background: 200 80% 45%;
+  --foreground: 0 0% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --primary: 200 80% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 90%;
+  --secondary-foreground: 0 0% 10%;
+  --muted: 0 0% 92%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 200 80% 95%;
+  --accent-foreground: 200 80% 30%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 80%;
+  --input: 0 0% 100%;
+  --ring: 200 80% 45%;
+  --radius: 0px;
+
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 96%;
+  --win98-face: 0 0% 97%;
+  --win98-shadow: 0 0% 80%;
+  --win98-dark-shadow: 0 0% 50%;
+  --win98-titlebar: 200 80% 45%;
+  --win98-titlebar-inactive: 0 0% 70%;
+
+  --font-body: 'Segoe UI', sans-serif;
+  --font-display: 'Segoe UI Light', 'Segoe UI', sans-serif;
+}
+
+.theme-win8 .win98-raised,
+.theme-win8 .win98-button,
+.theme-win8 .win98-sunken,
+.theme-win8 .candidate-card {
+  border-radius: 0;
+}
+
+.theme-win8 .win98-titlebar {
+  background: hsl(200 80% 45%);
+  border-radius: 0;
+  padding: 6px 8px;
+}
+
+.theme-win8 .win98-raised {
+  border: 1px solid hsl(0 0% 82%);
+  box-shadow: none;
+}
+
+.theme-win8 .win98-sunken {
+  border: 1px solid hsl(0 0% 80%);
+  box-shadow: none;
+}
+
+.theme-win8 .win98-button {
+  background: hsl(0 0% 97%);
+  border: 2px solid hsl(0 0% 82%);
+  box-shadow: none;
+}
+
+.theme-win8 .win98-button:hover {
+  border-color: hsl(200 80% 45%);
+}
+
+.theme-win8 .win98-button:active {
+  background: hsl(200 80% 90%);
+  border-color: hsl(200 80% 45%);
+  box-shadow: none;
+  padding: 2px 8px;
+}
+
+.theme-win8 .win98-titlebar-btn {
+  border-radius: 0;
+  border: none;
+}
+
+.theme-win8 ::-webkit-scrollbar { width: 10px; }
+.theme-win8 ::-webkit-scrollbar-track { background: hsl(0 0% 95%); border: none; }
+.theme-win8 ::-webkit-scrollbar-thumb { background: hsl(0 0% 75%); border: none; border-radius: 0; box-shadow: none; }
+
+
+/* -------- Windows 10 -------- */
+.theme-win10 {
+  --background: 210 15% 20%;
+  --foreground: 0 0% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --primary: 207 100% 44%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 0 0% 10%;
+  --muted: 0 0% 94%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 207 100% 95%;
+  --accent-foreground: 207 100% 30%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 82%;
+  --input: 0 0% 100%;
+  --ring: 207 100% 44%;
+  --radius: 0px;
+
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 96%;
+  --win98-face: 0 0% 96%;
+  --win98-shadow: 0 0% 80%;
+  --win98-dark-shadow: 0 0% 50%;
+  --win98-titlebar: 207 100% 44%;
+  --win98-titlebar-inactive: 0 0% 75%;
+
+  --font-body: 'Segoe UI', sans-serif;
+  --font-display: 'Segoe UI', sans-serif;
+}
+
+.theme-win10 .win98-raised,
+.theme-win10 .win98-button,
+.theme-win10 .win98-sunken,
+.theme-win10 .candidate-card {
+  border-radius: 0;
+}
+
+.theme-win10 .win98-titlebar {
+  background: hsl(0 0% 100%);
+  color: hsl(0 0% 10%);
+  border-radius: 0;
+  padding: 6px 8px;
+}
+
+.theme-win10 .win98-raised {
+  border: 1px solid hsl(0 0% 85%);
+  box-shadow: 0 2px 4px hsl(0 0% 0% / 0.06);
+}
+
+.theme-win10 .win98-sunken {
+  border: 1px solid hsl(0 0% 82%);
+  box-shadow: none;
+}
+
+.theme-win10 .win98-button {
+  background: hsl(0 0% 97%);
+  border: 1px solid hsl(0 0% 82%);
+  box-shadow: none;
+}
+
+.theme-win10 .win98-button:hover {
+  background: hsl(0 0% 93%);
+  border-color: hsl(0 0% 70%);
+}
+
+.theme-win10 .win98-button:active {
+  background: hsl(0 0% 88%);
+  box-shadow: none;
+  padding: 2px 8px;
+}
+
+.theme-win10 .win98-titlebar-btn {
+  border: none;
+  border-radius: 0;
+  width: 28px;
+  height: 20px;
+}
+
+.theme-win10 .win98-titlebar-btn:hover {
+  background: hsl(0 0% 90%);
+}
+
+.theme-win10 ::-webkit-scrollbar { width: 8px; }
+.theme-win10 ::-webkit-scrollbar-track { background: hsl(0 0% 95%); border: none; }
+.theme-win10 ::-webkit-scrollbar-thumb { background: hsl(0 0% 78%); border: none; border-radius: 0; box-shadow: none; }
+.theme-win10 ::-webkit-scrollbar-button { display: none; }
+
+
+/* -------- Windows 11 -------- */
+.theme-win11 {
+  --background: 210 20% 95%;
+  --foreground: 210 10% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 210 10% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 10% 10%;
+  --primary: 207 90% 48%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 10% 92%;
+  --secondary-foreground: 210 10% 10%;
+  --muted: 210 10% 94%;
+  --muted-foreground: 210 5% 40%;
+  --accent: 207 90% 95%;
+  --accent-foreground: 207 90% 30%;
+  --destructive: 0 75% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 10% 87%;
+  --input: 210 10% 97%;
+  --ring: 207 90% 48%;
+  --radius: 8px;
+
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 210 10% 97%;
+  --win98-face: 210 10% 97%;
+  --win98-shadow: 210 10% 82%;
+  --win98-dark-shadow: 210 10% 50%;
+  --win98-titlebar: 210 10% 97%;
+  --win98-titlebar-inactive: 210 5% 92%;
+
+  --font-body: 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  --font-display: 'Segoe UI Variable', 'Segoe UI', sans-serif;
+}
+
+.theme-win11 .win98-raised,
+.theme-win11 .win98-button,
+.theme-win11 .win98-sunken,
+.theme-win11 .candidate-card {
+  border-radius: 8px;
+}
+
+.theme-win11 .win98-titlebar {
+  background: hsl(210 10% 98% / 0.85);
+  color: hsl(210 10% 10%);
+  border-radius: 8px 8px 0 0;
+  padding: 8px 12px;
+  backdrop-filter: blur(20px);
+}
+
+.theme-win11 .win98-raised {
+  border: 1px solid hsl(210 10% 90%);
+  box-shadow: 0 2px 8px hsl(0 0% 0% / 0.04), 0 0 1px hsl(0 0% 0% / 0.06);
+  border-radius: 8px;
+}
+
+.theme-win11 .win98-sunken {
+  border: 1px solid hsl(210 10% 87%);
+  box-shadow: none;
+  border-radius: 6px;
+}
+
+.theme-win11 .win98-button {
+  background: hsl(210 10% 98% / 0.9);
+  border: 1px solid hsl(210 10% 87%);
+  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.04);
+  border-radius: 6px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.theme-win11 .win98-button:hover {
+  background: hsl(210 10% 94%);
+  border-color: hsl(210 10% 78%);
+}
+
+.theme-win11 .win98-button:active {
+  background: hsl(210 10% 90%);
+  box-shadow: none;
+  padding: 2px 8px;
+}
+
+.theme-win11 .win98-input {
+  border: 1px solid hsl(210 10% 82%);
+  box-shadow: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  transition: border-color 0.15s;
+}
+
+.theme-win11 .win98-input:focus {
+  border-color: hsl(207 90% 48%);
+  outline: none;
+  box-shadow: 0 0 0 1px hsl(207 90% 48% / 0.3);
+}
+
+.theme-win11 .win98-titlebar-btn {
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height: 22px;
+  transition: background 0.15s;
+}
+
+.theme-win11 .win98-titlebar-btn:hover {
+  background: hsl(210 10% 90%);
+}
+
+.theme-win11 ::-webkit-scrollbar { width: 6px; }
+.theme-win11 ::-webkit-scrollbar-track { background: transparent; border: none; }
+.theme-win11 ::-webkit-scrollbar-thumb { background: hsl(210 10% 75%); border: none; border-radius: 10px; box-shadow: none; }
+.theme-win11 ::-webkit-scrollbar-button { display: none; }
