@@ -30,7 +30,7 @@ const THEME_THUMBNAILS: Record<WindowsTheme, string> = {
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, darkMode, setDarkMode } = useTheme();
 
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
