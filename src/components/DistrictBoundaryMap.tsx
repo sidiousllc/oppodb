@@ -5,20 +5,11 @@ import {
   Geography,
   ZoomableGroup,
 } from "react-simple-maps";
-import { Loader2, Map as MapIcon } from "lucide-react";
+import { Loader2, Map as MapIcon, RefreshCw } from "lucide-react";
+import { MapSourceSelector } from "@/components/MapSourceSelector";
+import { useMapLoader } from "@/hooks/useMapLoader";
 
 const STATES_GEO = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
-
-// State abbreviation → FIPS code
-const STATE_FIPS: Record<string, string> = {
-  AL:"01",AK:"02",AZ:"04",AR:"05",CA:"06",CO:"08",CT:"09",DE:"10",
-  FL:"12",GA:"13",HI:"15",ID:"16",IL:"17",IN:"18",IA:"19",KS:"20",
-  KY:"21",LA:"22",ME:"23",MD:"24",MA:"25",MI:"26",MN:"27",MS:"28",
-  MO:"29",MT:"30",NE:"31",NV:"32",NH:"33",NJ:"34",NM:"35",NY:"36",
-  NC:"37",ND:"38",OH:"39",OK:"40",OR:"41",PA:"42",RI:"44",SC:"45",
-  SD:"46",TN:"47",TX:"48",UT:"49",VT:"50",VA:"51",WA:"53",WV:"54",
-  WI:"55",WY:"56",DC:"11",
-};
 
 // Approximate state centers + zoom for the map projection
 const STATE_VIEW: Record<string, { center: [number, number]; zoom: number }> = {
@@ -51,125 +42,61 @@ const STATE_VIEW: Record<string, { center: [number, number]; zoom: number }> = {
 };
 
 interface DistrictBoundaryMapProps {
-  districtId: string; // e.g. "CA-12"
+  districtId: string;
   stateName: string;
 }
 
-interface DistrictGeoJSON {
-  type: string;
-  features: Array<{
-    type: string;
-    geometry: { type: string; coordinates: number[][][] | number[][][][] };
-    properties: Record<string, unknown>;
-  }>;
-}
-
 function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMapProps) {
-  const [districtGeo, setDistrictGeo] = useState<DistrictGeoJSON | null>(null);
+  const mapLoader = useMapLoader();
+  const { geoData: allGeoData, loading: geoLoading } = mapLoader;
+
+  const [districtGeo, setDistrictGeo] = useState<{ type: string; features: Array<{ type: string; geometry: { type: string; coordinates: number[][][] | number[][][][] }; properties: Record<string, unknown> }> } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
   const stateAbbr = districtId.split("-")[0];
   const districtNum = districtId.split("-")[1] || "0";
-  const fips = STATE_FIPS[stateAbbr];
   const view = STATE_VIEW[stateAbbr];
 
+  // Extract district features from loaded data
   useEffect(() => {
-    if (!fips) {
-      setLoading(false);
-      setError(true);
+    if (geoLoading || !allGeoData) {
+      setLoading(geoLoading);
       return;
     }
 
     const cdNum = districtNum === "AL" ? "01" : districtNum.padStart(2, "0");
 
-    (async () => {
-      try {
-        // Try local GeoJSON first (fast, reliable)
-        const localRes = await fetch("/us-cd-118.json");
-        if (localRes.ok) {
-          const allGeo = await localRes.json();
-          if (allGeo?.features) {
-            const matching = allGeo.features.filter(
-              (f: { properties: Record<string, unknown> }) =>
-                f.properties.STATE_ABBR === stateAbbr &&
-                String(f.properties.CDFIPS).padStart(2, "0") === cdNum
-            );
-            if (matching.length > 0) {
-              setDistrictGeo({ type: "FeatureCollection", features: matching });
-              setLoading(false);
-              return;
-            }
-            // Try at-large fallback
-            if (cdNum !== "01") {
-              const atLarge = allGeo.features.filter(
-                (f: { properties: Record<string, unknown> }) =>
-                  f.properties.STATE_ABBR === stateAbbr &&
-                  String(f.properties.CDFIPS).padStart(2, "0") === "01"
-              );
-              if (atLarge.length > 0) {
-                setDistrictGeo({ type: "FeatureCollection", features: atLarge });
-                setLoading(false);
-                return;
-              }
-            }
-          }
-        }
+    const matching = allGeoData.features.filter(
+      (f) =>
+        (f.properties.STATE_ABBR === stateAbbr || String(f.properties.STATE_ABBR).toUpperCase() === stateAbbr) &&
+        String(f.properties.CDFIPS || f.properties.CD118FP || "").padStart(2, "0") === cdNum
+    );
 
-        // Fallback to Esri API
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+    if (matching.length > 0) {
+      setDistrictGeo({ type: "FeatureCollection", features: matching as typeof districtGeo extends null ? never : NonNullable<typeof districtGeo>["features"] });
+      setLoading(false);
+      return;
+    }
 
-        const ESRI_URL =
-          "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query";
-
-        const buildUrl = (cd: string) => {
-          const params = new URLSearchParams({
-            where: `STATE_ABBR='${stateAbbr}' AND CDFIPS=${cd}`,
-            outFields: "STATE_ABBR,CDFIPS",
-            f: "geojson",
-            outSR: "4326",
-            returnGeometry: "true",
-            maxAllowableOffset: "0.005",
-          });
-          return `${ESRI_URL}?${params}`;
-        };
-
-        const tryFetch = async (url: string): Promise<DistrictGeoJSON | null> => {
-          try {
-            const r = await fetch(url, { signal: controller.signal });
-            if (!r.ok) return null;
-            const data = await r.json();
-            if (data.error) return null;
-            if (data.features && data.features.length > 0) return data;
-            return null;
-          } catch (e) {
-            if ((e as Error).name === "AbortError") throw e;
-            return null;
-          }
-        };
-
-        let result = await tryFetch(buildUrl(cdNum));
-        if (!result && cdNum !== "01") {
-          result = await tryFetch(buildUrl("01"));
-        }
-
-        clearTimeout(timeoutId);
-
-        if (result) {
-          setDistrictGeo(result);
-        } else {
-          setError(true);
-        }
-      } catch (e) {
-        if ((e as Error).name !== "AbortError") setError(true);
-      } finally {
+    // At-large fallback
+    if (cdNum !== "01") {
+      const atLarge = allGeoData.features.filter(
+        (f) =>
+          (f.properties.STATE_ABBR === stateAbbr || String(f.properties.STATE_ABBR).toUpperCase() === stateAbbr) &&
+          String(f.properties.CDFIPS || f.properties.CD118FP || "").padStart(2, "0") === "01"
+      );
+      if (atLarge.length > 0) {
+        setDistrictGeo({ type: "FeatureCollection", features: atLarge as typeof districtGeo extends null ? never : NonNullable<typeof districtGeo>["features"] });
         setLoading(false);
+        return;
       }
-    })();
-  }, [fips, districtNum, stateAbbr]);
+    }
 
-  // Compute bounding box from district geometry to auto-center
+    setDistrictGeo(null);
+    setLoading(false);
+  }, [allGeoData, geoLoading, stateAbbr, districtNum]);
+
+  // Compute bounding box
   const bounds = useMemo(() => {
     if (!districtGeo?.features?.length) return null;
 
@@ -210,16 +137,27 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
     );
   }
 
-  if (error || !districtGeo || !view) {
+  if (!districtGeo || !view) {
     return (
-      <div className="bg-card rounded-xl border border-border p-6 mb-6 flex items-center justify-center h-32">
-        <p className="text-sm text-muted-foreground">District boundary unavailable</p>
+      <div className="bg-card rounded-xl border border-border p-6 mb-6">
+        <div className="flex items-center justify-center h-32 mb-3">
+          <p className="text-sm text-muted-foreground">District boundary unavailable</p>
+        </div>
+        <MapSourceSelector
+          preferredSource={mapLoader.preferredSource}
+          onSourceChange={mapLoader.setPreferredSource}
+          diagnostics={mapLoader.diagnostics}
+          loading={mapLoader.loading}
+          loadTimeMs={mapLoader.loadTimeMs}
+          error={mapLoader.error}
+          featureCount={mapLoader.featureCount}
+          onRetry={mapLoader.retry}
+          compact
+        />
       </div>
     );
   }
 
-  // Convert GeoJSON features to SVG paths manually for the district overlay
-  // We render the state base map + district polygon overlay
   const centerLng = bounds
     ? (bounds.minLng + bounds.maxLng) / 2
     : view.center[0];
@@ -227,14 +165,12 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
     ? (bounds.minLat + bounds.maxLat) / 2
     : view.center[1];
 
-  // Calculate zoom from bounds
   let autoZoom = view.zoom;
   if (bounds) {
     const lngSpan = bounds.maxLng - bounds.minLng;
     const latSpan = bounds.maxLat - bounds.minLat;
     const maxSpan = Math.max(lngSpan, latSpan);
     if (maxSpan > 0) {
-      // Rough heuristic: bigger span = less zoom
       autoZoom = Math.min(20, Math.max(3, 8 / maxSpan));
     }
   }
@@ -260,7 +196,6 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
             center={[centerLng, centerLat]}
             zoom={autoZoom}
           >
-            {/* State boundaries as background */}
             <Geographies geography={STATES_GEO}>
               {({ geographies }) =>
                 geographies.map((geo) => {
@@ -288,7 +223,6 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
               }
             </Geographies>
 
-            {/* District boundary overlay */}
             <Geographies geography={districtGeo}>
               {({ geographies }) =>
                 geographies.map((geo, i) => (
@@ -312,6 +246,21 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
             </Geographies>
           </ZoomableGroup>
         </ComposableMap>
+      </div>
+
+      {/* Source selector & diagnostics */}
+      <div className="mt-3">
+        <MapSourceSelector
+          preferredSource={mapLoader.preferredSource}
+          onSourceChange={mapLoader.setPreferredSource}
+          diagnostics={mapLoader.diagnostics}
+          loading={mapLoader.loading}
+          loadTimeMs={mapLoader.loadTimeMs}
+          error={mapLoader.error}
+          featureCount={mapLoader.featureCount}
+          onRetry={mapLoader.retry}
+          compact
+        />
       </div>
 
       <p className="text-xs text-muted-foreground mt-2">

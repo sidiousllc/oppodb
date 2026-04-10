@@ -8,6 +8,8 @@ import {
 import { Search, X, Users, DollarSign, BarChart3, Swords } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CompetitiveRacesSidebar } from "@/components/CompetitiveRacesSidebar";
+import { useMapLoader } from "@/hooks/useMapLoader";
+import { MapSourceSelector } from "@/components/MapSourceSelector";
 import { type DistrictProfile } from "@/data/districtIntel";
 import { getEffectivePVI, formatPVI, getPVIColor, hasPVIShift } from "@/data/cookPVI";
 import {
@@ -18,9 +20,7 @@ import {
   type CookRating,
 } from "@/data/cookRatings";
 
-// ─── Data Sources ───────────────────────────────────────────────────────────
-// Use local static file only — no external CDN calls
-const LOCAL_CD_GEO = "/us-cd-118.json";
+// GeoJSON source is now managed by useMapLoader hook
 
 // ─── Types & Exports ────────────────────────────────────────────────────────
 
@@ -172,19 +172,7 @@ interface FinanceEntry {
   party: string | null;
 }
 
-// ─── GeoJSON ────────────────────────────────────────────────────────────────
-
-interface DistrictGeoJSON {
-  type: string;
-  features: Array<{
-    type: string;
-    properties: Record<string, unknown>;
-    geometry: unknown;
-  }>;
-}
-
-let districtGeoCache: DistrictGeoJSON | null = null;
-
+// ─── GeoJSON is managed by useMapLoader hook ────────────────────────────────
 // ─── Component ──────────────────────────────────────────────────────────────
 
 interface DistrictMapProps {
@@ -214,10 +202,8 @@ function formatMoney(n: number): string {
 const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: DistrictMapProps) => {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-  const [geoData, setGeoData] = useState<DistrictGeoJSON | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadProgress, setLoadProgress] = useState(0);
-  const [loadLabel, setLoadLabel] = useState("Loading district boundaries…");
+  const mapLoader = useMapLoader();
+  const { geoData, loading, error: mapError, diagnostics, loadTimeMs, featureCount, retry, setPreferredSource, preferredSource } = mapLoader;
   const [colorMode, setColorMode] = useState<ColorMode>("cook");
   const [zoomState, setZoomState] = useState<{ center: [number, number]; zoom: number }>({
     center: [-96, 38],
@@ -234,38 +220,6 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   const [dbDemographics, setDbDemographics] = useState<Map<string, DemographicEntry>>(new Map());
   const [dbFinance, setDbFinance] = useState<Map<string, FinanceEntry[]>>(new Map());
   const [consensusRatings, setConsensusRatings] = useState<Map<string, string>>(new Map());
-
-  // Load GeoJSON from local static file
-  useEffect(() => {
-    let cancelled = false;
-    setLoadProgress(10);
-    setLoadLabel("Loading district boundaries…");
-
-    (async () => {
-      if (districtGeoCache) {
-        if (!cancelled) { setGeoData(districtGeoCache); setLoading(false); setLoadProgress(100); }
-        return;
-      }
-      try {
-        setLoadProgress(30);
-        const res = await fetch(LOCAL_CD_GEO);
-        if (!res.ok) throw new Error("Failed to load local GeoJSON");
-        setLoadProgress(60);
-        setLoadLabel("Parsing geometry…");
-        const data = await res.json();
-        districtGeoCache = data;
-        if (!cancelled) {
-          setGeoData(data);
-          setLoadProgress(100);
-          setLoadLabel("Ready");
-          setLoading(false);
-        }
-      } catch {
-        if (!cancelled) { setLoading(false); setLoadLabel("Failed to load map data"); }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   // Load DB data in parallel
   useEffect(() => {
@@ -579,15 +533,24 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="flex items-center gap-3 text-muted-foreground">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-            <span className="text-sm">{loadLabel}</span>
+            <span className="text-sm">Loading district boundaries…</span>
           </div>
-          <div className="w-64 h-2 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
-              style={{ width: `${loadProgress}%` }}
-            />
-          </div>
-          <span className="text-xs text-muted-foreground">{loadProgress}%</span>
+        </div>
+      )}
+
+      {/* Map Source Selector */}
+      {!loading && (
+        <div className="mb-3">
+          <MapSourceSelector
+            preferredSource={preferredSource}
+            onSourceChange={setPreferredSource}
+            diagnostics={diagnostics}
+            loading={loading}
+            loadTimeMs={loadTimeMs}
+            error={mapError}
+            featureCount={featureCount}
+            onRetry={retry}
+          />
         </div>
       )}
 
@@ -609,7 +572,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
               minZoom={1}
               maxZoom={20}
             >
-              <Geographies geography={LOCAL_CD_GEO}>
+              <Geographies geography={geoData}>
                 {({ geographies }) =>
                   geographies.map((geo) => {
                     const stateAbbr = geo.properties?.STATE_ABBR;
