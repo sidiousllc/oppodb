@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Database, Globe, Server, Zap, RefreshCw, CheckCircle2, XCircle, Clock, Info, Shield, WifiOff, Wifi } from "lucide-react";
+import { Database, Globe, Server, Zap, RefreshCw, CheckCircle2, XCircle, Clock, Info, Shield, WifiOff, Wifi, Trash2 } from "lucide-react";
 import { MapSource, MapDiagnostics, SOURCE_META } from "@/hooks/useMapLoader";
 
 interface MapSourceSelectorProps {
@@ -11,6 +11,7 @@ interface MapSourceSelectorProps {
   error: string | null;
   featureCount: number;
   onRetry: () => void;
+  onClearCache?: () => void;
   compact?: boolean;
 }
 
