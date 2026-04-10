@@ -817,10 +817,10 @@ function WikiPagesTab() {
 
       if (direction === "pull") {
         toast.success(`Pulled ${result.imported || 0} pages from GitHub`);
-        load();
       } else {
         toast.success(`Pushed ${result.pushed || 0} pages to GitHub`);
       }
+      await load();
       if (result.errors?.length) {
         toast.warning(`${result.errors.length} error(s) during sync`);
         console.warn("Sync errors:", result.errors);
