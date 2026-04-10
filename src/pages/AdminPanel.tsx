@@ -918,6 +918,8 @@ function WikiPagesTab() {
                 {updatingDocs ? <Loader2 className="h-3 w-3 animate-spin" /> : <BookOpen className="h-3 w-3" />}
                 Update Docs
               </button>
+            </>
+          )}
           <button onClick={() => setCreating(true)} className="win98-button text-[10px] flex items-center gap-1"><Plus className="h-3 w-3" /> Add Page</button>
         </div>
       </div>
