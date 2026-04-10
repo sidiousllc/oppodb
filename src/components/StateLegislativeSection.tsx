@@ -106,6 +106,39 @@ function StateLegCard({
 
 // ─── Detail View ────────────────────────────────────────────────────────────
 
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+        {icon}
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="font-display text-lg font-bold text-foreground">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+  return (
+    <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+      {icon}
+      {title}
+    </h2>
+  );
+}
+
+function DataRow({ label, value }: { label: string; value: string | null | undefined }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm font-semibold text-foreground">{value}</span>
+    </div>
+  );
+}
+
 function StatLegDetail({
   district,
   onBack,
@@ -113,147 +146,225 @@ function StatLegDetail({
   district: StateLegislativeProfile;
   onBack: () => void;
 }) {
+  const [activeTab, setActiveTab] = useState("overview");
   const isHouse = district.chamber === "house";
   const chamberColor = isHouse ? "210 80% 50%" : "280 60% 50%";
   const label = isHouse ? "House" : "Senate";
 
-  const statRow = (lbl: string, value: string | number | null | undefined, suffix = "") => {
-    if (value === null || value === undefined) return null;
-    return (
-      <div className="flex items-center justify-between py-2 border-b border-border/50">
-        <span className="text-sm text-muted-foreground">{lbl}</span>
-        <span className="text-sm font-medium text-foreground">
-          {typeof value === "number" ? value.toLocaleString() : value}{suffix}
-        </span>
-      </div>
-    );
-  };
+  const fmt = (n: number | null | undefined) => n != null ? n.toLocaleString() : null;
+  const pct = (n: number | null | undefined) => n != null ? `${n}%` : null;
+  const dollar = (n: number | null | undefined) => n != null ? `$${n.toLocaleString()}` : null;
 
   return (
     <div className="animate-fade-in">
       <button
         onClick={onBack}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to State Legislative Districts
       </button>
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
-            style={{ backgroundColor: `hsl(${chamberColor} / 0.1)` }}
+      {/* Header */}
+      <div className="bg-card rounded-xl border border-border p-6 mb-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            <div
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
+              style={{ backgroundColor: `hsl(${chamberColor} / 0.1)` }}
+            >
+              {isHouse ? (
+                <Building2 className="h-7 w-7" style={{ color: `hsl(${chamberColor})` }} />
+              ) : (
+                <Landmark className="h-7 w-7" style={{ color: `hsl(${chamberColor})` }} />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="font-display text-2xl font-bold text-foreground">
+                  {district.state_abbr} {label} District {district.district_number}
+                </h1>
+                <span
+                  className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-wide border"
+                  style={{
+                    backgroundColor: `hsl(${chamberColor} / 0.12)`,
+                    color: `hsl(${chamberColor})`,
+                    borderColor: `hsl(${chamberColor} / 0.25)`,
+                  }}
+                >
+                  {label}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="tag tag-governor">{district.state}</span>
+                <span className="text-sm text-muted-foreground">State Legislative District</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => exportStateLegPDF(district)}
+            className="win98-button text-[10px] flex items-center gap-1 shrink-0"
           >
-            {isHouse ? (
-              <Building2 className="h-6 w-6" style={{ color: `hsl(${chamberColor})` }} />
-            ) : (
-              <Landmark className="h-6 w-6" style={{ color: `hsl(${chamberColor})` }} />
+            <Download className="h-3 w-3" />
+            PDF
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/50 p-1 rounded-lg">
+          <TabsTrigger value="overview" className="flex items-center gap-1 text-xs">
+            <LayoutDashboard className="h-3 w-3" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="demographics" className="flex items-center gap-1 text-xs">
+            <Users className="h-3 w-3" />
+            Demographics
+          </TabsTrigger>
+          <TabsTrigger value="elections" className="flex items-center gap-1 text-xs">
+            <Vote className="h-3 w-3" />
+            Elections
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="mt-4">
+          <StateLegBoundaryMap
+            stateAbbr={district.state_abbr}
+            stateName={district.state}
+            chamber={district.chamber as "house" | "senate"}
+            districtNumber={district.district_number}
+          />
+
+          <div className="grid grid-cols-2 gap-3 mb-6 mt-6">
+            {district.population != null && (
+              <StatCard icon={<Users className="h-5 w-5 text-muted-foreground" />} label="Population" value={fmt(district.population)!} />
+            )}
+            {district.median_income != null && (
+              <StatCard icon={<DollarSign className="h-5 w-5 text-muted-foreground" />} label="Median Income" value={dollar(district.median_income)!} />
+            )}
+            {district.median_age != null && (
+              <StatCard icon={<Calendar className="h-5 w-5 text-muted-foreground" />} label="Median Age" value={String(district.median_age)} />
+            )}
+            {district.education_bachelor_pct != null && (
+              <StatCard icon={<GraduationCap className="h-5 w-5 text-muted-foreground" />} label="Bachelor's Degree+" value={pct(district.education_bachelor_pct)!} />
             )}
           </div>
-          <div>
-            <h2 className="font-display text-xl font-bold text-foreground">
-              {district.state_abbr} {label} District {district.district_number}
-            </h2>
-            <p className="text-sm text-muted-foreground">{district.state}</p>
+
+          {/* Race & Ethnicity Overview */}
+          {(district.white_pct != null || district.black_pct != null || district.hispanic_pct != null || district.asian_pct != null) && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader icon={<TrendingUp className="h-5 w-5 text-primary" />} title="Race & Ethnicity" />
+              {district.white_pct !== null && (
+                <DemographicBar label="White" pct={district.white_pct!} color="220 15% 60%" />
+              )}
+              {district.black_pct !== null && (
+                <DemographicBar label="Black" pct={district.black_pct!} color="210 60% 45%" />
+              )}
+              {district.hispanic_pct !== null && (
+                <DemographicBar label="Hispanic" pct={district.hispanic_pct!} color="30 80% 50%" />
+              )}
+              {district.asian_pct !== null && (
+                <DemographicBar label="Asian" pct={district.asian_pct!} color="160 50% 45%" />
+              )}
+            </div>
+          )}
+
+          {/* Data Source */}
+          <div className="bg-card rounded-xl border border-border p-6">
+            <h2 className="font-display text-lg font-bold text-foreground mb-3">Data Sources</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              District demographics sourced from the{" "}
+              <a href="https://www.census.gov/programs-surveys/acs" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">U.S. Census ACS 5-Year Estimates (2022)</a>.
+              Election results sourced from state election offices and{" "}
+              <a href="https://openelections.net" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">OpenElections</a>.
+            </p>
           </div>
-        </div>
-        <button
-          onClick={() => exportStateLegPDF(district)}
-          className="win98-button text-[10px] flex items-center gap-1 shrink-0"
-        >
-          <Download className="h-3 w-3" />
-          PDF
-        </button>
-      </div>
+        </TabsContent>
 
-      {/* State Polling */}
-      <StatePollingPanel stateAbbr={district.state_abbr} />
+        {/* Demographics Tab */}
+        <TabsContent value="demographics" className="mt-4">
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {district.population != null && (
+              <StatCard icon={<Users className="h-5 w-5 text-muted-foreground" />} label="Population" value={fmt(district.population)!} />
+            )}
+            {district.median_income != null && (
+              <StatCard icon={<DollarSign className="h-5 w-5 text-muted-foreground" />} label="Median Income" value={dollar(district.median_income)!} />
+            )}
+            {district.median_age != null && (
+              <StatCard icon={<Calendar className="h-5 w-5 text-muted-foreground" />} label="Median Age" value={String(district.median_age)} />
+            )}
+            {district.education_bachelor_pct != null && (
+              <StatCard icon={<GraduationCap className="h-5 w-5 text-muted-foreground" />} label="Bachelor's Degree+" value={pct(district.education_bachelor_pct)!} />
+            )}
+          </div>
 
-      {/* Campaign Finance */}
-      <AreaFinancePanel stateAbbr={district.state_abbr} title={`Campaign Finance — ${district.state}`} />
-
-      {/* Election History */}
-      <div className="mb-6">
-        <ElectionResultsSection
-          stateAbbr={district.state_abbr}
-          chamber={district.chamber}
-          districtNumber={district.district_number}
-        />
-      </div>
-
-      {/* District Boundary Map */}
-      <div className="mb-6">
-        <StateLegBoundaryMap
-          stateAbbr={district.state_abbr}
-          stateName={district.state}
-          chamber={district.chamber as "house" | "senate"}
-          districtNumber={district.district_number}
-        />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Demographics */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="font-display text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
-            Demographics
-          </h3>
-          {statRow("Population", district.population)}
-          {statRow("Median Age", district.median_age)}
-          {statRow("Total Households", district.total_households)}
-          {statRow("Avg Household Size", district.avg_household_size)}
-          {statRow("Veteran Population", district.veteran_pct, "%")}
-          {statRow("Foreign Born", district.foreign_born_pct, "%")}
-        </div>
-
-        {/* Economics */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="font-display text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary" />
-            Economics
-          </h3>
-          {statRow("Median Income", district.median_income ? `$${district.median_income.toLocaleString()}` : null)}
-          {statRow("Poverty Rate", district.poverty_rate, "%")}
-          {statRow("Unemployment", district.unemployment_rate, "%")}
-          {statRow("Uninsured", district.uninsured_pct, "%")}
-          {statRow("Median Home Value", district.median_home_value ? `$${district.median_home_value.toLocaleString()}` : null)}
-          {statRow("Median Rent", district.median_rent ? `$${district.median_rent.toLocaleString()}` : null)}
-          {statRow("Owner-Occupied", district.owner_occupied_pct, "%")}
-        </div>
-
-        {/* Race & Ethnicity */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="font-display text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            Race & Ethnicity
-          </h3>
-          {district.white_pct !== null && (
-            <DemographicBar label="White" pct={district.white_pct!} color="220 15% 60%" />
+          {/* Economic Indicators */}
+          {(district.poverty_rate != null || district.unemployment_rate != null || district.total_households != null) && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader icon={<TrendingDown className="h-5 w-5 text-accent" />} title="Economic Indicators" />
+              <div className="space-y-0">
+                <DataRow label="Poverty Rate" value={pct(district.poverty_rate)} />
+                <DataRow label="Unemployment Rate" value={pct(district.unemployment_rate)} />
+                <DataRow label="Total Households" value={fmt(district.total_households)} />
+                <DataRow label="Avg. Household Size" value={district.avg_household_size != null ? String(district.avg_household_size) : null} />
+              </div>
+            </div>
           )}
-          {district.black_pct !== null && (
-            <DemographicBar label="Black" pct={district.black_pct!} color="210 60% 45%" />
-          )}
-          {district.hispanic_pct !== null && (
-            <DemographicBar label="Hispanic" pct={district.hispanic_pct!} color="30 80% 50%" />
-          )}
-          {district.asian_pct !== null && (
-            <DemographicBar label="Asian" pct={district.asian_pct!} color="160 50% 45%" />
-          )}
-        </div>
 
-        {/* Education */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="font-display text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <GraduationCap className="h-4 w-4 text-primary" />
-            Education & Housing
-          </h3>
-          {statRow("Bachelor's Degree+", district.education_bachelor_pct, "%")}
-          {statRow("Owner-Occupied Housing", district.owner_occupied_pct, "%")}
-          {statRow("Median Home Value", district.median_home_value ? `$${district.median_home_value.toLocaleString()}` : null)}
-          {statRow("Median Rent", district.median_rent ? `$${district.median_rent.toLocaleString()}` : null)}
-        </div>
-      </div>
+          {/* Racial & Ethnic Demographics */}
+          {(district.white_pct != null || district.black_pct != null || district.hispanic_pct != null || district.asian_pct != null) && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader icon={<Users className="h-5 w-5 text-primary" />} title="Racial & Ethnic Demographics" />
+              <div className="space-y-0">
+                <DataRow label="White" value={pct(district.white_pct)} />
+                <DataRow label="Black / African American" value={pct(district.black_pct)} />
+                <DataRow label="Hispanic / Latino" value={pct(district.hispanic_pct)} />
+                <DataRow label="Asian" value={pct(district.asian_pct)} />
+                <DataRow label="Foreign-Born" value={pct(district.foreign_born_pct)} />
+              </div>
+            </div>
+          )}
+
+          {/* Housing */}
+          {(district.owner_occupied_pct != null || district.median_home_value != null || district.median_rent != null) && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader icon={<Home className="h-5 w-5 text-[hsl(var(--tag-house))]" />} title="Housing" />
+              <div className="space-y-0">
+                <DataRow label="Owner-Occupied" value={pct(district.owner_occupied_pct)} />
+                <DataRow label="Renter-Occupied" value={district.owner_occupied_pct != null ? pct(Math.round((100 - district.owner_occupied_pct) * 10) / 10) : null} />
+                <DataRow label="Median Home Value" value={dollar(district.median_home_value)} />
+                <DataRow label="Median Gross Rent" value={dollar(district.median_rent)} />
+              </div>
+            </div>
+          )}
+
+          {/* Health & Veterans */}
+          {(district.uninsured_pct != null || district.veteran_pct != null) && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader icon={<Heart className="h-5 w-5 text-destructive" />} title="Health & Veterans" />
+              <div className="space-y-0">
+                <DataRow label="Uninsured" value={pct(district.uninsured_pct)} />
+                <DataRow label="Veterans (18+)" value={pct(district.veteran_pct)} />
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Elections Tab */}
+        <TabsContent value="elections" className="mt-4">
+          <StatePollingPanel stateAbbr={district.state_abbr} />
+          <AreaFinancePanel stateAbbr={district.state_abbr} title={`Campaign Finance — ${district.state}`} />
+          {district.state_abbr === "MN" && <MNFinancePanel />}
+          <StateFinancePanel stateAbbr={district.state_abbr} />
+          <ElectionResultsSection
+            stateAbbr={district.state_abbr}
+            chamber={district.chamber}
+            districtNumber={district.district_number}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
