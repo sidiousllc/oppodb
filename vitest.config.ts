@@ -8,7 +8,7 @@ export default defineConfig({
     include: [
       'src/**/*.{test,spec}.{ts,tsx}',
       'supabase/functions/**/*.{test,spec}.{ts,tsx}',
-      'repo-builder-64.cluster-0.preview.emergentcf.cloud',
+      
     ],
     exclude: [
       '**/node_modules/**',
