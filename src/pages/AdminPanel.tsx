@@ -746,11 +746,16 @@ function WikiPagesTab() {
   const [editing, setEditing] = useState<WikiPageItem | null>(null);
   const [creating, setCreating] = useState(false);
   const [syncing, setSyncing] = useState<"pull" | "push" | null>(null);
+  const [syncMeta, setSyncMeta] = useState<{ last_commit_sha: string | null; last_synced_at: string | null } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from("wiki_pages").select("*").order("sort_order");
-    setItems((data || []) as WikiPageItem[]);
+    const [{ data: pages }, { data: meta }] = await Promise.all([
+      supabase.from("wiki_pages").select("*").order("sort_order"),
+      supabase.from("sync_metadata").select("last_commit_sha, last_synced_at").eq("id", 1).single(),
+    ]);
+    setItems((pages || []) as WikiPageItem[]);
+    setSyncMeta(meta || null);
     setLoading(false);
   }, []);
 
@@ -864,6 +869,21 @@ function WikiPagesTab() {
           <button onClick={() => setCreating(true)} className="win98-button text-[10px] flex items-center gap-1"><Plus className="h-3 w-3" /> Add Page</button>
         </div>
       </div>
+      {/* Sync status indicator */}
+      {syncMeta && (
+        <div className="win98-sunken bg-[hsl(var(--win98-light))] px-2 py-1 mb-2 flex items-center justify-between text-[9px] text-[hsl(var(--muted-foreground))]">
+          <span>
+            🔄 Last synced: {syncMeta.last_synced_at
+              ? new Date(syncMeta.last_synced_at).toLocaleString()
+              : "Never"}
+          </span>
+          {syncMeta.last_commit_sha && (
+            <span className="font-[monospace]" title={syncMeta.last_commit_sha}>
+              SHA: {syncMeta.last_commit_sha.slice(0, 7)}
+            </span>
+          )}
+        </div>
+      )}
       <div className="win98-sunken bg-white">
         {items.map(item => (
           <div key={item.id} className="flex items-center justify-between px-2 py-1.5 border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] text-[10px]">
