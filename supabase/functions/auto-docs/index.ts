@@ -344,12 +344,36 @@ serve(async (req) => {
   }
 });
 
-async function upsertPage(supabase: any, slug: string, title: string, content: string, sortOrder: number) {
+async function upsertPage(
+  supabase: any,
+  slug: string,
+  title: string,
+  content: string,
+  sortOrder: number,
+  triggeredBy?: string,
+  triggerMethod = "manual",
+) {
   const { data: existing } = await supabase
     .from("wiki_pages")
-    .select("id")
+    .select("id, content")
     .eq("slug", slug)
     .maybeSingle();
+
+  const oldContent = existing?.content || "";
+  const changeType = existing ? "updated" : "created";
+
+  // Only log if content actually changed
+  if (oldContent !== content) {
+    await supabase.from("wiki_changelog").insert({
+      slug,
+      title,
+      old_content: oldContent,
+      new_content: content,
+      change_type: changeType,
+      triggered_by: triggeredBy || null,
+      trigger_method: triggerMethod,
+    });
+  }
 
   if (existing) {
     await supabase
