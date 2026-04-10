@@ -66,9 +66,9 @@ function buildValidatedUrl(
     // Set the hostname with validated project ID
     url.hostname = `${projectId}.supabase.co`;
     
-    // Domain validation
+    // Domain validation - check if hostname ends with allowed domain
     const allowedDomains = ['supabase.co'];
-    if (!allowedDomains.includes(url.hostname)) {
+    if (!allowedDomains.some(domain => url.hostname.endsWith(`.${domain}`) || url.hostname === domain)) {
       throw new Error('Invalid host');
     }
     
