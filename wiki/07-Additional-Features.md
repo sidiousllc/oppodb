@@ -221,27 +221,52 @@ The landing page when users log in, providing an overview of the entire database
 ## Documentation Wiki (`DocumentationSection`)
 
 ### Description
-An in-app documentation reader that provides access to all OppoDB wiki documentation directly within the application.
+An in-app documentation reader that provides access to all OppoDB wiki documentation directly within the application. Documentation can be managed from the Admin Panel.
 
 ### Features
-- **Table of Contents Index**: Grid view of all 20 documentation pages with numbered entries
+- **Table of Contents Index**: Grid view of all documentation pages with numbered entries
 - **Search**: Filter documentation pages by title
-- **Lazy Loading**: Wiki content loaded on-demand via Vite dynamic imports (`?raw` suffix)
+- **Database-Backed Content**: Wiki pages can be stored in the `wiki_pages` database table, overriding static files
+- **Static File Fallback**: If no DB entry exists for a page, the static markdown file from `wiki/` is loaded via Vite raw imports
+- **Lazy Loading**: Content loaded on-demand (DB fetch or dynamic import)
 - **Markdown Rendering**: Full markdown support with Win98-styled components (tables, code blocks, blockquotes)
 - **Breadcrumb Navigation**: Shows current location within documentation hierarchy
 - **Quick Page Navigation**: Bottom nav allows jumping to other documentation pages without returning to index
+- **Draft Support**: Unpublished pages are only visible to admins/moderators
 - **Integration**: Accessible from sidebar navigation and mobile nav
 
-### Technical Implementation
-```typescript
-// Lazy-load wiki content via raw imports
-const wikiImports: Record<string, () => Promise<string>> = {
-  "overview": () => import("../../wiki/01-Overview.md?raw").then(m => m.default),
-  // ... one entry per wiki page
-};
+### Content Resolution Strategy
+```
+1. On mount, fetch all published wiki_pages from database
+2. Merge with static page list (DB pages override by slug match)
+3. DB-only pages (not in static list) are appended
+4. On page select:
+   a. If DB has content for slug → use DB content
+   b. Else → lazy-load static file via Vite raw import
+   c. Else → show "Page Not Found"
 ```
 
-### Wiki Sections (20 pages)
+### Admin Management
+In **Admin Panel → Documentation tab**, moderators and admins can:
+- Create new wiki pages with title, slug, content, sort order, and published flag
+- Edit existing pages (markdown editor with monospace font)
+- Delete pages (admin only)
+- Toggle published/draft status
+- Reorder pages via sort_order field
+
+### Database Table: `wiki_pages`
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid | Primary key |
+| `slug` | text (unique) | URL identifier matching static page slugs |
+| `title` | text | Display title |
+| `content` | text | Full markdown content |
+| `sort_order` | integer | Controls display ordering |
+| `published` | boolean | Visibility to non-admin users |
+| `created_at` | timestamptz | Creation timestamp |
+| `updated_at` | timestamptz | Last modification |
+
+### Wiki Sections (20+ pages)
 1. Overview
 2. Candidate Profiles
 3. District Intelligence
@@ -262,6 +287,7 @@ const wikiImports: Record<string, () => Promise<string>> = {
 18. OppoDB Search
 19. OppoHub
 20. MessagingHub
++ Any additional pages created via Admin Panel
 
 ---
 
