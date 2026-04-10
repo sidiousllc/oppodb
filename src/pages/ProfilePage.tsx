@@ -12,6 +12,7 @@ import { MarketCredentialsManager } from "@/components/MarketCredentialsManager"
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
