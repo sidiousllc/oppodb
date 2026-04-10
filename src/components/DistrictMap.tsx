@@ -172,18 +172,7 @@ interface FinanceEntry {
   party: string | null;
 }
 
-// ─── GeoJSON ────────────────────────────────────────────────────────────────
-
-interface DistrictGeoJSON {
-  type: string;
-  features: Array<{
-    type: string;
-    properties: Record<string, unknown>;
-    geometry: unknown;
-  }>;
-}
-
-// GeoJSON cache is managed by useMapLoader
+// ─── GeoJSON is managed by useMapLoader hook ────────────────────────────────
 // ─── Component ──────────────────────────────────────────────────────────────
 
 interface DistrictMapProps {
