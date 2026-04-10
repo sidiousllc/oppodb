@@ -765,10 +765,10 @@ function WikiPagesTab() {
     };
     try {
       if (item.id) {
-        await updateContent("wiki_pages" as any, item.id, record);
+        await updateContent("wiki_pages", item.id, record);
         toast.success("Updated");
       } else {
-        await insertContent("wiki_pages" as any, record);
+        await insertContent("wiki_pages", record);
         toast.success("Created");
       }
       setEditing(null); setCreating(false); load();
@@ -778,7 +778,7 @@ function WikiPagesTab() {
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this wiki page?")) return;
     try {
-      await deleteContent("wiki_pages" as any, id);
+      await deleteContent("wiki_pages", id);
       toast.success("Deleted"); load();
     } catch (e: any) { toast.error(e.message); }
   };
