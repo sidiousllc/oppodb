@@ -2037,6 +2037,42 @@ export type Database = {
         }
         Relationships: []
       }
+      wiki_changelog: {
+        Row: {
+          change_type: string
+          created_at: string
+          id: string
+          new_content: string
+          old_content: string
+          slug: string
+          title: string
+          trigger_method: string
+          triggered_by: string | null
+        }
+        Insert: {
+          change_type?: string
+          created_at?: string
+          id?: string
+          new_content?: string
+          old_content?: string
+          slug: string
+          title: string
+          trigger_method?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          change_type?: string
+          created_at?: string
+          id?: string
+          new_content?: string
+          old_content?: string
+          slug?: string
+          title?: string
+          trigger_method?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       wiki_pages: {
         Row: {
           content: string

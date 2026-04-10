@@ -158,7 +158,8 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const slugsToUpdate = body.slugs as string[] | undefined; // optional: only update specific pages
+    const slugsToUpdate = body.slugs as string[] | undefined;
+    const triggerMethod = body.trigger_method || "manual";
 
     // Step 1: Get current wiki content from DB
     const { data: existingPages } = await supabase
@@ -302,7 +303,7 @@ serve(async (req) => {
 
         // Fall back to template-based updates
         for (const page of pagesToUpdate) {
-          await upsertPage(supabase, page.slug, page.title, page.existingContent || generateFallbackContent(page), page.sortOrder);
+          await upsertPage(supabase, page.slug, page.title, page.existingContent || generateFallbackContent(page), page.sortOrder, user.id, triggerMethod);
           results.push({ slug: page.slug, status: "fallback" });
         }
       } else {
@@ -313,7 +314,7 @@ serve(async (req) => {
           const parsed = JSON.parse(toolCall.function.arguments);
           for (const page of parsed.pages || []) {
             const meta = FEATURE_REGISTRY[page.slug];
-            await upsertPage(supabase, page.slug, page.title, page.content, meta?.sortOrder ?? 99);
+            await upsertPage(supabase, page.slug, page.title, page.content, meta?.sortOrder ?? 99, user.id, triggerMethod);
             results.push({ slug: page.slug, status: "ai-updated" });
           }
         }
@@ -321,7 +322,7 @@ serve(async (req) => {
     } else {
       // No AI key — use template fallback
       for (const page of pagesToUpdate) {
-        await upsertPage(supabase, page.slug, page.title, generateFallbackContent(page), page.sortOrder);
+        await upsertPage(supabase, page.slug, page.title, generateFallbackContent(page), page.sortOrder, user.id, triggerMethod);
         results.push({ slug: page.slug, status: "template" });
       }
     }
@@ -343,12 +344,36 @@ serve(async (req) => {
   }
 });
 
-async function upsertPage(supabase: any, slug: string, title: string, content: string, sortOrder: number) {
+async function upsertPage(
+  supabase: any,
+  slug: string,
+  title: string,
+  content: string,
+  sortOrder: number,
+  triggeredBy?: string,
+  triggerMethod = "manual",
+) {
   const { data: existing } = await supabase
     .from("wiki_pages")
-    .select("id")
+    .select("id, content")
     .eq("slug", slug)
     .maybeSingle();
+
+  const oldContent = existing?.content || "";
+  const changeType = existing ? "updated" : "created";
+
+  // Only log if content actually changed
+  if (oldContent !== content) {
+    await supabase.from("wiki_changelog").insert({
+      slug,
+      title,
+      old_content: oldContent,
+      new_content: content,
+      change_type: changeType,
+      triggered_by: triggeredBy || null,
+      trigger_method: triggerMethod,
+    });
+  }
 
   if (existing) {
     await supabase

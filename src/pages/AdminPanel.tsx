@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { insertContent, updateContent, deleteContent } from "@/lib/contentAdmin";
 import { listUsers, setUserRole, deleteUser, createUser, updateUser, resetUserPassword, banUser, unbanUser, type AdminUser } from "@/lib/adminApi";
-import { Users, FileText, Globe, AlertTriangle, BookOpen, Shield, Trash2, Plus, Save, X, Edit3, Loader2, KeyRound, Pencil, Ban, ShieldCheck, RefreshCw, Upload, Download } from "lucide-react";
+import { Users, FileText, Globe, AlertTriangle, BookOpen, Shield, Trash2, Plus, Save, X, Edit3, Loader2, KeyRound, Pencil, Ban, ShieldCheck, RefreshCw, Upload, Download, Clock } from "lucide-react";
 import { RoleGroupsTab } from "@/components/RoleGroupsTab";
 import { AccessControlTab } from "@/components/AccessControlTab";
 import { ActivityLogsTab } from "@/components/ActivityLogsTab";
@@ -739,7 +739,110 @@ interface WikiPageItem {
   published: boolean;
 }
 
-function WikiPagesTab() {
+interface ChangelogEntry {
+  id: string;
+  slug: string;
+  title: string;
+  old_content: string;
+  new_content: string;
+  change_type: string;
+  trigger_method: string;
+  created_at: string;
+}
+
+function computeDiffStats(oldText: string, newText: string): string {
+  const oldLines = oldText.split("\n");
+  const newLines = newText.split("\n");
+  const oldSet = new Set(oldLines);
+  const newSet = new Set(newLines);
+  const added = newLines.filter(l => !oldSet.has(l)).length;
+  const removed = oldLines.filter(l => !newSet.has(l)).length;
+  return `+${added} / -${removed} lines`;
+}
+
+function DiffView({ oldText, newText }: { oldText: string; newText: string }) {
+  if (!oldText && newText) {
+    return (
+      <div className="win98-sunken bg-[hsl(var(--win98-light))] p-2 max-h-64 overflow-auto font-[monospace] text-[9px] leading-tight">
+        {newText.split("\n").slice(0, 80).map((line, i) => (
+          <div key={i} className="text-green-700 dark:text-green-400">+ {line}</div>
+        ))}
+        {newText.split("\n").length > 80 && <div className="text-[hsl(var(--muted-foreground))]">… {newText.split("\n").length - 80} more lines</div>}
+      </div>
+    );
+  }
+
+  const oldLines = oldText.split("\n");
+  const newLines = newText.split("\n");
+  const oldSet = new Set(oldLines);
+  const newSet = new Set(newLines);
+
+  const diffLines: { type: "add" | "remove" | "same"; text: string }[] = [];
+
+  // Simple line-based diff
+  const maxLen = Math.max(oldLines.length, newLines.length);
+  let oi = 0, ni = 0;
+  while (oi < oldLines.length || ni < newLines.length) {
+    if (oi < oldLines.length && ni < newLines.length && oldLines[oi] === newLines[ni]) {
+      diffLines.push({ type: "same", text: oldLines[oi] });
+      oi++; ni++;
+    } else if (oi < oldLines.length && !newSet.has(oldLines[oi])) {
+      diffLines.push({ type: "remove", text: oldLines[oi] });
+      oi++;
+    } else if (ni < newLines.length && !oldSet.has(newLines[ni])) {
+      diffLines.push({ type: "add", text: newLines[ni] });
+      ni++;
+    } else {
+      // Changed line
+      if (oi < oldLines.length) { diffLines.push({ type: "remove", text: oldLines[oi] }); oi++; }
+      if (ni < newLines.length) { diffLines.push({ type: "add", text: newLines[ni] }); ni++; }
+    }
+    if (diffLines.length > 200) break;
+  }
+
+  // Collapse unchanged sections
+  const collapsed: typeof diffLines = [];
+  let sameCount = 0;
+  for (const line of diffLines) {
+    if (line.type === "same") {
+      sameCount++;
+      if (sameCount <= 2) collapsed.push(line);
+      else if (sameCount === 3) collapsed.push({ type: "same", text: `… (${0} unchanged lines)` });
+    } else {
+      if (sameCount > 3) {
+        collapsed[collapsed.length - 1] = { type: "same", text: `… (${sameCount - 2} unchanged lines)` };
+      }
+      sameCount = 0;
+      collapsed.push(line);
+    }
+  }
+  if (sameCount > 3) {
+    collapsed[collapsed.length - 1] = { type: "same", text: `… (${sameCount - 2} unchanged lines)` };
+  }
+
+  return (
+    <div className="win98-sunken bg-[hsl(var(--win98-light))] p-2 max-h-64 overflow-auto font-[monospace] text-[9px] leading-tight">
+      {collapsed.length === 0 ? (
+        <div className="text-[hsl(var(--muted-foreground))]">No differences</div>
+      ) : (
+        collapsed.map((line, i) => (
+          <div
+            key={i}
+            className={
+              line.type === "add" ? "text-green-700 dark:text-green-400 bg-green-500/10" :
+              line.type === "remove" ? "text-red-700 dark:text-red-400 bg-red-500/10" :
+              "text-[hsl(var(--muted-foreground))]"
+            }
+          >
+            {line.type === "add" ? "+" : line.type === "remove" ? "-" : " "} {line.text}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+
   const { isAdmin } = useUserRole();
   const [items, setItems] = useState<WikiPageItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -748,6 +851,10 @@ function WikiPagesTab() {
   const [syncing, setSyncing] = useState<"pull" | "push" | null>(null);
   const [updatingDocs, setUpdatingDocs] = useState(false);
   const [syncMeta, setSyncMeta] = useState<{ last_commit_sha: string | null; last_synced_at: string | null } | null>(null);
+  const [showChangelog, setShowChangelog] = useState(false);
+  const [changelog, setChangelog] = useState<ChangelogEntry[]>([]);
+  const [changelogLoading, setChangelogLoading] = useState(false);
+  const [expandedChange, setExpandedChange] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -761,6 +868,17 @@ function WikiPagesTab() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadChangelog = async () => {
+    setChangelogLoading(true);
+    const { data } = await supabase
+      .from("wiki_changelog")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setChangelog((data || []) as ChangelogEntry[]);
+    setChangelogLoading(false);
+  };
 
   const handleSave = async (item: WikiPageItem) => {
     const record: Record<string, unknown> = {
@@ -850,7 +968,7 @@ function WikiPagesTab() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify(slugs ? { slugs } : {}),
+          body: JSON.stringify(slugs ? { slugs, trigger_method: "selective" } : { trigger_method: silent ? "auto-sync" : "manual" }),
         }
       );
       const result = await res.json();
@@ -966,6 +1084,61 @@ function WikiPagesTab() {
         ))}
         {items.length === 0 && (
           <div className="px-2 py-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">No wiki pages yet. Click "Pull from GitHub" to import or add pages manually.</div>
+        )}
+      </div>
+
+      {/* Changelog section */}
+      <div className="mt-3">
+        <button
+          onClick={() => { setShowChangelog(!showChangelog); if (!showChangelog && changelog.length === 0) loadChangelog(); }}
+          className="win98-button text-[10px] flex items-center gap-1 mb-2"
+        >
+          <Clock className="h-3 w-3" />
+          {showChangelog ? "Hide" : "Show"} Changelog
+        </button>
+
+        {showChangelog && (
+          <div className="win98-sunken bg-white">
+            {changelogLoading ? (
+              <div className="px-2 py-4 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
+                <Loader2 className="h-3 w-3 animate-spin inline mr-1" /> Loading changelog…
+              </div>
+            ) : changelog.length === 0 ? (
+              <div className="px-2 py-4 text-center text-[10px] text-[hsl(var(--muted-foreground))]">No documentation changes recorded yet.</div>
+            ) : (
+              changelog.map(entry => {
+                const isExpanded = expandedChange === entry.id;
+                return (
+                  <div key={entry.id} className="border-b border-[hsl(var(--win98-light))]">
+                    <button
+                      onClick={() => setExpandedChange(isExpanded ? null : entry.id)}
+                      className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-[hsl(var(--win98-light))] text-left"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-bold flex items-center gap-1">
+                          <span className={`inline-block w-1.5 h-1.5 rounded-full ${entry.change_type === "created" ? "bg-green-500" : "bg-amber-500"}`} />
+                          {entry.title}
+                          <span className="font-normal text-[hsl(var(--muted-foreground))]">/{entry.slug}</span>
+                        </div>
+                        <div className="text-[9px] text-[hsl(var(--muted-foreground))]">
+                          {new Date(entry.created_at).toLocaleString()} · {entry.change_type} · via {entry.trigger_method}
+                          {entry.old_content && entry.new_content && (
+                            <span> · {computeDiffStats(entry.old_content, entry.new_content)}</span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[9px] text-[hsl(var(--muted-foreground))] shrink-0 ml-2">{isExpanded ? "▼" : "►"}</span>
+                    </button>
+                    {isExpanded && (
+                      <div className="px-2 pb-2">
+                        <DiffView oldText={entry.old_content} newText={entry.new_content} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
         )}
       </div>
     </div>
