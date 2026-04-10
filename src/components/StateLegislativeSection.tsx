@@ -6,7 +6,8 @@ import {
   ALL_STATE_ABBRS,
   STATE_NAMES,
 } from "@/data/stateLegislativeIntel";
-import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign, Vote, Download } from "lucide-react";
+import { MapPin, ChevronRight, Users, Building2, Landmark, ArrowLeft, Search, TrendingUp, Home, GraduationCap, DollarSign, Vote, Download, LayoutDashboard, Heart, TrendingDown, Calendar, Newspaper, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StateLegBoundaryMap } from "./StateLegBoundaryMap";
 import { StateLegOverviewMap } from "./StateLegOverviewMap";
 import { ElectionResultsSection } from "./ElectionResultsSection";
