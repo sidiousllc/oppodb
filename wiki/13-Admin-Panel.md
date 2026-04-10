@@ -267,6 +267,12 @@ The Documentation tab manages wiki pages stored in the `wiki_pages` database tab
 | Published | Checkbox | Draft pages are hidden from non-admin users |
 | Content | Monospace Markdown textarea | Full markdown content |
 
+**Sync Status Indicator:**
+The Documentation tab displays a sync status bar showing:
+- **Last synced**: Formatted timestamp of the most recent GitHub → database sync
+- **Commit SHA**: Abbreviated (7-char) commit hash from the `sync_metadata` table
+- Data is loaded in parallel via `Promise.all` fetching `wiki_pages` and `sync_metadata` (id=1)
+
 **Content Resolution Strategy:**
 1. On load, the Documentation section fetches all published pages from `wiki_pages`
 2. DB pages override static wiki files by matching slug

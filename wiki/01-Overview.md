@@ -50,6 +50,7 @@ src/
 │   └── ...
 ├── contexts/                 # React contexts
 │   ├── AuthContext.tsx       # Authentication state
+│   ├── ThemeContext.tsx      # Multi-theme + dark mode management
 │   ├── MailContext.tsx       # AOL mail simulation
 │   └── WindowManagerContext  # Window z-index management
 ├── data/                     # Data access layer (Supabase queries)
@@ -161,7 +162,7 @@ supabase/
 - `user_roles` — RBAC role assignments (enum: admin, moderator, user)
 - `role_groups` — Custom role group definitions
 - `role_group_members` — User ↔ group mappings
-- `profiles` — Extended user profiles (display_name, avatar_url)
+- `profiles` — Extended user profiles (display_name, avatar_url, windows_theme, dark_mode)
 - `user_invitations` — Invite tokens for access
 - `access_requests` — Public access request queue
 - `user_mail` — In-app AOL mail messages
@@ -201,18 +202,50 @@ supabase/
 
 Roles are stored in a dedicated `user_roles` table using the `app_role` enum. Role checks use the `has_role()` SECURITY DEFINER function to prevent RLS recursion. Role Groups provide an additional layer of team-based access control with automatic role synchronization.
 
-## UI Theme: Win98 + AOL Desktop
+## UI Theme: Multi-Windows Theme System
 
-The application wraps its modern functionality in a nostalgic Windows 98 / AOL desktop environment:
-- **Win98Window** — Draggable/resizable window chrome with classic title bar buttons
-- **Win98Taskbar** — Classic taskbar at the bottom with Start button
+The application supports 7 selectable Windows desktop themes, each with light and dark mode variants:
+
+| Theme | Key Visual Traits |
+|-------|------------------|
+| **Windows 98** (default) | Classic 3D beveled borders, 0px radius, teal desktop, `Tahoma` font |
+| **Windows XP** | Luna-style gradients, rounded 3px corners, blue title bars, `Trebuchet MS` font |
+| **Windows Vista** | Aero glass translucency, `backdrop-filter: blur(10px)`, dark title bars |
+| **Windows 7** | Refined Aero glass, 4px rounded corners, softer gradients |
+| **Windows 8** | Flat Metro design, sharp 0px corners, bold accent colors, no bevels |
+| **Windows 10** | Minimal flat design, thin borders, subtle hover states, acrylic effects |
+| **Windows 11** | Rounded 8px corners, frosted glass, smooth transitions, `Segoe UI Variable` |
+
+### Theme Architecture
+
+- **`ThemeContext.tsx`** — React context managing theme + dark mode state
+- **`themes.css`** — CSS variable overrides for each theme via `.theme-{name}` classes
+- **`index.css`** — Base Win98 theme (default CSS variables)
+- **Dark mode** — Applied via `.dark` class on `<html>`, with per-theme dark color palettes
+- **Persistence** — Theme saved to `profiles` table (`windows_theme`, `dark_mode` columns) for cross-device sync, with `localStorage` fast-path fallback
+- **Page reload** — Theme/dark mode changes trigger `window.location.reload()` for full style reapplication
+
+### Theme Selection
+- Available in **Profile Settings** page under "Desktop Theme" section
+- Each theme shows a preview thumbnail image
+- Dark mode toggle button (🌙/☀️) alongside theme grid
+- Active theme highlighted with primary-color border and "✓ Active" badge
+
+### CSS Variable System
+All themes override the same HSL-based CSS custom properties:
+```css
+--background, --foreground, --card, --primary, --secondary, --muted, --accent,
+--destructive, --border, --input, --ring, --radius,
+--win98-highlight, --win98-light, --win98-face, --win98-shadow,
+--win98-dark-shadow, --win98-titlebar, --win98-titlebar-inactive
+```
+
+### AOL Components
+The AOL components (toolbar, buddy list, mail, dial-up animation) work within all themes:
 - **AOLToolbar** — AOL Browser-style navigation toolbar with Back/Forward/Refresh
 - **AOLBuddyList** — Real-time AIM-style buddy list with presence tracking
 - **AOLMailWindow** — Functional in-app mail system with email notifications
-- **Win98Desktop** — Desktop view when the main window is minimized
 - **AOLDialUpAnimation** — Nostalgic dial-up modem connection screen on auth page
-
-This design choice makes heavy political research data feel approachable and distinctive.
 
 ## Email Infrastructure
 

@@ -33,6 +33,9 @@ OppoDB is a comprehensive opposition research database for political campaigns, 
 
 ## Key Features
 
+- **7 Windows Desktop Themes** — Win98, XP, Vista, 7, 8, 10, 11 with light & dark mode variants
+- **Theme Preview Thumbnails** — Visual theme selector with preview screenshots
+- **Cross-Device Theme Sync** — Theme preferences stored in database, synced on login
 - **50+ Edge Functions** for data sync, API access, email, and administration
 - **Role-Based Access Control** with admin, moderator, premium, and user tiers
 - **Role Groups** with automatic role synchronization
@@ -50,4 +53,5 @@ OppoDB is a comprehensive opposition research database for political campaigns, 
 - **In-App Mail & Chat** with real email notification delivery
 - **Real-Time Presence** via AOL Buddy List
 - **Documentation Wiki** accessible directly within the application (20+ pages, admin-editable via database)
-- **Admin Documentation Management** — Create, edit, and publish wiki pages from the Admin Panel
+- **Admin Documentation Management** — Create, edit, and publish wiki pages from the Admin Panel with sync status indicator (last sync time + commit SHA)
+- **GitHub Sync Status** — Admin Panel shows last sync timestamp and commit SHA from `sync_metadata`
