@@ -746,6 +746,7 @@ function WikiPagesTab() {
   const [editing, setEditing] = useState<WikiPageItem | null>(null);
   const [creating, setCreating] = useState(false);
   const [syncing, setSyncing] = useState<"pull" | "push" | null>(null);
+  const [updatingDocs, setUpdatingDocs] = useState(false);
   const [syncMeta, setSyncMeta] = useState<{ last_commit_sha: string | null; last_synced_at: string | null } | null>(null);
 
   const load = useCallback(async () => {
