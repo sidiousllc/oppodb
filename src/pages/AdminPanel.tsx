@@ -842,7 +842,7 @@ function DiffView({ oldText, newText }: { oldText: string; newText: string }) {
   );
 }
 
-
+function WikiPagesTab() {
   const { isAdmin } = useUserRole();
   const [items, setItems] = useState<WikiPageItem[]>([]);
   const [loading, setLoading] = useState(true);
