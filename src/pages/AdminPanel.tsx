@@ -746,6 +746,7 @@ function WikiPagesTab() {
   const [editing, setEditing] = useState<WikiPageItem | null>(null);
   const [creating, setCreating] = useState(false);
   const [syncing, setSyncing] = useState<"pull" | "push" | null>(null);
+  const [updatingDocs, setUpdatingDocs] = useState(false);
   const [syncMeta, setSyncMeta] = useState<{ last_commit_sha: string | null; last_synced_at: string | null } | null>(null);
 
   const load = useCallback(async () => {
@@ -825,10 +826,54 @@ function WikiPagesTab() {
         toast.warning(`${result.errors.length} error(s) during sync`);
         console.warn("Sync errors:", result.errors);
       }
+      // Auto-update documentation after sync
+      handleUpdateDocs(true);
     } catch (e: any) {
       toast.error(e.message || "Sync failed");
     } finally {
       setSyncing(null);
+    }
+  };
+
+  const handleUpdateDocs = async (silent = false) => {
+    setUpdatingDocs(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { if (!silent) toast.error("Not authenticated"); return; }
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/auto-docs`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({}),
+        }
+      );
+      const result = await res.json();
+
+      if (!res.ok) {
+        if (!silent) toast.error(result.error || "Docs update failed");
+        return;
+      }
+
+      if (result.updated > 0) {
+        toast.success(`Updated ${result.updated} documentation page(s)`);
+        await load();
+      } else {
+        if (!silent) toast.info(result.message || "Documentation is already up to date");
+      }
+
+      if (result.newComponents?.length > 0) {
+        toast.info(`${result.newComponents.length} new component(s) detected: ${result.newComponents.slice(0, 3).join(", ")}${result.newComponents.length > 3 ? "…" : ""}`);
+      }
+    } catch (e: any) {
+      if (!silent) toast.error(e.message || "Docs update failed");
+    } finally {
+      setUpdatingDocs(false);
     }
   };
 
@@ -863,6 +908,15 @@ function WikiPagesTab() {
               >
                 {syncing === "push" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                 Push to GitHub
+              </button>
+              <button
+                onClick={() => handleUpdateDocs(false)}
+                disabled={syncing !== null || updatingDocs}
+                className="win98-button text-[10px] flex items-center gap-1"
+                title="Auto-update documentation based on codebase changes"
+              >
+                {updatingDocs ? <Loader2 className="h-3 w-3 animate-spin" /> : <BookOpen className="h-3 w-3" />}
+                Update Docs
               </button>
             </>
           )}
