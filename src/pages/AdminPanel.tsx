@@ -994,6 +994,61 @@ function WikiPagesTab() {
           <div className="px-2 py-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">No wiki pages yet. Click "Pull from GitHub" to import or add pages manually.</div>
         )}
       </div>
+
+      {/* Changelog section */}
+      <div className="mt-3">
+        <button
+          onClick={() => { setShowChangelog(!showChangelog); if (!showChangelog && changelog.length === 0) loadChangelog(); }}
+          className="win98-button text-[10px] flex items-center gap-1 mb-2"
+        >
+          <Clock className="h-3 w-3" />
+          {showChangelog ? "Hide" : "Show"} Changelog
+        </button>
+
+        {showChangelog && (
+          <div className="win98-sunken bg-white">
+            {changelogLoading ? (
+              <div className="px-2 py-4 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
+                <Loader2 className="h-3 w-3 animate-spin inline mr-1" /> Loading changelog…
+              </div>
+            ) : changelog.length === 0 ? (
+              <div className="px-2 py-4 text-center text-[10px] text-[hsl(var(--muted-foreground))]">No documentation changes recorded yet.</div>
+            ) : (
+              changelog.map(entry => {
+                const isExpanded = expandedChange === entry.id;
+                return (
+                  <div key={entry.id} className="border-b border-[hsl(var(--win98-light))]">
+                    <button
+                      onClick={() => setExpandedChange(isExpanded ? null : entry.id)}
+                      className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-[hsl(var(--win98-light))] text-left"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-bold flex items-center gap-1">
+                          <span className={`inline-block w-1.5 h-1.5 rounded-full ${entry.change_type === "created" ? "bg-green-500" : "bg-amber-500"}`} />
+                          {entry.title}
+                          <span className="font-normal text-[hsl(var(--muted-foreground))]">/{entry.slug}</span>
+                        </div>
+                        <div className="text-[9px] text-[hsl(var(--muted-foreground))]">
+                          {new Date(entry.created_at).toLocaleString()} · {entry.change_type} · via {entry.trigger_method}
+                          {entry.old_content && entry.new_content && (
+                            <span> · {computeDiffStats(entry.old_content, entry.new_content)}</span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[9px] text-[hsl(var(--muted-foreground))] shrink-0 ml-2">{isExpanded ? "▼" : "►"}</span>
+                    </button>
+                    {isExpanded && (
+                      <div className="px-2 pb-2">
+                        <DiffView oldText={entry.old_content} newText={entry.new_content} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
