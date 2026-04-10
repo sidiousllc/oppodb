@@ -304,7 +304,7 @@ export function useMapLoader(): MapLoadResult {
     setPreferredSourceState(s);
   }, []);
 
-  const applyData = useCallback((
+  const applyData = useCallback(async (
     data: GeoJSONData,
     src: MapSource,
     elapsed: number,
@@ -314,6 +314,7 @@ export function useMapLoader(): MapLoadResult {
   ) => {
     const clean = cleanGeoData(data);
     const states = countStates(clean);
+    const sizeMB = await idbGetSizeMB();
     setGeoData(clean);
     setActiveSource(src);
     setLoadTimeMs(elapsed);
@@ -325,6 +326,7 @@ export function useMapLoader(): MapLoadResult {
       cacheHit,
       offlineReady: true,
       idbCachedAt,
+      idbSizeMB: sizeMB,
     });
     setLoading(false);
   }, []);
