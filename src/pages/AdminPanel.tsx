@@ -745,6 +745,7 @@ function WikiPagesTab() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<WikiPageItem | null>(null);
   const [creating, setCreating] = useState(false);
+  const [syncing, setSyncing] = useState<"pull" | "push" | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -783,6 +784,49 @@ function WikiPagesTab() {
     } catch (e: any) { toast.error(e.message); }
   };
 
+  const handleSync = async (direction: "pull" | "push") => {
+    const confirmMsg = direction === "pull"
+      ? "Pull wiki pages from GitHub? This will overwrite local database content with GitHub content."
+      : "Push wiki pages to GitHub? This will overwrite GitHub wiki content with database content.";
+    if (!confirm(confirmMsg)) return;
+
+    setSyncing(direction);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Not authenticated"); return; }
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/wiki-sync`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ direction }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Sync failed");
+
+      if (direction === "pull") {
+        toast.success(`Pulled ${result.imported || 0} pages from GitHub`);
+        load();
+      } else {
+        toast.success(`Pushed ${result.pushed || 0} pages to GitHub`);
+      }
+      if (result.errors?.length) {
+        toast.warning(`${result.errors.length} error(s) during sync`);
+        console.warn("Sync errors:", result.errors);
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Sync failed");
+    } finally {
+      setSyncing(null);
+    }
+  };
+
   if (loading) return <div className="text-center py-8 text-[10px]">Loading...</div>;
 
   if (editing || creating) {
@@ -794,7 +838,31 @@ function WikiPagesTab() {
     <div>
       <div className="flex justify-between items-center mb-2">
         <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{items.length} pages</span>
-        <button onClick={() => setCreating(true)} className="win98-button text-[10px] flex items-center gap-1"><Plus className="h-3 w-3" /> Add Page</button>
+        <div className="flex gap-1">
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => handleSync("pull")}
+                disabled={syncing !== null}
+                className="win98-button text-[10px] flex items-center gap-1"
+                title="Pull from GitHub wiki into database"
+              >
+                {syncing === "pull" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                Pull from GitHub
+              </button>
+              <button
+                onClick={() => handleSync("push")}
+                disabled={syncing !== null}
+                className="win98-button text-[10px] flex items-center gap-1"
+                title="Push database wiki pages to GitHub wiki"
+              >
+                {syncing === "push" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                Push to GitHub
+              </button>
+            </>
+          )}
+          <button onClick={() => setCreating(true)} className="win98-button text-[10px] flex items-center gap-1"><Plus className="h-3 w-3" /> Add Page</button>
+        </div>
       </div>
       <div className="win98-sunken bg-white">
         {items.map(item => (
@@ -813,7 +881,7 @@ function WikiPagesTab() {
           </div>
         ))}
         {items.length === 0 && (
-          <div className="px-2 py-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">No wiki pages yet. Add pages or they'll be loaded from static files.</div>
+          <div className="px-2 py-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">No wiki pages yet. Click "Pull from GitHub" to import or add pages manually.</div>
         )}
       </div>
     </div>
