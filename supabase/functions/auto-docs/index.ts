@@ -158,7 +158,8 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const slugsToUpdate = body.slugs as string[] | undefined; // optional: only update specific pages
+    const slugsToUpdate = body.slugs as string[] | undefined;
+    const triggerMethod = body.trigger_method || "manual";
 
     // Step 1: Get current wiki content from DB
     const { data: existingPages } = await supabase
