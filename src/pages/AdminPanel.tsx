@@ -909,8 +909,15 @@ function WikiPagesTab() {
                 {syncing === "push" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                 Push to GitHub
               </button>
-            </>
-          )}
+              <button
+                onClick={() => handleUpdateDocs(false)}
+                disabled={syncing !== null || updatingDocs}
+                className="win98-button text-[10px] flex items-center gap-1"
+                title="Auto-update documentation based on codebase changes"
+              >
+                {updatingDocs ? <Loader2 className="h-3 w-3 animate-spin" /> : <BookOpen className="h-3 w-3" />}
+                Update Docs
+              </button>
           <button onClick={() => setCreating(true)} className="win98-button text-[10px] flex items-center gap-1"><Plus className="h-3 w-3" /> Add Page</button>
         </div>
       </div>
