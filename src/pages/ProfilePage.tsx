@@ -138,26 +138,27 @@ export default function ProfilePage() {
             <button
               key={key}
               onClick={() => setTheme(key)}
-              className={`win98-button text-[10px] py-2 px-3 text-left flex items-center gap-2 ${
+              className={`win98-button text-[10px] p-1.5 text-left flex flex-col items-center gap-1 ${
                 theme === key ? "font-bold" : ""
               }`}
               style={theme === key ? {
                 borderColor: "hsl(var(--primary))",
                 background: "hsl(var(--accent))",
+                boxShadow: "0 0 0 2px hsl(var(--primary) / 0.3)",
               } : {}}
             >
-              <span className="text-base">{
-                key === "win98" ? "🖥️" :
-                key === "winxp" ? "🌿" :
-                key === "vista" ? "✨" :
-                key === "win7" ? "🏠" :
-                key === "win8" ? "⬛" :
-                key === "win10" ? "🪟" :
-                "☁️"
-              }</span>
-              <div>
-                <div>{label}</div>
-                {theme === key && <div className="text-[8px] text-[hsl(var(--primary))]">Active</div>}
+              <img
+                src={THEME_THUMBNAILS[key]}
+                alt={label}
+                loading="lazy"
+                width={512}
+                height={512}
+                className="w-full aspect-square object-cover"
+                style={{ borderRadius: "1px", border: theme === key ? "2px solid hsl(var(--primary))" : "1px solid hsl(var(--win98-shadow))" }}
+              />
+              <div className="text-center w-full">
+                <div className="truncate">{label}</div>
+                {theme === key && <div className="text-[8px] text-[hsl(var(--primary))]">✓ Active</div>}
               </div>
             </button>
           ))}
