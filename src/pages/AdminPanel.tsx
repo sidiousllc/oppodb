@@ -746,11 +746,16 @@ function WikiPagesTab() {
   const [editing, setEditing] = useState<WikiPageItem | null>(null);
   const [creating, setCreating] = useState(false);
   const [syncing, setSyncing] = useState<"pull" | "push" | null>(null);
+  const [syncMeta, setSyncMeta] = useState<{ last_commit_sha: string | null; last_synced_at: string | null } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from("wiki_pages").select("*").order("sort_order");
-    setItems((data || []) as WikiPageItem[]);
+    const [{ data: pages }, { data: meta }] = await Promise.all([
+      supabase.from("wiki_pages").select("*").order("sort_order"),
+      supabase.from("sync_metadata").select("last_commit_sha, last_synced_at").eq("id", 1).single(),
+    ]);
+    setItems((pages || []) as WikiPageItem[]);
+    setSyncMeta(meta || null);
     setLoading(false);
   }, []);
 
