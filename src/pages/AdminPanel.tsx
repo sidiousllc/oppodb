@@ -750,7 +750,99 @@ interface ChangelogEntry {
   created_at: string;
 }
 
-function WikiPagesTab() {
+function computeDiffStats(oldText: string, newText: string): string {
+  const oldLines = oldText.split("\n");
+  const newLines = newText.split("\n");
+  const oldSet = new Set(oldLines);
+  const newSet = new Set(newLines);
+  const added = newLines.filter(l => !oldSet.has(l)).length;
+  const removed = oldLines.filter(l => !newSet.has(l)).length;
+  return `+${added} / -${removed} lines`;
+}
+
+function DiffView({ oldText, newText }: { oldText: string; newText: string }) {
+  if (!oldText && newText) {
+    return (
+      <div className="win98-sunken bg-[hsl(var(--win98-light))] p-2 max-h-64 overflow-auto font-[monospace] text-[9px] leading-tight">
+        {newText.split("\n").slice(0, 80).map((line, i) => (
+          <div key={i} className="text-green-700 dark:text-green-400">+ {line}</div>
+        ))}
+        {newText.split("\n").length > 80 && <div className="text-[hsl(var(--muted-foreground))]">… {newText.split("\n").length - 80} more lines</div>}
+      </div>
+    );
+  }
+
+  const oldLines = oldText.split("\n");
+  const newLines = newText.split("\n");
+  const oldSet = new Set(oldLines);
+  const newSet = new Set(newLines);
+
+  const diffLines: { type: "add" | "remove" | "same"; text: string }[] = [];
+
+  // Simple line-based diff
+  const maxLen = Math.max(oldLines.length, newLines.length);
+  let oi = 0, ni = 0;
+  while (oi < oldLines.length || ni < newLines.length) {
+    if (oi < oldLines.length && ni < newLines.length && oldLines[oi] === newLines[ni]) {
+      diffLines.push({ type: "same", text: oldLines[oi] });
+      oi++; ni++;
+    } else if (oi < oldLines.length && !newSet.has(oldLines[oi])) {
+      diffLines.push({ type: "remove", text: oldLines[oi] });
+      oi++;
+    } else if (ni < newLines.length && !oldSet.has(newLines[ni])) {
+      diffLines.push({ type: "add", text: newLines[ni] });
+      ni++;
+    } else {
+      // Changed line
+      if (oi < oldLines.length) { diffLines.push({ type: "remove", text: oldLines[oi] }); oi++; }
+      if (ni < newLines.length) { diffLines.push({ type: "add", text: newLines[ni] }); ni++; }
+    }
+    if (diffLines.length > 200) break;
+  }
+
+  // Collapse unchanged sections
+  const collapsed: typeof diffLines = [];
+  let sameCount = 0;
+  for (const line of diffLines) {
+    if (line.type === "same") {
+      sameCount++;
+      if (sameCount <= 2) collapsed.push(line);
+      else if (sameCount === 3) collapsed.push({ type: "same", text: `… (${0} unchanged lines)` });
+    } else {
+      if (sameCount > 3) {
+        collapsed[collapsed.length - 1] = { type: "same", text: `… (${sameCount - 2} unchanged lines)` };
+      }
+      sameCount = 0;
+      collapsed.push(line);
+    }
+  }
+  if (sameCount > 3) {
+    collapsed[collapsed.length - 1] = { type: "same", text: `… (${sameCount - 2} unchanged lines)` };
+  }
+
+  return (
+    <div className="win98-sunken bg-[hsl(var(--win98-light))] p-2 max-h-64 overflow-auto font-[monospace] text-[9px] leading-tight">
+      {collapsed.length === 0 ? (
+        <div className="text-[hsl(var(--muted-foreground))]">No differences</div>
+      ) : (
+        collapsed.map((line, i) => (
+          <div
+            key={i}
+            className={
+              line.type === "add" ? "text-green-700 dark:text-green-400 bg-green-500/10" :
+              line.type === "remove" ? "text-red-700 dark:text-red-400 bg-red-500/10" :
+              "text-[hsl(var(--muted-foreground))]"
+            }
+          >
+            {line.type === "add" ? "+" : line.type === "remove" ? "-" : " "} {line.text}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+
   const { isAdmin } = useUserRole();
   const [items, setItems] = useState<WikiPageItem[]>([]);
   const [loading, setLoading] = useState(true);
