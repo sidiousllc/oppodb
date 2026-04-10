@@ -493,3 +493,324 @@
 .theme-win11 ::-webkit-scrollbar-track { background: transparent; border: none; }
 .theme-win11 ::-webkit-scrollbar-thumb { background: hsl(210 10% 75%); border: none; border-radius: 10px; box-shadow: none; }
 .theme-win11 ::-webkit-scrollbar-button { display: none; }
+
+
+/* =============================================
+   Dark Mode Variants
+   Applied via .dark on <html> alongside .theme-{name}
+   ============================================= */
+
+/* -------- Win98 Dark -------- */
+.dark {
+  --background: 180 30% 12%;
+  --foreground: 0 0% 88%;
+  --card: 0 0% 22%;
+  --card-foreground: 0 0% 88%;
+  --popover: 0 0% 22%;
+  --popover-foreground: 0 0% 88%;
+  --primary: 220 80% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 30%;
+  --secondary-foreground: 0 0% 88%;
+  --muted: 0 0% 28%;
+  --muted-foreground: 0 0% 60%;
+  --accent: 0 0% 25%;
+  --accent-foreground: 0 0% 88%;
+  --destructive: 0 70% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 35%;
+  --input: 0 0% 18%;
+  --ring: 220 80% 55%;
+
+  --win98-highlight: 0 0% 40%;
+  --win98-light: 0 0% 28%;
+  --win98-face: 0 0% 24%;
+  --win98-shadow: 0 0% 14%;
+  --win98-dark-shadow: 0 0% 5%;
+  --win98-titlebar: 220 70% 35%;
+  --win98-titlebar-inactive: 0 0% 30%;
+
+  --sidebar-background: 0 0% 20%;
+  --sidebar-foreground: 0 0% 88%;
+  --sidebar-primary: 220 80% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 70% 35%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 0 0% 30%;
+  --sidebar-ring: 220 80% 55%;
+}
+
+/* -------- WinXP Dark -------- */
+.dark.theme-winxp {
+  --background: 213 40% 12%;
+  --foreground: 0 0% 88%;
+  --card: 40 10% 20%;
+  --card-foreground: 0 0% 88%;
+  --popover: 40 10% 20%;
+  --popover-foreground: 0 0% 88%;
+  --primary: 213 71% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 120 25% 30%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 40 8% 25%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 40 10% 22%;
+  --accent-foreground: 0 0% 88%;
+  --border: 213 20% 35%;
+  --input: 0 0% 16%;
+  --ring: 213 71% 50%;
+
+  --win98-highlight: 40 10% 35%;
+  --win98-light: 40 8% 26%;
+  --win98-face: 40 8% 22%;
+  --win98-shadow: 213 15% 14%;
+  --win98-dark-shadow: 213 20% 6%;
+  --win98-titlebar: 213 65% 35%;
+  --win98-titlebar-inactive: 213 10% 30%;
+}
+
+.dark.theme-winxp .win98-titlebar {
+  background: linear-gradient(180deg, hsl(213 70% 40%), hsl(213 65% 30%), hsl(213 60% 22%));
+}
+
+.dark.theme-winxp .win98-button {
+  background: linear-gradient(180deg, hsl(40 10% 26%), hsl(40 8% 20%));
+  border-color: hsl(213 15% 30%);
+}
+
+/* -------- Vista Dark -------- */
+.dark.theme-vista {
+  --background: 210 20% 10%;
+  --foreground: 0 0% 88%;
+  --card: 210 12% 18%;
+  --card-foreground: 0 0% 88%;
+  --popover: 210 12% 20%;
+  --popover-foreground: 0 0% 88%;
+  --primary: 210 60% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 10% 28%;
+  --secondary-foreground: 0 0% 88%;
+  --muted: 210 8% 24%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 210 12% 22%;
+  --accent-foreground: 0 0% 88%;
+  --border: 210 10% 30%;
+  --input: 0 0% 14%;
+  --ring: 210 60% 50%;
+
+  --win98-highlight: 210 8% 35%;
+  --win98-light: 210 8% 22%;
+  --win98-face: 210 10% 18%;
+  --win98-shadow: 210 10% 12%;
+  --win98-dark-shadow: 210 12% 5%;
+  --win98-titlebar: 210 40% 18%;
+  --win98-titlebar-inactive: 210 5% 25%;
+}
+
+.dark.theme-vista .win98-titlebar {
+  background: linear-gradient(180deg, hsl(210 25% 28% / 0.9), hsl(210 20% 14% / 0.95));
+}
+
+.dark.theme-vista .win98-button {
+  background: linear-gradient(180deg, hsl(210 10% 24%), hsl(210 10% 18%));
+  border-color: hsl(210 10% 28%);
+}
+
+/* -------- Win7 Dark -------- */
+.dark.theme-win7 {
+  --background: 210 25% 10%;
+  --foreground: 0 0% 88%;
+  --card: 210 12% 18%;
+  --card-foreground: 0 0% 88%;
+  --popover: 210 12% 20%;
+  --popover-foreground: 0 0% 88%;
+  --primary: 200 70% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 200 12% 28%;
+  --secondary-foreground: 0 0% 88%;
+  --muted: 200 8% 24%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 200 12% 22%;
+  --accent-foreground: 0 0% 88%;
+  --border: 200 10% 32%;
+  --input: 0 0% 14%;
+  --ring: 200 70% 50%;
+
+  --win98-highlight: 200 10% 35%;
+  --win98-light: 200 10% 22%;
+  --win98-face: 200 10% 18%;
+  --win98-shadow: 200 10% 12%;
+  --win98-dark-shadow: 200 12% 5%;
+  --win98-titlebar: 200 55% 30%;
+  --win98-titlebar-inactive: 200 5% 25%;
+}
+
+.dark.theme-win7 .win98-titlebar {
+  background: linear-gradient(180deg, hsl(200 45% 40% / 0.8), hsl(200 50% 25% / 0.9));
+}
+
+.dark.theme-win7 .win98-button {
+  background: linear-gradient(180deg, hsl(200 8% 24%), hsl(200 8% 18%));
+  border-color: hsl(200 10% 28%);
+}
+
+/* -------- Win8 Dark -------- */
+.dark.theme-win8 {
+  --background: 200 50% 12%;
+  --foreground: 0 0% 92%;
+  --card: 0 0% 16%;
+  --card-foreground: 0 0% 92%;
+  --popover: 0 0% 18%;
+  --popover-foreground: 0 0% 92%;
+  --primary: 200 80% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 22%;
+  --secondary-foreground: 0 0% 92%;
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 200 50% 18%;
+  --accent-foreground: 200 80% 80%;
+  --border: 0 0% 28%;
+  --input: 0 0% 14%;
+  --ring: 200 80% 50%;
+
+  --win98-highlight: 0 0% 30%;
+  --win98-light: 0 0% 20%;
+  --win98-face: 0 0% 18%;
+  --win98-shadow: 0 0% 10%;
+  --win98-dark-shadow: 0 0% 4%;
+  --win98-titlebar: 200 70% 35%;
+  --win98-titlebar-inactive: 0 0% 25%;
+}
+
+.dark.theme-win8 .win98-button {
+  background: hsl(0 0% 20%);
+  border-color: hsl(0 0% 30%);
+}
+
+.dark.theme-win8 .win98-button:hover {
+  border-color: hsl(200 80% 50%);
+}
+
+/* -------- Win10 Dark -------- */
+.dark.theme-win10 {
+  --background: 210 15% 8%;
+  --foreground: 0 0% 92%;
+  --card: 0 0% 14%;
+  --card-foreground: 0 0% 92%;
+  --popover: 0 0% 16%;
+  --popover-foreground: 0 0% 92%;
+  --primary: 207 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 20%;
+  --secondary-foreground: 0 0% 92%;
+  --muted: 0 0% 18%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 207 80% 16%;
+  --accent-foreground: 207 100% 80%;
+  --border: 0 0% 25%;
+  --input: 0 0% 12%;
+  --ring: 207 100% 50%;
+
+  --win98-highlight: 0 0% 28%;
+  --win98-light: 0 0% 18%;
+  --win98-face: 0 0% 16%;
+  --win98-shadow: 0 0% 10%;
+  --win98-dark-shadow: 0 0% 4%;
+  --win98-titlebar: 0 0% 14%;
+  --win98-titlebar-inactive: 0 0% 18%;
+}
+
+.dark.theme-win10 .win98-titlebar {
+  background: hsl(0 0% 14%);
+  color: hsl(0 0% 92%);
+}
+
+.dark.theme-win10 .win98-button {
+  background: hsl(0 0% 18%);
+  border-color: hsl(0 0% 28%);
+}
+
+.dark.theme-win10 .win98-button:hover {
+  background: hsl(0 0% 24%);
+  border-color: hsl(0 0% 35%);
+}
+
+.dark.theme-win10 .win98-titlebar-btn:hover {
+  background: hsl(0 0% 22%);
+}
+
+/* -------- Win11 Dark -------- */
+.dark.theme-win11 {
+  --background: 210 15% 8%;
+  --foreground: 210 10% 92%;
+  --card: 210 8% 14%;
+  --card-foreground: 210 10% 92%;
+  --popover: 210 8% 16%;
+  --popover-foreground: 210 10% 92%;
+  --primary: 207 90% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 8% 20%;
+  --secondary-foreground: 210 10% 92%;
+  --muted: 210 6% 18%;
+  --muted-foreground: 210 5% 55%;
+  --accent: 207 40% 16%;
+  --accent-foreground: 207 90% 80%;
+  --border: 210 8% 22%;
+  --input: 210 8% 12%;
+  --ring: 207 90% 55%;
+
+  --win98-highlight: 210 8% 28%;
+  --win98-light: 210 6% 18%;
+  --win98-face: 210 8% 14%;
+  --win98-shadow: 210 8% 10%;
+  --win98-dark-shadow: 210 8% 4%;
+  --win98-titlebar: 210 8% 16%;
+  --win98-titlebar-inactive: 210 5% 18%;
+}
+
+.dark.theme-win11 .win98-titlebar {
+  background: hsl(210 8% 16% / 0.9);
+  color: hsl(210 10% 92%);
+}
+
+.dark.theme-win11 .win98-button {
+  background: hsl(210 8% 18% / 0.9);
+  border-color: hsl(210 8% 25%);
+}
+
+.dark.theme-win11 .win98-button:hover {
+  background: hsl(210 8% 24%);
+  border-color: hsl(210 8% 32%);
+}
+
+.dark.theme-win11 .win98-titlebar-btn:hover {
+  background: hsl(210 8% 24%);
+}
+
+/* Dark scrollbar defaults */
+.dark ::-webkit-scrollbar-track {
+  background: hsl(0 0% 14%);
+  border-color: hsl(0 0% 20%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(0 0% 30%);
+  border-color: hsl(0 0% 35%) hsl(0 0% 18%) hsl(0 0% 18%) hsl(0 0% 35%);
+}
+
+.dark ::-webkit-scrollbar-button {
+  background: hsl(0 0% 22%);
+  border-color: hsl(0 0% 35%) hsl(0 0% 12%) hsl(0 0% 12%) hsl(0 0% 35%);
+}
+
+/* Dark mode input overrides */
+.dark .win98-input {
+  background: hsl(var(--input));
+  color: hsl(var(--foreground));
+}
+
+.dark .search-input {
+  background: hsl(var(--input));
+  color: hsl(var(--foreground));
+}
