@@ -959,9 +959,9 @@ function WikiPagesTab() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { if (!silent) toast.error("Not authenticated"); return; }
 
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/auto-docs`,
+        `${supabaseUrl}/functions/v1/auto-docs`,
         {
           method: "POST",
           headers: {
