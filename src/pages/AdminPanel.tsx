@@ -12,7 +12,7 @@ import { ActivityLogsTab } from "@/components/ActivityLogsTab";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "roles" | "access" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging";
+type Tab = "users" | "roles" | "access" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs";
 
 interface ContentItem {
   id: string;
@@ -61,6 +61,7 @@ export default function AdminPanel() {
     { id: "local", label: "Local Impact", emoji: "🌐" },
     { id: "narratives", label: "Narratives", emoji: "📄" },
     { id: "messaging", label: "Messaging", emoji: "📢" },
+    { id: "docs", label: "Documentation", emoji: "📖" },
   ];
 
   return (
@@ -107,6 +108,7 @@ export default function AdminPanel() {
         {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
         {tab === "narratives" && <ContentTab table="narrative_reports" nameField="name" />}
         {tab === "messaging" && <MessagingGuidanceTab />}
+        {tab === "docs" && <WikiPagesTab />}
       </div>
 
       {/* Security Badge */}
@@ -718,6 +720,147 @@ function MessagingEditor({ item, onSave, onCancel }: { item: MessagingItem; onSa
         </div>
         <div className="flex gap-2 pt-1">
           <button onClick={() => onSave({ ...form, issue_areas: form.issueAreasText.split(",").map(s => s.trim()).filter(Boolean) })} className="win98-button text-[10px] font-bold">
+            <Save className="h-3 w-3 inline mr-1" />{isNew ? "Create" : "Save"}
+          </button>
+          <button onClick={onCancel} className="win98-button text-[10px]">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============== WikiPagesTab ==============
+interface WikiPageItem {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  sort_order: number;
+  published: boolean;
+}
+
+function WikiPagesTab() {
+  const { isAdmin } = useUserRole();
+  const [items, setItems] = useState<WikiPageItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<WikiPageItem | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from("wiki_pages").select("*").order("sort_order");
+    setItems((data || []) as WikiPageItem[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSave = async (item: WikiPageItem) => {
+    const record: Record<string, unknown> = {
+      title: item.title,
+      slug: item.slug,
+      content: item.content,
+      sort_order: item.sort_order,
+      published: item.published,
+    };
+    try {
+      if (item.id) {
+        await updateContent("wiki_pages", item.id, record);
+        toast.success("Updated");
+      } else {
+        await insertContent("wiki_pages", record);
+        toast.success("Created");
+      }
+      setEditing(null); setCreating(false); load();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this wiki page?")) return;
+    try {
+      await deleteContent("wiki_pages", id);
+      toast.success("Deleted"); load();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  if (loading) return <div className="text-center py-8 text-[10px]">Loading...</div>;
+
+  if (editing || creating) {
+    const empty: WikiPageItem = { id: "", slug: "", title: "", content: "", sort_order: items.length, published: true };
+    return <WikiPageEditor item={editing || empty} onSave={handleSave} onCancel={() => { setEditing(null); setCreating(false); }} />;
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{items.length} pages</span>
+        <button onClick={() => setCreating(true)} className="win98-button text-[10px] flex items-center gap-1"><Plus className="h-3 w-3" /> Add Page</button>
+      </div>
+      <div className="win98-sunken bg-white">
+        {items.map(item => (
+          <div key={item.id} className="flex items-center justify-between px-2 py-1.5 border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] text-[10px]">
+            <div className="min-w-0">
+              <div className="font-bold truncate">
+                {!item.published && <span className="text-[hsl(var(--muted-foreground))]">[Draft] </span>}
+                {item.title}
+              </div>
+              <div className="text-[9px] text-[hsl(var(--muted-foreground))] truncate">/{item.slug} · #{item.sort_order} · {item.content.length} chars</div>
+            </div>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button onClick={() => setEditing(item)} className="win98-button px-1 py-0 text-[9px]"><Edit3 className="h-2.5 w-2.5" /></button>
+              {isAdmin && <button onClick={() => handleDelete(item.id)} className="win98-button px-1 py-0 text-[9px]"><Trash2 className="h-2.5 w-2.5" /></button>}
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="px-2 py-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">No wiki pages yet. Add pages or they'll be loaded from static files.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WikiPageEditor({ item, onSave, onCancel }: { item: WikiPageItem; onSave: (item: WikiPageItem) => void; onCancel: () => void }) {
+  const [form, setForm] = useState({ ...item });
+  const isNew = !item.id;
+  const autoSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80);
+
+  return (
+    <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[11px] font-bold">{isNew ? "Create New" : "Edit"} Wiki Page</span>
+        <button onClick={onCancel} className="win98-titlebar-btn">✕</button>
+      </div>
+      <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Title:</label>
+            <input value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value, slug: isNew ? autoSlug(e.target.value) : f.slug }))} className="win98-input w-full" placeholder="Page title" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Slug:</label>
+            <input value={form.slug} onChange={(e) => setForm(f => ({ ...f, slug: e.target.value }))} className="win98-input w-full" placeholder="url-slug" />
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-1">Sort Order:</label>
+            <input type="number" value={form.sort_order} onChange={(e) => setForm(f => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))} className="win98-input w-full" />
+          </div>
+          <div className="flex items-end pb-1">
+            <label className="flex items-center gap-1 text-[10px]">
+              <input type="checkbox" checked={form.published} onChange={(e) => setForm(f => ({ ...f, published: e.target.checked }))} />
+              <span className="font-bold">Published</span>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold mb-1">Content (Markdown):</label>
+          <textarea value={form.content} onChange={(e) => setForm(f => ({ ...f, content: e.target.value }))} rows={20}
+            className="win98-input w-full font-[monospace] text-[10px]" placeholder="# Page Title..." />
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button onClick={() => onSave(form)} className="win98-button text-[10px] font-bold">
             <Save className="h-3 w-3 inline mr-1" />{isNew ? "Create" : "Save"}
           </button>
           <button onClick={onCancel} className="win98-button text-[10px]">Cancel</button>

@@ -13,6 +13,7 @@ const ALLOWED_TABLES = new Set([
   "local_impacts",
   "narrative_reports",
   "messaging_guidance",
+  "wiki_pages",
 ]);
 
 serve(async (req) => {

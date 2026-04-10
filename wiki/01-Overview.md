@@ -44,7 +44,7 @@ src/
  │   ├── MarketDetailWindow.tsx # Prediction market detail modal
  │   ├── MasterSearch.tsx     # Unified search across 14+ data sources
  │   ├── LegHub.tsx           # Legislative hub (State Leg + Legislation tabs)
- │   ├── DocumentationSection  # In-app wiki reader (20 pages)
+ │   ├── DocumentationSection  # In-app wiki reader (20+ pages, DB-backed with static fallback)
 │   ├── AccessControlTab.tsx  # Admin invite/request management
 │   ├── ChatPanel.tsx         # Real-time chat
 │   └── ...
@@ -114,7 +114,7 @@ supabase/
 │   ├── version-history/      # Git version history
 │   ├── scheduled-sync/       # Scheduled data sync
 │   ├── integration-proxy/    # Integration proxy
-│   ├── content-admin/        # Content management
+│   ├── content-admin/        # Content management (candidates, MAGA, local impact, narratives, messaging, wiki pages)
 │   ├── candidate-scraper/    # Candidate data scraping
 │   ├── district-intel/       # District intelligence
 │   ├── mit-election-sync/    # MIT Election Lab sync
@@ -176,6 +176,7 @@ supabase/
 - `email_unsubscribe_tokens` — Unsubscribe token management
 - `email_send_log` — Email delivery audit log
 - `email_send_state` — Email queue configuration (batch size, delays, TTLs)
+- `wiki_pages` — Editable documentation pages (overrides static wiki files)
 
 ### Database Functions
 - `has_role(uuid, app_role)` — SECURITY DEFINER role check (prevents RLS recursion)
