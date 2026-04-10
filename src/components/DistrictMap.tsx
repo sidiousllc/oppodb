@@ -203,7 +203,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const mapLoader = useMapLoader();
-  const { geoData, loading, error: mapError, diagnostics, loadTimeMs, featureCount, retry, setPreferredSource, preferredSource } = mapLoader;
+  const { geoData, loading, error: mapError, diagnostics, loadTimeMs, featureCount, retry, clearCache, setPreferredSource, preferredSource } = mapLoader;
   const [colorMode, setColorMode] = useState<ColorMode>("cook");
   const [zoomState, setZoomState] = useState<{ center: [number, number]; zoom: number }>({
     center: [-96, 38],
@@ -550,6 +550,7 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
             error={mapError}
             featureCount={featureCount}
             onRetry={retry}
+            onClearCache={clearCache}
           />
         </div>
       )}

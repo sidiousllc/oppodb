@@ -152,6 +152,7 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
           error={mapLoader.error}
           featureCount={mapLoader.featureCount}
           onRetry={mapLoader.retry}
+          onClearCache={mapLoader.clearCache}
           compact
         />
       </div>
@@ -259,6 +260,7 @@ function DistrictBoundaryMapInner({ districtId, stateName }: DistrictBoundaryMap
           error={mapLoader.error}
           featureCount={mapLoader.featureCount}
           onRetry={mapLoader.retry}
+          onClearCache={mapLoader.clearCache}
           compact
         />
       </div>

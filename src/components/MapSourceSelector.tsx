@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Database, Globe, Server, Zap, RefreshCw, CheckCircle2, XCircle, Clock, Info, Shield, WifiOff, Wifi } from "lucide-react";
+import { Database, Globe, Server, Zap, RefreshCw, CheckCircle2, XCircle, Clock, Info, Shield, WifiOff, Wifi, Trash2 } from "lucide-react";
 import { MapSource, MapDiagnostics, SOURCE_META } from "@/hooks/useMapLoader";
 
 interface MapSourceSelectorProps {
@@ -11,6 +11,7 @@ interface MapSourceSelectorProps {
   error: string | null;
   featureCount: number;
   onRetry: () => void;
+  onClearCache?: () => void;
   compact?: boolean;
 }
 
@@ -79,6 +80,7 @@ function MapSourceSelectorInner({
   error,
   featureCount,
   onRetry,
+  onClearCache,
   compact = false,
 }: MapSourceSelectorProps) {
   const sources: MapSource[] = ["auto", "local", "esri", "census"];
@@ -166,6 +168,18 @@ function MapSourceSelectorInner({
             <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
             Retry
           </button>
+
+          {onClearCache && diagnostics.offlineReady && (
+            <button
+              onClick={onClearCache}
+              disabled={loading}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-muted-foreground border border-border hover:text-destructive hover:border-destructive/30 transition-colors disabled:opacity-50"
+              title="Clear cached map data and download fresh"
+            >
+              <Trash2 className="h-3 w-3" />
+              Clear Cache
+            </button>
+          )}
         </div>
       </div>
 

@@ -13,6 +13,7 @@ export interface MapLoadResult {
   featureCount: number;
   diagnostics: MapDiagnostics;
   retry: () => void;
+  clearCache: () => void;
   setPreferredSource: (s: MapSource) => void;
   preferredSource: MapSource;
 }
@@ -470,6 +471,11 @@ export function useMapLoader(): MapLoadResult {
     idbClear().then(() => loadMap());
   }, [loadMap, preferredSource]);
 
+  const clearCache = useCallback(() => {
+    geoCache.clear();
+    idbClear().then(() => loadMap());
+  }, [loadMap]);
+
   useEffect(() => {
     loadMap();
     return () => abortRef.current?.abort();
@@ -484,6 +490,7 @@ export function useMapLoader(): MapLoadResult {
     featureCount: geoData?.features?.length ?? 0,
     diagnostics,
     retry,
+    clearCache,
     setPreferredSource,
     preferredSource,
   };
