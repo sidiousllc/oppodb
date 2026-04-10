@@ -25,6 +25,7 @@ export interface MapDiagnostics {
   cacheHit: boolean;
   offlineReady: boolean;
   idbCachedAt: string | null;
+  idbSizeMB: number | null;
 }
 
 export interface GeoJSONData {
