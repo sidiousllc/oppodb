@@ -53,6 +53,7 @@ Candidate research profiles are stored as Markdown files in a GitHub repository 
 3. Content is upserted into `candidate_profiles` table
 4. `sync_metadata` table tracks last commit SHA and sync time
 5. UI displays the markdown content via `CandidateDetail`
+6. **Admin Panel** Documentation tab shows a sync status indicator with last sync timestamp and abbreviated commit SHA (7 chars) loaded from `sync_metadata`
 
 ### Key Functions (Client-side)
 ```typescript
