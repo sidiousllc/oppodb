@@ -9,6 +9,24 @@ import { Win98PageLayout } from "@/components/Win98PageLayout";
 import { IntegrationSettings } from "@/components/IntegrationSettings";
 import { MarketCredentialsManager } from "@/components/MarketCredentialsManager";
 
+import themeWin98 from "@/assets/theme-win98.jpg";
+import themeWinXP from "@/assets/theme-winxp.jpg";
+import themeVista from "@/assets/theme-vista.jpg";
+import themeWin7 from "@/assets/theme-win7.jpg";
+import themeWin8 from "@/assets/theme-win8.jpg";
+import themeWin10 from "@/assets/theme-win10.jpg";
+import themeWin11 from "@/assets/theme-win11.jpg";
+
+const THEME_THUMBNAILS: Record<WindowsTheme, string> = {
+  win98: themeWin98,
+  winxp: themeWinXP,
+  vista: themeVista,
+  win7: themeWin7,
+  win8: themeWin8,
+  win10: themeWin10,
+  win11: themeWin11,
+};
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
