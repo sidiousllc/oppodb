@@ -26,92 +26,69 @@ Deno.serve(async (req) => {
 
     const url = new URL(req.url);
     const currentCongress = url.searchParams.get("congress") || "119";
-    const limit = parseInt(url.searchParams.get("limit") || "500");
-
-    // Congress.gov API v3: /member endpoint lists all members, filter by currentMember
-    let allMembers: any[] = [];
-    let offset = 0;
+    const offset = parseInt(url.searchParams.get("offset") || "0");
     const pageSize = 250;
 
-    while (offset < limit) {
-      const apiUrl = `https://api.congress.gov/v3/member?api_key=${CONGRESS_API_KEY}&limit=${pageSize}&offset=${offset}&format=json&currentMember=true`;
-      console.log(`Fetching offset=${offset}...`);
-      const resp = await fetch(apiUrl);
-      if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(`Congress API error ${resp.status}: ${text}`);
-      }
-      const data = await resp.json();
-      const members = data.members || [];
-      if (members.length === 0) break;
-      allMembers = allMembers.concat(members);
-      offset += pageSize;
-      if (members.length < pageSize) break;
-
-      // Rate limit
-      await new Promise((r) => setTimeout(r, 1100));
+    // Single page fetch
+    const apiUrl = `https://api.congress.gov/v3/member?api_key=${CONGRESS_API_KEY}&limit=${pageSize}&offset=${offset}&format=json&currentMember=true`;
+    const resp = await fetch(apiUrl);
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`Congress API error ${resp.status}: ${text}`);
     }
+    const data = await resp.json();
+    const members = data.members || [];
 
-    let upserted = 0;
-    let errors = 0;
-
-    for (const m of allMembers) {
-      const bioguideId = m.bioguideId;
-      if (!bioguideId) continue;
-
-      // Determine chamber and district from terms
-      let chamber = "House";
-      let district: string | null = null;
-      let state: string | null = m.state || null;
-
-      // The member endpoint returns terms as an array of { chamber, startYear, endYear }
-      // or via depiction, partyName, etc.
+    // Batch upsert
+    const records = members.map((m: any) => {
       const terms = m.terms?.item || m.terms || [];
+      let chamber = "House";
       if (Array.isArray(terms) && terms.length > 0) {
-        const latestTerm = terms[terms.length - 1];
-        chamber = latestTerm.chamber || "House";
-        // For House members, district comes from the member object
+        chamber = terms[terms.length - 1].chamber || "House";
       }
 
-      // District is in the member's district field
-      if (m.district != null) {
-        district = m.district.toString();
-      }
-
-      const record: Record<string, unknown> = {
-        bioguide_id: bioguideId,
+      return {
+        bioguide_id: m.bioguideId,
         name: m.name || `${m.firstName || ""} ${m.lastName || ""}`.trim(),
         first_name: m.firstName || null,
         last_name: m.lastName || null,
         party: m.partyName || m.party || null,
-        state: state,
-        district: district,
-        chamber: chamber,
+        state: m.state || null,
+        district: m.district != null ? m.district.toString() : null,
+        chamber,
         congress: parseInt(currentCongress),
         depiction_url: m.depiction?.imageUrl || null,
         official_url: m.url || m.officialWebsiteUrl || null,
         terms: JSON.stringify(terms),
         updated_at: new Date().toISOString(),
       };
+    }).filter((r: any) => r.bioguide_id);
 
+    let upserted = 0;
+    let errors = 0;
+
+    // Batch in chunks of 50
+    for (let i = 0; i < records.length; i += 50) {
+      const batch = records.slice(i, i + 50);
       const { error } = await sb
         .from("congress_members")
-        .upsert(record, { onConflict: "bioguide_id" });
-
+        .upsert(batch, { onConflict: "bioguide_id" });
       if (error) {
-        console.error(`Error upserting ${bioguideId}:`, error.message);
-        errors++;
+        console.error("Batch upsert error:", error.message);
+        errors += batch.length;
       } else {
-        upserted++;
+        upserted += batch.length;
       }
     }
 
     return new Response(
       JSON.stringify({
-        fetched: allMembers.length,
+        fetched: members.length,
         upserted,
         errors,
-        congress: currentCongress,
+        offset,
+        hasMore: members.length === pageSize,
+        nextOffset: offset + pageSize,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
