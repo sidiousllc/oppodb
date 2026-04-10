@@ -739,6 +739,17 @@ interface WikiPageItem {
   published: boolean;
 }
 
+interface ChangelogEntry {
+  id: string;
+  slug: string;
+  title: string;
+  old_content: string;
+  new_content: string;
+  change_type: string;
+  trigger_method: string;
+  created_at: string;
+}
+
 function WikiPagesTab() {
   const { isAdmin } = useUserRole();
   const [items, setItems] = useState<WikiPageItem[]>([]);
@@ -748,6 +759,10 @@ function WikiPagesTab() {
   const [syncing, setSyncing] = useState<"pull" | "push" | null>(null);
   const [updatingDocs, setUpdatingDocs] = useState(false);
   const [syncMeta, setSyncMeta] = useState<{ last_commit_sha: string | null; last_synced_at: string | null } | null>(null);
+  const [showChangelog, setShowChangelog] = useState(false);
+  const [changelog, setChangelog] = useState<ChangelogEntry[]>([]);
+  const [changelogLoading, setChangelogLoading] = useState(false);
+  const [expandedChange, setExpandedChange] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
