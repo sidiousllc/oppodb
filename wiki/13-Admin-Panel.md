@@ -20,6 +20,7 @@ The Admin Panel provides administrative oversight and management capabilities fo
 | Local Impact | ✓ | ✓ |
 | Narratives | ✓ | ✓ |
 | Messaging Guidance | ✓ | ✓ |
+| Documentation | ✓ | ✓ |
 
 ### Access Denied Page
 Users without admin/moderator privileges see an "Access Denied" screen with:
@@ -252,6 +253,44 @@ const record = { slug, content, tags, ...otherFields };
 #### Messaging Guidance Tab
 - Uses a separate specialized editor (see [MessagingHub](MessagingHub))
 - Tags stored in `issue_areas` column (same concept, different column name)
+
+#### Documentation Tab (Wiki Pages)
+The Documentation tab manages wiki pages stored in the `wiki_pages` database table. These pages override the static wiki files bundled with the application.
+
+**Wiki Page Editor Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| Title | Text input | Page display title |
+| Slug | Text input (auto-generated from title) | URL-safe identifier |
+| Sort Order | Number input | Controls display order in the Documentation section |
+| Published | Checkbox | Draft pages are hidden from non-admin users |
+| Content | Monospace Markdown textarea | Full markdown content |
+
+**Content Resolution Strategy:**
+1. On load, the Documentation section fetches all published pages from `wiki_pages`
+2. DB pages override static wiki files by matching slug
+3. DB-only pages (not in the static list) are appended to the page list
+4. If no DB entry exists for a slug, the static file from `wiki/` is loaded as fallback
+
+**Database Table: `wiki_pages`**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid | Primary key |
+| `slug` | text (unique) | URL identifier |
+| `title` | text | Display title |
+| `content` | text | Markdown content |
+| `sort_order` | integer | Display ordering |
+| `published` | boolean | Visibility flag |
+| `created_at` | timestamptz | Creation timestamp |
+| `updated_at` | timestamptz | Last update timestamp |
+
+**RLS Policies:**
+- Anyone can read published pages
+- Admins and moderators can read all pages (including drafts)
+- Admins and moderators can create and update pages
+- Only admins can delete pages
 
 ---
 
