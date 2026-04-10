@@ -1,37 +1,39 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WikiPage {
   slug: string;
   title: string;
   content: string;
+  fromDb?: boolean;
 }
 
-const wikiPages: WikiPage[] = [
-  { slug: "overview", title: "Overview", content: "" },
-  { slug: "candidate-profiles", title: "Candidate Profiles", content: "" },
-  { slug: "district-intelligence", title: "District Intelligence", content: "" },
-  { slug: "polling-data", title: "Polling Data", content: "" },
-  { slug: "campaign-finance", title: "Campaign Finance", content: "" },
-  { slug: "state-legislative-districts", title: "State Legislative Districts", content: "" },
-  { slug: "additional-features", title: "Additional Features", content: "" },
-  { slug: "authentication-and-user-management", title: "Authentication & User Management", content: "" },
-  { slug: "api-access", title: "API Access", content: "" },
-  { slug: "ui-design-system", title: "UI Design System", content: "" },
-  { slug: "data-sync-and-sources", title: "Data Sync & Sources", content: "" },
-  { slug: "cook-ratings-and-forecasting", title: "Cook Ratings & Forecasting", content: "" },
-  { slug: "admin-panel", title: "Admin Panel", content: "" },
-  { slug: "research-tools", title: "Research Tools", content: "" },
-  { slug: "android-app", title: "Android App", content: "" },
-  { slug: "prediction-market-trading", title: "Prediction Market Trading", content: "" },
-  { slug: "leghub", title: "LegHub", content: "" },
-  { slug: "oppodb-search", title: "OppoDB Search", content: "" },
-  { slug: "oppohub", title: "OppoHub", content: "" },
-  { slug: "messaginghub", title: "MessagingHub", content: "" },
+const STATIC_PAGES: Array<{ slug: string; title: string }> = [
+  { slug: "overview", title: "Overview" },
+  { slug: "candidate-profiles", title: "Candidate Profiles" },
+  { slug: "district-intelligence", title: "District Intelligence" },
+  { slug: "polling-data", title: "Polling Data" },
+  { slug: "campaign-finance", title: "Campaign Finance" },
+  { slug: "state-legislative-districts", title: "State Legislative Districts" },
+  { slug: "additional-features", title: "Additional Features" },
+  { slug: "authentication-and-user-management", title: "Authentication & User Management" },
+  { slug: "api-access", title: "API Access" },
+  { slug: "ui-design-system", title: "UI Design System" },
+  { slug: "data-sync-and-sources", title: "Data Sync & Sources" },
+  { slug: "cook-ratings-and-forecasting", title: "Cook Ratings & Forecasting" },
+  { slug: "admin-panel", title: "Admin Panel" },
+  { slug: "research-tools", title: "Research Tools" },
+  { slug: "android-app", title: "Android App" },
+  { slug: "prediction-market-trading", title: "Prediction Market Trading" },
+  { slug: "leghub", title: "LegHub" },
+  { slug: "oppodb-search", title: "OppoDB Search" },
+  { slug: "oppohub", title: "OppoHub" },
+  { slug: "messaginghub", title: "MessagingHub" },
 ];
 
-// Lazy-load wiki content via raw imports
+// Lazy-load wiki content via raw imports (fallback)
 const wikiImports: Record<string, () => Promise<string>> = {
   "overview": () => import("../../wiki/01-Overview.md?raw").then(m => m.default),
   "candidate-profiles": () => import("../../wiki/02-Candidate-Profiles.md?raw").then(m => m.default),
@@ -60,23 +62,64 @@ export function DocumentationSection() {
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dbPages, setDbPages] = useState<WikiPage[]>([]);
+  const [dbLoaded, setDbLoaded] = useState(false);
+
+  // Load DB pages on mount
+  useEffect(() => {
+    supabase
+      .from("wiki_pages")
+      .select("slug, title, content, sort_order")
+      .eq("published", true)
+      .order("sort_order")
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setDbPages(data.map(p => ({ slug: p.slug, title: p.title, content: p.content, fromDb: true })));
+        }
+        setDbLoaded(true);
+      });
+  }, []);
+
+  // Merge: DB pages override static pages by slug, DB-only pages are appended
+  const wikiPages = useMemo(() => {
+    if (!dbLoaded) return STATIC_PAGES.map(p => ({ ...p, content: "", fromDb: false }));
+    const dbMap = new Map(dbPages.map(p => [p.slug, p]));
+    const merged: WikiPage[] = STATIC_PAGES.map(sp => {
+      const dbVersion = dbMap.get(sp.slug);
+      return dbVersion ? { ...dbVersion } : { ...sp, content: "", fromDb: false };
+    });
+    // Add DB-only pages not in static list
+    for (const dp of dbPages) {
+      if (!STATIC_PAGES.find(sp => sp.slug === dp.slug)) {
+        merged.push(dp);
+      }
+    }
+    return merged;
+  }, [dbPages, dbLoaded]);
 
   const filteredPages = useMemo(() => {
     if (!searchQuery) return wikiPages;
     const q = searchQuery.toLowerCase();
     return wikiPages.filter(p => p.title.toLowerCase().includes(q));
-  }, [searchQuery]);
+  }, [searchQuery, wikiPages]);
 
   const handleSelectPage = async (slug: string) => {
     setSelectedSlug(slug);
     setLoading(true);
     try {
-      const loader = wikiImports[slug];
-      if (loader) {
-        const text = await loader();
-        setContent(text);
+      // Check if DB has content for this slug
+      const dbPage = dbPages.find(p => p.slug === slug);
+      if (dbPage && dbPage.content) {
+        setContent(dbPage.content);
       } else {
-        setContent("# Page Not Found\n\nThis documentation page could not be loaded.");
+        // Fallback to static file
+        const loader = wikiImports[slug];
+        if (loader) {
+          const text = await loader();
+          setContent(text);
+        } else {
+          setContent("# Page Not Found\n\nThis documentation page could not be loaded.");
+        }
       }
     } catch {
       setContent("# Error\n\nFailed to load documentation page.");
@@ -98,7 +141,6 @@ export function DocumentationSection() {
           Back to Documentation
         </button>
 
-        {/* Breadcrumb */}
         <div className="flex items-center gap-1 text-[10px] text-[hsl(var(--muted-foreground))] mb-3">
           <BookOpen className="h-3 w-3" />
           <span>Documentation</span>
@@ -106,104 +148,21 @@ export function DocumentationSection() {
           <span className="text-[hsl(var(--foreground))] font-bold">{selectedPage.title}</span>
         </div>
 
-        {/* Article content */}
         <div className="candidate-card">
           {loading ? (
-            <div className="text-center py-8 text-[11px] text-[hsl(var(--muted-foreground))]">
-              Loading documentation...
-            </div>
+            <div className="text-center py-8 text-[11px] text-[hsl(var(--muted-foreground))]">Loading documentation...</div>
           ) : (
-            <div className="prose-research">
-              <ReactMarkdown
-                components={{
-                  h1: ({ children }) => (
-                    <h1 className="text-lg font-bold border-b border-[hsl(var(--win98-shadow))] pb-1 mb-3">
-                      {children}
-                    </h1>
-                  ),
-                  h2: ({ children }) => (
-                    <h2 className="text-sm font-bold border-b border-[hsl(var(--win98-light))] pb-1 mt-4 mb-2">
-                      {children}
-                    </h2>
-                  ),
-                  h3: ({ children }) => (
-                    <h3 className="text-[12px] font-bold mt-3 mb-1">{children}</h3>
-                  ),
-                  table: ({ children }) => (
-                    <div className="win98-sunken overflow-x-auto my-2">
-                      <table className="w-full text-[10px]">{children}</table>
-                    </div>
-                  ),
-                  th: ({ children }) => (
-                    <th className="bg-[hsl(var(--win98-face))] px-2 py-1 text-left font-bold border border-[hsl(var(--win98-shadow))]">
-                      {children}
-                    </th>
-                  ),
-                  td: ({ children }) => (
-                    <td className="px-2 py-1 border border-[hsl(var(--win98-light))]">
-                      {children}
-                    </td>
-                  ),
-                  code: ({ children, className }) => {
-                    const isBlock = className?.includes("language-");
-                    if (isBlock) {
-                      return (
-                        <div className="win98-sunken bg-[hsl(var(--background))] p-2 my-2 overflow-x-auto">
-                          <code className="text-[10px] font-mono whitespace-pre">{children}</code>
-                        </div>
-                      );
-                    }
-                    return (
-                      <code className="bg-[hsl(var(--win98-face))] px-1 text-[10px] font-mono border border-[hsl(var(--win98-shadow))]">
-                        {children}
-                      </code>
-                    );
-                  },
-                  pre: ({ children }) => <>{children}</>,
-                  a: ({ href, children }) => (
-                    <a
-                      href={href}
-                      className="text-[hsl(var(--primary))] hover:underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {children}
-                    </a>
-                  ),
-                  ul: ({ children }) => (
-                    <ul className="list-disc pl-4 my-1 space-y-0.5 text-[11px]">{children}</ul>
-                  ),
-                  ol: ({ children }) => (
-                    <ol className="list-decimal pl-4 my-1 space-y-0.5 text-[11px]">{children}</ol>
-                  ),
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-2 border-[hsl(var(--win98-titlebar))] pl-3 my-2 text-[11px] italic text-[hsl(var(--muted-foreground))]">
-                      {children}
-                    </blockquote>
-                  ),
-                  hr: () => (
-                    <hr className="border-t border-[hsl(var(--win98-shadow))] my-3" />
-                  ),
-                }}
-              >
-                {content}
-              </ReactMarkdown>
-            </div>
+            <WikiMarkdown content={content} />
           )}
         </div>
 
-        {/* Table of Contents sidebar-style nav at bottom */}
         <div className="mt-4 candidate-card">
           <div className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] mb-2">📑 OTHER PAGES</div>
           <div className="flex flex-wrap gap-1">
             {wikiPages
               .filter(p => p.slug !== selectedSlug)
               .map(p => (
-                <button
-                  key={p.slug}
-                  onClick={() => handleSelectPage(p.slug)}
-                  className="win98-button text-[10px]"
-                >
+                <button key={p.slug} onClick={() => handleSelectPage(p.slug)} className="win98-button text-[10px]">
                   {p.title}
                 </button>
               ))}
@@ -213,10 +172,8 @@ export function DocumentationSection() {
     );
   }
 
-  // Index / Table of Contents view
   return (
     <div className="animate-fade-in">
-      {/* Header */}
       <div className="candidate-card mb-3">
         <div className="flex items-center gap-3 mb-2">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center text-2xl">📖</div>
@@ -229,7 +186,6 @@ export function DocumentationSection() {
         </div>
       </div>
 
-      {/* Search */}
       <div className="mb-3">
         <div className="win98-sunken flex items-center px-2 py-1">
           <span className="text-[11px] mr-1">🔍</span>
@@ -243,7 +199,6 @@ export function DocumentationSection() {
         </div>
       </div>
 
-      {/* Page grid */}
       <div className="grid gap-2 sm:grid-cols-2">
         {filteredPages.map((page, i) => (
           <button
@@ -274,6 +229,69 @@ export function DocumentationSection() {
           <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No documentation pages match your search.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// Extracted markdown renderer
+function WikiMarkdown({ content }: { content: string }) {
+  return (
+    <div className="prose-research">
+      <ReactMarkdown
+        components={{
+          h1: ({ children }) => (
+            <h1 className="text-lg font-bold border-b border-[hsl(var(--win98-shadow))] pb-1 mb-3">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="text-sm font-bold border-b border-[hsl(var(--win98-light))] pb-1 mt-4 mb-2">{children}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="text-[12px] font-bold mt-3 mb-1">{children}</h3>
+          ),
+          table: ({ children }) => (
+            <div className="win98-sunken overflow-x-auto my-2">
+              <table className="w-full text-[10px]">{children}</table>
+            </div>
+          ),
+          th: ({ children }) => (
+            <th className="bg-[hsl(var(--win98-face))] px-2 py-1 text-left font-bold border border-[hsl(var(--win98-shadow))]">{children}</th>
+          ),
+          td: ({ children }) => (
+            <td className="px-2 py-1 border border-[hsl(var(--win98-light))]">{children}</td>
+          ),
+          code: ({ children, className }) => {
+            const isBlock = className?.includes("language-");
+            if (isBlock) {
+              return (
+                <div className="win98-sunken bg-[hsl(var(--background))] p-2 my-2 overflow-x-auto">
+                  <code className="text-[10px] font-mono whitespace-pre">{children}</code>
+                </div>
+              );
+            }
+            return (
+              <code className="bg-[hsl(var(--win98-face))] px-1 text-[10px] font-mono border border-[hsl(var(--win98-shadow))]">{children}</code>
+            );
+          },
+          pre: ({ children }) => <>{children}</>,
+          a: ({ href, children }) => (
+            <a href={href} className="text-[hsl(var(--primary))] hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>
+          ),
+          ul: ({ children }) => (
+            <ul className="list-disc pl-4 my-1 space-y-0.5 text-[11px]">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="list-decimal pl-4 my-1 space-y-0.5 text-[11px]">{children}</ol>
+          ),
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-[hsl(var(--win98-titlebar))] pl-3 my-2 text-[11px] italic text-[hsl(var(--muted-foreground))]">{children}</blockquote>
+          ),
+          hr: () => (
+            <hr className="border-t border-[hsl(var(--win98-shadow))] my-3" />
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 }
