@@ -293,6 +293,7 @@ export function useMapLoader(): MapLoadResult {
     cacheHit: false,
     offlineReady: false,
     idbCachedAt: null,
+    idbSizeMB: null,
   });
 
   const abortRef = useRef<AbortController | null>(null);
