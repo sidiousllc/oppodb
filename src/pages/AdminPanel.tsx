@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { insertContent, updateContent, deleteContent } from "@/lib/contentAdmin";
 import { listUsers, setUserRole, deleteUser, createUser, updateUser, resetUserPassword, banUser, unbanUser, type AdminUser } from "@/lib/adminApi";
-import { Users, FileText, Globe, AlertTriangle, BookOpen, Shield, Trash2, Plus, Save, X, Edit3, Loader2, KeyRound, Pencil, Ban, ShieldCheck } from "lucide-react";
+import { Users, FileText, Globe, AlertTriangle, BookOpen, Shield, Trash2, Plus, Save, X, Edit3, Loader2, KeyRound, Pencil, Ban, ShieldCheck, RefreshCw, Upload, Download } from "lucide-react";
 import { RoleGroupsTab } from "@/components/RoleGroupsTab";
 import { AccessControlTab } from "@/components/AccessControlTab";
 import { ActivityLogsTab } from "@/components/ActivityLogsTab";
