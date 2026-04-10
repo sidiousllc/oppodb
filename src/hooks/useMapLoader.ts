@@ -135,6 +135,22 @@ async function idbClear(): Promise<void> {
   }
 }
 
+async function idbGetSizeMB(): Promise<number | null> {
+  try {
+    if (navigator.storage?.estimate) {
+      const est = await navigator.storage.estimate();
+      // This gives overall storage usage; for a more precise IDB-only estimate,
+      // we'd need to iterate stores, but estimate() is the standard lightweight API.
+      if (typeof est.usage === "number") {
+        return Math.round((est.usage / (1024 * 1024)) * 100) / 100;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function idbHasAny(): Promise<boolean> {
   try {
     const db = await openIDB();
