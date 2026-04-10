@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Database, Globe, Server, Zap, RefreshCw, CheckCircle2, XCircle, Clock, Info, Shield } from "lucide-react";
+import { Database, Globe, Server, Zap, RefreshCw, CheckCircle2, XCircle, Clock, Info, Shield, WifiOff, Wifi } from "lucide-react";
 import { MapSource, MapDiagnostics, SOURCE_META } from "@/hooks/useMapLoader";
 
 interface MapSourceSelectorProps {
@@ -102,6 +102,23 @@ function MapSourceSelectorInner({
           <span className={`inline-block h-2 w-2 rounded-full ${qStyle.dot} ${quality.level === "yellow" && loading ? "animate-pulse" : ""}`} />
           <Shield className="h-3 w-3" />
           {quality.label}
+        </div>
+
+        {/* Offline badge */}
+        <div
+          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border ${
+            diagnostics.offlineReady
+              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+              : "bg-muted text-muted-foreground border-border"
+          }`}
+          title={
+            diagnostics.offlineReady
+              ? `Offline ready${diagnostics.idbCachedAt ? ` · Cached ${new Date(diagnostics.idbCachedAt).toLocaleDateString()}` : ""}`
+              : "Not cached for offline use yet"
+          }
+        >
+          {diagnostics.offlineReady ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+          {diagnostics.offlineReady ? "Offline Ready" : "Online Only"}
         </div>
 
         <span className="text-muted-foreground text-[10px]">·</span>
