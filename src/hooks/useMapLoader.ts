@@ -437,6 +437,7 @@ export function useMapLoader(): MapLoadResult {
       cacheHit: false,
       offlineReady,
       idbCachedAt: null,
+      idbSizeMB: null,
     });
     setError(
       `All map sources failed. ${attempts.map(a => `${a.source}: ${a.error}`).join(" | ")}`
