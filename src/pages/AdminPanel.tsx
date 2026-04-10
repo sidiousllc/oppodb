@@ -850,7 +850,7 @@ function WikiPagesTab() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify(slugs ? { slugs } : {}),
+          body: JSON.stringify(slugs ? { slugs, trigger_method: "selective" } : { trigger_method: silent ? "auto-sync" : "manual" }),
         }
       );
       const result = await res.json();
