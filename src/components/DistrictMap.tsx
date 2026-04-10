@@ -213,10 +213,8 @@ function formatMoney(n: number): string {
 const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: DistrictMapProps) => {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-  const [geoData, setGeoData] = useState<DistrictGeoJSON | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadProgress, setLoadProgress] = useState(0);
-  const [loadLabel, setLoadLabel] = useState("Loading district boundaries…");
+  const mapLoader = useMapLoader();
+  const { geoData, loading, error: mapError, diagnostics, loadTimeMs, featureCount, retry, setPreferredSource, preferredSource } = mapLoader;
   const [colorMode, setColorMode] = useState<ColorMode>("cook");
   const [zoomState, setZoomState] = useState<{ center: [number, number]; zoom: number }>({
     center: [-96, 38],
@@ -233,38 +231,6 @@ const DistrictMapInner = ({ districts, onSelectDistrict, pviFilter = "all" }: Di
   const [dbDemographics, setDbDemographics] = useState<Map<string, DemographicEntry>>(new Map());
   const [dbFinance, setDbFinance] = useState<Map<string, FinanceEntry[]>>(new Map());
   const [consensusRatings, setConsensusRatings] = useState<Map<string, string>>(new Map());
-
-  // Load GeoJSON from local static file
-  useEffect(() => {
-    let cancelled = false;
-    setLoadProgress(10);
-    setLoadLabel("Loading district boundaries…");
-
-    (async () => {
-      if (districtGeoCache) {
-        if (!cancelled) { setGeoData(districtGeoCache); setLoading(false); setLoadProgress(100); }
-        return;
-      }
-      try {
-        setLoadProgress(30);
-        const res = await fetch(LOCAL_CD_GEO);
-        if (!res.ok) throw new Error("Failed to load local GeoJSON");
-        setLoadProgress(60);
-        setLoadLabel("Parsing geometry…");
-        const data = await res.json();
-        districtGeoCache = data;
-        if (!cancelled) {
-          setGeoData(data);
-          setLoadProgress(100);
-          setLoadLabel("Ready");
-          setLoading(false);
-        }
-      } catch {
-        if (!cancelled) { setLoading(false); setLoadLabel("Failed to load map data"); }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   // Load DB data in parallel
   useEffect(() => {
