@@ -357,7 +357,7 @@ function StatLegDetail({
           <StatePollingPanel stateAbbr={district.state_abbr} />
           <AreaFinancePanel stateAbbr={district.state_abbr} title={`Campaign Finance — ${district.state}`} />
           {district.state_abbr === "MN" && <MNFinancePanel />}
-          <StateFinancePanel stateAbbr={district.state_abbr} />
+          {(district.state_abbr === "PA" || district.state_abbr === "MI") && <StateFinancePanel stateAbbr={district.state_abbr} />}
           <ElectionResultsSection
             stateAbbr={district.state_abbr}
             chamber={district.chamber}
