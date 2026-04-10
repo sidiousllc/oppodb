@@ -94,15 +94,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   const setTheme = (newTheme: WindowsTheme) => {
+    setThemeState(newTheme);
     localStorage.setItem("windows-theme", newTheme);
     saveToProfile(newTheme, darkMode);
-    window.location.reload();
   };
 
   const setDarkMode = (dark: boolean) => {
+    setDarkModeState(dark);
     localStorage.setItem("windows-dark-mode", String(dark));
     saveToProfile(theme, dark);
-    window.location.reload();
   };
 
   return (
