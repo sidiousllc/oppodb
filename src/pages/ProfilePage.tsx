@@ -9,6 +9,24 @@ import { Win98PageLayout } from "@/components/Win98PageLayout";
 import { IntegrationSettings } from "@/components/IntegrationSettings";
 import { MarketCredentialsManager } from "@/components/MarketCredentialsManager";
 
+import themeWin98 from "@/assets/theme-win98.jpg";
+import themeWinXP from "@/assets/theme-winxp.jpg";
+import themeVista from "@/assets/theme-vista.jpg";
+import themeWin7 from "@/assets/theme-win7.jpg";
+import themeWin8 from "@/assets/theme-win8.jpg";
+import themeWin10 from "@/assets/theme-win10.jpg";
+import themeWin11 from "@/assets/theme-win11.jpg";
+
+const THEME_THUMBNAILS: Record<WindowsTheme, string> = {
+  win98: themeWin98,
+  winxp: themeWinXP,
+  vista: themeVista,
+  win7: themeWin7,
+  win8: themeWin8,
+  win10: themeWin10,
+  win11: themeWin11,
+};
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -120,26 +138,27 @@ export default function ProfilePage() {
             <button
               key={key}
               onClick={() => setTheme(key)}
-              className={`win98-button text-[10px] py-2 px-3 text-left flex items-center gap-2 ${
+              className={`win98-button text-[10px] p-1.5 text-left flex flex-col items-center gap-1 ${
                 theme === key ? "font-bold" : ""
               }`}
               style={theme === key ? {
                 borderColor: "hsl(var(--primary))",
                 background: "hsl(var(--accent))",
+                boxShadow: "0 0 0 2px hsl(var(--primary) / 0.3)",
               } : {}}
             >
-              <span className="text-base">{
-                key === "win98" ? "🖥️" :
-                key === "winxp" ? "🌿" :
-                key === "vista" ? "✨" :
-                key === "win7" ? "🏠" :
-                key === "win8" ? "⬛" :
-                key === "win10" ? "🪟" :
-                "☁️"
-              }</span>
-              <div>
-                <div>{label}</div>
-                {theme === key && <div className="text-[8px] text-[hsl(var(--primary))]">Active</div>}
+              <img
+                src={THEME_THUMBNAILS[key]}
+                alt={label}
+                loading="lazy"
+                width={512}
+                height={512}
+                className="w-full aspect-square object-cover"
+                style={{ borderRadius: "1px", border: theme === key ? "2px solid hsl(var(--primary))" : "1px solid hsl(var(--win98-shadow))" }}
+              />
+              <div className="text-center w-full">
+                <div className="truncate">{label}</div>
+                {theme === key && <div className="text-[8px] text-[hsl(var(--primary))]">✓ Active</div>}
               </div>
             </button>
           ))}
