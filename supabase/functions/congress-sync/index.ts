@@ -25,17 +25,17 @@ Deno.serve(async (req) => {
     );
 
     const url = new URL(req.url);
-    const chamber = url.searchParams.get("chamber") || "house";
-    const congress = url.searchParams.get("congress") || "119";
-    const limit = parseInt(url.searchParams.get("limit") || "250");
+    const currentCongress = url.searchParams.get("congress") || "119";
+    const limit = parseInt(url.searchParams.get("limit") || "500");
 
+    // Congress.gov API v3: /member endpoint lists all members, filter by currentMember
     let allMembers: any[] = [];
     let offset = 0;
-    const pageSize = Math.min(limit, 250);
+    const pageSize = 250;
 
-    // Paginate through all members
     while (offset < limit) {
-      const apiUrl = `https://api.congress.gov/v3/member/congress/${congress}/${chamber}?api_key=${CONGRESS_API_KEY}&limit=${pageSize}&offset=${offset}&format=json`;
+      const apiUrl = `https://api.congress.gov/v3/member?api_key=${CONGRESS_API_KEY}&limit=${pageSize}&offset=${offset}&format=json&currentMember=true`;
+      console.log(`Fetching offset=${offset}...`);
       const resp = await fetch(apiUrl);
       if (!resp.ok) {
         const text = await resp.text();
@@ -48,15 +48,35 @@ Deno.serve(async (req) => {
       offset += pageSize;
       if (members.length < pageSize) break;
 
-      // Rate limit: 1 req/sec
+      // Rate limit
       await new Promise((r) => setTimeout(r, 1100));
     }
 
-    // Upsert members
     let upserted = 0;
+    let errors = 0;
+
     for (const m of allMembers) {
       const bioguideId = m.bioguideId;
       if (!bioguideId) continue;
+
+      // Determine chamber and district from terms
+      let chamber = "House";
+      let district: string | null = null;
+      let state: string | null = m.state || null;
+
+      // The member endpoint returns terms as an array of { chamber, startYear, endYear }
+      // or via depiction, partyName, etc.
+      const terms = m.terms?.item || m.terms || [];
+      if (Array.isArray(terms) && terms.length > 0) {
+        const latestTerm = terms[terms.length - 1];
+        chamber = latestTerm.chamber || "House";
+        // For House members, district comes from the member object
+      }
+
+      // District is in the member's district field
+      if (m.district != null) {
+        district = m.district.toString();
+      }
 
       const record: Record<string, unknown> = {
         bioguide_id: bioguideId,
@@ -64,13 +84,13 @@ Deno.serve(async (req) => {
         first_name: m.firstName || null,
         last_name: m.lastName || null,
         party: m.partyName || m.party || null,
-        state: m.state || null,
-        district: m.district?.toString() || null,
-        chamber: chamber === "senate" ? "Senate" : "House",
-        congress: parseInt(congress),
+        state: state,
+        district: district,
+        chamber: chamber,
+        congress: parseInt(currentCongress),
         depiction_url: m.depiction?.imageUrl || null,
         official_url: m.url || m.officialWebsiteUrl || null,
-        terms: m.terms ? JSON.stringify(m.terms) : "[]",
+        terms: JSON.stringify(terms),
         updated_at: new Date().toISOString(),
       };
 
@@ -80,53 +100,9 @@ Deno.serve(async (req) => {
 
       if (error) {
         console.error(`Error upserting ${bioguideId}:`, error.message);
+        errors++;
       } else {
         upserted++;
-      }
-    }
-
-    // Also sync Senate if requested
-    const syncSenate = url.searchParams.get("include_senate") === "true";
-    let senateUpserted = 0;
-
-    if (syncSenate && chamber === "house") {
-      let senateOffset = 0;
-      let senateMembers: any[] = [];
-      while (senateOffset < 250) {
-        const senateUrl = `https://api.congress.gov/v3/member/congress/${congress}/senate?api_key=${CONGRESS_API_KEY}&limit=250&offset=${senateOffset}&format=json`;
-        const resp = await fetch(senateUrl);
-        if (!resp.ok) break;
-        const data = await resp.json();
-        const members = data.members || [];
-        if (members.length === 0) break;
-        senateMembers = senateMembers.concat(members);
-        senateOffset += 250;
-        if (members.length < 250) break;
-        await new Promise((r) => setTimeout(r, 1100));
-      }
-
-      for (const m of senateMembers) {
-        const bioguideId = m.bioguideId;
-        if (!bioguideId) continue;
-        const record: Record<string, unknown> = {
-          bioguide_id: bioguideId,
-          name: m.name || `${m.firstName || ""} ${m.lastName || ""}`.trim(),
-          first_name: m.firstName || null,
-          last_name: m.lastName || null,
-          party: m.partyName || m.party || null,
-          state: m.state || null,
-          district: null,
-          chamber: "Senate",
-          congress: parseInt(congress),
-          depiction_url: m.depiction?.imageUrl || null,
-          official_url: m.url || m.officialWebsiteUrl || null,
-          terms: m.terms ? JSON.stringify(m.terms) : "[]",
-          updated_at: new Date().toISOString(),
-        };
-        const { error } = await sb
-          .from("congress_members")
-          .upsert(record, { onConflict: "bioguide_id" });
-        if (!error) senateUpserted++;
       }
     }
 
@@ -134,9 +110,8 @@ Deno.serve(async (req) => {
       JSON.stringify({
         fetched: allMembers.length,
         upserted,
-        senate_upserted: senateUpserted,
-        chamber,
-        congress,
+        errors,
+        congress: currentCongress,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
