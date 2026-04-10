@@ -190,6 +190,12 @@ function MapSourceSelectorInner({
               {featureCount} districts · {diagnostics.statesFound} states
             </span>
           )}
+          {diagnostics.idbSizeMB !== null && (
+            <span className="flex items-center gap-1">
+              <Database className="h-3 w-3" />
+              Cache: {diagnostics.idbSizeMB} MB
+            </span>
+          )}
           {diagnostics.attempts.length > 1 && (
             <span className="flex items-center gap-1 text-amber-500">
               <RefreshCw className="h-3 w-3" />

@@ -25,6 +25,7 @@ export interface MapDiagnostics {
   cacheHit: boolean;
   offlineReady: boolean;
   idbCachedAt: string | null;
+  idbSizeMB: number | null;
 }
 
 export interface GeoJSONData {
@@ -131,6 +132,22 @@ async function idbClear(): Promise<void> {
     });
   } catch {
     // ignore
+  }
+}
+
+async function idbGetSizeMB(): Promise<number | null> {
+  try {
+    if (navigator.storage?.estimate) {
+      const est = await navigator.storage.estimate();
+      // This gives overall storage usage; for a more precise IDB-only estimate,
+      // we'd need to iterate stores, but estimate() is the standard lightweight API.
+      if (typeof est.usage === "number") {
+        return Math.round((est.usage / (1024 * 1024)) * 100) / 100;
+      }
+    }
+    return null;
+  } catch {
+    return null;
   }
 }
 
@@ -276,6 +293,7 @@ export function useMapLoader(): MapLoadResult {
     cacheHit: false,
     offlineReady: false,
     idbCachedAt: null,
+    idbSizeMB: null,
   });
 
   const abortRef = useRef<AbortController | null>(null);
@@ -286,7 +304,7 @@ export function useMapLoader(): MapLoadResult {
     setPreferredSourceState(s);
   }, []);
 
-  const applyData = useCallback((
+  const applyData = useCallback(async (
     data: GeoJSONData,
     src: MapSource,
     elapsed: number,
@@ -296,6 +314,7 @@ export function useMapLoader(): MapLoadResult {
   ) => {
     const clean = cleanGeoData(data);
     const states = countStates(clean);
+    const sizeMB = await idbGetSizeMB();
     setGeoData(clean);
     setActiveSource(src);
     setLoadTimeMs(elapsed);
@@ -307,6 +326,7 @@ export function useMapLoader(): MapLoadResult {
       cacheHit,
       offlineReady: true,
       idbCachedAt,
+      idbSizeMB: sizeMB,
     });
     setLoading(false);
   }, []);
@@ -417,6 +437,7 @@ export function useMapLoader(): MapLoadResult {
       cacheHit: false,
       offlineReady,
       idbCachedAt: null,
+      idbSizeMB: null,
     });
     setError(
       `All map sources failed. ${attempts.map(a => `${a.source}: ${a.error}`).join(" | ")}`
