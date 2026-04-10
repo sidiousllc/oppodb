@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type WindowsTheme = "win98" | "winxp" | "vista" | "win7" | "win8" | "win10" | "win11";
@@ -17,11 +16,15 @@ export const THEME_LABELS: Record<WindowsTheme, string> = {
 interface ThemeContextType {
   theme: WindowsTheme;
   setTheme: (theme: WindowsTheme) => void;
+  darkMode: boolean;
+  setDarkMode: (dark: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: "win98",
   setTheme: () => {},
+  darkMode: false,
+  setDarkMode: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -29,8 +32,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<WindowsTheme>(() => {
     return (localStorage.getItem("windows-theme") as WindowsTheme) || "win98";
   });
+  const [darkMode, setDarkModeState] = useState<boolean>(() => {
+    return localStorage.getItem("windows-dark-mode") === "true";
+  });
 
-  // Load saved theme from profile on login
   useEffect(() => {
     if (!user) return;
     const saved = localStorage.getItem("windows-theme") as WindowsTheme;
@@ -42,19 +47,32 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Apply theme class to document
   useEffect(() => {
     const root = document.documentElement;
-    // Remove all theme classes
     Object.keys(THEME_LABELS).forEach(t => root.classList.remove(`theme-${t}`));
-    // Add current theme class
     root.classList.add(`theme-${theme}`);
   }, [theme]);
+
+  // Apply dark mode class
+  useEffect(() => {
+    const root = document.documentElement;
+    if (darkMode) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [darkMode]);
 
   const setTheme = (newTheme: WindowsTheme) => {
     setThemeState(newTheme);
     localStorage.setItem("windows-theme", newTheme);
   };
 
+  const setDarkMode = (dark: boolean) => {
+    setDarkModeState(dark);
+    localStorage.setItem("windows-dark-mode", String(dark));
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, darkMode, setDarkMode }}>
       {children}
     </ThemeContext.Provider>
   );

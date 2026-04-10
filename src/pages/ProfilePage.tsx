@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme, THEME_LABELS, type WindowsTheme } from "@/contexts/ThemeContext";
+import { Moon, Sun } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 import { IntegrationSettings } from "@/components/IntegrationSettings";
