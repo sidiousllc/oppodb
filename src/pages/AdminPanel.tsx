@@ -949,6 +949,16 @@ function WikiPagesTab() {
               <div className="text-[9px] text-[hsl(var(--muted-foreground))] truncate">/{item.slug} · #{item.sort_order} · {item.content.length} chars</div>
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
+              {isAdmin && (
+                <button
+                  onClick={() => handleUpdateDocs(false, [item.slug])}
+                  disabled={updatingDocs}
+                  className="win98-button px-1 py-0 text-[9px]"
+                  title={`Regenerate docs for ${item.title}`}
+                >
+                  {updatingDocs ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <BookOpen className="h-2.5 w-2.5" />}
+                </button>
+              )}
               <button onClick={() => setEditing(item)} className="win98-button px-1 py-0 text-[9px]"><Edit3 className="h-2.5 w-2.5" /></button>
               {isAdmin && <button onClick={() => handleDelete(item.id)} className="win98-button px-1 py-0 text-[9px]"><Trash2 className="h-2.5 w-2.5" /></button>}
             </div>
