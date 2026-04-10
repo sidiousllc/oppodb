@@ -12,7 +12,7 @@ import { ActivityLogsTab } from "@/components/ActivityLogsTab";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "roles" | "access" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging";
+type Tab = "users" | "roles" | "access" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs";
 
 interface ContentItem {
   id: string;
@@ -61,6 +61,7 @@ export default function AdminPanel() {
     { id: "local", label: "Local Impact", emoji: "🌐" },
     { id: "narratives", label: "Narratives", emoji: "📄" },
     { id: "messaging", label: "Messaging", emoji: "📢" },
+    { id: "docs", label: "Documentation", emoji: "📖" },
   ];
 
   return (
@@ -107,6 +108,7 @@ export default function AdminPanel() {
         {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
         {tab === "narratives" && <ContentTab table="narrative_reports" nameField="name" />}
         {tab === "messaging" && <MessagingGuidanceTab />}
+        {tab === "docs" && <WikiPagesTab />}
       </div>
 
       {/* Security Badge */}
