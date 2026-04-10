@@ -112,6 +112,40 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Theme Selector */}
+      <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mb-3">
+        <p className="text-[11px] font-bold mb-2 flex items-center gap-1">🎨 Desktop Theme</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {(Object.entries(THEME_LABELS) as [WindowsTheme, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTheme(key)}
+              className={`win98-button text-[10px] py-2 px-3 text-left flex items-center gap-2 ${
+                theme === key ? "font-bold" : ""
+              }`}
+              style={theme === key ? {
+                borderColor: "hsl(var(--primary))",
+                background: "hsl(var(--accent))",
+              } : {}}
+            >
+              <span className="text-base">{
+                key === "win98" ? "🖥️" :
+                key === "winxp" ? "🌿" :
+                key === "vista" ? "✨" :
+                key === "win7" ? "🏠" :
+                key === "win8" ? "⬛" :
+                key === "win10" ? "🪟" :
+                "☁️"
+              }</span>
+              <div>
+                <div>{label}</div>
+                {theme === key && <div className="text-[8px] text-[hsl(var(--primary))]">Active</div>}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Change Password */}
       {hasEmailIdentity && (
         <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mb-3">
