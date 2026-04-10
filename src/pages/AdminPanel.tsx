@@ -835,7 +835,7 @@ function WikiPagesTab() {
     }
   };
 
-  const handleUpdateDocs = async (silent = false) => {
+  const handleUpdateDocs = async (silent = false, slugs?: string[]) => {
     setUpdatingDocs(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -850,7 +850,7 @@ function WikiPagesTab() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify(slugs ? { slugs } : {}),
         }
       );
       const result = await res.json();
