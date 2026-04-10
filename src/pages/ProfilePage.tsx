@@ -132,7 +132,16 @@ export default function ProfilePage() {
 
       {/* Theme Selector */}
       <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mb-3">
-        <p className="text-[11px] font-bold mb-2 flex items-center gap-1">🎨 Desktop Theme</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] font-bold flex items-center gap-1">🎨 Desktop Theme</p>
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="win98-button text-[10px] flex items-center gap-1 px-2 py-1"
+          >
+            {darkMode ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+            {darkMode ? "Light Mode" : "Dark Mode"}
+          </button>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {(Object.entries(THEME_LABELS) as [WindowsTheme, string][]).map(([key, label]) => (
             <button
