@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type WindowsTheme = "win98" | "winxp" | "vista" | "win7" | "win8" | "win10" | "win11";
@@ -35,13 +36,36 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [darkMode, setDarkModeState] = useState<boolean>(() => {
     return localStorage.getItem("windows-dark-mode") === "true";
   });
+  const loadedFromDb = useRef(false);
 
+  // Load saved theme from profile on login
   useEffect(() => {
-    if (!user) return;
-    const saved = localStorage.getItem("windows-theme") as WindowsTheme;
-    if (saved && THEME_LABELS[saved]) {
-      setThemeState(saved);
+    if (!user) {
+      loadedFromDb.current = false;
+      return;
     }
+
+    const loadFromProfile = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("windows_theme, dark_mode")
+        .eq("id", user.id)
+        .single();
+
+      if (data) {
+        const dbTheme = data.windows_theme as WindowsTheme;
+        if (dbTheme && THEME_LABELS[dbTheme]) {
+          setThemeState(dbTheme);
+          localStorage.setItem("windows-theme", dbTheme);
+        }
+        const dbDark = data.dark_mode ?? false;
+        setDarkModeState(dbDark);
+        localStorage.setItem("windows-dark-mode", String(dbDark));
+      }
+      loadedFromDb.current = true;
+    };
+
+    loadFromProfile();
   }, [user]);
 
   // Apply theme class to document
@@ -61,14 +85,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [darkMode]);
 
+  const saveToProfile = async (newTheme: WindowsTheme, newDark: boolean) => {
+    if (!user) return;
+    await supabase
+      .from("profiles")
+      .update({ windows_theme: newTheme, dark_mode: newDark })
+      .eq("id", user.id);
+  };
+
   const setTheme = (newTheme: WindowsTheme) => {
     setThemeState(newTheme);
     localStorage.setItem("windows-theme", newTheme);
+    saveToProfile(newTheme, darkMode);
   };
 
   const setDarkMode = (dark: boolean) => {
     setDarkModeState(dark);
     localStorage.setItem("windows-dark-mode", String(dark));
+    saveToProfile(theme, dark);
   };
 
   return (

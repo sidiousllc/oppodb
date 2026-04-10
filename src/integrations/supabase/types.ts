@@ -1313,23 +1313,29 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          dark_mode: boolean
           display_name: string | null
           id: string
           updated_at: string
+          windows_theme: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          dark_mode?: boolean
           display_name?: string | null
           id: string
           updated_at?: string
+          windows_theme?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          dark_mode?: boolean
           display_name?: string | null
           id?: string
           updated_at?: string
+          windows_theme?: string
         }
         Relationships: []
       }
