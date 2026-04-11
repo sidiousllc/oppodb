@@ -2628,23 +2628,23 @@ export function PollingSection() {
           </button>
         </div>
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-          <table className="w-full text-sm">
+           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-[hsl(var(--win98-face))] z-10">
               <tr className="border-b border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))]">
-                <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
-                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Topic</th>
-                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Result</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Margin</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sample</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">MoE</th>
-                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Method</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
+                <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("source")}>Source<SortIcon col="source" /></th>
+                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("topic")}>Topic<SortIcon col="topic" /></th>
+                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("type")}>Type<SortIcon col="type" /></th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("result")}>Result<SortIcon col="result" /></th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("margin")}>Margin<SortIcon col="margin" /></th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("sample")}>Sample<SortIcon col="sample" /></th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("moe")}>MoE<SortIcon col="moe" /></th>
+                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("method")}>Method<SortIcon col="method" /></th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("date")}>Date<SortIcon col="date" /></th>
                 <th className="py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider"></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((poll) => {
+              {sortedFiltered.map((poll) => {
                 const src = getSourceInfo(poll.source);
                 const primaryPct = poll.approve_pct ?? poll.favor_pct;
                 const secondaryPct = poll.disapprove_pct ?? poll.oppose_pct;
