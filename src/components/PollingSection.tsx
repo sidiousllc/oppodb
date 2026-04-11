@@ -2333,7 +2333,7 @@ export function PollingSection() {
       }
 
       {/* ─── Multi-Source Trend Chart ─────────────────────────────────────── */}
-      <MultiSourceTrendChart polls={polls} />
+      <MultiSourceTrendChart polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
 
       {/* ─── Rolling Average Trend ────────────────────────────────────────── */}
       <RollingAverageTrend polls={polls} />
@@ -2344,7 +2344,7 @@ export function PollingSection() {
       {/* ─── Charts Row: Dot Plot + Issue Butterfly ────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
         <SourceDotPlot latestBySource={latestBySource} />
-        <IssueButterflyChart polls={issuePolls} />
+        <IssueButterflyChart polls={issuePolls} onSelectPoll={(p) => setSelectedPoll(p)} />
       </div>
 
       {/* ─── Pollster Heatmap ─────────────────────────────────────────────── */}
