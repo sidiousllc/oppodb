@@ -2038,9 +2038,82 @@ export function PollingSection() {
     return polls.filter((p) => {
       if (sourceFilter !== "all" && p.source !== sourceFilter) return false;
       if (typeFilter !== "all" && p.poll_type !== typeFilter) return false;
+      if (topicFilter !== "all" && p.candidate_or_topic !== topicFilter) return false;
+      if (methodFilter !== "all" && (p.methodology || "Unknown") !== methodFilter) return false;
+      if (sampleTypeFilter !== "all" && (p.sample_type || "Unknown") !== sampleTypeFilter) return false;
+      if (dateFrom && p.date_conducted < dateFrom) return false;
+      if (dateTo && p.date_conducted > dateTo) return false;
+      if (marginMin !== "" && (p.margin === null || p.margin < Number(marginMin))) return false;
+      if (marginMax !== "" && (p.margin === null || p.margin > Number(marginMax))) return false;
       return true;
     });
-  }, [polls, sourceFilter, typeFilter]);
+  }, [polls, sourceFilter, typeFilter, topicFilter, methodFilter, sampleTypeFilter, dateFrom, dateTo, marginMin, marginMax]);
+
+  // Unique values for filter dropdowns
+  const uniqueTopics = useMemo(() => Array.from(new Set(polls.map((p) => p.candidate_or_topic))).sort(), [polls]);
+  const uniqueMethods = useMemo(() => Array.from(new Set(polls.map((p) => p.methodology || "Unknown"))).sort(), [polls]);
+  const uniqueSampleTypes = useMemo(() => Array.from(new Set(polls.map((p) => p.sample_type || "Unknown"))).sort(), [polls]);
+
+  const activeFilterCount = useMemo(() => {
+    let c = 0;
+    if (sourceFilter !== "all") c++;
+    if (typeFilter !== "all") c++;
+    if (topicFilter !== "all") c++;
+    if (methodFilter !== "all") c++;
+    if (sampleTypeFilter !== "all") c++;
+    if (dateFrom) c++;
+    if (dateTo) c++;
+    if (marginMin !== "") c++;
+    if (marginMax !== "") c++;
+    return c;
+  }, [sourceFilter, typeFilter, topicFilter, methodFilter, sampleTypeFilter, dateFrom, dateTo, marginMin, marginMax]);
+
+  function clearAllFilters() {
+    setSourceFilter("all");
+    setTypeFilter("all");
+    setTopicFilter("all");
+    setMethodFilter("all");
+    setSampleTypeFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    setMarginMin("");
+    setMarginMax("");
+  }
+
+  // Sorting for the All Polls table
+  const sortedFiltered = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      let cmp = 0;
+      switch (sortCol) {
+        case "source": cmp = a.source.localeCompare(b.source); break;
+        case "topic": cmp = a.candidate_or_topic.localeCompare(b.candidate_or_topic); break;
+        case "type": cmp = a.poll_type.localeCompare(b.poll_type); break;
+        case "result": cmp = ((a.approve_pct ?? a.favor_pct ?? 0) - (b.approve_pct ?? b.favor_pct ?? 0)); break;
+        case "margin": cmp = ((a.margin ?? 0) - (b.margin ?? 0)); break;
+        case "sample": cmp = ((a.sample_size ?? 0) - (b.sample_size ?? 0)); break;
+        case "moe": cmp = ((a.margin_of_error ?? 0) - (b.margin_of_error ?? 0)); break;
+        case "method": cmp = (a.methodology || "").localeCompare(b.methodology || ""); break;
+        case "date": default: cmp = a.date_conducted.localeCompare(b.date_conducted); break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return arr;
+  }, [filtered, sortCol, sortDir]);
+
+  function toggleSort(col: string) {
+    if (sortCol === col) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortCol(col);
+      setSortDir("desc");
+    }
+  }
+
+  function SortIcon({ col }: { col: string }) {
+    if (sortCol !== col) return <span className="text-muted-foreground/30 ml-0.5">↕</span>;
+    return <span className="ml-0.5">{sortDir === "asc" ? "↑" : "↓"}</span>;
+  }
 
   const approvalPolls = useMemo(
     () => filtered.filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval"),
