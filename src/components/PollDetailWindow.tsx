@@ -46,7 +46,11 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
     neutral > 0.5 && { name: "Undecided/Other", value: +neutral.toFixed(1), color: "hsl(var(--muted-foreground))" },
   ].filter(Boolean) as { name: string; value: number; color: string }[];
 
-  // Demographic crosstabs from raw_data
+  // Demographic crosstabs: check both inline raw_data.demographics array
+  // AND separate crosstab rows from allPolls (same source + topic with group_type)
+  const demoGroups = new Map<string, Array<{ demographic: string; approve: number; disapprove: number }>>();
+
+  // Method 1: inline demographics array in raw_data
   const rawData = (p.raw_data || {}) as Record<string, unknown>;
   const demographics = rawData.demographics as Array<{
     group_type?: string;
@@ -54,8 +58,6 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
     approve_pct?: number;
     disapprove_pct?: number;
   }> | undefined;
-
-  const demoGroups = new Map<string, Array<{ demographic: string; approve: number; disapprove: number }>>();
   if (demographics && Array.isArray(demographics)) {
     demographics.forEach(d => {
       const group = d.group_type || "Other";
@@ -66,6 +68,52 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
         disapprove: d.disapprove_pct ?? 0,
       });
     });
+  }
+
+  // Method 2: separate crosstab rows in allPolls (same source + topic, with group_type in raw_data)
+  if (demoGroups.size === 0) {
+    const crosstabPolls = allPolls.filter(o => {
+      const rd = (o.raw_data || {}) as Record<string, unknown>;
+      return rd.group_type &&
+        o.source === p.source &&
+        o.candidate_or_topic === p.candidate_or_topic &&
+        Math.abs(new Date(o.date_conducted).getTime() - new Date(p.date_conducted).getTime()) < 60 * 24 * 60 * 60 * 1000;
+    });
+    crosstabPolls.forEach(o => {
+      const rd = (o.raw_data || {}) as Record<string, unknown>;
+      const group = (rd.group_type as string) || "Other";
+      const demo = (rd.demographic as string) || "Unknown";
+      if (!demoGroups.has(group)) demoGroups.set(group, []);
+      demoGroups.get(group)!.push({
+        demographic: demo,
+        approve: o.approve_pct ?? o.favor_pct ?? 0,
+        disapprove: o.disapprove_pct ?? o.oppose_pct ?? 0,
+      });
+    });
+
+    // If still empty, try cross-source crosstabs for the same topic
+    if (demoGroups.size === 0) {
+      const anySourceCrosstabs = allPolls.filter(o => {
+        const rd = (o.raw_data || {}) as Record<string, unknown>;
+        return rd.group_type &&
+          o.candidate_or_topic === p.candidate_or_topic;
+      });
+      anySourceCrosstabs.forEach(o => {
+        const rd = (o.raw_data || {}) as Record<string, unknown>;
+        const group = (rd.group_type as string) || "Other";
+        const demo = `${(rd.demographic as string) || "Unknown"} (${o.source})`;
+        if (!demoGroups.has(group)) demoGroups.set(group, []);
+        const existing = demoGroups.get(group)!;
+        // Deduplicate by demographic label
+        if (!existing.some(e => e.demographic === demo)) {
+          existing.push({
+            demographic: demo,
+            approve: o.approve_pct ?? o.favor_pct ?? 0,
+            disapprove: o.disapprove_pct ?? o.oppose_pct ?? 0,
+          });
+        }
+      });
+    }
   }
 
   // Same-source polls for context
@@ -284,20 +332,29 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
         {/* Demographic Crosstabs */}
         {demoGroups.size > 0 && (
           <div className="candidate-card p-4">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Demographic Breakdown</h3>
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+              Demographic Breakdown — {p.candidate_or_topic}
+            </h3>
+            <p className="text-[9px] text-muted-foreground mb-3">
+              {[...demoGroups.values()].reduce((s, a) => s + a.length, 0)} crosstab data points across {demoGroups.size} categories
+            </p>
             <div className="space-y-3">
-              {[...demoGroups.entries()].map(([group, entries]) => (
+              {[...demoGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([group, entries]) => (
                 <div key={group}>
-                  <p className="text-[10px] font-bold text-foreground mb-1.5">{group}</p>
+                  <p className="text-[10px] font-bold text-foreground mb-1.5 capitalize">{group}</p>
                   <div className="space-y-1">
-                    {entries.map(e => (
-                      <div key={e.demographic} className="flex items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground w-24 shrink-0 truncate">{e.demographic}</span>
-                        <div className="flex-1 h-3 rounded bg-muted overflow-hidden flex">
-                          <div className="h-full" style={{ width: `${e.approve}%`, backgroundColor: "hsl(150, 55%, 45%)" }} />
-                          <div className="h-full" style={{ width: `${e.disapprove}%`, backgroundColor: "hsl(0, 65%, 50%)" }} />
+                    {entries.map((e, i) => (
+                      <div key={`${e.demographic}-${i}`} className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground w-32 shrink-0 truncate" title={e.demographic}>{e.demographic}</span>
+                        <div className="flex-1 h-3.5 rounded bg-muted overflow-hidden flex">
+                          <div className="h-full transition-all" style={{ width: `${e.approve}%`, backgroundColor: "hsl(150, 55%, 45%)" }}>
+                            {e.approve > 15 && <span className="text-[7px] text-white font-bold leading-[14px] pl-1">{e.approve}%</span>}
+                          </div>
+                          <div className="h-full transition-all" style={{ width: `${e.disapprove}%`, backgroundColor: "hsl(0, 65%, 50%)" }}>
+                            {e.disapprove > 15 && <span className="text-[7px] text-white font-bold leading-[14px] pl-1">{e.disapprove}%</span>}
+                          </div>
                         </div>
-                        <span className="text-[9px] font-bold w-16 text-right shrink-0">
+                        <span className="text-[9px] font-bold w-20 text-right shrink-0">
                           <span style={{ color: "hsl(150,55%,45%)" }}>{e.approve}%</span>
                           <span className="text-muted-foreground mx-0.5">/</span>
                           <span style={{ color: "hsl(0,65%,50%)" }}>{e.disapprove}%</span>
