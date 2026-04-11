@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, ExternalLink, Loader2, Calendar, RefreshCw, ArrowLeft } from "lucide-react";
+import { Search, ExternalLink, Loader2, Calendar, RefreshCw, ArrowLeft, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
 
 interface MessagingGuidance {
   id: string;
@@ -113,6 +114,147 @@ function getPartyBadge(areas: string[]): string | null {
   return null;
 }
 
+function exportMessagingPdf(item: MessagingGuidance) {
+  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 50;
+  const contentW = pageW - margin * 2;
+  let y = margin;
+
+  const drawBg = () => {
+    doc.setFillColor(25, 25, 50);
+    doc.rect(0, 0, pageW, pageH, "F");
+  };
+  drawBg();
+
+  const checkPage = (needed: number) => {
+    if (y + needed > pageH - margin) {
+      doc.addPage();
+      drawBg();
+      y = margin;
+    }
+  };
+
+  const party = getPartyBadge(item.issue_areas || []);
+
+  // Header bar
+  doc.setFillColor(35, 35, 70);
+  doc.roundedRect(margin, y, contentW, 60, 4, 4, "F");
+  doc.setTextColor(180, 180, 220);
+  doc.setFontSize(9);
+  doc.text(item.source + (party ? `  •  ${party}` : ""), margin + 12, y + 18);
+  doc.setTextColor(230, 230, 255);
+  doc.setFontSize(14);
+  const titleLines = doc.splitTextToSize(item.title, contentW - 24);
+  doc.text(titleLines.slice(0, 2), margin + 12, y + 38);
+  y += 70;
+
+  // Meta line
+  const metaParts: string[] = [];
+  if (item.author) metaParts.push(item.author);
+  if (item.published_date) metaParts.push(new Date(item.published_date).toLocaleDateString());
+  if (metaParts.length) {
+    doc.setFontSize(8);
+    doc.setTextColor(140, 140, 180);
+    doc.text(metaParts.join("  •  "), margin, y + 4);
+    y += 16;
+  }
+
+  // Tags
+  const issueTags = (item.issue_areas || []).filter(t => !["Democrat","Republican","Independent"].includes(t));
+  if (issueTags.length) {
+    doc.setFontSize(7);
+    doc.setTextColor(160, 160, 200);
+    doc.text(issueTags.join("  |  "), margin, y + 4);
+    y += 16;
+  }
+
+  // Summary
+  if (item.summary) {
+    checkPage(40);
+    doc.setFontSize(9);
+    doc.setTextColor(170, 170, 210);
+    const sumLines = doc.splitTextToSize(item.summary, contentW);
+    doc.text(sumLines, margin, y + 4);
+    y += sumLines.length * 13 + 10;
+  }
+
+  // Content - render markdown as plain text
+  const content = (item.content || "").replace(/\r\n/g, "\n");
+  const lines = content.split("\n");
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) { y += 8; continue; }
+
+    // Headings
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.*)/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const text = headingMatch[2].replace(/\*\*/g, "");
+      checkPage(24);
+      y += 6;
+      doc.setFontSize(level === 1 ? 14 : level === 2 ? 12 : level === 3 ? 10 : 9);
+      doc.setTextColor(230, 230, 255);
+      doc.setFont("helvetica", "bold");
+      const hLines = doc.splitTextToSize(text, contentW);
+      doc.text(hLines, margin, y + 4);
+      y += hLines.length * (doc.getFontSize() * 1.3) + 4;
+      doc.setFont("helvetica", "normal");
+      continue;
+    }
+
+    // Bold lines
+    const boldMatch = trimmed.match(/^\*\*(.*?)\*\*:?\s*(.*)/);
+    if (boldMatch) {
+      const boldText = boldMatch[1];
+      const rest = boldMatch[2] || "";
+      checkPage(16);
+      doc.setFontSize(9);
+      doc.setTextColor(220, 220, 250);
+      doc.setFont("helvetica", "bold");
+      const bLines = doc.splitTextToSize(boldText + (rest ? ": " + rest : ""), contentW);
+      doc.text(bLines, margin, y + 4);
+      y += bLines.length * 12;
+      doc.setFont("helvetica", "normal");
+      continue;
+    }
+
+    // Bullet points
+    const bulletMatch = trimmed.match(/^[-*•]\s+(.*)/);
+    const plainText = bulletMatch ? bulletMatch[1] : trimmed;
+    const indent = bulletMatch ? 12 : 0;
+
+    doc.setFontSize(9);
+    doc.setTextColor(200, 200, 230);
+    const wrapped = doc.splitTextToSize(plainText.replace(/\*\*/g, ""), contentW - indent);
+    
+    for (const wLine of wrapped) {
+      checkPage(14);
+      if (bulletMatch && wLine === wrapped[0]) {
+        doc.text("•", margin + 2, y + 4);
+      }
+      doc.text(wLine, margin + indent, y + 4);
+      y += 12;
+    }
+  }
+
+  // Footer on each page
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 140);
+    doc.text(`${item.source} — ${item.title}`, margin, pageH - 20);
+    doc.text(`Page ${i} of ${totalPages}`, pageW - margin - 60, pageH - 20);
+  }
+
+  const slug = item.slug || item.title.toLowerCase().replace(/\s+/g, "-").slice(0, 40);
+  doc.save(`messaging-${slug}.pdf`);
+  toast.success("PDF exported");
+}
+
 export function MessagingHub() {
   const [items, setItems] = useState<MessagingGuidance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -218,17 +360,26 @@ export function MessagingHub() {
                 ))}
               </div>
             </div>
-            {selectedItem.source_url && (
-              <a
-                href={selectedItem.source_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="win98-button text-[10px] flex items-center gap-1 shrink-0"
+            <div className="flex flex-col gap-1.5 shrink-0">
+              <button
+                onClick={() => exportMessagingPdf(selectedItem)}
+                className="win98-button text-[10px] flex items-center gap-1"
               >
-                <ExternalLink className="h-3 w-3" />
-                Source
-              </a>
-            )}
+                <Download className="h-3 w-3" />
+                Export PDF
+              </button>
+              {selectedItem.source_url && (
+                <a
+                  href={selectedItem.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="win98-button text-[10px] flex items-center gap-1"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Source
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
