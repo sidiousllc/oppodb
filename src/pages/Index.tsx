@@ -5,24 +5,18 @@ import { magaFiles, searchMagaFiles, mergeMagaFilesFromDB } from "@/data/magaFil
 import { localImpactReports, searchLocalImpact, getLocalImpactBySlug, mergeLocalImpactFromDB } from "@/data/localImpact";
 import { narrativeReports, searchNarrativeReports, mergeNarrativeReportsFromDB } from "@/data/narrativeReports";
 import { fetchCandidatesFromDB } from "@/data/githubSync";
-import { fetchAllDistricts, searchDistricts, syncCensusData, type DistrictProfile } from "@/data/districtIntel";
-import { syncCongressionalElections } from "@/data/congressionalElections";
+import { fetchAllDistricts, type DistrictProfile } from "@/data/districtIntel";
 import { fetchStateLegislativeDistricts, syncStateLegislativeData, type StateLegislativeProfile } from "@/data/stateLegislativeIntel";
-import { getCookRating, getCookRatingColor, COOK_RATING_ORDER, type CookRating } from "@/data/cookRatings";
-import { candidateDistrictMap } from "@/data/candidateDistricts";
+
 import { MasterSearch } from "@/components/MasterSearch";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
 import { GenericCard } from "@/components/GenericCard";
 import { GenericDetail } from "@/components/GenericDetail";
-import { DistrictCard } from "@/components/DistrictCard";
-import { DistrictDetail } from "@/components/DistrictDetail";
-import { DistrictMap, type PVIFilter, PVI_FILTER_OPTIONS } from "@/components/DistrictMap";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
-import { DistrictCompare } from "@/components/DistrictCompare";
 import { Win98Window } from "@/components/Win98Window";
 import { Win98Taskbar } from "@/components/Win98Taskbar";
 import { AOLToolbar } from "@/components/AOLToolbar";
@@ -30,7 +24,7 @@ import { Win98Desktop } from "@/components/Win98Desktop";
 import { AOLBuddyList } from "@/components/AOLBuddyList";
 import { AOLMailWindow } from "@/components/AOLMailWindow";
 import { useMail } from "@/contexts/MailContext";
-import { AlertTriangle, Globe, FileText, Plus, GitCompareArrows } from "lucide-react";
+import { AlertTriangle, Globe, FileText, Plus } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PollingSection } from "@/components/PollingSection";
 import { LegHub } from "@/components/LegHub";
@@ -62,15 +56,8 @@ export default function Index() {
   const [pollingCount, setPollingCount] = useState(0);
   
   const [stateLegSyncing, setStateLegSyncing] = useState(false);
-  const [censusSyncing, setCensusSyncing] = useState(false);
-  const [electionSyncing, setElectionSyncing] = useState(false);
-  const [electionSyncProgress, setElectionSyncProgress] = useState("");
-  const [trackedOnly, setTrackedOnly] = useState(false);
   const [researchSubsection, setResearchSubsection] = useState<string | null>(null);
   const [candidateSubsection, setCandidateSubsection] = useState<"profiles" | "maga-files">("profiles");
-  const [compareMode, setCompareMode] = useState(false);
-  const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
-  const [pviFilter, setPviFilter] = useState<PVIFilter>("all");
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [editData, setEditData] = useState<{
@@ -78,20 +65,13 @@ export default function Index() {
     github_path: string; is_subpage: boolean; parent_slug: string | null; subpage_title: string | null;
   } | undefined>(undefined);
 
-  const trackedDistrictIds = useMemo(() => new Set(
-    Object.values(candidateDistrictMap)
-      .map(v => v.district_id)
-      .filter((id): id is string => id !== null)
-  ), []);
 
   // Track section changes
   useEffect(() => {
     trackPageView(section);
   }, [section, trackPageView]);
 
-  // Track map views
   useEffect(() => {
-    if (section === "district-intel") trackMapView("congressional_districts");
     if (section === "leghub") trackMapView("state_legislative");
   }, [section, trackMapView]);
 
@@ -134,53 +114,6 @@ export default function Index() {
     });
   }, []);
 
-  const handleCensusSync = useCallback(async () => {
-    setCensusSyncing(true);
-    try {
-      const result = await syncCensusData();
-      if (result.success) {
-        const fresh = await fetchAllDistricts();
-        setDistricts(fresh);
-      } else {
-        console.error("Census sync failed:", result.error);
-      }
-    } catch (e) {
-      console.error("Census sync error:", e);
-    } finally {
-      setCensusSyncing(false);
-    }
-  }, []);
-
-  const ALL_STATES = [
-    "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS",
-    "KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY",
-    "NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-  ];
-
-  const handleBulkElectionSync = useCallback(async () => {
-    setElectionSyncing(true);
-    let totalUpserted = 0;
-    try {
-      for (let i = 0; i < ALL_STATES.length; i++) {
-        const st = ALL_STATES[i];
-        setElectionSyncProgress(`${st} (${i + 1}/${ALL_STATES.length})`);
-        try {
-          const result = await syncCongressionalElections(st);
-          if (result.success) totalUpserted += result.upserted;
-        } catch {
-          console.warn(`Election sync failed for ${st}`);
-        }
-        if (i < ALL_STATES.length - 1) await new Promise(r => setTimeout(r, 500));
-      }
-      setElectionSyncProgress(`Done — ${totalUpserted} results synced`);
-      setTimeout(() => setElectionSyncProgress(""), 4000);
-    } catch (e) {
-      console.error("Bulk election sync error:", e);
-      setElectionSyncProgress("Error");
-    } finally {
-      setElectionSyncing(false);
-    }
-  }, []);
 
   const handleStateLegSync = useCallback(async (stateAbbr?: string, chamber?: string) => {
     setStateLegSyncing(true);
@@ -251,7 +184,7 @@ export default function Index() {
     const narrativeMatch = narrativeReports.find(n => n.slug.toLowerCase() === slug);
     if (narrativeMatch) { setSection("oppohub"); setSelectedSlug(narrativeMatch.slug); return true; }
     const districtMatch = districts.find(d => d.district_id.toLowerCase() === slug);
-    if (districtMatch) { setSection("district-intel"); setSelectedSlug(districtMatch.district_id); return true; }
+    if (districtMatch) { setSection("leghub"); setSelectedSlug(districtMatch.district_id); return true; }
 
     // Check if this is a subpage slug — find its parent candidate
     const parentCandidate = candidates.find(c => {
@@ -276,12 +209,6 @@ export default function Index() {
   const filteredMaga = useMemo(() => searchMagaFiles(search), [search, dataVersion]);
   const filteredLocal = useMemo(() => searchLocalImpact(search), [search, dataVersion]);
   const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search, dataVersion]);
-  const filteredDistricts = useMemo(() => {
-    let results = searchDistricts(districts, search);
-    if (trackedOnly) results = results.filter(d => trackedDistrictIds.has(d.district_id));
-    if (cookFilter !== "all") results = results.filter(d => getCookRating(d.district_id) === cookFilter);
-    return results;
-  }, [search, districts, trackedOnly, trackedDistrictIds, cookFilter]);
 
   const counts = useMemo(() => ({
     all: candidates.length,
@@ -294,8 +221,7 @@ export default function Index() {
   const sectionCounts = useMemo(() => ({
     dashboard: 0,
     oppohub: candidates.length + localImpactReports.length + narrativeReports.length,
-    "district-intel": districts.length,
-    leghub: stateLegDistricts.length,
+    leghub: stateLegDistricts.length + districts.length,
     polling: pollingCount,
     messaging: 0,
     "research-tools": 0,
@@ -307,14 +233,13 @@ export default function Index() {
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
   const selectedLocal = selectedSlug ? getLocalImpactBySlug(selectedSlug) : null;
   const selectedNarrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
-  const selectedDistrict = selectedSlug ? districts.find(d => d.district_id === selectedSlug) : null;
+  
 
   if (!loaded) return null;
 
   const sectionLabels: Record<Section, string> = {
     dashboard: "Dashboard",
     oppohub: "OppoHub",
-    "district-intel": "District Intelligence",
     leghub: "LegHub",
     polling: "DataHub",
     messaging: "MessagingHub",
@@ -324,18 +249,6 @@ export default function Index() {
   };
 
   function renderDetail() {
-    if (section === "district-intel" && compareMode) {
-      return <DistrictCompare districts={districts} onBack={() => setCompareMode(false)} />;
-    }
-    if (section === "district-intel" && selectedDistrict) {
-      return (
-        <DistrictDetail
-          district={selectedDistrict}
-          onBack={() => setSelectedSlug(null)}
-          onSelectCandidate={(slug) => { setSection("oppohub"); setSelectedSlug(slug); }}
-        />
-      );
-    }
     return null;
   }
 
@@ -371,119 +284,6 @@ export default function Index() {
       );
     }
 
-    if (section === "district-intel") {
-      return (
-        <>
-          <div className="mt-2 mb-1 flex flex-wrap items-center justify-between gap-1">
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{filteredDistricts.length} district profiles</p>
-              <button
-                onClick={() => setTrackedOnly(v => !v)}
-                className={`win98-button text-[10px] flex items-center gap-1 ${trackedOnly ? "font-bold" : ""}`}
-              >
-                <span className={`h-2 w-2 border ${trackedOnly ? "bg-[hsl(var(--win98-titlebar))]" : ""}`} />
-                Tracked only
-              </button>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCompareMode(true)}
-                className="win98-button text-[10px] flex items-center gap-1"
-              >
-                <GitCompareArrows className="h-3 w-3" />
-                Compare
-              </button>
-              <button
-                onClick={handleCensusSync}
-                disabled={censusSyncing}
-                className="win98-button text-[10px] flex items-center gap-1 disabled:opacity-50"
-              >
-                {censusSyncing ? "Syncing…" : "Census Sync"}
-              </button>
-              <button
-                onClick={handleBulkElectionSync}
-                disabled={electionSyncing}
-                className="win98-button text-[10px] flex items-center gap-1 disabled:opacity-50"
-              >
-                {electionSyncing ? electionSyncProgress : electionSyncProgress || "Sync Elections"}
-              </button>
-            </div>
-          </div>
-
-          {/* Cook filter */}
-          <div className="mb-2 flex flex-wrap gap-1">
-            <button
-              onClick={() => setCookFilter("all")}
-              className={`win98-button text-[9px] px-1 py-0 ${cookFilter === "all" ? "font-bold" : ""}`}
-            >
-              All Ratings
-            </button>
-            {COOK_RATING_ORDER.map((rating) => {
-              const color = getCookRatingColor(rating);
-              const isActive = cookFilter === rating;
-              return (
-                <button
-                  key={rating}
-                  onClick={() => setCookFilter(isActive ? "all" : rating)}
-                  className="win98-button text-[9px] px-1 py-0"
-                  style={{
-                    backgroundColor: isActive ? `hsl(${color})` : undefined,
-                    color: isActive ? "white" : `hsl(${color})`,
-                    fontWeight: isActive ? 700 : 400,
-                  }}
-                >
-                  {rating}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* PVI filter */}
-          <div className="mb-2 flex flex-wrap gap-1 items-center">
-            <span className="text-[9px] font-bold mr-1">PVI:</span>
-            {PVI_FILTER_OPTIONS.map((opt) => {
-              const isActive = pviFilter === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => setPviFilter(isActive && opt.id !== "all" ? "all" : opt.id)}
-                  className="win98-button text-[9px] px-1 py-0"
-                  style={opt.color ? {
-                    backgroundColor: isActive ? `hsl(${opt.color})` : undefined,
-                    color: isActive ? "white" : `hsl(${opt.color})`,
-                    fontWeight: isActive ? 700 : 400,
-                  } : {
-                    fontWeight: isActive ? 700 : 400,
-                  }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Map */}
-          {districts.length > 0 && (
-            <div className="mb-3 win98-sunken bg-white p-2">
-              <p className="text-[11px] font-bold mb-1">Congressional District Map</p>
-              <DistrictMap districts={districts} onSelectDistrict={setSelectedSlug} pviFilter={pviFilter} />
-            </div>
-          )}
-
-          <div className="grid gap-2 sm:grid-cols-2">
-            {filteredDistricts.map(d => (
-              <DistrictCard key={d.district_id} district={d} onClick={setSelectedSlug} />
-            ))}
-          </div>
-          {filteredDistricts.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No districts match your search.</p>
-            </div>
-          )}
-        </>
-      );
-    }
-
     if (section === "leghub") {
       return (
         <LegHub
@@ -491,6 +291,12 @@ export default function Index() {
           stateLegLoading={stateLegLoading}
           onStateLegSync={handleStateLegSync}
           stateLegSyncing={stateLegSyncing}
+          districts={districts}
+          onDistrictsChange={setDistricts}
+          search={search}
+          onSelectSlug={setSelectedSlug}
+          selectedSlug={selectedSlug}
+          onNavigateToCandidate={(slug) => { setSection("oppohub"); setSelectedSlug(slug); }}
         />
       );
     }

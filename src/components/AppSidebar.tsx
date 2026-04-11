@@ -22,7 +22,6 @@ export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
 export type Section =
   | "dashboard"
   | "oppohub"
-  | "district-intel"
   | "leghub"
   | "polling"
   | "messaging"
@@ -51,7 +50,6 @@ const filters: Array<{ id: FilterCategory; label: string; emoji: string }> = [
 const sections: Array<{ id: Section; label: string; emoji: string }> = [
   { id: "dashboard", label: "Dashboard", emoji: "🏠" },
   { id: "oppohub", label: "OppoHub", emoji: "🎯" },
-  { id: "district-intel", label: "District Intel", emoji: "🧭" },
   { id: "leghub", label: "LegHub", emoji: "⚖️" },
   { id: "polling", label: "DataHub", emoji: "📊" },
   { id: "messaging", label: "MessagingHub", emoji: "📢" },

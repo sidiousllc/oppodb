@@ -11,7 +11,6 @@ interface MobileNavProps {
 
 const sectionItems: Array<{ id: Section; label: string }> = [
   { id: "oppohub", label: "OppoHub" },
-  { id: "district-intel", label: "District Intel" },
   { id: "leghub", label: "LegHub" },
   { id: "polling", label: "DataHub" },
   { id: "messaging", label: "Messaging" },
