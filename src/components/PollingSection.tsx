@@ -1992,6 +1992,13 @@ export function PollingSection() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [sortCol, setSortCol] = useState<string>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [tableSearch, setTableSearch] = useState("");
+  const [colFilterSource, setColFilterSource] = useState("all");
+  const [colFilterTopic, setColFilterTopic] = useState("all");
+  const [colFilterType, setColFilterType] = useState("all");
+  const [colFilterMethod, setColFilterMethod] = useState("all");
+  const [colFilterDateFrom, setColFilterDateFrom] = useState("");
+  const [colFilterDateTo, setColFilterDateTo] = useState("");
   const [selectedPoll, setSelectedPoll] = useState<PollEntry | null>(null);
   const [activeTab, setActiveTab] = useState<"polling" | "markets" | "finance">("polling");
 
@@ -2080,9 +2087,35 @@ export function PollingSection() {
     setMarginMax("");
   }
 
+  // Table-level unique values for column filters
+  const tableUniqueSources = useMemo(() => Array.from(new Set(filtered.map((p) => p.source))).sort(), [filtered]);
+  const tableUniqueTopics = useMemo(() => Array.from(new Set(filtered.map((p) => p.candidate_or_topic))).sort(), [filtered]);
+  const tableUniqueTypes = useMemo(() => Array.from(new Set(filtered.map((p) => p.poll_type))).sort(), [filtered]);
+  const tableUniqueMethods = useMemo(() => Array.from(new Set(filtered.map((p) => p.methodology || "Unknown"))).sort(), [filtered]);
+
   // Sorting for the All Polls table
   const sortedFiltered = useMemo(() => {
-    const arr = [...filtered];
+    let arr = [...filtered];
+    // Apply table search
+    if (tableSearch.trim()) {
+      const q = tableSearch.toLowerCase();
+      arr = arr.filter((p) =>
+        p.source.toLowerCase().includes(q) ||
+        p.candidate_or_topic.toLowerCase().includes(q) ||
+        p.poll_type.toLowerCase().includes(q) ||
+        (p.methodology || "").toLowerCase().includes(q) ||
+        p.date_conducted.includes(q) ||
+        (p.sample_type || "").toLowerCase().includes(q)
+      );
+    }
+    // Apply column filters
+    if (colFilterSource !== "all") arr = arr.filter((p) => p.source === colFilterSource);
+    if (colFilterTopic !== "all") arr = arr.filter((p) => p.candidate_or_topic === colFilterTopic);
+    if (colFilterType !== "all") arr = arr.filter((p) => p.poll_type === colFilterType);
+    if (colFilterMethod !== "all") arr = arr.filter((p) => (p.methodology || "Unknown") === colFilterMethod);
+    if (colFilterDateFrom) arr = arr.filter((p) => p.date_conducted >= colFilterDateFrom);
+    if (colFilterDateTo) arr = arr.filter((p) => p.date_conducted <= colFilterDateTo);
+
     arr.sort((a, b) => {
       let cmp = 0;
       switch (sortCol) {
@@ -2099,7 +2132,19 @@ export function PollingSection() {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return arr;
-  }, [filtered, sortCol, sortDir]);
+  }, [filtered, sortCol, sortDir, tableSearch, colFilterSource, colFilterTopic, colFilterType, colFilterMethod, colFilterDateFrom, colFilterDateTo]);
+
+  const tableFilterActive = tableSearch.trim() !== "" || colFilterSource !== "all" || colFilterTopic !== "all" || colFilterType !== "all" || colFilterMethod !== "all" || colFilterDateFrom !== "" || colFilterDateTo !== "";
+
+  function clearTableFilters() {
+    setTableSearch("");
+    setColFilterSource("all");
+    setColFilterTopic("all");
+    setColFilterType("all");
+    setColFilterMethod("all");
+    setColFilterDateFrom("");
+    setColFilterDateTo("");
+  }
 
   function toggleSort(col: string) {
     if (sortCol === col) {
@@ -2609,23 +2654,42 @@ export function PollingSection() {
 
       {/* ─── All Polls Table ─────────────────────────────────────────────── */}
       <div className="candidate-card overflow-hidden">
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <div>
-            <h3 className="font-display text-sm font-semibold text-foreground">
-              All Polls ({filtered.length})
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Complete polling data from all sources
-            </p>
+        <div className="p-4 border-b border-border flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-display text-sm font-semibold text-foreground">
+                All Polls ({sortedFiltered.length}{tableFilterActive ? ` of ${filtered.length}` : ""})
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Complete polling data from all sources — click column headers to sort
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {tableFilterActive && (
+                <button onClick={clearTableFilters} className="win98-button text-[9px] px-2 py-0.5 text-destructive">
+                  ✕ Clear filters
+                </button>
+              )}
+              <button
+                onClick={seedData}
+                disabled={seeding}
+                className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50">
+                <RefreshCw className={`h-3 w-3 ${seeding ? "animate-spin" : ""}`} />
+                Refresh
+              </button>
+            </div>
           </div>
-          <button
-            onClick={seedData}
-            disabled={seeding}
-            className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50">
-            
-            <RefreshCw className={`h-3 w-3 ${seeding ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
+          {/* Search bar */}
+          <div className="relative">
+            <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              value={tableSearch}
+              onChange={(e) => setTableSearch(e.target.value)}
+              placeholder="Search polls by source, topic, type, method…"
+              className="w-full win98-sunken text-xs py-1.5 pl-8 pr-3 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+          </div>
         </div>
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
            <table className="w-full text-sm">
@@ -2641,6 +2705,44 @@ export function PollingSection() {
                 <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("method")}>Method<SortIcon col="method" /></th>
                 <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("date")}>Date<SortIcon col="date" /></th>
                 <th className="py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider"></th>
+              </tr>
+              {/* Column filter row */}
+              <tr className="border-b border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))]">
+                <th className="py-1 px-4">
+                  <select value={colFilterSource} onChange={(e) => setColFilterSource(e.target.value)} className="win98-sunken text-[9px] w-full bg-background text-foreground py-0.5 px-1">
+                    <option value="all">All</option>
+                    {tableUniqueSources.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </th>
+                <th className="py-1 px-3">
+                  <select value={colFilterTopic} onChange={(e) => setColFilterTopic(e.target.value)} className="win98-sunken text-[9px] w-full bg-background text-foreground py-0.5 px-1">
+                    <option value="all">All</option>
+                    {tableUniqueTopics.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </th>
+                <th className="py-1 px-3">
+                  <select value={colFilterType} onChange={(e) => setColFilterType(e.target.value)} className="win98-sunken text-[9px] w-full bg-background text-foreground py-0.5 px-1">
+                    <option value="all">All</option>
+                    {tableUniqueTypes.map((t) => <option key={t} value={t}>{POLL_TYPES.find((pt) => pt.id === t)?.label ?? t}</option>)}
+                  </select>
+                </th>
+                <th className="py-1 px-3"></th>
+                <th className="py-1 px-3"></th>
+                <th className="py-1 px-3"></th>
+                <th className="py-1 px-3"></th>
+                <th className="py-1 px-3">
+                  <select value={colFilterMethod} onChange={(e) => setColFilterMethod(e.target.value)} className="win98-sunken text-[9px] w-full bg-background text-foreground py-0.5 px-1">
+                    <option value="all">All</option>
+                    {tableUniqueMethods.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </th>
+                <th className="py-1 px-3">
+                  <div className="flex gap-1">
+                    <input type="date" value={colFilterDateFrom} onChange={(e) => setColFilterDateFrom(e.target.value)} className="win98-sunken text-[9px] bg-background text-foreground py-0.5 px-0.5 w-[85px]" title="From date" />
+                    <input type="date" value={colFilterDateTo} onChange={(e) => setColFilterDateTo(e.target.value)} className="win98-sunken text-[9px] bg-background text-foreground py-0.5 px-0.5 w-[85px]" title="To date" />
+                  </div>
+                </th>
+                <th className="py-1 px-3"></th>
               </tr>
             </thead>
             <tbody>
