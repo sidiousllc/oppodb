@@ -65,11 +65,6 @@ export default function Index() {
     github_path: string; is_subpage: boolean; parent_slug: string | null; subpage_title: string | null;
   } | undefined>(undefined);
 
-  const trackedDistrictIds = useMemo(() => new Set(
-    Object.values(candidateDistrictMap)
-      .map(v => v.district_id)
-      .filter((id): id is string => id !== null)
-  ), []);
 
   // Track section changes
   useEffect(() => {
