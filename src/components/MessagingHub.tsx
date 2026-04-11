@@ -140,17 +140,26 @@ export function MessagingHub() {
                 ))}
               </div>
             </div>
-            {selectedItem.source_url && (
-              <a
-                href={selectedItem.source_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="win98-button text-[10px] flex items-center gap-1 shrink-0"
+            <div className="flex flex-col gap-1 shrink-0">
+              <button
+                onClick={() => exportMessagingPDF(selectedItem)}
+                className="win98-button text-[10px] flex items-center gap-1"
               >
-                <ExternalLink className="h-3 w-3" />
-                Source
-              </a>
-            )}
+                <FileDown className="h-3 w-3" />
+                Export PDF
+              </button>
+              {selectedItem.source_url && (
+                <a
+                  href={selectedItem.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="win98-button text-[10px] flex items-center gap-1"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Source
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
