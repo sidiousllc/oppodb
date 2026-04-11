@@ -2087,9 +2087,35 @@ export function PollingSection() {
     setMarginMax("");
   }
 
+  // Table-level unique values for column filters
+  const tableUniqueSources = useMemo(() => Array.from(new Set(filtered.map((p) => p.source))).sort(), [filtered]);
+  const tableUniqueTopics = useMemo(() => Array.from(new Set(filtered.map((p) => p.candidate_or_topic))).sort(), [filtered]);
+  const tableUniqueTypes = useMemo(() => Array.from(new Set(filtered.map((p) => p.poll_type))).sort(), [filtered]);
+  const tableUniqueMethods = useMemo(() => Array.from(new Set(filtered.map((p) => p.methodology || "Unknown"))).sort(), [filtered]);
+
   // Sorting for the All Polls table
   const sortedFiltered = useMemo(() => {
-    const arr = [...filtered];
+    let arr = [...filtered];
+    // Apply table search
+    if (tableSearch.trim()) {
+      const q = tableSearch.toLowerCase();
+      arr = arr.filter((p) =>
+        p.source.toLowerCase().includes(q) ||
+        p.candidate_or_topic.toLowerCase().includes(q) ||
+        p.poll_type.toLowerCase().includes(q) ||
+        (p.methodology || "").toLowerCase().includes(q) ||
+        p.date_conducted.includes(q) ||
+        (p.sample_type || "").toLowerCase().includes(q)
+      );
+    }
+    // Apply column filters
+    if (colFilterSource !== "all") arr = arr.filter((p) => p.source === colFilterSource);
+    if (colFilterTopic !== "all") arr = arr.filter((p) => p.candidate_or_topic === colFilterTopic);
+    if (colFilterType !== "all") arr = arr.filter((p) => p.poll_type === colFilterType);
+    if (colFilterMethod !== "all") arr = arr.filter((p) => (p.methodology || "Unknown") === colFilterMethod);
+    if (colFilterDateFrom) arr = arr.filter((p) => p.date_conducted >= colFilterDateFrom);
+    if (colFilterDateTo) arr = arr.filter((p) => p.date_conducted <= colFilterDateTo);
+
     arr.sort((a, b) => {
       let cmp = 0;
       switch (sortCol) {
@@ -2106,7 +2132,19 @@ export function PollingSection() {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return arr;
-  }, [filtered, sortCol, sortDir]);
+  }, [filtered, sortCol, sortDir, tableSearch, colFilterSource, colFilterTopic, colFilterType, colFilterMethod, colFilterDateFrom, colFilterDateTo]);
+
+  const tableFilterActive = tableSearch.trim() !== "" || colFilterSource !== "all" || colFilterTopic !== "all" || colFilterType !== "all" || colFilterMethod !== "all" || colFilterDateFrom !== "" || colFilterDateTo !== "";
+
+  function clearTableFilters() {
+    setTableSearch("");
+    setColFilterSource("all");
+    setColFilterTopic("all");
+    setColFilterType("all");
+    setColFilterMethod("all");
+    setColFilterDateFrom("");
+    setColFilterDateTo("");
+  }
 
   function toggleSort(col: string) {
     if (sortCol === col) {
