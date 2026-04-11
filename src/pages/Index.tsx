@@ -226,7 +226,6 @@ export default function Index() {
   const sectionCounts = useMemo(() => ({
     dashboard: 0,
     oppohub: candidates.length + localImpactReports.length + narrativeReports.length,
-    "district-intel": 0, // kept for count compat but not used as section
     leghub: stateLegDistricts.length + districts.length,
     polling: pollingCount,
     messaging: 0,
