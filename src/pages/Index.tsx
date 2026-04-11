@@ -238,7 +238,7 @@ export default function Index() {
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
   const selectedLocal = selectedSlug ? getLocalImpactBySlug(selectedSlug) : null;
   const selectedNarrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
-  const selectedDistrict = selectedSlug ? districts.find(d => d.district_id === selectedSlug) : null;
+  
 
   if (!loaded) return null;
 
