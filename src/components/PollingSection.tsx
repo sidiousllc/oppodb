@@ -2339,7 +2339,7 @@ export function PollingSection() {
       <RollingAverageTrend polls={polls} />
 
       {/* ─── Demographic Breakdown ───────────────────────────────────────── */}
-      <DemographicBreakdownChart polls={polls} />
+      <DemographicBreakdownChart polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
 
       {/* ─── Charts Row: Dot Plot + Issue Butterfly ────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
