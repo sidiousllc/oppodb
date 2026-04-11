@@ -379,12 +379,19 @@ export function useMapLoader(): MapLoadResult {
 
       const start = performance.now();
       try {
+        // Each source gets its own abort controller for timeouts
+        // so a timeout on one source doesn't kill subsequent fallbacks
+        const srcController = new AbortController();
+        const onMainAbort = () => srcController.abort();
+        controller.signal.addEventListener("abort", onMainAbort);
+
         const timeoutId = setTimeout(() => {
-          if (!controller.signal.aborted) controller.abort();
+          srcController.abort();
         }, src === "local" ? 10000 : 20000);
 
-        const data = await FETCHERS[src](controller.signal);
+        const data = await FETCHERS[src](srcController.signal);
         clearTimeout(timeoutId);
+        controller.signal.removeEventListener("abort", onMainAbort);
 
         const elapsed = Math.round(performance.now() - start);
         const validation = validateGeoData(data);
