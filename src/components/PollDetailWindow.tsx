@@ -1,13 +1,16 @@
+import { useState } from "react";
 import { Win98Window } from "@/components/Win98Window";
 import { getSourceInfo, POLL_TYPES, type PollEntry } from "@/data/pollingData";
 import {
   BarChart3, ExternalLink, Clock, Users, Target, FileText,
-  TrendingUp, TrendingDown, Minus, Activity, Info,
+  TrendingUp, TrendingDown, Minus, Activity, Info, ChevronRight,
 } from "lucide-react";
 import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip as RechartsTooltip,
 } from "recharts";
+
+interface DemoEntry { demographic: string; approve: number; disapprove: number; source?: string; date?: string; sampleSize?: number }
 
 interface Props {
   poll: PollEntry;
