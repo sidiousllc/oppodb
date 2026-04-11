@@ -56,15 +56,8 @@ export default function Index() {
   const [pollingCount, setPollingCount] = useState(0);
   
   const [stateLegSyncing, setStateLegSyncing] = useState(false);
-  const [censusSyncing, setCensusSyncing] = useState(false);
-  const [electionSyncing, setElectionSyncing] = useState(false);
-  const [electionSyncProgress, setElectionSyncProgress] = useState("");
-  const [trackedOnly, setTrackedOnly] = useState(false);
   const [researchSubsection, setResearchSubsection] = useState<string | null>(null);
   const [candidateSubsection, setCandidateSubsection] = useState<"profiles" | "maga-files">("profiles");
-  const [compareMode, setCompareMode] = useState(false);
-  const [cookFilter, setCookFilter] = useState<CookRating | "all">("all");
-  const [pviFilter, setPviFilter] = useState<PVIFilter>("all");
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [editData, setEditData] = useState<{
