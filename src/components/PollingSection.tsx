@@ -2225,107 +2225,181 @@ export function PollingSection() {
       ) : (
       <>
       {/* Filters + Export */}
-      <div className="flex flex-wrap gap-4 items-center justify-between">
-       <div className="flex flex-wrap gap-4 items-center flex-1">
-        <div className="flex items-center gap-2">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Source:</span>
-          <div className="flex flex-wrap gap-1">
-            <button
-                onClick={() => setSourceFilter("all")}
-                className={`win98-button px-2.5 py-1 text-[9px] ${
-                sourceFilter === "all" ?
-                "bg-foreground text-background border-foreground" :
-                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
-                }>
-                
-              All
-            </button>
-            {POLLING_SOURCES.map((s) => {
-                const isActive = sourceFilter === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => setSourceFilter(isActive ? "all" : s.id)}
-                    className="win98-button text-[9px]"
-                    style={{
-                      backgroundColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.08)`,
-                      color: isActive ? "white" : `hsl(${s.color})`,
-                      borderColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.25)`
-                    }}>
-                    
-                  {s.name}
-                </button>);
-
-              })}
-          </div>
+      <div className="candidate-card p-3 space-y-3">
+       {/* Row 1: Source + Type + toggle */}
+       <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex flex-wrap gap-4 items-center flex-1">
+         <div className="flex items-center gap-2">
+           <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Source:</span>
+           <div className="flex flex-wrap gap-1">
+             <button
+                 onClick={() => setSourceFilter("all")}
+                 className={`win98-button px-2.5 py-1 text-[9px] ${
+                 sourceFilter === "all" ?
+                 "bg-foreground text-background border-foreground" :
+                 "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+                 }>
+               All
+             </button>
+             {POLLING_SOURCES.map((s) => {
+                 const isActive = sourceFilter === s.id;
+                 return (
+                   <button
+                     key={s.id}
+                     onClick={() => setSourceFilter(isActive ? "all" : s.id)}
+                     className="win98-button text-[9px]"
+                     style={{
+                       backgroundColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.08)`,
+                       color: isActive ? "white" : `hsl(${s.color})`,
+                       borderColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.25)`
+                     }}>
+                   {s.name}
+                 </button>);
+               })}
+           </div>
+         </div>
+         <div className="flex items-center gap-2">
+           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type:</span>
+           <div className="flex flex-wrap gap-1">
+             <button
+                 onClick={() => setTypeFilter("all")}
+                 className={`win98-button px-2.5 py-1 text-[9px] ${
+                 typeFilter === "all" ?
+                 "bg-foreground text-background border-foreground" :
+                 "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+                 }>
+               All
+             </button>
+             {POLL_TYPES.map((t) =>
+               <button
+                 key={t.id}
+                 onClick={() => setTypeFilter(typeFilter === t.id ? "all" : t.id)}
+                 className={`win98-button px-2.5 py-1 text-[9px] ${
+                 typeFilter === t.id ?
+                 "bg-foreground text-background border-foreground" :
+                 "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+                 }>
+                 {t.label}
+               </button>
+               )}
+           </div>
+         </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type:</span>
-          <div className="flex flex-wrap gap-1">
-            <button
-                onClick={() => setTypeFilter("all")}
-                className={`win98-button px-2.5 py-1 text-[9px] ${
-                typeFilter === "all" ?
-                "bg-foreground text-background border-foreground" :
-                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
-                }>
-                
-              All
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className={`win98-button text-[9px] px-2 py-0.5 flex items-center gap-1 ${showAdvancedFilters ? "bg-primary text-primary-foreground" : ""}`}
+          >
+            <Filter className="h-3 w-3" />
+            Filters{activeFilterCount > 2 ? ` (${activeFilterCount})` : ""}
+          </button>
+          {activeFilterCount > 0 && (
+            <button onClick={clearAllFilters} className="win98-button text-[9px] px-2 py-0.5 text-destructive">
+              Clear All
             </button>
-            {POLL_TYPES.map((t) =>
-              <button
-                key={t.id}
-                onClick={() => setTypeFilter(typeFilter === t.id ? "all" : t.id)}
-                className={`win98-button px-2.5 py-1 text-[9px] ${
-                typeFilter === t.id ?
-                "bg-foreground text-background border-foreground" :
-                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
-                }>
-                
-                {t.label}
-              </button>
-              )}
-          </div>
-        </div>
-       </div>
-       {/* Update + Export Buttons */}
-       <div className="flex items-center gap-1.5 shrink-0">
-         <button
-            onClick={syncLiveSources}
-            disabled={syncing || seeding}
-            className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50"
-            title="Scrape live polling data from 20+ sources">
-            
+          )}
+          <button
+             onClick={syncLiveSources}
+             disabled={syncing || seeding}
+             className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50"
+             title="Scrape live polling data from 20+ sources">
            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
            {syncing ? "Syncing…" : "Sync Live"}
-         </button>
-         <button
-            onClick={seedData}
-            disabled={seeding || syncing}
-            className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50"
-            title="Update polling data from all sources">
-            
+          </button>
+          <button
+             onClick={seedData}
+             disabled={seeding || syncing}
+             className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50"
+             title="Update polling data from all sources">
            <RefreshCw className={`h-3.5 w-3.5 ${seeding ? "animate-spin" : ""}`} />
            {seeding ? "Updating…" : "Update Data"}
-         </button>
-         <button
-            onClick={() => exportPollingCSV(filtered)}
-            className="win98-button text-[10px] flex items-center gap-1"
-            title="Export as CSV">
-            
+          </button>
+          <button
+             onClick={() => exportPollingCSV(filtered)}
+             className="win98-button text-[10px] flex items-center gap-1"
+             title="Export as CSV">
            <FileSpreadsheet className="h-3 w-3" />
            CSV
-         </button>
-         <button
-            onClick={() => exportPollingPDF(filtered)}
-            className="win98-button text-[10px] flex items-center gap-1"
-            title="Export as PDF">
-            
+          </button>
+          <button
+             onClick={() => exportPollingPDF(filtered)}
+             className="win98-button text-[10px] flex items-center gap-1"
+             title="Export as PDF">
            <FileText className="h-3 w-3" />
            PDF
-         </button>
+          </button>
+        </div>
        </div>
+
+       {/* Row 2: Advanced filters */}
+       {showAdvancedFilters && (
+         <div className="border-t border-border pt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+           {/* Topic */}
+           <div>
+             <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Topic</label>
+             <select
+               value={topicFilter}
+               onChange={(e) => setTopicFilter(e.target.value)}
+               className="w-full win98-sunken text-xs px-2 py-1.5 bg-background text-foreground"
+             >
+               <option value="all">All Topics</option>
+               {uniqueTopics.map((t) => <option key={t} value={t}>{t}</option>)}
+             </select>
+           </div>
+           {/* Method */}
+           <div>
+             <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Methodology</label>
+             <select
+               value={methodFilter}
+               onChange={(e) => setMethodFilter(e.target.value)}
+               className="w-full win98-sunken text-xs px-2 py-1.5 bg-background text-foreground"
+             >
+               <option value="all">All Methods</option>
+               {uniqueMethods.map((m) => <option key={m} value={m}>{m}</option>)}
+             </select>
+           </div>
+           {/* Sample Type */}
+           <div>
+             <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Sample Type</label>
+             <select
+               value={sampleTypeFilter}
+               onChange={(e) => setSampleTypeFilter(e.target.value)}
+               className="w-full win98-sunken text-xs px-2 py-1.5 bg-background text-foreground"
+             >
+               <option value="all">All Sample Types</option>
+               {uniqueSampleTypes.map((s) => <option key={s} value={s}>{s}</option>)}
+             </select>
+           </div>
+           {/* Date Range */}
+           <div>
+             <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Date Range</label>
+             <div className="flex items-center gap-1">
+               <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="win98-sunken text-[10px] px-1.5 py-1 bg-background text-foreground flex-1 min-w-0" />
+               <span className="text-[9px] text-muted-foreground">to</span>
+               <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="win98-sunken text-[10px] px-1.5 py-1 bg-background text-foreground flex-1 min-w-0" />
+             </div>
+           </div>
+           {/* Margin Range */}
+           <div>
+             <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Margin Range</label>
+             <div className="flex items-center gap-1">
+               <input type="number" value={marginMin} onChange={(e) => setMarginMin(e.target.value)} placeholder="Min" className="win98-sunken text-[10px] px-1.5 py-1 bg-background text-foreground flex-1 min-w-0 w-12" />
+               <span className="text-[9px] text-muted-foreground">to</span>
+               <input type="number" value={marginMax} onChange={(e) => setMarginMax(e.target.value)} placeholder="Max" className="win98-sunken text-[10px] px-1.5 py-1 bg-background text-foreground flex-1 min-w-0 w-12" />
+             </div>
+           </div>
+         </div>
+       )}
+
+       {/* Active filter summary */}
+       {activeFilterCount > 0 && (
+         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+           <span>Showing <strong className="text-foreground">{filtered.length}</strong> of {polls.length} polls</span>
+           <span className="text-muted-foreground/40">·</span>
+           <span>{activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""} active</span>
+         </div>
+       )}
       </div>
 
       {/* ─── Summary Cards with Gauge ──────────────────────────────────────── */}
