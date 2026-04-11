@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, ExternalLink, Loader2, Calendar, RefreshCw, ArrowLeft } from "lucide-react";
+import { Search, ExternalLink, Loader2, Calendar, RefreshCw, ArrowLeft, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
 
 interface MessagingGuidance {
   id: string;
