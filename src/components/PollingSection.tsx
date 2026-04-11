@@ -192,7 +192,7 @@ export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, se
 
 }
 
-function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
+function MultiSourceTrendChart({ polls, onSelectPoll }: {polls: PollEntry[]; onSelectPoll?: (p: PollEntry) => void;}) {
   const { ref, inView } = useInView();
   const [hoveredBar, setHoveredBar] = useState<{source: string; approve: number; disapprove: number; margin: number; x: number; y: number;} | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<{source: string; date: string; value: number; x: number; y: number;} | null>(null);
@@ -409,7 +409,7 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
               const disapproveH = (disapprove - minVal) / valRange * plotH;
               const baseY = PAD.top + plotH;
               return (
-                <g key={sourceId} onMouseEnter={() => setHoveredBar({ source: sourceId, approve, disapprove, margin: approve - disapprove, x: groupX + barGroupW / 2, y: valToY(Math.max(approve, disapprove)) })} onMouseLeave={() => setHoveredBar(null)} style={{ cursor: "pointer" }}>
+                <g key={sourceId} onMouseEnter={() => setHoveredBar({ source: sourceId, approve, disapprove, margin: approve - disapprove, x: groupX + barGroupW / 2, y: valToY(Math.max(approve, disapprove)) })} onMouseLeave={() => setHoveredBar(null)} onClick={() => onSelectPoll?.(poll)} style={{ cursor: "pointer" }}>
                   <rect x={groupX} y={baseY - approveH} width={halfBar} height={inView ? approveH : 0} rx={2} fill="hsl(150, 55%, 45%)" opacity={0.85} style={{ transition: "height 0.8s ease, y 0.8s ease" }} />
                   <rect x={groupX + halfBar + 2} y={baseY - disapproveH} width={halfBar} height={inView ? disapproveH : 0} rx={2} fill="hsl(0, 65%, 50%)" opacity={0.85} style={{ transition: "height 0.8s ease, y 0.8s ease" }} />
                   <text x={groupX + halfBar / 2} y={baseY - approveH - 3} textAnchor="middle" fontSize={8} fontWeight="600" fill="hsl(150, 55%, 45%)">{approve}%</text>
