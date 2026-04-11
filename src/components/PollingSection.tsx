@@ -855,7 +855,7 @@ function IssueButterflyChart({ polls, onSelectPoll }: {polls: PollEntry[]; onSel
           const sourceNames = topicPolls.map((p) => getSourceInfo(p.source).name);
 
           return (
-            <div key={topic} className="group" style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(10px)", transition: `all 0.5s ease ${idx * 80}ms` }}>
+            <div key={topic} className="group cursor-pointer" onClick={() => onSelectPoll?.(topicPolls[0])} style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(10px)", transition: `all 0.5s ease ${idx * 80}ms` }}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-semibold text-foreground">{topic}</span>
                 <div className="flex items-center gap-2">
