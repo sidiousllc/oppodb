@@ -337,6 +337,7 @@ export function MessagingHub() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 mb-0.5">
+                        <SourceLogo source={item.source} size={14} />
                         {party && (
                           <span className={`text-[8px] px-1 py-0 border rounded ${PARTY_COLORS[party] || ""}`}>
                             {party}
