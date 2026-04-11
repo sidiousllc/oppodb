@@ -1,13 +1,16 @@
+import { useState } from "react";
 import { Win98Window } from "@/components/Win98Window";
 import { getSourceInfo, POLL_TYPES, type PollEntry } from "@/data/pollingData";
 import {
   BarChart3, ExternalLink, Clock, Users, Target, FileText,
-  TrendingUp, TrendingDown, Minus, Activity, Info,
+  TrendingUp, TrendingDown, Minus, Activity, Info, ChevronRight,
 } from "lucide-react";
 import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip as RechartsTooltip,
 } from "recharts";
+
+interface DemoEntry { demographic: string; approve: number; disapprove: number; source?: string; date?: string; sampleSize?: number }
 
 interface Props {
   poll: PollEntry;
@@ -28,6 +31,7 @@ function probColor(approve: boolean) {
 }
 
 export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Props) {
+  const [demoDetailGroup, setDemoDetailGroup] = useState<string | null>(null);
   const p = poll;
   const src = getSourceInfo(p.source);
   const primaryPct = p.approve_pct ?? p.favor_pct;
@@ -46,23 +50,30 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
     neutral > 0.5 && { name: "Undecided/Other", value: +neutral.toFixed(1), color: "hsl(var(--muted-foreground))" },
   ].filter(Boolean) as { name: string; value: number; color: string }[];
 
-  // Demographic crosstabs: check both inline raw_data.demographics array
-  // AND separate crosstab rows from allPolls (same source + topic with group_type)
-  const demoGroups = new Map<string, Array<{ demographic: string; approve: number; disapprove: number }>>();
-
-  // Method 1: inline demographics array in raw_data
+  // Demographic crosstabs: ONLY from this specific poll's own data
   const rawData = (p.raw_data || {}) as Record<string, unknown>;
+  const pollDemoGroups = new Map<string, DemoEntry[]>();
+
+  // Check if this poll itself has a group_type (it IS a crosstab row)
+  if (rawData.group_type) {
+    const group = (rawData.group_type as string);
+    const demo = (rawData.demographic as string) || "Unknown";
+    pollDemoGroups.set(group, [{
+      demographic: demo,
+      approve: p.approve_pct ?? p.favor_pct ?? 0,
+      disapprove: p.disapprove_pct ?? p.oppose_pct ?? 0,
+    }]);
+  }
+
+  // Check inline demographics array
   const demographics = rawData.demographics as Array<{
-    group_type?: string;
-    demographic?: string;
-    approve_pct?: number;
-    disapprove_pct?: number;
+    group_type?: string; demographic?: string; approve_pct?: number; disapprove_pct?: number;
   }> | undefined;
   if (demographics && Array.isArray(demographics)) {
     demographics.forEach(d => {
       const group = d.group_type || "Other";
-      if (!demoGroups.has(group)) demoGroups.set(group, []);
-      demoGroups.get(group)!.push({
+      if (!pollDemoGroups.has(group)) pollDemoGroups.set(group, []);
+      pollDemoGroups.get(group)!.push({
         demographic: d.demographic || "Unknown",
         approve: d.approve_pct ?? 0,
         disapprove: d.disapprove_pct ?? 0,
@@ -70,51 +81,43 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
     });
   }
 
-  // Method 2: separate crosstab rows in allPolls (same source + topic, with group_type in raw_data)
-  if (demoGroups.size === 0) {
-    const crosstabPolls = allPolls.filter(o => {
-      const rd = (o.raw_data || {}) as Record<string, unknown>;
-      return rd.group_type &&
-        o.source === p.source &&
-        o.candidate_or_topic === p.candidate_or_topic &&
-        Math.abs(new Date(o.date_conducted).getTime() - new Date(p.date_conducted).getTime()) < 60 * 24 * 60 * 60 * 1000;
+  // Also find sibling crosstab rows from the same source/topic/date for this poll
+  const siblingCrosstabs = allPolls.filter(o => {
+    if (o.id === p.id) return false;
+    const rd = (o.raw_data || {}) as Record<string, unknown>;
+    return rd.group_type &&
+      o.source === p.source &&
+      o.candidate_or_topic === p.candidate_or_topic &&
+      Math.abs(new Date(o.date_conducted).getTime() - new Date(p.date_conducted).getTime()) < 7 * 24 * 60 * 60 * 1000;
+  });
+  siblingCrosstabs.forEach(o => {
+    const rd = (o.raw_data || {}) as Record<string, unknown>;
+    const group = (rd.group_type as string) || "Other";
+    if (!pollDemoGroups.has(group)) pollDemoGroups.set(group, []);
+    pollDemoGroups.get(group)!.push({
+      demographic: (rd.demographic as string) || "Unknown",
+      approve: o.approve_pct ?? o.favor_pct ?? 0,
+      disapprove: o.disapprove_pct ?? o.oppose_pct ?? 0,
     });
-    crosstabPolls.forEach(o => {
+  });
+
+  // Full cross-source demographic data (for the detail window)
+  const buildFullDemoData = (groupType: string): DemoEntry[] => {
+    return allPolls.filter(o => {
       const rd = (o.raw_data || {}) as Record<string, unknown>;
-      const group = (rd.group_type as string) || "Other";
-      const demo = (rd.demographic as string) || "Unknown";
-      if (!demoGroups.has(group)) demoGroups.set(group, []);
-      demoGroups.get(group)!.push({
-        demographic: demo,
+      return rd.group_type === groupType && o.candidate_or_topic === p.candidate_or_topic;
+    }).map(o => {
+      const rd = (o.raw_data || {}) as Record<string, unknown>;
+      return {
+        demographic: (rd.demographic as string) || "Unknown",
         approve: o.approve_pct ?? o.favor_pct ?? 0,
         disapprove: o.disapprove_pct ?? o.oppose_pct ?? 0,
-      });
-    });
-
-    // If still empty, try cross-source crosstabs for the same topic
-    if (demoGroups.size === 0) {
-      const anySourceCrosstabs = allPolls.filter(o => {
-        const rd = (o.raw_data || {}) as Record<string, unknown>;
-        return rd.group_type &&
-          o.candidate_or_topic === p.candidate_or_topic;
-      });
-      anySourceCrosstabs.forEach(o => {
-        const rd = (o.raw_data || {}) as Record<string, unknown>;
-        const group = (rd.group_type as string) || "Other";
-        const demo = `${(rd.demographic as string) || "Unknown"} (${o.source})`;
-        if (!demoGroups.has(group)) demoGroups.set(group, []);
-        const existing = demoGroups.get(group)!;
-        // Deduplicate by demographic label
-        if (!existing.some(e => e.demographic === demo)) {
-          existing.push({
-            demographic: demo,
-            approve: o.approve_pct ?? o.favor_pct ?? 0,
-            disapprove: o.disapprove_pct ?? o.oppose_pct ?? 0,
-          });
-        }
-      });
-    }
-  }
+        source: o.source,
+        date: o.date_conducted,
+        sampleSize: o.sample_size ?? undefined,
+      };
+    }).sort((a, b) => a.demographic.localeCompare(b.demographic));
+  };
 
   // Same-source polls for context
   const sameSrcPolls = allPolls.filter(o =>
@@ -329,19 +332,25 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
           )}
         </div>
 
-        {/* Demographic Crosstabs */}
-        {demoGroups.size > 0 && (
+        {/* Demographic Crosstabs (this poll only) */}
+        {pollDemoGroups.size > 0 && (
           <div className="candidate-card p-4">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-              Demographic Breakdown — {p.candidate_or_topic}
+              Demographic Breakdown — {src.name}
             </h3>
             <p className="text-[9px] text-muted-foreground mb-3">
-              {[...demoGroups.values()].reduce((s, a) => s + a.length, 0)} crosstab data points across {demoGroups.size} categories
+              {[...pollDemoGroups.values()].reduce((s, a) => s + a.length, 0)} data points from this poll · Click a category for cross-source detail
             </p>
             <div className="space-y-3">
-              {[...demoGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([group, entries]) => (
-                <div key={group}>
-                  <p className="text-[10px] font-bold text-foreground mb-1.5 capitalize">{group}</p>
+              {[...pollDemoGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([group, entries]) => (
+                <div key={group}
+                  className="cursor-pointer hover:bg-[hsl(var(--win98-light))] rounded p-1.5 -m-1.5 transition-colors"
+                  onClick={() => setDemoDetailGroup(group)}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[10px] font-bold text-foreground capitalize">{group}</p>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                  </div>
                   <div className="space-y-1">
                     {entries.map((e, i) => (
                       <div key={`${e.demographic}-${i}`} className="flex items-center gap-2">
@@ -430,6 +439,151 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
             </div>
           </div>
         )}
+      </div>
+
+      {/* Demographic Detail Window */}
+      {demoDetailGroup && (
+        <DemographicDetailWindow
+          groupType={demoDetailGroup}
+          topic={p.candidate_or_topic}
+          sourcePoll={p}
+          entries={buildFullDemoData(demoDetailGroup)}
+          onClose={() => setDemoDetailGroup(null)}
+        />
+      )}
+    </Win98Window>
+  );
+}
+
+// ─── Demographic Detail Window ──────────────────────────────────────────────
+
+function DemographicDetailWindow({
+  groupType, topic, sourcePoll, entries, onClose,
+}: {
+  groupType: string;
+  topic: string;
+  sourcePoll: PollEntry;
+  entries: DemoEntry[];
+  onClose: () => void;
+}) {
+  const uniqueDemos = [...new Set(entries.map(e => e.demographic))].sort();
+  const uniqueSources = [...new Set(entries.map(e => e.source).filter(Boolean))].sort();
+
+  // Group by demographic for comparison chart
+  const chartData = uniqueDemos.map(demo => {
+    const rows = entries.filter(e => e.demographic === demo);
+    const avgApprove = rows.reduce((s, r) => s + r.approve, 0) / rows.length;
+    const avgDisapprove = rows.reduce((s, r) => s + r.disapprove, 0) / rows.length;
+    return { demographic: demo, approve: +avgApprove.toFixed(1), disapprove: +avgDisapprove.toFixed(1), count: rows.length };
+  });
+
+  return (
+    <Win98Window
+      title={`Demographics: ${groupType} — ${topic}`}
+      icon={<Users className="h-3.5 w-3.5 text-white" />}
+      onClose={onClose}
+      defaultPosition={{ x: Math.max(80, window.innerWidth / 2 - 320), y: 60 }}
+      defaultSize={{ width: 680, height: Math.min(window.innerHeight - 100, 640) }}
+      minSize={{ width: 380, height: 280 }}
+      statusBar={<span>{entries.length} data points · {uniqueSources.length} sources · {uniqueDemos.length} segments</span>}
+    >
+      <div className="p-4 space-y-4 text-xs">
+        {/* Header */}
+        <div>
+          <h2 className="font-display text-base font-bold text-foreground capitalize">{groupType} Breakdown</h2>
+          <p className="text-sm text-muted-foreground">{topic} · All sources combined</p>
+        </div>
+
+        {/* Average Chart */}
+        {chartData.length > 0 && (
+          <div className="candidate-card p-4">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              Cross-Source Average by {groupType}
+            </h3>
+            <ResponsiveContainer width="100%" height={Math.max(140, chartData.length * 32)}>
+              <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 10, bottom: 5, left: 80 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 9 }} tickFormatter={(v: number) => `${v}%`} />
+                <YAxis type="category" dataKey="demographic" tick={{ fontSize: 9 }} width={75} />
+                <RechartsTooltip
+                  contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                  formatter={(v: number, name: string) => [`${v}%`, name]}
+                />
+                <Bar dataKey="approve" name="Approve" fill="hsl(150, 55%, 45%)" radius={[0, 2, 2, 0]} barSize={14} />
+                <Bar dataKey="disapprove" name="Disapprove" fill="hsl(0, 65%, 50%)" radius={[0, 2, 2, 0]} barSize={14} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Source-by-source detail table */}
+        <div className="candidate-card overflow-hidden">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider p-3 border-b border-border">
+            All Sources — {groupType} Data
+          </h3>
+          <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-[hsl(var(--win98-face))]">
+                <tr className="border-b border-[hsl(var(--win98-shadow))]">
+                  <th className="text-left py-1.5 px-3 text-[9px] font-semibold text-muted-foreground uppercase">Source</th>
+                  <th className="text-left py-1.5 px-3 text-[9px] font-semibold text-muted-foreground uppercase">Segment</th>
+                  <th className="text-center py-1.5 px-2 text-[9px] font-semibold text-muted-foreground uppercase">Approve</th>
+                  <th className="text-center py-1.5 px-2 text-[9px] font-semibold text-muted-foreground uppercase">Disapprove</th>
+                  <th className="text-center py-1.5 px-2 text-[9px] font-semibold text-muted-foreground uppercase">Net</th>
+                  <th className="text-center py-1.5 px-2 text-[9px] font-semibold text-muted-foreground uppercase">Sample</th>
+                  <th className="text-center py-1.5 px-2 text-[9px] font-semibold text-muted-foreground uppercase">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e, i) => {
+                  const net = +(e.approve - e.disapprove).toFixed(1);
+                  const srcInfo = e.source ? getSourceInfo(e.source) : null;
+                  return (
+                    <tr key={i} className="border-b border-border last:border-0 hover:bg-[hsl(var(--win98-light))]">
+                      <td className="py-1.5 px-3">
+                        <div className="flex items-center gap-1.5">
+                          {srcInfo && <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: `hsl(${srcInfo.color})` }} />}
+                          <span className="font-medium text-foreground">{e.source || "—"}</span>
+                        </div>
+                      </td>
+                      <td className="py-1.5 px-3 text-foreground">{e.demographic}</td>
+                      <td className="py-1.5 px-2 text-center font-bold" style={{ color: "hsl(150,55%,45%)" }}>{e.approve}%</td>
+                      <td className="py-1.5 px-2 text-center font-bold" style={{ color: "hsl(0,65%,50%)" }}>{e.disapprove}%</td>
+                      <td className="py-1.5 px-2 text-center font-bold" style={{ color: net > 0 ? "hsl(150,55%,45%)" : net < 0 ? "hsl(0,65%,50%)" : undefined }}>
+                        {net > 0 ? "+" : ""}{net}
+                      </td>
+                      <td className="py-1.5 px-2 text-center text-muted-foreground">{e.sampleSize ? `n=${e.sampleSize.toLocaleString()}` : "—"}</td>
+                      <td className="py-1.5 px-2 text-center text-muted-foreground">{e.date ? fmtDate(e.date) : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Per-segment breakdown bars */}
+        <div className="candidate-card p-4">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Segment Summary</h3>
+          <div className="space-y-2">
+            {chartData.map(d => (
+              <div key={d.demographic} className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground w-28 shrink-0 truncate" title={d.demographic}>{d.demographic}</span>
+                <div className="flex-1 h-4 rounded bg-muted overflow-hidden flex">
+                  <div className="h-full transition-all flex items-center" style={{ width: `${d.approve}%`, backgroundColor: "hsl(150, 55%, 45%)" }}>
+                    {d.approve > 12 && <span className="text-[8px] text-white font-bold pl-1">{d.approve}%</span>}
+                  </div>
+                  <div className="h-full transition-all flex items-center" style={{ width: `${d.disapprove}%`, backgroundColor: "hsl(0, 65%, 50%)" }}>
+                    {d.disapprove > 12 && <span className="text-[8px] text-white font-bold pl-1">{d.disapprove}%</span>}
+                  </div>
+                </div>
+                <span className="text-[9px] text-muted-foreground w-14 text-right shrink-0">
+                  {d.count} poll{d.count !== 1 ? "s" : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </Win98Window>
   );
