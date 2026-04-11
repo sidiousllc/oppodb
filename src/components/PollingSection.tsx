@@ -811,7 +811,7 @@ function GenericBallotTrendChart({ polls }: {polls: PollEntry[];}) {
 
 // ─── Issue Polling Butterfly Chart ──────────────────────────────────────────
 
-function IssueButterflyChart({ polls }: {polls: PollEntry[];}) {
+function IssueButterflyChart({ polls, onSelectPoll }: {polls: PollEntry[]; onSelectPoll?: (p: PollEntry) => void;}) {
   const { ref, inView } = useInView();
   const issueFilter = useCallback((p: PollEntry) => p.poll_type === "issue", []);
   const picker = usePollPicker(polls, issueFilter);
