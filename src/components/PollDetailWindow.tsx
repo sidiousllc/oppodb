@@ -31,6 +31,7 @@ function probColor(approve: boolean) {
 }
 
 export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Props) {
+  const [demoDetailGroup, setDemoDetailGroup] = useState<string | null>(null);
   const p = poll;
   const src = getSourceInfo(p.source);
   const primaryPct = p.approve_pct ?? p.favor_pct;
