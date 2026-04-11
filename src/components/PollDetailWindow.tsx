@@ -50,23 +50,30 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
     neutral > 0.5 && { name: "Undecided/Other", value: +neutral.toFixed(1), color: "hsl(var(--muted-foreground))" },
   ].filter(Boolean) as { name: string; value: number; color: string }[];
 
-  // Demographic crosstabs: check both inline raw_data.demographics array
-  // AND separate crosstab rows from allPolls (same source + topic with group_type)
-  const demoGroups = new Map<string, Array<{ demographic: string; approve: number; disapprove: number }>>();
-
-  // Method 1: inline demographics array in raw_data
+  // Demographic crosstabs: ONLY from this specific poll's own data
   const rawData = (p.raw_data || {}) as Record<string, unknown>;
+  const pollDemoGroups = new Map<string, DemoEntry[]>();
+
+  // Check if this poll itself has a group_type (it IS a crosstab row)
+  if (rawData.group_type) {
+    const group = (rawData.group_type as string);
+    const demo = (rawData.demographic as string) || "Unknown";
+    pollDemoGroups.set(group, [{
+      demographic: demo,
+      approve: p.approve_pct ?? p.favor_pct ?? 0,
+      disapprove: p.disapprove_pct ?? p.oppose_pct ?? 0,
+    }]);
+  }
+
+  // Check inline demographics array
   const demographics = rawData.demographics as Array<{
-    group_type?: string;
-    demographic?: string;
-    approve_pct?: number;
-    disapprove_pct?: number;
+    group_type?: string; demographic?: string; approve_pct?: number; disapprove_pct?: number;
   }> | undefined;
   if (demographics && Array.isArray(demographics)) {
     demographics.forEach(d => {
       const group = d.group_type || "Other";
-      if (!demoGroups.has(group)) demoGroups.set(group, []);
-      demoGroups.get(group)!.push({
+      if (!pollDemoGroups.has(group)) pollDemoGroups.set(group, []);
+      pollDemoGroups.get(group)!.push({
         demographic: d.demographic || "Unknown",
         approve: d.approve_pct ?? 0,
         disapprove: d.disapprove_pct ?? 0,
@@ -74,51 +81,43 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
     });
   }
 
-  // Method 2: separate crosstab rows in allPolls (same source + topic, with group_type in raw_data)
-  if (demoGroups.size === 0) {
-    const crosstabPolls = allPolls.filter(o => {
-      const rd = (o.raw_data || {}) as Record<string, unknown>;
-      return rd.group_type &&
-        o.source === p.source &&
-        o.candidate_or_topic === p.candidate_or_topic &&
-        Math.abs(new Date(o.date_conducted).getTime() - new Date(p.date_conducted).getTime()) < 60 * 24 * 60 * 60 * 1000;
+  // Also find sibling crosstab rows from the same source/topic/date for this poll
+  const siblingCrosstabs = allPolls.filter(o => {
+    if (o.id === p.id) return false;
+    const rd = (o.raw_data || {}) as Record<string, unknown>;
+    return rd.group_type &&
+      o.source === p.source &&
+      o.candidate_or_topic === p.candidate_or_topic &&
+      Math.abs(new Date(o.date_conducted).getTime() - new Date(p.date_conducted).getTime()) < 7 * 24 * 60 * 60 * 1000;
+  });
+  siblingCrosstabs.forEach(o => {
+    const rd = (o.raw_data || {}) as Record<string, unknown>;
+    const group = (rd.group_type as string) || "Other";
+    if (!pollDemoGroups.has(group)) pollDemoGroups.set(group, []);
+    pollDemoGroups.get(group)!.push({
+      demographic: (rd.demographic as string) || "Unknown",
+      approve: o.approve_pct ?? o.favor_pct ?? 0,
+      disapprove: o.disapprove_pct ?? o.oppose_pct ?? 0,
     });
-    crosstabPolls.forEach(o => {
+  });
+
+  // Full cross-source demographic data (for the detail window)
+  const buildFullDemoData = (groupType: string): DemoEntry[] => {
+    return allPolls.filter(o => {
       const rd = (o.raw_data || {}) as Record<string, unknown>;
-      const group = (rd.group_type as string) || "Other";
-      const demo = (rd.demographic as string) || "Unknown";
-      if (!demoGroups.has(group)) demoGroups.set(group, []);
-      demoGroups.get(group)!.push({
-        demographic: demo,
+      return rd.group_type === groupType && o.candidate_or_topic === p.candidate_or_topic;
+    }).map(o => {
+      const rd = (o.raw_data || {}) as Record<string, unknown>;
+      return {
+        demographic: (rd.demographic as string) || "Unknown",
         approve: o.approve_pct ?? o.favor_pct ?? 0,
         disapprove: o.disapprove_pct ?? o.oppose_pct ?? 0,
-      });
-    });
-
-    // If still empty, try cross-source crosstabs for the same topic
-    if (demoGroups.size === 0) {
-      const anySourceCrosstabs = allPolls.filter(o => {
-        const rd = (o.raw_data || {}) as Record<string, unknown>;
-        return rd.group_type &&
-          o.candidate_or_topic === p.candidate_or_topic;
-      });
-      anySourceCrosstabs.forEach(o => {
-        const rd = (o.raw_data || {}) as Record<string, unknown>;
-        const group = (rd.group_type as string) || "Other";
-        const demo = `${(rd.demographic as string) || "Unknown"} (${o.source})`;
-        if (!demoGroups.has(group)) demoGroups.set(group, []);
-        const existing = demoGroups.get(group)!;
-        // Deduplicate by demographic label
-        if (!existing.some(e => e.demographic === demo)) {
-          existing.push({
-            demographic: demo,
-            approve: o.approve_pct ?? o.favor_pct ?? 0,
-            disapprove: o.disapprove_pct ?? o.oppose_pct ?? 0,
-          });
-        }
-      });
-    }
-  }
+        source: o.source,
+        date: o.date_conducted,
+        sampleSize: o.sample_size ?? undefined,
+      };
+    }).sort((a, b) => a.demographic.localeCompare(b.demographic));
+  };
 
   // Same-source polls for context
   const sameSrcPolls = allPolls.filter(o =>
