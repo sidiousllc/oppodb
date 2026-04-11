@@ -214,12 +214,6 @@ export default function Index() {
   const filteredMaga = useMemo(() => searchMagaFiles(search), [search, dataVersion]);
   const filteredLocal = useMemo(() => searchLocalImpact(search), [search, dataVersion]);
   const filteredNarratives = useMemo(() => searchNarrativeReports(search), [search, dataVersion]);
-  const filteredDistricts = useMemo(() => {
-    let results = searchDistricts(districts, search);
-    if (trackedOnly) results = results.filter(d => trackedDistrictIds.has(d.district_id));
-    if (cookFilter !== "all") results = results.filter(d => getCookRating(d.district_id) === cookFilter);
-    return results;
-  }, [search, districts, trackedOnly, trackedDistrictIds, cookFilter]);
 
   const counts = useMemo(() => ({
     all: candidates.length,
@@ -232,8 +226,8 @@ export default function Index() {
   const sectionCounts = useMemo(() => ({
     dashboard: 0,
     oppohub: candidates.length + localImpactReports.length + narrativeReports.length,
-    "district-intel": districts.length,
-    leghub: stateLegDistricts.length,
+    "district-intel": 0, // kept for count compat but not used as section
+    leghub: stateLegDistricts.length + districts.length,
     polling: pollingCount,
     messaging: 0,
     "research-tools": 0,
