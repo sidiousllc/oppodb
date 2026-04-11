@@ -311,7 +311,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
                 return (
                   <button
                     key={id}
-                    onClick={() => onNavigateSection("district-intel", id)}
+                    onClick={() => onNavigateSection("leghub", id)}
                     className="win98-button text-[10px] px-1.5 py-0.5 flex items-center gap-1"
                     title={`${id} — PVI: ${pvi !== null ? formatPVI(pvi) : "N/A"}`}
                   >
@@ -345,7 +345,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
                   return (
                     <button
                       key={id}
-                      onClick={() => onNavigateSection("district-intel", id)}
+                      onClick={() => onNavigateSection("leghub", id)}
                       className="win98-button text-[10px] px-1.5 py-0.5 flex items-center gap-1"
                       title={`${id} — Cook: ${rating || "N/A"}`}
                     >
