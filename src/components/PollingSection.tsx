@@ -192,7 +192,7 @@ export function PollPickerDropdown({ uniquePolls, selectedIds, isAll, toggle, se
 
 }
 
-function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
+function MultiSourceTrendChart({ polls, onSelectPoll }: {polls: PollEntry[]; onSelectPoll?: (p: PollEntry) => void;}) {
   const { ref, inView } = useInView();
   const [hoveredBar, setHoveredBar] = useState<{source: string; approve: number; disapprove: number; margin: number; x: number; y: number;} | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<{source: string; date: string; value: number; x: number; y: number;} | null>(null);
@@ -409,7 +409,7 @@ function MultiSourceTrendChart({ polls }: {polls: PollEntry[];}) {
               const disapproveH = (disapprove - minVal) / valRange * plotH;
               const baseY = PAD.top + plotH;
               return (
-                <g key={sourceId} onMouseEnter={() => setHoveredBar({ source: sourceId, approve, disapprove, margin: approve - disapprove, x: groupX + barGroupW / 2, y: valToY(Math.max(approve, disapprove)) })} onMouseLeave={() => setHoveredBar(null)} style={{ cursor: "pointer" }}>
+                <g key={sourceId} onMouseEnter={() => setHoveredBar({ source: sourceId, approve, disapprove, margin: approve - disapprove, x: groupX + barGroupW / 2, y: valToY(Math.max(approve, disapprove)) })} onMouseLeave={() => setHoveredBar(null)} onClick={() => onSelectPoll?.(poll)} style={{ cursor: "pointer" }}>
                   <rect x={groupX} y={baseY - approveH} width={halfBar} height={inView ? approveH : 0} rx={2} fill="hsl(150, 55%, 45%)" opacity={0.85} style={{ transition: "height 0.8s ease, y 0.8s ease" }} />
                   <rect x={groupX + halfBar + 2} y={baseY - disapproveH} width={halfBar} height={inView ? disapproveH : 0} rx={2} fill="hsl(0, 65%, 50%)" opacity={0.85} style={{ transition: "height 0.8s ease, y 0.8s ease" }} />
                   <text x={groupX + halfBar / 2} y={baseY - approveH - 3} textAnchor="middle" fontSize={8} fontWeight="600" fill="hsl(150, 55%, 45%)">{approve}%</text>
@@ -811,7 +811,7 @@ function GenericBallotTrendChart({ polls }: {polls: PollEntry[];}) {
 
 // ─── Issue Polling Butterfly Chart ──────────────────────────────────────────
 
-function IssueButterflyChart({ polls }: {polls: PollEntry[];}) {
+function IssueButterflyChart({ polls, onSelectPoll }: {polls: PollEntry[]; onSelectPoll?: (p: PollEntry) => void;}) {
   const { ref, inView } = useInView();
   const issueFilter = useCallback((p: PollEntry) => p.poll_type === "issue", []);
   const picker = usePollPicker(polls, issueFilter);
@@ -855,7 +855,7 @@ function IssueButterflyChart({ polls }: {polls: PollEntry[];}) {
           const sourceNames = topicPolls.map((p) => getSourceInfo(p.source).name);
 
           return (
-            <div key={topic} className="group" style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(10px)", transition: `all 0.5s ease ${idx * 80}ms` }}>
+            <div key={topic} className="group cursor-pointer" onClick={() => onSelectPoll?.(topicPolls[0])} style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(10px)", transition: `all 0.5s ease ${idx * 80}ms` }}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-semibold text-foreground">{topic}</span>
                 <div className="flex items-center gap-2">
@@ -1225,7 +1225,7 @@ function DemoRingChart({ entries, groupColors }: { entries: DemoEntry[]; groupCo
   );
 }
 
-function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
+function DemographicBreakdownChart({ polls, onSelectPoll }: { polls: PollEntry[]; onSelectPoll?: (p: PollEntry) => void }) {
   const { ref, inView } = useInView();
   const [activeGroup, setActiveGroup] = useState<string>("party");
   const [selectedPollIds, setSelectedPollIds] = useState<Set<string>>(new Set());
@@ -1379,7 +1379,14 @@ function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
                 return (
                   <div
                     key={entry.demographic}
-                    className="transition-all duration-500"
+                    className="transition-all duration-500 cursor-pointer hover:bg-muted/30 rounded px-1 -mx-1"
+                    onClick={() => {
+                      const demoPoll = filteredPolls.find((p) => {
+                        const rd = p.raw_data as any;
+                        return rd?.group_type === activeGroup && rd?.demographic === entry.demographic;
+                      });
+                      if (demoPoll && onSelectPoll) onSelectPoll(demoPoll);
+                    }}
                     style={{
                       opacity: inView ? 1 : 0,
                       transform: inView ? "translateX(0)" : "translateX(-20px)",
@@ -2333,18 +2340,18 @@ export function PollingSection() {
       }
 
       {/* ─── Multi-Source Trend Chart ─────────────────────────────────────── */}
-      <MultiSourceTrendChart polls={polls} />
+      <MultiSourceTrendChart polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
 
       {/* ─── Rolling Average Trend ────────────────────────────────────────── */}
       <RollingAverageTrend polls={polls} />
 
       {/* ─── Demographic Breakdown ───────────────────────────────────────── */}
-      <DemographicBreakdownChart polls={polls} />
+      <DemographicBreakdownChart polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
 
       {/* ─── Charts Row: Dot Plot + Issue Butterfly ────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
         <SourceDotPlot latestBySource={latestBySource} />
-        <IssueButterflyChart polls={issuePolls} />
+        <IssueButterflyChart polls={issuePolls} onSelectPoll={(p) => setSelectedPoll(p)} />
       </div>
 
       {/* ─── Pollster Heatmap ─────────────────────────────────────────────── */}
@@ -2366,7 +2373,7 @@ export function PollingSection() {
       </div>
 
       {/* ─── Issue Polling Deep Dive ──────────────────────────────────────── */}
-      <IssuePollingSection polls={polls} />
+      <IssuePollingSection polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
 
       {/* ─── Source Comparison Table ──────────────────────────────────────── */}
       {latestBySource.length > 0 &&
