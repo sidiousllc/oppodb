@@ -9,7 +9,7 @@ import { Loader2, Map as MapIcon, RefreshCw } from "lucide-react";
 import { MapSourceSelector } from "@/components/MapSourceSelector";
 import { useMapLoader } from "@/hooks/useMapLoader";
 
-const STATES_GEO = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+const STATES_GEO = `${import.meta.env.BASE_URL}states-10m.json`;
 
 // Approximate state centers + zoom for the map projection
 const STATE_VIEW: Record<string, { center: [number, number]; zoom: number }> = {

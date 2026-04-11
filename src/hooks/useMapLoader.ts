@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -168,8 +169,10 @@ async function idbHasAny(): Promise<boolean> {
 
 // ─── Fetchers ───────────────────────────────────────────────────────────────
 
+const LOCAL_GEO_URL = `${import.meta.env.BASE_URL}us-cd-118.json`;
+
 async function fetchLocal(signal: AbortSignal): Promise<GeoJSONData> {
-  const res = await fetch("/us-cd-118.json", { signal });
+  const res = await fetch(LOCAL_GEO_URL, { signal });
   if (!res.ok) throw new Error(`Local GeoJSON: HTTP ${res.status}`);
   const data = await res.json();
   if (!data?.features?.length) throw new Error("Local GeoJSON: empty features");
@@ -186,85 +189,76 @@ const FIPS_TO_STATE: Record<string, string> = {
   "54":"WV","55":"WI","56":"WY","60":"AS","66":"GU","69":"MP","72":"PR","78":"VI",
 };
 
-async function fetchEsri(signal: AbortSignal): Promise<GeoJSONData> {
-  const urls = [
-    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_119th_Congressional_Districts/FeatureServer/0/query",
-    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query",
-  ];
+function createAbortError(): Error {
+  const error = new Error("Request aborted");
+  error.name = "AbortError";
+  return error;
+}
 
-  for (const ESRI_URL of urls) {
-    try {
-      const params = new URLSearchParams({
-        where: "1=1",
-        outFields: "STATE_ABBR,CDFIPS,DISTRICTID,NAME,CD119FP,CD118FP",
-        f: "geojson",
-        outSR: "4326",
-        returnGeometry: "true",
-        maxAllowableOffset: "0.01",
-        resultRecordCount: "500",
-      });
-      const res = await fetch(`${ESRI_URL}?${params}`, { signal });
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data.error || !data?.features?.length) continue;
-      data.features = data.features.map((f: { properties: Record<string, unknown>; [key: string]: unknown }) => ({
+function abortPromise(signal: AbortSignal): Promise<never> {
+  if (signal.aborted) {
+    return Promise.reject(createAbortError());
+  }
+
+  return new Promise((_, reject) => {
+    const onAbort = () => reject(createAbortError());
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+function normalizeRemoteGeoData(data: GeoJSONData): GeoJSONData {
+  return {
+    ...data,
+    features: data.features.map((f) => {
+      const stateFips = String(f.properties.STATE || f.properties.STATEFP || "");
+      const stateAbbr = String(
+        f.properties.STATE_ABBR || f.properties.STUSAB || FIPS_TO_STATE[stateFips] || stateFips || ""
+      ).toUpperCase();
+      const districtCode = String(
+        f.properties.CDFIPS || f.properties.CD119FP || f.properties.CD118FP || f.properties.BASENAME || ""
+      )
+        .replace(/\D/g, "")
+        .padStart(2, "0")
+        .slice(-2);
+
+      return {
         ...f,
         properties: {
           ...f.properties,
-          STATE_ABBR: f.properties.STATE_ABBR || FIPS_TO_STATE[String(f.properties.STATE || "")] || f.properties.STUSAB,
-          CDFIPS: f.properties.CDFIPS || f.properties.CD119FP || f.properties.CD118FP || f.properties.BASENAME,
+          STATE_ABBR: stateAbbr,
+          CDFIPS: districtCode,
         },
-      }));
-      return data;
-    } catch (e) {
-      if ((e as Error).name === "AbortError") throw e;
-      continue;
-    }
+      };
+    }),
+  };
+}
+
+async function fetchRemoteSource(source: "esri" | "census", signal: AbortSignal): Promise<GeoJSONData> {
+  const invokePromise = supabase.functions.invoke("map-geojson", {
+    body: { source },
+  });
+
+  const result = await Promise.race([invokePromise, abortPromise(signal)]);
+  const { data, error } = result as Awaited<typeof invokePromise>;
+
+  if (error) {
+    throw new Error(`${source} proxy failed: ${error.message}`);
   }
-  throw new Error("Esri API: all endpoints failed");
+
+  if (!data?.features?.length) {
+    const backendError = typeof data?.error === "string" ? data.error : "empty features";
+    throw new Error(`${source} proxy failed: ${backendError}`);
+  }
+
+  return normalizeRemoteGeoData(data as GeoJSONData);
+}
+
+async function fetchEsri(signal: AbortSignal): Promise<GeoJSONData> {
+  return fetchRemoteSource("esri", signal);
 }
 
 async function fetchCensus(signal: AbortSignal): Promise<GeoJSONData> {
-  const urls = [
-    "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024/Legislative/MapServer/0/query",
-    "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0/query",
-  ];
-
-  for (const CENSUS_URL of urls) {
-    try {
-      const params = new URLSearchParams({
-        where: "1=1",
-        outFields: "STATE,STATEFP,CD118FP,CD119FP,GEOID,BASENAME,STUSAB",
-        f: "geojson",
-        outSR: "4326",
-        returnGeometry: "true",
-        maxAllowableOffset: "0.01",
-        resultRecordCount: "500",
-      });
-      const res = await fetch(`${CENSUS_URL}?${params}`, { signal });
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data.error || !data?.features?.length) continue;
-
-      data.features = data.features.map((f: { properties: Record<string, unknown>; [key: string]: unknown }) => {
-        const stateFips = String(f.properties.STATE || f.properties.STATEFP || "");
-        const stateAbbr = f.properties.STUSAB || FIPS_TO_STATE[stateFips] || stateFips;
-        return {
-          ...f,
-          properties: {
-            ...f.properties,
-            STATE_ABBR: stateAbbr,
-            CDFIPS: f.properties.CD119FP || f.properties.CD118FP || f.properties.BASENAME,
-          },
-        };
-      });
-      return data;
-    } catch (e) {
-      if ((e as Error).name === "AbortError") throw e;
-      continue;
-    }
-  }
-  throw new Error("Census API: all endpoints failed");
+  return fetchRemoteSource("census", signal);
 }
 
 const FETCHERS: Record<Exclude<MapSource, "auto">, (signal: AbortSignal) => Promise<GeoJSONData>> = {

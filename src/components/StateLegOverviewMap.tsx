@@ -7,7 +7,7 @@ import {
 } from "react-simple-maps";
 import { Loader2, Map as MapIcon, Layers } from "lucide-react";
 
-const STATES_GEO = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+const STATES_GEO = `${import.meta.env.BASE_URL}states-10m.json`;
 
 const STATE_FIPS: Record<string, string> = {
   AL:"01",AK:"02",AZ:"04",AR:"05",CA:"06",CO:"08",CT:"09",DE:"10",

@@ -10,7 +10,7 @@ import { Vote, ChevronLeft, ChevronRight, Loader2, ExternalLink, ZoomIn, ZoomOut
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const COUNTY_GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json";
+const COUNTY_GEO_URL = `${import.meta.env.BASE_URL}counties-10m.json`;
 
 const ELECTION_YEARS = [2024, 2020, 2016, 2012, 2008, 2004, 2000];
 
