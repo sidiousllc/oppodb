@@ -1982,6 +1982,16 @@ export function PollingSection() {
   const [seeding, setSeeding] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [topicFilter, setTopicFilter] = useState<string>("all");
+  const [methodFilter, setMethodFilter] = useState<string>("all");
+  const [sampleTypeFilter, setSampleTypeFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [marginMin, setMarginMin] = useState<string>("");
+  const [marginMax, setMarginMax] = useState<string>("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [sortCol, setSortCol] = useState<string>("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedPoll, setSelectedPoll] = useState<PollEntry | null>(null);
   const [activeTab, setActiveTab] = useState<"polling" | "markets" | "finance">("polling");
 
@@ -2028,9 +2038,82 @@ export function PollingSection() {
     return polls.filter((p) => {
       if (sourceFilter !== "all" && p.source !== sourceFilter) return false;
       if (typeFilter !== "all" && p.poll_type !== typeFilter) return false;
+      if (topicFilter !== "all" && p.candidate_or_topic !== topicFilter) return false;
+      if (methodFilter !== "all" && (p.methodology || "Unknown") !== methodFilter) return false;
+      if (sampleTypeFilter !== "all" && (p.sample_type || "Unknown") !== sampleTypeFilter) return false;
+      if (dateFrom && p.date_conducted < dateFrom) return false;
+      if (dateTo && p.date_conducted > dateTo) return false;
+      if (marginMin !== "" && (p.margin === null || p.margin < Number(marginMin))) return false;
+      if (marginMax !== "" && (p.margin === null || p.margin > Number(marginMax))) return false;
       return true;
     });
-  }, [polls, sourceFilter, typeFilter]);
+  }, [polls, sourceFilter, typeFilter, topicFilter, methodFilter, sampleTypeFilter, dateFrom, dateTo, marginMin, marginMax]);
+
+  // Unique values for filter dropdowns
+  const uniqueTopics = useMemo(() => Array.from(new Set(polls.map((p) => p.candidate_or_topic))).sort(), [polls]);
+  const uniqueMethods = useMemo(() => Array.from(new Set(polls.map((p) => p.methodology || "Unknown"))).sort(), [polls]);
+  const uniqueSampleTypes = useMemo(() => Array.from(new Set(polls.map((p) => p.sample_type || "Unknown"))).sort(), [polls]);
+
+  const activeFilterCount = useMemo(() => {
+    let c = 0;
+    if (sourceFilter !== "all") c++;
+    if (typeFilter !== "all") c++;
+    if (topicFilter !== "all") c++;
+    if (methodFilter !== "all") c++;
+    if (sampleTypeFilter !== "all") c++;
+    if (dateFrom) c++;
+    if (dateTo) c++;
+    if (marginMin !== "") c++;
+    if (marginMax !== "") c++;
+    return c;
+  }, [sourceFilter, typeFilter, topicFilter, methodFilter, sampleTypeFilter, dateFrom, dateTo, marginMin, marginMax]);
+
+  function clearAllFilters() {
+    setSourceFilter("all");
+    setTypeFilter("all");
+    setTopicFilter("all");
+    setMethodFilter("all");
+    setSampleTypeFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    setMarginMin("");
+    setMarginMax("");
+  }
+
+  // Sorting for the All Polls table
+  const sortedFiltered = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      let cmp = 0;
+      switch (sortCol) {
+        case "source": cmp = a.source.localeCompare(b.source); break;
+        case "topic": cmp = a.candidate_or_topic.localeCompare(b.candidate_or_topic); break;
+        case "type": cmp = a.poll_type.localeCompare(b.poll_type); break;
+        case "result": cmp = ((a.approve_pct ?? a.favor_pct ?? 0) - (b.approve_pct ?? b.favor_pct ?? 0)); break;
+        case "margin": cmp = ((a.margin ?? 0) - (b.margin ?? 0)); break;
+        case "sample": cmp = ((a.sample_size ?? 0) - (b.sample_size ?? 0)); break;
+        case "moe": cmp = ((a.margin_of_error ?? 0) - (b.margin_of_error ?? 0)); break;
+        case "method": cmp = (a.methodology || "").localeCompare(b.methodology || ""); break;
+        case "date": default: cmp = a.date_conducted.localeCompare(b.date_conducted); break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return arr;
+  }, [filtered, sortCol, sortDir]);
+
+  function toggleSort(col: string) {
+    if (sortCol === col) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortCol(col);
+      setSortDir("desc");
+    }
+  }
+
+  function SortIcon({ col }: { col: string }) {
+    if (sortCol !== col) return <span className="text-muted-foreground/30 ml-0.5">↕</span>;
+    return <span className="ml-0.5">{sortDir === "asc" ? "↑" : "↓"}</span>;
+  }
 
   const approvalPolls = useMemo(
     () => filtered.filter((p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval"),
@@ -2142,107 +2225,181 @@ export function PollingSection() {
       ) : (
       <>
       {/* Filters + Export */}
-      <div className="flex flex-wrap gap-4 items-center justify-between">
-       <div className="flex flex-wrap gap-4 items-center flex-1">
-        <div className="flex items-center gap-2">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Source:</span>
-          <div className="flex flex-wrap gap-1">
-            <button
-                onClick={() => setSourceFilter("all")}
-                className={`win98-button px-2.5 py-1 text-[9px] ${
-                sourceFilter === "all" ?
-                "bg-foreground text-background border-foreground" :
-                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
-                }>
-                
-              All
-            </button>
-            {POLLING_SOURCES.map((s) => {
-                const isActive = sourceFilter === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => setSourceFilter(isActive ? "all" : s.id)}
-                    className="win98-button text-[9px]"
-                    style={{
-                      backgroundColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.08)`,
-                      color: isActive ? "white" : `hsl(${s.color})`,
-                      borderColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.25)`
-                    }}>
-                    
-                  {s.name}
-                </button>);
-
-              })}
-          </div>
+      <div className="candidate-card p-3 space-y-3">
+       {/* Row 1: Source + Type + toggle */}
+       <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex flex-wrap gap-4 items-center flex-1">
+         <div className="flex items-center gap-2">
+           <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Source:</span>
+           <div className="flex flex-wrap gap-1">
+             <button
+                 onClick={() => setSourceFilter("all")}
+                 className={`win98-button px-2.5 py-1 text-[9px] ${
+                 sourceFilter === "all" ?
+                 "bg-foreground text-background border-foreground" :
+                 "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+                 }>
+               All
+             </button>
+             {POLLING_SOURCES.map((s) => {
+                 const isActive = sourceFilter === s.id;
+                 return (
+                   <button
+                     key={s.id}
+                     onClick={() => setSourceFilter(isActive ? "all" : s.id)}
+                     className="win98-button text-[9px]"
+                     style={{
+                       backgroundColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.08)`,
+                       color: isActive ? "white" : `hsl(${s.color})`,
+                       borderColor: isActive ? `hsl(${s.color})` : `hsl(${s.color} / 0.25)`
+                     }}>
+                   {s.name}
+                 </button>);
+               })}
+           </div>
+         </div>
+         <div className="flex items-center gap-2">
+           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type:</span>
+           <div className="flex flex-wrap gap-1">
+             <button
+                 onClick={() => setTypeFilter("all")}
+                 className={`win98-button px-2.5 py-1 text-[9px] ${
+                 typeFilter === "all" ?
+                 "bg-foreground text-background border-foreground" :
+                 "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+                 }>
+               All
+             </button>
+             {POLL_TYPES.map((t) =>
+               <button
+                 key={t.id}
+                 onClick={() => setTypeFilter(typeFilter === t.id ? "all" : t.id)}
+                 className={`win98-button px-2.5 py-1 text-[9px] ${
+                 typeFilter === t.id ?
+                 "bg-foreground text-background border-foreground" :
+                 "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
+                 }>
+                 {t.label}
+               </button>
+               )}
+           </div>
+         </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type:</span>
-          <div className="flex flex-wrap gap-1">
-            <button
-                onClick={() => setTypeFilter("all")}
-                className={`win98-button px-2.5 py-1 text-[9px] ${
-                typeFilter === "all" ?
-                "bg-foreground text-background border-foreground" :
-                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
-                }>
-                
-              All
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className={`win98-button text-[9px] px-2 py-0.5 flex items-center gap-1 ${showAdvancedFilters ? "bg-primary text-primary-foreground" : ""}`}
+          >
+            <Filter className="h-3 w-3" />
+            Filters{activeFilterCount > 2 ? ` (${activeFilterCount})` : ""}
+          </button>
+          {activeFilterCount > 0 && (
+            <button onClick={clearAllFilters} className="win98-button text-[9px] px-2 py-0.5 text-destructive">
+              Clear All
             </button>
-            {POLL_TYPES.map((t) =>
-              <button
-                key={t.id}
-                onClick={() => setTypeFilter(typeFilter === t.id ? "all" : t.id)}
-                className={`win98-button px-2.5 py-1 text-[9px] ${
-                typeFilter === t.id ?
-                "bg-foreground text-background border-foreground" :
-                "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`
-                }>
-                
-                {t.label}
-              </button>
-              )}
-          </div>
-        </div>
-       </div>
-       {/* Update + Export Buttons */}
-       <div className="flex items-center gap-1.5 shrink-0">
-         <button
-            onClick={syncLiveSources}
-            disabled={syncing || seeding}
-            className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50"
-            title="Scrape live polling data from 20+ sources">
-            
+          )}
+          <button
+             onClick={syncLiveSources}
+             disabled={syncing || seeding}
+             className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50"
+             title="Scrape live polling data from 20+ sources">
            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
            {syncing ? "Syncing…" : "Sync Live"}
-         </button>
-         <button
-            onClick={seedData}
-            disabled={seeding || syncing}
-            className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50"
-            title="Update polling data from all sources">
-            
+          </button>
+          <button
+             onClick={seedData}
+             disabled={seeding || syncing}
+             className="win98-button text-[9px] px-2 py-0.5 disabled:opacity-50"
+             title="Update polling data from all sources">
            <RefreshCw className={`h-3.5 w-3.5 ${seeding ? "animate-spin" : ""}`} />
            {seeding ? "Updating…" : "Update Data"}
-         </button>
-         <button
-            onClick={() => exportPollingCSV(filtered)}
-            className="win98-button text-[10px] flex items-center gap-1"
-            title="Export as CSV">
-            
+          </button>
+          <button
+             onClick={() => exportPollingCSV(filtered)}
+             className="win98-button text-[10px] flex items-center gap-1"
+             title="Export as CSV">
            <FileSpreadsheet className="h-3 w-3" />
            CSV
-         </button>
-         <button
-            onClick={() => exportPollingPDF(filtered)}
-            className="win98-button text-[10px] flex items-center gap-1"
-            title="Export as PDF">
-            
+          </button>
+          <button
+             onClick={() => exportPollingPDF(filtered)}
+             className="win98-button text-[10px] flex items-center gap-1"
+             title="Export as PDF">
            <FileText className="h-3 w-3" />
            PDF
-         </button>
+          </button>
+        </div>
        </div>
+
+       {/* Row 2: Advanced filters */}
+       {showAdvancedFilters && (
+         <div className="border-t border-border pt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+           {/* Topic */}
+           <div>
+             <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Topic</label>
+             <select
+               value={topicFilter}
+               onChange={(e) => setTopicFilter(e.target.value)}
+               className="w-full win98-sunken text-xs px-2 py-1.5 bg-background text-foreground"
+             >
+               <option value="all">All Topics</option>
+               {uniqueTopics.map((t) => <option key={t} value={t}>{t}</option>)}
+             </select>
+           </div>
+           {/* Method */}
+           <div>
+             <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Methodology</label>
+             <select
+               value={methodFilter}
+               onChange={(e) => setMethodFilter(e.target.value)}
+               className="w-full win98-sunken text-xs px-2 py-1.5 bg-background text-foreground"
+             >
+               <option value="all">All Methods</option>
+               {uniqueMethods.map((m) => <option key={m} value={m}>{m}</option>)}
+             </select>
+           </div>
+           {/* Sample Type */}
+           <div>
+             <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Sample Type</label>
+             <select
+               value={sampleTypeFilter}
+               onChange={(e) => setSampleTypeFilter(e.target.value)}
+               className="w-full win98-sunken text-xs px-2 py-1.5 bg-background text-foreground"
+             >
+               <option value="all">All Sample Types</option>
+               {uniqueSampleTypes.map((s) => <option key={s} value={s}>{s}</option>)}
+             </select>
+           </div>
+           {/* Date Range */}
+           <div>
+             <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Date Range</label>
+             <div className="flex items-center gap-1">
+               <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="win98-sunken text-[10px] px-1.5 py-1 bg-background text-foreground flex-1 min-w-0" />
+               <span className="text-[9px] text-muted-foreground">to</span>
+               <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="win98-sunken text-[10px] px-1.5 py-1 bg-background text-foreground flex-1 min-w-0" />
+             </div>
+           </div>
+           {/* Margin Range */}
+           <div>
+             <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Margin Range</label>
+             <div className="flex items-center gap-1">
+               <input type="number" value={marginMin} onChange={(e) => setMarginMin(e.target.value)} placeholder="Min" className="win98-sunken text-[10px] px-1.5 py-1 bg-background text-foreground flex-1 min-w-0 w-12" />
+               <span className="text-[9px] text-muted-foreground">to</span>
+               <input type="number" value={marginMax} onChange={(e) => setMarginMax(e.target.value)} placeholder="Max" className="win98-sunken text-[10px] px-1.5 py-1 bg-background text-foreground flex-1 min-w-0 w-12" />
+             </div>
+           </div>
+         </div>
+       )}
+
+       {/* Active filter summary */}
+       {activeFilterCount > 0 && (
+         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+           <span>Showing <strong className="text-foreground">{filtered.length}</strong> of {polls.length} polls</span>
+           <span className="text-muted-foreground/40">·</span>
+           <span>{activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""} active</span>
+         </div>
+       )}
       </div>
 
       {/* ─── Summary Cards with Gauge ──────────────────────────────────────── */}
@@ -2471,23 +2628,23 @@ export function PollingSection() {
           </button>
         </div>
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-          <table className="w-full text-sm">
+           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-[hsl(var(--win98-face))] z-10">
               <tr className="border-b border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))]">
-                <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
-                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Topic</th>
-                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Result</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Margin</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sample</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">MoE</th>
-                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Method</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
+                <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("source")}>Source<SortIcon col="source" /></th>
+                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("topic")}>Topic<SortIcon col="topic" /></th>
+                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("type")}>Type<SortIcon col="type" /></th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("result")}>Result<SortIcon col="result" /></th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("margin")}>Margin<SortIcon col="margin" /></th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("sample")}>Sample<SortIcon col="sample" /></th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("moe")}>MoE<SortIcon col="moe" /></th>
+                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("method")}>Method<SortIcon col="method" /></th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none" onClick={() => toggleSort("date")}>Date<SortIcon col="date" /></th>
                 <th className="py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider"></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((poll) => {
+              {sortedFiltered.map((poll) => {
                 const src = getSourceInfo(poll.source);
                 const primaryPct = poll.approve_pct ?? poll.favor_pct;
                 const secondaryPct = poll.disapprove_pct ?? poll.oppose_pct;
