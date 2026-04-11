@@ -246,7 +246,6 @@ export default function Index() {
   const sectionLabels: Record<Section, string> = {
     dashboard: "Dashboard",
     oppohub: "OppoHub",
-    "district-intel": "District Intelligence",
     leghub: "LegHub",
     polling: "DataHub",
     messaging: "MessagingHub",
@@ -256,18 +255,6 @@ export default function Index() {
   };
 
   function renderDetail() {
-    if (section === "district-intel" && compareMode) {
-      return <DistrictCompare districts={districts} onBack={() => setCompareMode(false)} />;
-    }
-    if (section === "district-intel" && selectedDistrict) {
-      return (
-        <DistrictDetail
-          district={selectedDistrict}
-          onBack={() => setSelectedSlug(null)}
-          onSelectCandidate={(slug) => { setSection("oppohub"); setSelectedSlug(slug); }}
-        />
-      );
-    }
     return null;
   }
 
