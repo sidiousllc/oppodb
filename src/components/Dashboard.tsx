@@ -135,10 +135,10 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
 
   // ─── Quick stats ────────────────────────────────────────────────────
   const quickStats = [
-    { label: "Candidate Profiles", value: candidateCount, emoji: "👥", section: "candidates" },
-    { label: "District Profiles", value: districtCount, emoji: "🧭", section: "district-intel" },
-    { label: "MAGA Files", value: magaFiles.length, emoji: "⚠️", section: "maga-files" },
-    { label: "Toss Up Races", value: tossUpDistricts.length, emoji: "🎯", section: "district-intel" },
+    { label: "Candidate Profiles", value: candidateCount, emoji: "👥", section: "oppohub" },
+    { label: "District Profiles", value: districtCount, emoji: "🧭", section: "leghub" },
+    { label: "MAGA Files", value: magaFiles.length, emoji: "⚠️", section: "oppohub" },
+    { label: "Toss Up Races", value: tossUpDistricts.length, emoji: "🎯", section: "leghub" },
   ];
 
   return (
