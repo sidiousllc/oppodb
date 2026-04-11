@@ -189,7 +189,7 @@ export default function Index() {
     const narrativeMatch = narrativeReports.find(n => n.slug.toLowerCase() === slug);
     if (narrativeMatch) { setSection("oppohub"); setSelectedSlug(narrativeMatch.slug); return true; }
     const districtMatch = districts.find(d => d.district_id.toLowerCase() === slug);
-    if (districtMatch) { setSection("district-intel"); setSelectedSlug(districtMatch.district_id); return true; }
+    if (districtMatch) { setSection("leghub"); setSelectedSlug(districtMatch.district_id); return true; }
 
     // Check if this is a subpage slug — find its parent candidate
     const parentCandidate = candidates.find(c => {
