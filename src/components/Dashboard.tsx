@@ -381,7 +381,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             { label: "OppoHub", emoji: "🎯", section: "oppohub" },
-            { label: "District Intel", emoji: "🧭", section: "district-intel" },
+            { label: "District Intel", emoji: "🧭", section: "leghub" },
             { label: "LegHub", emoji: "⚖️", section: "leghub" },
             { label: "DataHub", emoji: "📊", section: "polling" },
             { label: "MessagingHub", emoji: "📢", section: "messaging" },
