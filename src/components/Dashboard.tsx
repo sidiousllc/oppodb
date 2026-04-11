@@ -135,10 +135,10 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
 
   // ─── Quick stats ────────────────────────────────────────────────────
   const quickStats = [
-    { label: "Candidate Profiles", value: candidateCount, emoji: "👥", section: "candidates" },
-    { label: "District Profiles", value: districtCount, emoji: "🧭", section: "district-intel" },
-    { label: "MAGA Files", value: magaFiles.length, emoji: "⚠️", section: "maga-files" },
-    { label: "Toss Up Races", value: tossUpDistricts.length, emoji: "🎯", section: "district-intel" },
+    { label: "Candidate Profiles", value: candidateCount, emoji: "👥", section: "oppohub" },
+    { label: "District Profiles", value: districtCount, emoji: "🧭", section: "leghub" },
+    { label: "MAGA Files", value: magaFiles.length, emoji: "⚠️", section: "oppohub" },
+    { label: "Toss Up Races", value: tossUpDistricts.length, emoji: "🎯", section: "leghub" },
   ];
 
   return (
@@ -288,7 +288,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
           <Compass className="h-4 w-4" />
           <h2 className="text-sm font-bold">🎯 Competitive Districts</h2>
           <button
-            onClick={() => onNavigateSection("district-intel")}
+            onClick={() => onNavigateSection("leghub")}
             className="ml-auto win98-button text-[10px]"
           >
             View All Districts →
@@ -311,7 +311,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
                 return (
                   <button
                     key={id}
-                    onClick={() => onNavigateSection("district-intel", id)}
+                    onClick={() => onNavigateSection("leghub", id)}
                     className="win98-button text-[10px] px-1.5 py-0.5 flex items-center gap-1"
                     title={`${id} — PVI: ${pvi !== null ? formatPVI(pvi) : "N/A"}`}
                   >
@@ -345,7 +345,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
                   return (
                     <button
                       key={id}
-                      onClick={() => onNavigateSection("district-intel", id)}
+                      onClick={() => onNavigateSection("leghub", id)}
                       className="win98-button text-[10px] px-1.5 py-0.5 flex items-center gap-1"
                       title={`${id} — Cook: ${rating || "N/A"}`}
                     >
@@ -381,7 +381,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             { label: "OppoHub", emoji: "🎯", section: "oppohub" },
-            { label: "District Intel", emoji: "🧭", section: "district-intel" },
+            { label: "District Intel", emoji: "🧭", section: "leghub" },
             { label: "LegHub", emoji: "⚖️", section: "leghub" },
             { label: "DataHub", emoji: "📊", section: "polling" },
             { label: "MessagingHub", emoji: "📢", section: "messaging" },
