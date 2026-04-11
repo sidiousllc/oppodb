@@ -290,119 +290,6 @@ export default function Index() {
       );
     }
 
-    if (section === "district-intel") {
-      return (
-        <>
-          <div className="mt-2 mb-1 flex flex-wrap items-center justify-between gap-1">
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{filteredDistricts.length} district profiles</p>
-              <button
-                onClick={() => setTrackedOnly(v => !v)}
-                className={`win98-button text-[10px] flex items-center gap-1 ${trackedOnly ? "font-bold" : ""}`}
-              >
-                <span className={`h-2 w-2 border ${trackedOnly ? "bg-[hsl(var(--win98-titlebar))]" : ""}`} />
-                Tracked only
-              </button>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCompareMode(true)}
-                className="win98-button text-[10px] flex items-center gap-1"
-              >
-                <GitCompareArrows className="h-3 w-3" />
-                Compare
-              </button>
-              <button
-                onClick={handleCensusSync}
-                disabled={censusSyncing}
-                className="win98-button text-[10px] flex items-center gap-1 disabled:opacity-50"
-              >
-                {censusSyncing ? "Syncing…" : "Census Sync"}
-              </button>
-              <button
-                onClick={handleBulkElectionSync}
-                disabled={electionSyncing}
-                className="win98-button text-[10px] flex items-center gap-1 disabled:opacity-50"
-              >
-                {electionSyncing ? electionSyncProgress : electionSyncProgress || "Sync Elections"}
-              </button>
-            </div>
-          </div>
-
-          {/* Cook filter */}
-          <div className="mb-2 flex flex-wrap gap-1">
-            <button
-              onClick={() => setCookFilter("all")}
-              className={`win98-button text-[9px] px-1 py-0 ${cookFilter === "all" ? "font-bold" : ""}`}
-            >
-              All Ratings
-            </button>
-            {COOK_RATING_ORDER.map((rating) => {
-              const color = getCookRatingColor(rating);
-              const isActive = cookFilter === rating;
-              return (
-                <button
-                  key={rating}
-                  onClick={() => setCookFilter(isActive ? "all" : rating)}
-                  className="win98-button text-[9px] px-1 py-0"
-                  style={{
-                    backgroundColor: isActive ? `hsl(${color})` : undefined,
-                    color: isActive ? "white" : `hsl(${color})`,
-                    fontWeight: isActive ? 700 : 400,
-                  }}
-                >
-                  {rating}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* PVI filter */}
-          <div className="mb-2 flex flex-wrap gap-1 items-center">
-            <span className="text-[9px] font-bold mr-1">PVI:</span>
-            {PVI_FILTER_OPTIONS.map((opt) => {
-              const isActive = pviFilter === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => setPviFilter(isActive && opt.id !== "all" ? "all" : opt.id)}
-                  className="win98-button text-[9px] px-1 py-0"
-                  style={opt.color ? {
-                    backgroundColor: isActive ? `hsl(${opt.color})` : undefined,
-                    color: isActive ? "white" : `hsl(${opt.color})`,
-                    fontWeight: isActive ? 700 : 400,
-                  } : {
-                    fontWeight: isActive ? 700 : 400,
-                  }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Map */}
-          {districts.length > 0 && (
-            <div className="mb-3 win98-sunken bg-white p-2">
-              <p className="text-[11px] font-bold mb-1">Congressional District Map</p>
-              <DistrictMap districts={districts} onSelectDistrict={setSelectedSlug} pviFilter={pviFilter} />
-            </div>
-          )}
-
-          <div className="grid gap-2 sm:grid-cols-2">
-            {filteredDistricts.map(d => (
-              <DistrictCard key={d.district_id} district={d} onClick={setSelectedSlug} />
-            ))}
-          </div>
-          {filteredDistricts.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">No districts match your search.</p>
-            </div>
-          )}
-        </>
-      );
-    }
-
     if (section === "leghub") {
       return (
         <LegHub
@@ -410,6 +297,12 @@ export default function Index() {
           stateLegLoading={stateLegLoading}
           onStateLegSync={handleStateLegSync}
           stateLegSyncing={stateLegSyncing}
+          districts={districts}
+          onDistrictsChange={setDistricts}
+          search={search}
+          onSelectSlug={setSelectedSlug}
+          selectedSlug={selectedSlug}
+          onNavigateToCandidate={(slug) => { setSection("oppohub"); setSelectedSlug(slug); }}
         />
       );
     }
