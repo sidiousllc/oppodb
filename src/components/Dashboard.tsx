@@ -288,7 +288,7 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
           <Compass className="h-4 w-4" />
           <h2 className="text-sm font-bold">🎯 Competitive Districts</h2>
           <button
-            onClick={() => onNavigateSection("district-intel")}
+            onClick={() => onNavigateSection("leghub")}
             className="ml-auto win98-button text-[10px]"
           >
             View All Districts →
