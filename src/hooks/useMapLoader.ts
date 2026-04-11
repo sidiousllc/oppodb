@@ -176,53 +176,95 @@ async function fetchLocal(signal: AbortSignal): Promise<GeoJSONData> {
   return data;
 }
 
+const FIPS_TO_STATE: Record<string, string> = {
+  "01":"AL","02":"AK","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT","10":"DE",
+  "11":"DC","12":"FL","13":"GA","15":"HI","16":"ID","17":"IL","18":"IN","19":"IA",
+  "20":"KS","21":"KY","22":"LA","23":"ME","24":"MD","25":"MA","26":"MI","27":"MN",
+  "28":"MS","29":"MO","30":"MT","31":"NE","32":"NV","33":"NH","34":"NJ","35":"NM",
+  "36":"NY","37":"NC","38":"ND","39":"OH","40":"OK","41":"OR","42":"PA","44":"RI",
+  "45":"SC","46":"SD","47":"TN","48":"TX","49":"UT","50":"VT","51":"VA","53":"WA",
+  "54":"WV","55":"WI","56":"WY","60":"AS","66":"GU","69":"MP","72":"PR","78":"VI",
+};
+
 async function fetchEsri(signal: AbortSignal): Promise<GeoJSONData> {
-  const ESRI_URL =
-    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query";
-  const params = new URLSearchParams({
-    where: "1=1",
-    outFields: "STATE_ABBR,CDFIPS,DISTRICTID,NAME",
-    f: "geojson",
-    outSR: "4326",
-    returnGeometry: "true",
-    maxAllowableOffset: "0.01",
-    resultRecordCount: "500",
-  });
-  const res = await fetch(`${ESRI_URL}?${params}`, { signal });
-  if (!res.ok) throw new Error(`Esri API: HTTP ${res.status}`);
-  const data = await res.json();
-  if (data.error) throw new Error(`Esri API: ${data.error.message || "unknown error"}`);
-  if (!data?.features?.length) throw new Error("Esri API: empty features");
-  return data;
+  const urls = [
+    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_119th_Congressional_Districts/FeatureServer/0/query",
+    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query",
+  ];
+
+  for (const ESRI_URL of urls) {
+    try {
+      const params = new URLSearchParams({
+        where: "1=1",
+        outFields: "STATE_ABBR,CDFIPS,DISTRICTID,NAME,CD119FP,CD118FP",
+        f: "geojson",
+        outSR: "4326",
+        returnGeometry: "true",
+        maxAllowableOffset: "0.01",
+        resultRecordCount: "500",
+      });
+      const res = await fetch(`${ESRI_URL}?${params}`, { signal });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.error || !data?.features?.length) continue;
+      data.features = data.features.map((f: { properties: Record<string, unknown>; [key: string]: unknown }) => ({
+        ...f,
+        properties: {
+          ...f.properties,
+          STATE_ABBR: f.properties.STATE_ABBR || FIPS_TO_STATE[String(f.properties.STATE || "")] || f.properties.STUSAB,
+          CDFIPS: f.properties.CDFIPS || f.properties.CD119FP || f.properties.CD118FP || f.properties.BASENAME,
+        },
+      }));
+      return data;
+    } catch (e) {
+      if ((e as Error).name === "AbortError") throw e;
+      continue;
+    }
+  }
+  throw new Error("Esri API: all endpoints failed");
 }
 
 async function fetchCensus(signal: AbortSignal): Promise<GeoJSONData> {
-  const CENSUS_URL =
-    "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0/query";
-  const params = new URLSearchParams({
-    where: "1=1",
-    outFields: "STATE,CD118FP,GEOID,BASENAME",
-    f: "geojson",
-    outSR: "4326",
-    returnGeometry: "true",
-    maxAllowableOffset: "0.01",
-    resultRecordCount: "500",
-  });
-  const res = await fetch(`${CENSUS_URL}?${params}`, { signal });
-  if (!res.ok) throw new Error(`Census API: HTTP ${res.status}`);
-  const data = await res.json();
-  if (data.error) throw new Error(`Census API: ${data.error.message || "unknown error"}`);
-  if (!data?.features?.length) throw new Error("Census API: empty features");
+  const urls = [
+    "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024/Legislative/MapServer/0/query",
+    "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0/query",
+  ];
 
-  data.features = data.features.map((f: { properties: Record<string, unknown>; [key: string]: unknown }) => ({
-    ...f,
-    properties: {
-      ...f.properties,
-      STATE_ABBR: f.properties.STATE || f.properties.STUSAB,
-      CDFIPS: f.properties.CD118FP || f.properties.BASENAME,
-    },
-  }));
-  return data;
+  for (const CENSUS_URL of urls) {
+    try {
+      const params = new URLSearchParams({
+        where: "1=1",
+        outFields: "STATE,STATEFP,CD118FP,CD119FP,GEOID,BASENAME,STUSAB",
+        f: "geojson",
+        outSR: "4326",
+        returnGeometry: "true",
+        maxAllowableOffset: "0.01",
+        resultRecordCount: "500",
+      });
+      const res = await fetch(`${CENSUS_URL}?${params}`, { signal });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.error || !data?.features?.length) continue;
+
+      data.features = data.features.map((f: { properties: Record<string, unknown>; [key: string]: unknown }) => {
+        const stateFips = String(f.properties.STATE || f.properties.STATEFP || "");
+        const stateAbbr = f.properties.STUSAB || FIPS_TO_STATE[stateFips] || stateFips;
+        return {
+          ...f,
+          properties: {
+            ...f.properties,
+            STATE_ABBR: stateAbbr,
+            CDFIPS: f.properties.CD119FP || f.properties.CD118FP || f.properties.BASENAME,
+          },
+        };
+      });
+      return data;
+    } catch (e) {
+      if ((e as Error).name === "AbortError") throw e;
+      continue;
+    }
+  }
+  throw new Error("Census API: all endpoints failed");
 }
 
 const FETCHERS: Record<Exclude<MapSource, "auto">, (signal: AbortSignal) => Promise<GeoJSONData>> = {
@@ -379,12 +421,19 @@ export function useMapLoader(): MapLoadResult {
 
       const start = performance.now();
       try {
+        // Each source gets its own abort controller for timeouts
+        // so a timeout on one source doesn't kill subsequent fallbacks
+        const srcController = new AbortController();
+        const onMainAbort = () => srcController.abort();
+        controller.signal.addEventListener("abort", onMainAbort);
+
         const timeoutId = setTimeout(() => {
-          if (!controller.signal.aborted) controller.abort();
+          srcController.abort();
         }, src === "local" ? 10000 : 20000);
 
-        const data = await FETCHERS[src](controller.signal);
+        const data = await FETCHERS[src](srcController.signal);
         clearTimeout(timeoutId);
+        controller.signal.removeEventListener("abort", onMainAbort);
 
         const elapsed = Math.round(performance.now() - start);
         const validation = validateGeoData(data);
