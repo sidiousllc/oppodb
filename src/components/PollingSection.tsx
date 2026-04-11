@@ -1225,7 +1225,7 @@ function DemoRingChart({ entries, groupColors }: { entries: DemoEntry[]; groupCo
   );
 }
 
-function DemographicBreakdownChart({ polls }: { polls: PollEntry[] }) {
+function DemographicBreakdownChart({ polls, onSelectPoll }: { polls: PollEntry[]; onSelectPoll?: (p: PollEntry) => void }) {
   const { ref, inView } = useInView();
   const [activeGroup, setActiveGroup] = useState<string>("party");
   const [selectedPollIds, setSelectedPollIds] = useState<Set<string>>(new Set());
