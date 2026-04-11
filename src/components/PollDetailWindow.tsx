@@ -332,19 +332,25 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
           )}
         </div>
 
-        {/* Demographic Crosstabs */}
-        {demoGroups.size > 0 && (
+        {/* Demographic Crosstabs (this poll only) */}
+        {pollDemoGroups.size > 0 && (
           <div className="candidate-card p-4">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-              Demographic Breakdown — {p.candidate_or_topic}
+              Demographic Breakdown — {src.name}
             </h3>
             <p className="text-[9px] text-muted-foreground mb-3">
-              {[...demoGroups.values()].reduce((s, a) => s + a.length, 0)} crosstab data points across {demoGroups.size} categories
+              {[...pollDemoGroups.values()].reduce((s, a) => s + a.length, 0)} data points from this poll · Click a category for cross-source detail
             </p>
             <div className="space-y-3">
-              {[...demoGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([group, entries]) => (
-                <div key={group}>
-                  <p className="text-[10px] font-bold text-foreground mb-1.5 capitalize">{group}</p>
+              {[...pollDemoGroups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([group, entries]) => (
+                <div key={group}
+                  className="cursor-pointer hover:bg-[hsl(var(--win98-light))] rounded p-1.5 -m-1.5 transition-colors"
+                  onClick={() => setDemoDetailGroup(group)}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[10px] font-bold text-foreground capitalize">{group}</p>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                  </div>
                   <div className="space-y-1">
                     {entries.map((e, i) => (
                       <div key={`${e.demographic}-${i}`} className="flex items-center gap-2">
