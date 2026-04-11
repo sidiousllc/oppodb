@@ -7,12 +7,12 @@ type MapSource = "esri" | "census";
 
 const SOURCE_URLS: Record<MapSource, string[]> = {
   esri: [
-    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_119th_Congressional_Districts/FeatureServer/0/query?where=1%3D1&outFields=STATE_ABBR%2CCDFIPS%2CDISTRICTID%2CNAME%2CCD119FP%2CCD118FP%2CSTATE%2CSTUSAB&f=geojson&outSR=4326&returnGeometry=true&maxAllowableOffset=0.01&resultRecordCount=500",
-    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query?where=1%3D1&outFields=STATE_ABBR%2CCDFIPS%2CDISTRICTID%2CNAME%2CCD119FP%2CCD118FP%2CSTATE%2CSTUSAB&f=geojson&outSR=4326&returnGeometry=true&maxAllowableOffset=0.01&resultRecordCount=500",
+    "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_119th_Congressional_Districts/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson&outSR=4326&returnGeometry=true&resultRecordCount=2000",
+    "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_118th_Congressional_Districts/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson&outSR=4326&returnGeometry=true&resultRecordCount=2000",
   ],
   census: [
-    "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024/Legislative/MapServer/0/query?where=1%3D1&outFields=STATE%2CSTATEFP%2CCD118FP%2CCD119FP%2CGEOID%2CBASENAME%2CSTUSAB&f=geojson&outSR=4326&returnGeometry=true&maxAllowableOffset=0.01&resultRecordCount=500",
-    "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0/query?where=1%3D1&outFields=STATE%2CSTATEFP%2CCD118FP%2CCD119FP%2CGEOID%2CBASENAME%2CSTUSAB&f=geojson&outSR=4326&returnGeometry=true&maxAllowableOffset=0.01&resultRecordCount=500",
+    "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024/Legislative/MapServer/4/query?where=1%3D1&outFields=*&f=geojson&outSR=4326&returnGeometry=true&resultRecordCount=2000",
+    "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/8/query?where=1%3D1&outFields=*&f=geojson&outSR=4326&returnGeometry=true&resultRecordCount=2000",
   ],
 };
 
@@ -44,25 +44,28 @@ Deno.serve(async (req) => {
       return json({ error: "source must be 'esri' or 'census'" }, 400);
     }
 
-    const attempts: Array<{ url: string; status?: number; error?: string }> = [];
+    const attempts: Array<{ url: string; status?: number; error?: string; featureCount?: number }> = [];
 
     for (const url of SOURCE_URLS[source]) {
       try {
         const response = await fetch(url, {
           headers: {
-            "Accept": "application/json",
+            Accept: "application/json",
             "User-Agent": "Lovable Map Loader/1.0",
           },
-          signal: AbortSignal.timeout(15000),
+          signal: AbortSignal.timeout(20000),
         });
 
-        attempts.push({ url, status: response.status });
-        if (!response.ok) continue;
+        const data = await response.json().catch(() => null);
+        attempts.push({
+          url,
+          status: response.status,
+          featureCount: Array.isArray(data?.features) ? data.features.length : 0,
+          error: data?.error ? JSON.stringify(data.error) : undefined,
+        });
 
-        const data = await response.json();
-        if (data?.error || !Array.isArray(data?.features) || data.features.length === 0) {
-          continue;
-        }
+        if (!response.ok) continue;
+        if (!Array.isArray(data?.features) || data.features.length === 0) continue;
 
         return json({
           ...data,
