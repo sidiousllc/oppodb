@@ -2366,7 +2366,7 @@ export function PollingSection() {
       </div>
 
       {/* ─── Issue Polling Deep Dive ──────────────────────────────────────── */}
-      <IssuePollingSection polls={polls} />
+      <IssuePollingSection polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
 
       {/* ─── Source Comparison Table ──────────────────────────────────────── */}
       {latestBySource.length > 0 &&
