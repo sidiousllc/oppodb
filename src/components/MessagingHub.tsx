@@ -27,8 +27,86 @@ const PARTY_COLORS: Record<string, string> = {
   Independent: "bg-purple-100 text-purple-800 border-purple-300",
 };
 
+const SOURCE_DOMAINS: Record<string, string> = {
+  "AARP": "aarp.org",
+  "America First Policy Institute": "americafirstpolicy.com",
+  "American Compass": "americancompass.org",
+  "American Conservative Union": "conservative.org",
+  "American Enterprise Institute": "aei.org",
+  "Annenberg Public Policy Center": "annenbergpublicpolicycenter.org",
+  "Bipartisan Policy Center": "bipartisanpolicy.org",
+  "Brookings Institution": "brookings.edu",
+  "Cato Institute": "cato.org",
+  "Center for a New American Security": "cnas.org",
+  "Center for American Progress": "americanprogress.org",
+  "Center for American Progress Action": "americanprogressaction.org",
+  "Center for Rural Strategies": "ruralstrategies.org",
+  "Club for Growth": "clubforgrowth.org",
+  "Council on Criminal Justice": "counciloncj.org",
+  "Data for Progress": "dataforprogress.org",
+  "Democracy Corps": "democracycorps.com",
+  "Democracy Fund": "democracyfund.org",
+  "Economic Policy Institute": "epi.org",
+  "Families USA": "familiesusa.org",
+  "Family Research Council": "frc.org",
+  "Heritage Foundation": "heritage.org",
+  "Institute for Energy Research": "instituteforenergyresearch.org",
+  "Issue One": "issueone.org",
+  "Manhattan Institute": "manhattan-institute.org",
+  "National Alliance on Mental Illness": "nami.org",
+  "National Council on Disability": "ncd.gov",
+  "National Federation of Independent Business": "nfib.com",
+  "National Women's Law Center": "nwlc.org",
+  "Navigator Research": "navigatorresearch.org",
+  "Niskanen Center": "niskanencenter.org",
+  "No Labels": "nolabels.org",
+  "NRCC": "nrcc.org",
+  "NRSC": "nrsc.org",
+  "Pew Research Center": "pewresearch.org",
+  "Priorities USA": "priorities.org",
+  "R Street Institute": "rstreet.org",
+  "RAND Corporation": "rand.org",
+  "Republican Main Street Partnership": "republicanmainstreet.org",
+  "Republican National Committee": "gop.com",
+  "Tax Foundation": "taxfoundation.org",
+  "Theodore Roosevelt Conservation Partnership": "trcp.org",
+  "Third Way": "thirdway.org",
+  "Young Invincibles": "younginvincibles.org",
+};
+
+function getSourceLogo(source: string): string {
+  const domain = SOURCE_DOMAINS[source];
+  if (domain) return `https://logo.clearbit.com/${domain}`;
+  return "";
+}
+
+function SourceLogo({ source, size = 16 }: { source: string; size?: number }) {
+  const [error, setError] = useState(false);
+  const url = getSourceLogo(source);
+  if (!url || error) {
+    return (
+      <div
+        className="rounded bg-[hsl(var(--muted))] flex items-center justify-center text-[7px] font-bold text-[hsl(var(--muted-foreground))] shrink-0"
+        style={{ width: size, height: size }}
+      >
+        {source.charAt(0)}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt={source}
+      width={size}
+      height={size}
+      className="rounded shrink-0 object-contain"
+      onError={() => setError(true)}
+    />
+  );
+}
+
 function getPartyBadge(areas: string[]): string | null {
-  if (areas.includes("Democrat") && areas.includes("Republican")) return null; // bipartisan
+  if (areas.includes("Democrat") && areas.includes("Republican")) return null;
   if (areas.includes("Democrat")) return "Democrat";
   if (areas.includes("Republican")) return "Republican";
   if (areas.includes("Independent")) return "Independent";
