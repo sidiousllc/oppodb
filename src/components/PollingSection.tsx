@@ -1982,6 +1982,16 @@ export function PollingSection() {
   const [seeding, setSeeding] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [topicFilter, setTopicFilter] = useState<string>("all");
+  const [methodFilter, setMethodFilter] = useState<string>("all");
+  const [sampleTypeFilter, setSampleTypeFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [marginMin, setMarginMin] = useState<string>("");
+  const [marginMax, setMarginMax] = useState<string>("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [sortCol, setSortCol] = useState<string>("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedPoll, setSelectedPoll] = useState<PollEntry | null>(null);
   const [activeTab, setActiveTab] = useState<"polling" | "markets" | "finance">("polling");
 
