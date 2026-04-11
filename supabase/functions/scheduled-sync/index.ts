@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       console.log("[SECURITY] Authenticated as service_role (cron)");
     } else {
       // For non-service_role tokens, verify user and check admin/moderator role
-      const userId = claimsData.claims.sub as string;
+      const userId = userData!.user!.id;
       const adminClient = createClient(supabaseUrl, supabaseKey);
       const { data: roles } = await adminClient
         .from("user_roles")
