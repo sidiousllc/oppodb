@@ -7,7 +7,7 @@ import { narrativeReports, searchNarrativeReports, mergeNarrativeReportsFromDB }
 import { fetchCandidatesFromDB } from "@/data/githubSync";
 import { fetchAllDistricts, type DistrictProfile } from "@/data/districtIntel";
 import { fetchStateLegislativeDistricts, syncStateLegislativeData, type StateLegislativeProfile } from "@/data/stateLegislativeIntel";
-import { candidateDistrictMap } from "@/data/candidateDistricts";
+
 import { MasterSearch } from "@/components/MasterSearch";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateDetail } from "@/components/CandidateDetail";
