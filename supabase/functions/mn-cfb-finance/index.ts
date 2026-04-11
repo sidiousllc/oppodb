@@ -23,7 +23,8 @@ Deno.serve(async (req) => {
 
     // Sync: trigger background data import
     if (action === "sync") {
-      EdgeRuntime.waitUntil(syncMNCFBData(supabase));
+      // Fire and forget - don't block the response
+      syncMNCFBData(supabase).catch(e => console.error("MN CFB sync error:", e));
       return new Response(
         JSON.stringify({ success: true, message: "Sync started in background" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -78,7 +78,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("SFX generation error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Internal error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

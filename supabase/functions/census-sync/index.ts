@@ -163,19 +163,23 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const token = authHeader.slice(7).trim();
 
-    // Use getClaims() for signature-verified JWT validation
+    // Validate JWT via getUser()
     const authClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: userData, error: userError } = await authClient.auth.getUser(token);
+
+    // Allow service_role tokens (check via JWT decode fallback)
+    const isServiceRole = token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!isServiceRole && (userError || !userData?.user)) {
       return new Response(JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Allow service_role (from scheduled-sync) or admin users
-    if (claimsData.claims.role !== "service_role") {
-      const userId = claimsData.claims.sub as string;
+    if (!isServiceRole) {
+      const userId = userData!.user!.id;
       const adminClient = createClient(supabaseUrl, supabaseKey);
       const { data: roleCheck } = await adminClient.rpc("has_role", { _user_id: userId, _role: "admin" });
       if (!roleCheck) {

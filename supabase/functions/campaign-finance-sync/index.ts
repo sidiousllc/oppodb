@@ -113,7 +113,7 @@ async function fetchFECPage(endpoint: string, params: Record<string, string>): P
 }
 
 async function syncStateFinance(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   stateAbbr: string,
   cycle: number,
 ): Promise<{ upserted: number; errors: string[] }> {

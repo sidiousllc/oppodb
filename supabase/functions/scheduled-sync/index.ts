@@ -54,12 +54,15 @@ Deno.serve(async (req) => {
 
     const token = authHeader.slice("Bearer ".length).trim();
 
-    // Use getClaims() for signature-verified JWT validation
+    // Validate JWT via getUser()
     const authClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: userData, error: userError } = await authClient.auth.getUser(token);
+
+    const isServiceRole = token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!isServiceRole && (userError || !userData?.user)) {
       return new Response(
         JSON.stringify({ error: "Unauthorized: Invalid token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -67,7 +70,7 @@ Deno.serve(async (req) => {
     }
 
     // Allow service_role tokens (for scheduled cron jobs)
-    if (claimsData.claims.role === "service_role") {
+    if (isServiceRole) {
       console.log("[SECURITY] Authenticated as service_role (cron)");
     } else {
       // For non-service_role tokens, verify user and check admin/moderator role
