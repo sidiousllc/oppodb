@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { getSourceInfo, type PollEntry } from "@/data/pollingData";
 import { usePollPicker, PollPickerButton, PollPickerDropdown } from "@/components/PollingSection";
-import { AlertTriangle, TrendingDown, TrendingUp, Minus, Globe, DollarSign, Compass, Shield, Heart, Users, Leaf, Crosshair, Scale, Landmark, Briefcase, Home, Award, Cpu, Banknote, Vote } from "lucide-react";
+import { AlertTriangle, TrendingDown, TrendingUp, Minus, Globe, DollarSign, Compass, Shield, Heart, Users, Leaf, Crosshair, Scale, Landmark, Briefcase, Home, Award, Cpu, Banknote, Vote, Maximize2 } from "lucide-react";
 
 // ─── useInView ──────────────────────────────────────────────────────────────
 
@@ -25,149 +25,34 @@ function useInView(options?: IntersectionObserverInit) {
 interface TopicGroup {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  color: string; // HSL values
+  color: string;
   keywords: string[];
 }
 
 const TOPIC_GROUPS: TopicGroup[] = [
-  {
-    label: "Direction of Country",
-    icon: Compass,
-    color: "260, 55%, 48%",
-    keywords: ["direction of country", "right direction"],
-  },
-  {
-    label: "Economy",
-    icon: DollarSign,
-    color: "150, 55%, 45%",
-    keywords: ["economy", "economic confidence", "trump economy handling"],
-  },
-  {
-    label: "Cost of Living",
-    icon: Banknote,
-    color: "30, 80%, 48%",
-    keywords: ["cost of living", "inflation concern", "inflation"],
-  },
-  {
-    label: "Iran / Foreign Policy",
-    icon: Globe,
-    color: "25, 90%, 50%",
-    keywords: ["trump iran handling", "iran", "foreign policy"],
-  },
-  {
-    label: "Ukraine / Foreign Aid",
-    icon: Globe,
-    color: "200, 70%, 48%",
-    keywords: ["ukraine", "foreign aid"],
-  },
-  {
-    label: "Immigration",
-    icon: Shield,
-    color: "210, 75%, 50%",
-    keywords: ["immigration"],
-  },
-  {
-    label: "Healthcare",
-    icon: Heart,
-    color: "350, 65%, 50%",
-    keywords: ["healthcare"],
-  },
-  {
-    label: "Social Security / Medicare",
-    icon: Landmark,
-    color: "280, 55%, 50%",
-    keywords: ["social security", "medicare"],
-  },
-  {
-    label: "Education",
-    icon: Award,
-    color: "170, 60%, 42%",
-    keywords: ["education"],
-  },
-  {
-    label: "Climate / Environment",
-    icon: Leaf,
-    color: "120, 55%, 40%",
-    keywords: ["climate", "environment"],
-  },
-  {
-    label: "Abortion / Reproductive Rights",
-    icon: Scale,
-    color: "320, 60%, 50%",
-    keywords: ["abortion", "reproductive"],
-  },
-  {
-    label: "Gun Policy",
-    icon: Crosshair,
-    color: "0, 50%, 45%",
-    keywords: ["gun policy", "gun"],
-  },
-  {
-    label: "National Security",
-    icon: Shield,
-    color: "220, 60%, 45%",
-    keywords: ["national security", "defense"],
-  },
-  {
-    label: "Crime / Public Safety",
-    icon: Shield,
-    color: "15, 70%, 48%",
-    keywords: ["crime", "public safety"],
-  },
-  {
-    label: "Tariffs / Trade",
-    icon: DollarSign,
-    color: "40, 80%, 45%",
-    keywords: ["tariffs", "trade"],
-  },
-  {
-    label: "DOGE",
-    icon: Landmark,
-    color: "45, 70%, 48%",
-    keywords: ["doge"],
-  },
-  {
-    label: "Jobs / Employment",
-    icon: Briefcase,
-    color: "180, 55%, 42%",
-    keywords: ["jobs", "employment"],
-  },
-  {
-    label: "Housing",
-    icon: Home,
-    color: "35, 65%, 45%",
-    keywords: ["housing"],
-  },
-  {
-    label: "Government Spending",
-    icon: Landmark,
-    color: "0, 45%, 55%",
-    keywords: ["government spending", "deficit"],
-  },
-  {
-    label: "Democracy / Rule of Law",
-    icon: Vote,
-    color: "240, 55%, 50%",
-    keywords: ["democracy", "rule of law"],
-  },
-  {
-    label: "Veterans Affairs",
-    icon: Award,
-    color: "160, 50%, 45%",
-    keywords: ["veterans"],
-  },
-  {
-    label: "Tech / AI Policy",
-    icon: Cpu,
-    color: "270, 60%, 52%",
-    keywords: ["tech", "ai policy"],
-  },
-  {
-    label: "Cabinet / Personnel",
-    icon: Users,
-    color: "45, 70%, 48%",
-    keywords: ["hegseth", "rubio", "secretary"],
-  },
+  { label: "Direction of Country", icon: Compass, color: "260, 55%, 48%", keywords: ["direction of country", "right direction"] },
+  { label: "Economy", icon: DollarSign, color: "150, 55%, 45%", keywords: ["economy", "economic confidence", "trump economy handling"] },
+  { label: "Cost of Living", icon: Banknote, color: "30, 80%, 48%", keywords: ["cost of living", "inflation concern", "inflation"] },
+  { label: "Iran / Foreign Policy", icon: Globe, color: "25, 90%, 50%", keywords: ["trump iran handling", "iran", "foreign policy"] },
+  { label: "Ukraine / Foreign Aid", icon: Globe, color: "200, 70%, 48%", keywords: ["ukraine", "foreign aid"] },
+  { label: "Immigration", icon: Shield, color: "210, 75%, 50%", keywords: ["immigration"] },
+  { label: "Healthcare", icon: Heart, color: "350, 65%, 50%", keywords: ["healthcare"] },
+  { label: "Social Security / Medicare", icon: Landmark, color: "280, 55%, 50%", keywords: ["social security", "medicare"] },
+  { label: "Education", icon: Award, color: "170, 60%, 42%", keywords: ["education"] },
+  { label: "Climate / Environment", icon: Leaf, color: "120, 55%, 40%", keywords: ["climate", "environment"] },
+  { label: "Abortion / Reproductive Rights", icon: Scale, color: "320, 60%, 50%", keywords: ["abortion", "reproductive"] },
+  { label: "Gun Policy", icon: Crosshair, color: "0, 50%, 45%", keywords: ["gun policy", "gun"] },
+  { label: "National Security", icon: Shield, color: "220, 60%, 45%", keywords: ["national security", "defense"] },
+  { label: "Crime / Public Safety", icon: Shield, color: "15, 70%, 48%", keywords: ["crime", "public safety"] },
+  { label: "Tariffs / Trade", icon: DollarSign, color: "40, 80%, 45%", keywords: ["tariffs", "trade"] },
+  { label: "DOGE", icon: Landmark, color: "45, 70%, 48%", keywords: ["doge"] },
+  { label: "Jobs / Employment", icon: Briefcase, color: "180, 55%, 42%", keywords: ["jobs", "employment"] },
+  { label: "Housing", icon: Home, color: "35, 65%, 45%", keywords: ["housing"] },
+  { label: "Government Spending", icon: Landmark, color: "0, 45%, 55%", keywords: ["government spending", "deficit"] },
+  { label: "Democracy / Rule of Law", icon: Vote, color: "240, 55%, 50%", keywords: ["democracy", "rule of law"] },
+  { label: "Veterans Affairs", icon: Award, color: "160, 50%, 45%", keywords: ["veterans"] },
+  { label: "Tech / AI Policy", icon: Cpu, color: "270, 60%, 52%", keywords: ["tech", "ai policy"] },
+  { label: "Cabinet / Personnel", icon: Users, color: "45, 70%, 48%", keywords: ["hegseth", "rubio", "secretary"] },
 ];
 
 function matchGroup(topic: string): TopicGroup | null {
@@ -175,50 +60,124 @@ function matchGroup(topic: string): TopicGroup | null {
   return TOPIC_GROUPS.find((g) => g.keywords.some((kw) => lower.includes(kw))) ?? null;
 }
 
-// ─── Demographic Breakdown Charts ───────────────────────────────────────────
+// ─── Demographic Breakdown (Real Data) ──────────────────────────────────────
 
-interface DemoSegment { label: string; approve: number; disapprove: number; }
+interface DemoSegment { label: string; approve: number; disapprove: number; count: number; }
 interface DemoCategory { title: string; segments: DemoSegment[]; }
 
-function getDemographicData(topic: string): DemoCategory[] {
-  const hash = topic.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const base = (_h: number, offset: number) => 25 + ((hash + offset * 17) % 30);
-  return [
-    { title: "By Age Group", segments: [
-      { label: "18–29", approve: base(hash, 1), disapprove: 100 - base(hash, 1) - 12 },
-      { label: "30–44", approve: base(hash, 2), disapprove: 100 - base(hash, 2) - 10 },
-      { label: "45–64", approve: base(hash, 3), disapprove: 100 - base(hash, 3) - 8 },
-      { label: "65+", approve: base(hash, 4), disapprove: 100 - base(hash, 4) - 6 },
-    ]},
-    { title: "By Party ID", segments: [
-      { label: "Democrat", approve: Math.max(12, base(hash, 5) - 15), disapprove: Math.min(80, 100 - base(hash, 5) + 5) },
-      { label: "Independent", approve: base(hash, 6), disapprove: 100 - base(hash, 6) - 14 },
-      { label: "Republican", approve: Math.min(75, base(hash, 7) + 20), disapprove: Math.max(12, 100 - base(hash, 7) - 28) },
-    ]},
-    { title: "By Education", segments: [
-      { label: "No College", approve: base(hash, 8) + 5, disapprove: 100 - base(hash, 8) - 15 },
-      { label: "Some College", approve: base(hash, 9), disapprove: 100 - base(hash, 9) - 10 },
-      { label: "College Grad", approve: base(hash, 10) - 3, disapprove: 100 - base(hash, 10) + 1 },
-      { label: "Postgrad", approve: base(hash, 11) - 6, disapprove: 100 - base(hash, 11) + 4 },
-    ]},
-    { title: "By Race / Ethnicity", segments: [
-      { label: "White", approve: base(hash, 12) + 5, disapprove: 100 - base(hash, 12) - 12 },
-      { label: "Black", approve: base(hash, 13) - 10, disapprove: 100 - base(hash, 13) + 5 },
-      { label: "Hispanic", approve: base(hash, 14) - 3, disapprove: 100 - base(hash, 14) + 1 },
-      { label: "Asian", approve: base(hash, 15) - 5, disapprove: 100 - base(hash, 15) + 2 },
-    ]},
-  ];
+const DEMO_GROUP_ORDER = ["party", "age", "gender", "race", "education", "region"];
+const DEMO_GROUP_LABELS: Record<string, string> = {
+  party: "By Party ID",
+  age: "By Age Group",
+  gender: "By Gender",
+  race: "By Race / Ethnicity",
+  education: "By Education",
+  region: "By Region",
+};
+
+function getRealDemographicData(allPolls: PollEntry[], topicKeywords: string[]): DemoCategory[] {
+  // Find polls matching topic keywords that have demographic crosstab data
+  const matchingPolls = allPolls.filter((p) => {
+    const rd = p.raw_data as any;
+    if (!rd?.group_type || !rd?.demographic) return false;
+    const lower = p.candidate_or_topic.toLowerCase();
+    return topicKeywords.some((kw) => lower.includes(kw));
+  });
+
+  // Also include approval polls with demographics as fallback
+  const approvalDemoPolls = allPolls.filter((p) => {
+    const rd = p.raw_data as any;
+    return rd?.group_type && rd?.demographic && p.poll_type === "approval";
+  });
+
+  const demoPolls = matchingPolls.length > 0 ? matchingPolls : approvalDemoPolls;
+
+  if (demoPolls.length === 0) return [];
+
+  // Aggregate by group_type -> demographic
+  const grouped = new Map<string, Map<string, { totalApprove: number; totalDisapprove: number; count: number }>>();
+  demoPolls.forEach((p) => {
+    const rd = p.raw_data as any;
+    const groupType = rd.group_type as string;
+    const demographic = rd.demographic as string;
+    if (!grouped.has(groupType)) grouped.set(groupType, new Map());
+    const group = grouped.get(groupType)!;
+    if (!group.has(demographic)) group.set(demographic, { totalApprove: 0, totalDisapprove: 0, count: 0 });
+    const entry = group.get(demographic)!;
+    entry.totalApprove += p.approve_pct ?? p.favor_pct ?? 0;
+    entry.totalDisapprove += p.disapprove_pct ?? p.oppose_pct ?? 0;
+    entry.count += 1;
+  });
+
+  const categories: DemoCategory[] = [];
+  DEMO_GROUP_ORDER.forEach((groupType) => {
+    const demos = grouped.get(groupType);
+    if (!demos) return;
+    const segments: DemoSegment[] = [];
+    demos.forEach((val, demo) => {
+      segments.push({
+        label: demo,
+        approve: Math.round(val.totalApprove / val.count),
+        disapprove: Math.round(val.totalDisapprove / val.count),
+        count: val.count,
+      });
+    });
+    segments.sort((a, b) => (b.approve - b.disapprove) - (a.approve - a.disapprove));
+    categories.push({
+      title: DEMO_GROUP_LABELS[groupType] || groupType,
+      segments,
+    });
+  });
+
+  return categories;
 }
 
-function DemographicBreakdown({ group, label }: { group: TopicGroup; label: string }) {
+function DemographicBreakdown({ group, label, allPolls, onSelectPoll }: {
+  group: TopicGroup;
+  label: string;
+  allPolls: PollEntry[];
+  onSelectPoll?: (poll: PollEntry) => void;
+}) {
   const { ref, inView } = useInView();
-  const demos = useMemo(() => getDemographicData(label), [label]);
+  const demos = useMemo(() => getRealDemographicData(allPolls, group.keywords), [allPolls, group.keywords]);
+
+  // Count unique sources used
+  const sourceCount = useMemo(() => {
+    const sources = new Set<string>();
+    allPolls.forEach((p) => {
+      const rd = p.raw_data as any;
+      if (rd?.group_type && rd?.demographic) sources.add(p.source);
+    });
+    return sources.size;
+  }, [allPolls]);
+
+  if (demos.length === 0) return null;
+
   return (
     <div ref={ref} className="px-3 pb-3">
       <div className="win98-sunken overflow-hidden">
         <div className="px-3 py-2 border-b border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))] flex items-center gap-2" style={{ backgroundColor: `hsl(${group.color} / 0.06)` }}>
           <Users className="h-4 w-4" />
           <span className="text-sm font-bold text-foreground">{label} — Demographic Breakdown</span>
+          {onSelectPoll && (
+            <button
+              className="ml-auto win98-button text-[9px] flex items-center gap-1"
+              onClick={() => {
+                // Open the latest poll with demographic data for this topic
+                const demoPoll = allPolls.find((p) => {
+                  const rd = p.raw_data as any;
+                  return rd?.group_type && p.poll_type === "issue" && group.keywords.some((kw) => p.candidate_or_topic.toLowerCase().includes(kw));
+                }) || allPolls.find((p) => {
+                  const rd = p.raw_data as any;
+                  return rd?.group_type && p.poll_type === "approval";
+                });
+                if (demoPoll) onSelectPoll(demoPoll);
+              }}
+            >
+              <Maximize2 className="h-3 w-3" />
+              Detail
+            </button>
+          )}
         </div>
         <div className="grid gap-0 sm:grid-cols-2">
           {demos.map((cat, catIdx) => (
@@ -237,6 +196,7 @@ function DemographicBreakdown({ group, label }: { group: TopicGroup; label: stri
                         <span className="text-[10px] text-muted-foreground">
                           <span style={{ color: "hsl(150, 55%, 45%)" }}>{seg.approve}%</span>{" / "}
                           <span style={{ color: "hsl(0, 65%, 50%)" }}>{seg.disapprove}%</span>
+                          {seg.count > 1 && <span className="ml-1 text-muted-foreground/60">({seg.count} polls)</span>}
                         </span>
                       </div>
                       <div className="flex h-4 w-full overflow-hidden rounded-md bg-muted">
@@ -251,7 +211,9 @@ function DemographicBreakdown({ group, label }: { group: TopicGroup; label: stri
           ))}
         </div>
         <div className="px-3 py-1.5 border-t border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))]">
-          <p className="text-[9px] text-muted-foreground">Demographic cross-tabs aggregated from Pew Research, Gallup, YouGov, and AP-NORC surveys.</p>
+          <p className="text-[9px] text-muted-foreground">
+            Demographic cross-tabs aggregated from {sourceCount} source{sourceCount !== 1 ? "s" : ""} with crosstab data (AP-NORC, Emerson, Fox News, Quinnipiac, and more).
+          </p>
         </div>
       </div>
     </div>
@@ -262,9 +224,10 @@ function DemographicBreakdown({ group, label }: { group: TopicGroup; label: stri
 
 interface IssuePollingProps {
   polls: PollEntry[];
+  onSelectPoll?: (poll: PollEntry) => void;
 }
 
-export default function IssuePollingSection({ polls }: IssuePollingProps) {
+export default function IssuePollingSection({ polls, onSelectPoll }: IssuePollingProps) {
   const { ref, inView } = useInView();
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
@@ -285,12 +248,11 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
       if (!map.has(g.label)) map.set(g.label, { group: g, polls: [] });
       map.get(g.label)!.polls.push(p);
     });
-    // Sort each group's polls by date desc
     map.forEach((v) => v.polls.sort((a, b) => b.date_conducted.localeCompare(a.date_conducted)));
     return map;
   }, [issuePolls]);
 
-  // Summary stats per group (average across latest per source)
+  // Summary stats per group
   const summaries = useMemo(() => {
     return Array.from(grouped.entries()).map(([label, { group, polls: gPolls }]) => {
       const bySource = new Map<string, PollEntry>();
@@ -370,7 +332,7 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
       {/* Summary cards grid */}
       <div className="px-3 py-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {(selectedGroup ? summaries.filter((s) => s.label === selectedGroup) : summaries).map(
-          ({ label, group, avgApprove, avgDisapprove, margin, latest }, idx) => {
+          ({ label, group, avgApprove, avgDisapprove, margin, latest, polls: gPolls }, idx) => {
             const Icon = group.icon;
             const MarginIcon = margin > 0 ? TrendingUp : margin < 0 ? TrendingDown : Minus;
             return (
@@ -395,6 +357,18 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
                     <Icon className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-bold text-foreground">{label}</span>
+                  {onSelectPoll && (
+                    <button
+                      className="ml-auto p-1 rounded hover:bg-accent transition-colors"
+                      title="Open detail view"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (gPolls[0]) onSelectPoll(gPolls[0]);
+                      }}
+                    >
+                      <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Horizontal bar */}
@@ -466,7 +440,11 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
                     const src = getSourceInfo(p.source);
                     const m = p.margin;
                     return (
-                      <tr key={p.id} className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] transition-colors">
+                      <tr
+                        key={p.id}
+                        className="border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] transition-colors cursor-pointer"
+                        onClick={() => onSelectPoll?.(p)}
+                      >
                         <td className="py-2 px-4">
                           <div className="flex items-center gap-2">
                             <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `hsl(${src.color})` }} />
@@ -509,8 +487,8 @@ export default function IssuePollingSection({ polls }: IssuePollingProps) {
         </div>
       )}
 
-      {/* Demographic Breakdown */}
-      {active && <DemographicBreakdown group={active.group} label={active.label} />}
+      {/* Demographic Breakdown — now using real data */}
+      {active && <DemographicBreakdown group={active.group} label={active.label} allPolls={polls} onSelectPoll={onSelectPoll} />}
 
       <div className="px-3 pb-3 flex items-center gap-4 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1">
