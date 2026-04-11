@@ -1992,6 +1992,13 @@ export function PollingSection() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [sortCol, setSortCol] = useState<string>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [tableSearch, setTableSearch] = useState("");
+  const [colFilterSource, setColFilterSource] = useState("all");
+  const [colFilterTopic, setColFilterTopic] = useState("all");
+  const [colFilterType, setColFilterType] = useState("all");
+  const [colFilterMethod, setColFilterMethod] = useState("all");
+  const [colFilterDateFrom, setColFilterDateFrom] = useState("");
+  const [colFilterDateTo, setColFilterDateTo] = useState("");
   const [selectedPoll, setSelectedPoll] = useState<PollEntry | null>(null);
   const [activeTab, setActiveTab] = useState<"polling" | "markets" | "finance">("polling");
 
