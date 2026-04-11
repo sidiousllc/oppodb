@@ -1379,7 +1379,14 @@ function DemographicBreakdownChart({ polls, onSelectPoll }: { polls: PollEntry[]
                 return (
                   <div
                     key={entry.demographic}
-                    className="transition-all duration-500"
+                    className="transition-all duration-500 cursor-pointer hover:bg-muted/30 rounded px-1 -mx-1"
+                    onClick={() => {
+                      const demoPoll = filteredPolls.find((p) => {
+                        const rd = p.raw_data as any;
+                        return rd?.group_type === activeGroup && rd?.demographic === entry.demographic;
+                      });
+                      if (demoPoll && onSelectPoll) onSelectPoll(demoPoll);
+                    }}
                     style={{
                       opacity: inView ? 1 : 0,
                       transform: inView ? "translateX(0)" : "translateX(-20px)",
