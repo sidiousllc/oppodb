@@ -54,8 +54,8 @@ function getCSSVar(name: string): string {
 }
 
 function parseHSL(val: string): [number, number, number] {
-  const parts = val.split(/[\s,]+/).map(Number);
-  if (parts.length >= 3) return hslToRgb(parts[0], parts[1], parts[2]);
+  const parts = val.replace(/%/g, "").split(/[\s,]+/).map(Number);
+  if (parts.length >= 3 && parts.every(n => !isNaN(n))) return hslToRgb(parts[0], parts[1], parts[2]);
   return [128, 128, 128];
 }
 
