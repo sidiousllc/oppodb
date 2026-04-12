@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { applyPdfBranding } from "./pdfBranding";
 
 interface ElectionCandidate {
   candidate_name: string;
@@ -102,6 +103,7 @@ export function exportElectionResultsPDF(
     );
   }
 
+  applyPdfBranding(doc);
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40);
   doc.save(`${slug}-elections.pdf`);
 }

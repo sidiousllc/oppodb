@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { type DistrictProfile } from "@/data/districtIntel";
 import { type CookRating } from "@/data/cookRatings";
+import { applyPdfBranding } from "./pdfBranding";
 
 export function exportDistrictPDF(district: DistrictProfile, cookRating?: CookRating | null) {
   const doc = new jsPDF();
@@ -124,5 +125,6 @@ export function exportDistrictPDF(district: DistrictProfile, cookRating?: CookRa
     });
   }
 
+  applyPdfBranding(doc);
   doc.save(`${district.district_id.toLowerCase().replace(/\s+/g, "-")}.pdf`);
 }

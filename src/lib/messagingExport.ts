@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { applyPdfBranding } from "./pdfBranding";
 import autoTable from "jspdf-autotable";
 
 interface MessagingExportItem {
@@ -445,6 +446,7 @@ export function exportMessagingPDF(item: MessagingExportItem) {
     doc.text(`Page ${i} of ${totalPages}`, pw - margin - 20, ph - 8);
   }
 
+  applyPdfBranding(doc);
   const slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 50);
   doc.save(`${slug}.pdf`);
 }
