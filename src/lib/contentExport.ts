@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { applyPdfBranding } from "./pdfBranding";
 
 interface ExportOptions {
   title: string;
@@ -164,6 +165,7 @@ export function exportContentPDF({ title, subtitle, tag, content, section }: Exp
     y += wrapped.length * 4.5 + 2;
   }
 
+  applyPdfBranding(doc);
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40);
   doc.save(`${slug}.pdf`);
 }

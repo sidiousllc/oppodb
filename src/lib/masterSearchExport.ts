@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { applyPdfBranding } from "./pdfBranding";
 
 interface ExportGroup {
   label: string;
@@ -76,6 +77,7 @@ export function exportSearchPDF(query: string, groups: ExportGroup[]) {
     y = (doc as any).lastAutoTable?.finalY + 20 || y + 40;
   }
 
+  applyPdfBranding(doc);
   doc.save(`search-results-${slugify(query)}.pdf`);
 }
 

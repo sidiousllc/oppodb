@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { getSourceInfo, POLLING_SOURCES, POLL_TYPES, type PollEntry } from "@/data/pollingData";
+import { applyPdfBranding } from "./pdfBranding";
 
 // ─── Theme colors (Win98-inspired) ──────────────────────────────────────────
 
@@ -998,5 +999,6 @@ export function exportPollingPDF(polls: PollEntry[], filename = "polling-report"
     addPageFooter(doc, i, totalPages);
   }
 
+  applyPdfBranding(doc);
   doc.save(`${filename}-${new Date().toISOString().split("T")[0]}.pdf`);
 }

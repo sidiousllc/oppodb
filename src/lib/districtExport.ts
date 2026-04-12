@@ -2,6 +2,7 @@ import { type DistrictProfile } from "@/data/districtIntel";
 import { getCookRating } from "@/data/cookRatings";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { applyPdfBranding } from "./pdfBranding";
 
 type MetricDef = {
   key: keyof DistrictProfile;
@@ -205,6 +206,7 @@ export function exportPDF(selected: DistrictProfile[]) {
     margin: { left: 14 },
   });
 
+  applyPdfBranding(doc);
   doc.save(`district-comparison-${Date.now()}.pdf`);
 }
 

@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { type StateLegislativeProfile } from "@/data/stateLegislativeIntel";
+import { applyPdfBranding } from "./pdfBranding";
 
 export function exportStateLegPDF(district: StateLegislativeProfile) {
   const doc = new jsPDF();
@@ -104,5 +105,6 @@ export function exportStateLegPDF(district: StateLegislativeProfile) {
   }
 
   const slug = `${district.state_abbr}-${label}-${district.district_number}`.toLowerCase();
+  applyPdfBranding(doc);
   doc.save(`${slug}.pdf`);
 }
