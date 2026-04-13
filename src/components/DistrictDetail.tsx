@@ -38,6 +38,7 @@ import {
   Shield,
   Globe,
   FileText,
+  Landmark,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { exportDistrictPDF } from "@/lib/districtDetailExport";
