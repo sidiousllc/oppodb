@@ -69,7 +69,9 @@ function ArticleDetailWindow({
         if (error || !data?.success) {
           if (!cached) setScrapeError("Could not load full article.");
         } else {
-          const md = data.markdown || "No content extracted.";
+          const md = data.markdown && data.markdown.trim().length > 0
+            ? data.markdown
+            : "Could not extract article content. Try opening the original link.";
           setContent(md);
           // Cache for offline use
           try {
