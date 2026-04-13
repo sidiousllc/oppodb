@@ -3,6 +3,39 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/** Strip non-article noise from markdown output */
+function cleanMarkdown(md: string): string {
+  const lines = md.split("\n");
+  const cleaned: string[] = [];
+  const noisePatterns = [
+    /^#{1,3}\s*(menu|navigation|nav|footer|sidebar|advertisement|cookie|subscribe|newsletter|sign up|log in|search|follow us|share this|related articles|trending|most read|popular|comments|leave a reply)/i,
+    /^\[?(menu|skip to|sign in|log in|subscribe|newsletter|cookie|accept|reject|privacy policy|terms of service|advertise|about us|contact us|careers)\]?/i,
+    /^(advertisement|sponsored|ad|promo|©|copyright|\|.*\|.*\|)/i,
+    /^\s*(\*\s*){3,}/, // decorative dividers of just asterisks
+  ];
+  let skipBlock = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Skip lines matching noise patterns
+    if (noisePatterns.some((p) => p.test(trimmed))) {
+      skipBlock = true;
+      continue;
+    }
+    // Resume on next heading that isn't noise
+    if (skipBlock && trimmed.startsWith("#")) {
+      skipBlock = false;
+    }
+    if (skipBlock && trimmed.length > 0 && trimmed.length < 60) continue;
+    if (skipBlock && trimmed.length === 0) { skipBlock = false; continue; }
+    cleaned.push(line);
+  }
+  // Remove trailing short lines (often footer fragments)
+  while (cleaned.length > 0 && cleaned[cleaned.length - 1].trim().length < 30 && !cleaned[cleaned.length - 1].trim().startsWith("#")) {
+    cleaned.pop();
+  }
+  return cleaned.join("\n").trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
