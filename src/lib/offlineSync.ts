@@ -185,12 +185,25 @@ export async function getOfflineData<T = Record<string, unknown>>(table: string)
   if (navigator.onLine) {
     try {
       const config = SYNC_TABLES.find((t) => t.table === table);
-      const { data, error } = await (supabase as any)
-        .from(table)
-        .select(config?.select || "*")
-        .order(config?.orderBy || "id")
-        .limit(1000);
-      if (!error && data) return data as T[];
+      const selectStr = config?.select || "*";
+      const orderStr = config?.orderBy || "id";
+      const allData: T[] = [];
+      let offset = 0;
+      const pageSize = 1000;
+
+      while (true) {
+        const { data, error } = await (supabase as any)
+          .from(table)
+          .select(selectStr)
+          .order(orderStr)
+          .range(offset, offset + pageSize - 1);
+        if (error || !data || data.length === 0) break;
+        allData.push(...(data as T[]));
+        if (data.length < pageSize) break;
+        offset += pageSize;
+      }
+
+      if (allData.length > 0) return allData;
     } catch {
       // Fall through to offline
     }
