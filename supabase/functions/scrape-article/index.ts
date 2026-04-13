@@ -3,6 +3,39 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/** Strip non-article noise from markdown output */
+function cleanMarkdown(md: string): string {
+  const lines = md.split("\n");
+  const cleaned: string[] = [];
+  const noisePatterns = [
+    /^#{1,3}\s*(menu|navigation|nav|footer|sidebar|advertisement|cookie|subscribe|newsletter|sign up|log in|search|follow us|share this|related articles|trending|most read|popular|comments|leave a reply)/i,
+    /^\[?(menu|skip to|sign in|log in|subscribe|newsletter|cookie|accept|reject|privacy policy|terms of service|advertise|about us|contact us|careers)\]?/i,
+    /^(advertisement|sponsored|ad|promo|©|copyright|\|.*\|.*\|)/i,
+    /^\s*(\*\s*){3,}/, // decorative dividers of just asterisks
+  ];
+  let skipBlock = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Skip lines matching noise patterns
+    if (noisePatterns.some((p) => p.test(trimmed))) {
+      skipBlock = true;
+      continue;
+    }
+    // Resume on next heading that isn't noise
+    if (skipBlock && trimmed.startsWith("#")) {
+      skipBlock = false;
+    }
+    if (skipBlock && trimmed.length > 0 && trimmed.length < 60) continue;
+    if (skipBlock && trimmed.length === 0) { skipBlock = false; continue; }
+    cleaned.push(line);
+  }
+  // Remove trailing short lines (often footer fragments)
+  while (cleaned.length > 0 && cleaned[cleaned.length - 1].trim().length < 30 && !cleaned[cleaned.length - 1].trim().startsWith("#")) {
+    cleaned.pop();
+  }
+  return cleaned.join("\n").trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -55,14 +88,15 @@ Deno.serve(async (req) => {
         console.log("Firecrawl status:", response.status, "has markdown:", !!(data?.data?.markdown));
 
         if (response.ok) {
-          const markdown = data?.data?.markdown || data?.markdown || "";
+          let markdown = data?.data?.markdown || data?.markdown || "";
+          // Strip navigation, ads, cookie banners, and non-article noise
+          markdown = cleanMarkdown(markdown);
           if (markdown.length > 20) {
             return new Response(
               JSON.stringify({ success: true, markdown }),
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           }
-          // If Firecrawl returned empty/short content, fall through to manual scraping
           console.log("Firecrawl returned insufficient content, falling back to manual scrape");
         } else {
           console.log("Firecrawl error:", data?.error || response.status);
@@ -99,6 +133,10 @@ Deno.serve(async (req) => {
       if (mainMatch) contentHtml = mainMatch[1];
     }
 
+    // Strip nav, header, footer, aside, and ad-related elements before extraction
+    contentHtml = contentHtml.replace(/<(nav|header|footer|aside|form|iframe|script|style|noscript)[^>]*>[\s\S]*?<\/\1>/gi, "");
+    contentHtml = contentHtml.replace(/<div[^>]*class="[^"]*(?:ad-|advertisement|sidebar|nav-|menu|cookie|banner|popup|modal|newsletter|signup)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
+
     // Extract text from paragraphs, headings, and list items
     const blocks: string[] = [];
     const blockRegex = /<(p|h[1-6]|li)[^>]*>([\s\S]*?)<\/\1>/gi;
@@ -117,9 +155,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    const markdown = blocks.length > 0
+    const rawMarkdown = blocks.length > 0
       ? (title ? `# ${title}\n\n` : "") + blocks.join("\n\n")
       : "Could not extract article content. Try opening the original link.";
+    const markdown = cleanMarkdown(rawMarkdown);
 
     console.log("Manual scrape extracted", blocks.length, "blocks from", resolvedUrl);
 
