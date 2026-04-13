@@ -155,9 +155,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    const markdown = blocks.length > 0
+    const rawMarkdown = blocks.length > 0
       ? (title ? `# ${title}\n\n` : "") + blocks.join("\n\n")
       : "Could not extract article content. Try opening the original link.";
+    const markdown = cleanMarkdown(rawMarkdown);
 
     console.log("Manual scrape extracted", blocks.length, "blocks from", resolvedUrl);
 
