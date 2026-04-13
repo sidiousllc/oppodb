@@ -209,7 +209,8 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             return issueSet.has(al) || [...issueSet].some(i => al.includes(i) || i.includes(al));
           })
         );
-        setMessagingItems(matched.slice(0, 10));
+        // If no direct match, show the most recent reports as general guidance
+        setMessagingItems(matched.length > 0 ? matched.slice(0, 10) : data.slice(0, 6));
       });
 
     // Load narrative reports
