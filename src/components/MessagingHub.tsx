@@ -181,6 +181,8 @@ export function MessagingHub() {
 
   /* ── List View ────────────────────────────────────── */
   return (
+    <>
+    {detailWindow}
     <div className="space-y-3">
       <div className="win98-sunken bg-[hsl(var(--win98-light))] px-3 py-2">
         <div className="flex items-center justify-between">
