@@ -602,6 +602,76 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    if (dbResults.intelBriefings.length > 0) {
+      groups.push({
+        key: "intel-briefings",
+        label: "Intel Briefings",
+        icon: <Newspaper className="h-3.5 w-3.5" />,
+        section: "intelhub",
+        results: dbResults.intelBriefings.map((b: any) => ({
+          id: b.id,
+          title: b.title,
+          subtitle: `${b.source_name} • ${b.scope} • ${b.category} • ${b.published_at ? new Date(b.published_at).toLocaleDateString() : ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.congressCommittees.length > 0) {
+      groups.push({
+        key: "congress-committees",
+        label: "Congress Committees",
+        icon: <Building2 className="h-3.5 w-3.5" />,
+        section: "leghub",
+        results: dbResults.congressCommittees.map((c: any) => ({
+          id: c.id,
+          title: c.name,
+          subtitle: `${c.chamber} • ${c.system_code}`,
+        })),
+      });
+    }
+
+    if (dbResults.congressVotes.length > 0) {
+      groups.push({
+        key: "congress-votes",
+        label: "Congress Votes",
+        icon: <Gavel className="h-3.5 w-3.5" />,
+        section: "leghub",
+        results: dbResults.congressVotes.map((v: any) => ({
+          id: v.id,
+          title: v.question || v.bill_id || v.vote_id,
+          subtitle: `${v.chamber} • ${v.vote_date || ""} • ${v.result || ""} • Yea: ${v.yea_total || 0} Nay: ${v.nay_total || 0}`,
+        })),
+      });
+    }
+
+    if (dbResults.stateLegElections.length > 0) {
+      groups.push({
+        key: "state-leg-elections",
+        label: "State Leg Elections",
+        icon: <Vote className="h-3.5 w-3.5" />,
+        section: "leghub",
+        results: dbResults.stateLegElections.map((e: any) => ({
+          id: e.id,
+          title: e.candidate_name,
+          subtitle: `${e.state_abbr} ${e.chamber}-${e.district_number} • ${e.party || ""} • ${e.election_year}${e.is_winner ? " ✓" : ""} • ${e.vote_pct ? `${e.vote_pct}%` : ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.forecastHistory.length > 0) {
+      groups.push({
+        key: "forecast-history",
+        label: "Forecast Rating Changes",
+        icon: <ArrowLeftRight className="h-3.5 w-3.5" />,
+        section: "district-intel",
+        results: dbResults.forecastHistory.map((f: any) => ({
+          id: f.id,
+          title: `${f.state_abbr}-${f.district || "AL"} (${f.source})`,
+          subtitle: `${f.old_rating || "New"} → ${f.new_rating} • ${f.race_type} • ${f.changed_at ? new Date(f.changed_at).toLocaleDateString() : ""}`,
+        })),
+      });
+    }
+
     return groups;
   }, [dbResults]);
 
