@@ -451,6 +451,8 @@ Deno.serve(async (req) => {
           civiqs: civiqsPolls.length,
           national: nationalPolls.length,
           senate: senatePolls.length,
+          governor: governorPolls.length,
+          house: housePolls.length,
           search: searchPolls.length,
         },
       }),
