@@ -6,7 +6,8 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 import { supabase } from "@/integrations/supabase/client";
-import { Vote, ChevronLeft, ChevronRight, Loader2, ExternalLink, ZoomIn, ZoomOut } from "lucide-react";
+import { Vote, ChevronLeft, ChevronRight, Loader2, ExternalLink, ZoomIn, ZoomOut, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
