@@ -370,9 +370,11 @@ export function IntelHub() {
       {/* Briefing List */}
       {loading ? (
         <div className="text-xs text-gray-500 py-8 text-center">Loading intelligence briefings...</div>
-      ) : briefings.length === 0 ? (
+      ) : filteredBriefings.length === 0 ? (
         <div className="text-xs text-gray-500 py-8 text-center">
-          No briefings found for {SCOPE_CONFIG[activeScope].label}. Click "Sync" to fetch latest intelligence.
+          {briefings.length === 0
+            ? `No briefings found for ${SCOPE_CONFIG[activeScope].label}. Click "Sync" to fetch latest intelligence.`
+            : "No briefings match your search/filter criteria."}
         </div>
       ) : (
         <div className="space-y-4">
