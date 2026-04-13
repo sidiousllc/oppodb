@@ -6,7 +6,8 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 import { supabase } from "@/integrations/supabase/client";
-import { Vote, ChevronLeft, ChevronRight, Loader2, ExternalLink, ZoomIn, ZoomOut } from "lucide-react";
+import { Vote, ChevronLeft, ChevronRight, Loader2, ExternalLink, ZoomIn, ZoomOut, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -232,6 +233,7 @@ export function PresidentialCountyMap({ stateAbbr }: PresidentialCountyMapProps)
   const [year, setYear] = useState(2024);
   const [winners, setWinners] = useState<Map<string, CountyWinner>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [tooltip, setTooltip] = useState<{ winner: CountyWinner; x: number; y: number } | null>(null);
   const [zoom, setZoom] = useState(1);
 
@@ -239,13 +241,36 @@ export function PresidentialCountyMap({ stateAbbr }: PresidentialCountyMapProps)
   const center = STATE_CENTERS[stateAbbr] || [-98.5, 39.8];
   const baseZoom = STATE_ZOOMS[stateAbbr] || 5;
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     setLoading(true);
     setTooltip(null);
     fetchCountyResults(stateAbbr, year)
       .then(setWinners)
       .finally(() => setLoading(false));
   }, [stateAbbr, year]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        `mit-election-sync?dataset=president_county&state=${stateAbbr}&min_year=2000`
+      );
+      if (error) {
+        toast.error("Sync failed: " + error.message);
+      } else {
+        toast.success(`Synced ${data?.total_synced || 0} county presidential records for ${stateAbbr}`);
+        loadData();
+      }
+    } catch (e) {
+      toast.error("Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleMouseEnter = useCallback((fips: string, event: React.MouseEvent) => {
     const w = winners.get(fips);
@@ -269,15 +294,25 @@ export function PresidentialCountyMap({ stateAbbr }: PresidentialCountyMapProps)
           <Vote className="h-4 w-4 text-primary" />
           Presidential Results by County
         </h3>
-        <a
-          href="https://electionlab.mit.edu/data"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ExternalLink className="h-3 w-3" />
-          MIT Election Lab
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href="https://electionlab.mit.edu/data"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="h-3 w-3" />
+            MIT Election Lab
+          </a>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing…" : "Sync"}
+          </button>
+        </div>
       </div>
 
       {/* Year selector */}
@@ -325,7 +360,7 @@ export function PresidentialCountyMap({ stateAbbr }: PresidentialCountyMapProps)
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-muted-foreground text-xs">
             <span className="text-3xl mb-2">🗳️</span>
             <p>No county data for {stateAbbr} in {year}.</p>
-            <p className="text-[10px] mt-1">Sync "President (County)" data from the Voter Data → Election History tab.</p>
+            <p className="text-[10px] mt-1">Click "Sync" above to fetch presidential county data from MIT Election Lab.</p>
           </div>
         )}
 

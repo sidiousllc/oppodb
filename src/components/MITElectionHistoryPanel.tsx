@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Vote, Trophy, TrendingUp, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { Vote, Trophy, TrendingUp, ChevronDown, ChevronUp, ExternalLink, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 const PARTY_COLORS: Record<string, string> = {
   DEMOCRAT: "hsl(var(--primary))",
@@ -185,13 +186,14 @@ interface MITElectionHistoryPanelProps {
 export function MITElectionHistoryPanel({ districtId }: MITElectionHistoryPanelProps) {
   const [records, setRecords] = useState<MITRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
   const parts = districtId.split("-");
   const stateAbbr = parts[0] || "";
   const rawDistrict = parts[1] || "0";
   const districtNum = rawDistrict === "AL" ? "0" : rawDistrict;
 
-  useEffect(() => {
+  const fetchData = () => {
     setLoading(true);
     supabase
       .from("mit_election_results")
@@ -208,9 +210,32 @@ export function MITElectionHistoryPanel({ districtId }: MITElectionHistoryPanelP
         setRecords((data || []) as MITRecord[]);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchData();
   }, [stateAbbr, districtNum]);
 
   const cycles = useMemo(() => groupByCycle(records), [records]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        `mit-election-sync?dataset=house&state=${stateAbbr}&min_year=2000`
+      );
+      if (error) {
+        toast.error("Sync failed: " + error.message);
+      } else {
+        toast.success(`Synced ${data?.total_synced || 0} House election records for ${stateAbbr}`);
+        fetchData();
+      }
+    } catch (e) {
+      toast.error("Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -227,38 +252,56 @@ export function MITElectionHistoryPanel({ districtId }: MITElectionHistoryPanelP
     );
   }
 
-  if (cycles.length === 0) return null; // Don't show section if no MIT data
-
   return (
     <div className="rounded-xl border border-border bg-card p-4 mb-6">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
           <Vote className="h-4 w-4 text-primary" />
           Historical Elections (MIT)
-          <span className="text-xs font-normal text-muted-foreground">
-            ({cycles.length} {cycles.length === 1 ? "cycle" : "cycles"})
-          </span>
+          {cycles.length > 0 && (
+            <span className="text-xs font-normal text-muted-foreground">
+              ({cycles.length} {cycles.length === 1 ? "cycle" : "cycles"})
+            </span>
+          )}
         </h3>
-        <a
-          href="https://electionlab.mit.edu/data"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ExternalLink className="h-3 w-3" />
-          MIT Election Lab
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href="https://electionlab.mit.edu/data"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="h-3 w-3" />
+            MIT Election Lab
+          </a>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing…" : "Sync"}
+          </button>
+        </div>
       </div>
 
-      <TrendDots cycles={cycles} />
-      <div className="space-y-3">
-        {cycles.map((cycle) => (
-          <CycleCard key={`${cycle.year}-${cycle.special}`} cycle={cycle} />
-        ))}
-      </div>
-      <p className="text-[10px] text-muted-foreground mt-3 text-center">
-        Source: MIT Election Data + Science Lab via Harvard Dataverse (1976–2024)
-      </p>
+      {cycles.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center py-4">
+          No historical election data available yet. Click "Sync" to fetch data from MIT Election Lab.
+        </p>
+      ) : (
+        <>
+          <TrendDots cycles={cycles} />
+          <div className="space-y-3">
+            {cycles.map((cycle) => (
+              <CycleCard key={`${cycle.year}-${cycle.special}`} cycle={cycle} />
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-3 text-center">
+            Source: MIT Election Data + Science Lab via Harvard Dataverse (1976–2024)
+          </p>
+        </>
+      )}
     </div>
   );
 }
