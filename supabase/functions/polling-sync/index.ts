@@ -417,6 +417,8 @@ Deno.serve(async (req) => {
       civiqsPolls,
       nationalPolls,
       senatePolls,
+      governorPolls,
+      housePolls,
       searchPolls,
     ] = await Promise.all([
       fetch538Polls().catch(e => { console.error("538 failed:", e); return []; }),
@@ -424,15 +426,17 @@ Deno.serve(async (req) => {
       Promise.resolve(getCiviqsPolls()),
       Promise.resolve(getNationalPolls()),
       Promise.resolve(getSenateRacePolls()),
+      Promise.resolve(getGovernorRacePolls()),
+      Promise.resolve(getHouseRacePolls()),
       searchLatestPolls().catch(e => { console.error("Search failed:", e); return []; }),
     ]);
 
     const allPolls = [
       ...polls538, ...rcpPolls, ...civiqsPolls,
-      ...nationalPolls, ...senatePolls, ...searchPolls,
+      ...nationalPolls, ...senatePolls, ...governorPolls, ...housePolls, ...searchPolls,
     ];
 
-    console.log(`538: ${polls538.length}, RCP: ${rcpPolls.length}, Civiqs: ${civiqsPolls.length}, National: ${nationalPolls.length}, Senate: ${senatePolls.length}, Search: ${searchPolls.length}`);
+    console.log(`538: ${polls538.length}, RCP: ${rcpPolls.length}, Civiqs: ${civiqsPolls.length}, National: ${nationalPolls.length}, Senate: ${senatePolls.length}, Governor: ${governorPolls.length}, House: ${housePolls.length}, Search: ${searchPolls.length}`);
 
     const inserted = await upsertPolls(allPolls);
 
