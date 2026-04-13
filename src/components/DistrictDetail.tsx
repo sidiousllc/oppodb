@@ -383,11 +383,11 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
           )}
 
           {/* Top Issues */}
-          {district.top_issues.length > 0 && (
+          {effectiveTopIssues.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6 mb-6">
               <SectionHeader icon={<AlertCircle className="h-5 w-5 text-accent" />} title="Top Issues" subtitle="Key voter concerns in this district" />
               <div className="space-y-3">
-                {district.top_issues.map((issue, i) => (
+                {effectiveTopIssues.map((issue, i) => (
                   <div key={issue} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">{i + 1}</span>
                     <span className="text-sm font-medium text-foreground capitalize">{issue}</span>
