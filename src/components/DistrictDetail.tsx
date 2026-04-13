@@ -250,6 +250,11 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
   const [pollingItems, setPollingItems] = useState<PollingItem[]>([]);
   const [intelItems, setIntelItems] = useState<IntelBriefingItem[]>([]);
   const [forecastItems, setForecastItems] = useState<ForecastItem[]>([]);
+  const [districtFinance, setDistrictFinance] = useState<DistrictFinanceItem[]>([]);
+  const [congressMembers, setCongressMembers] = useState<CongressMemberItem[]>([]);
+  const [congressBills, setCongressBills] = useState<CongressBillItem[]>([]);
+  const [stateLegResults, setStateLegResults] = useState<StateLegElectionItem[]>([]);
+  const [magaFiles, setMagaFiles] = useState<MagaFileItem[]>([]);
   const candidateSlugs = getCandidatesForDistrict(district.district_id);
   const linkedCandidates = candidateSlugs
     .map((slug) => getCandidateBySlug(slug))
