@@ -126,9 +126,45 @@ interface LocalImpact {
   tags: string[];
 }
 
+interface MessagingItem {
+  id: string;
+  title: string;
+  slug: string;
+  source: string;
+  summary: string;
+  issue_areas: string[];
+}
+
+interface NarrativeItem {
+  id: string;
+  name: string;
+  slug: string;
+  tags: string[];
+}
+
+/** Derive top issues from demographics when the DB field is empty */
+function deriveTopIssues(d: DistrictProfile): string[] {
+  const issues: string[] = [];
+  if (d.poverty_rate != null && d.poverty_rate > 15) issues.push("poverty");
+  if (d.unemployment_rate != null && d.unemployment_rate > 6) issues.push("jobs");
+  if (d.uninsured_pct != null && d.uninsured_pct > 10) issues.push("healthcare");
+  if (d.median_home_value != null && d.median_income != null && d.median_home_value / d.median_income > 5) issues.push("housing costs");
+  if (d.education_bachelor_pct != null && d.education_bachelor_pct < 20) issues.push("education");
+  if (d.foreign_born_pct != null && d.foreign_born_pct > 15) issues.push("immigration");
+  if (d.veteran_pct != null && d.veteran_pct > 10) issues.push("veterans");
+  if (d.median_income != null && d.median_income < 45000) issues.push("income inequality");
+  if (d.owner_occupied_pct != null && d.owner_occupied_pct < 45) issues.push("housing");
+  if (d.median_rent != null && d.median_income != null && (d.median_rent * 12) / d.median_income > 0.3) issues.push("cost of living");
+  // Always include economy as a baseline
+  if (issues.length === 0) issues.push("economy", "healthcare", "education");
+  return issues.slice(0, 6);
+}
+
 export function DistrictDetail({ district, onBack, onSelectCandidate }: DistrictDetailProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [localImpacts, setLocalImpacts] = useState<LocalImpact[]>([]);
+  const [messagingItems, setMessagingItems] = useState<MessagingItem[]>([]);
+  const [narrativeItems, setNarrativeItems] = useState<NarrativeItem[]>([]);
   const candidateSlugs = getCandidatesForDistrict(district.district_id);
   const linkedCandidates = candidateSlugs
     .map((slug) => getCandidateBySlug(slug))
@@ -137,21 +173,57 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
   const cookRating = getCookRating(district.district_id);
   const stateAbbr = district.district_id.split("-")[0];
 
+  // Use DB top_issues or derive from demographics
+  const effectiveTopIssues = district.top_issues.length > 0 ? district.top_issues : deriveTopIssues(district);
+
   const fmt = (n: number | null | undefined) => n != null ? n.toLocaleString() : null;
   const pct = (n: number | null | undefined) => n != null ? `${n}%` : null;
   const dollar = (n: number | null | undefined) => n != null ? `$${n.toLocaleString()}` : null;
 
-  // Load local impacts for the state
+  // Load local impacts, messaging guidance, and narrative reports
   useEffect(() => {
+    const stateName = stateAbbrToName(stateAbbr);
+
     supabase
       .from("local_impacts")
       .select("slug, state, summary, tags")
-      .eq("state", stateAbbrToName(stateAbbr))
+      .eq("state", stateName)
       .limit(20)
+      .then(({ data }) => { if (data) setLocalImpacts(data); });
+
+    // Load messaging guidance matching district issues
+    supabase
+      .from("messaging_guidance")
+      .select("id, title, slug, source, summary, issue_areas")
+      .order("published_date", { ascending: false })
+      .limit(200)
       .then(({ data }) => {
-        if (data) setLocalImpacts(data);
+        if (!data) return;
+        const issueSet = new Set(effectiveTopIssues.map(i => i.toLowerCase()));
+        const matched = data.filter(m =>
+          m.issue_areas.some(a => {
+            const al = a.toLowerCase();
+            return issueSet.has(al) || [...issueSet].some(i => al.includes(i) || i.includes(al));
+          })
+        );
+        setMessagingItems(matched.slice(0, 10));
       });
-  }, [stateAbbr]);
+
+    // Load narrative reports
+    supabase
+      .from("narrative_reports")
+      .select("id, name, slug, tags")
+      .limit(100)
+      .then(({ data }) => {
+        if (!data) return;
+        const issueSet = new Set(effectiveTopIssues.map(i => i.toLowerCase()));
+        const matched = data.filter(n => {
+          const nameLower = n.name.toLowerCase();
+          return [...issueSet].some(i => nameLower.includes(i) || n.tags.some(t => t.toLowerCase().includes(i)));
+        });
+        setNarrativeItems(matched.length > 0 ? matched.slice(0, 8) : data.slice(0, 5));
+      });
+  }, [stateAbbr, effectiveTopIssues]);
 
   // Compute additional derived stats
   const renterPct = district.owner_occupied_pct != null ? Math.round((100 - district.owner_occupied_pct) * 10) / 10 : null;
