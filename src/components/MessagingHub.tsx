@@ -102,20 +102,17 @@ export function MessagingHub() {
     return results;
   }, [items, search, selectedTag, partyFilter]);
 
-  /* ── Detail View ──────────────────────────────────── */
-  if (selectedItem) {
+  /* ── Detail Window ──────────────────────────────────── */
+  const detailWindow = selectedItem ? (() => {
     const party = getPartyBadge(selectedItem.issue_areas || []);
     return (
-      <div className="animate-fade-in">
-        <button
-          onClick={() => setSelectedItem(null)}
-          className="flex items-center gap-1.5 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] mb-4 transition-colors"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to Messaging Hub
-        </button>
-
-        <div className="candidate-card mb-4">
+      <Win98Window
+        title={`📢 ${selectedItem.title}`}
+        onClose={() => setSelectedItem(null)}
+        defaultSize={{ width: 620, height: 520 }}
+        defaultPosition={{ x: 60, y: 30 }}
+      >
+        <div className="p-4 space-y-3 overflow-auto h-full">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1">
@@ -135,7 +132,7 @@ export function MessagingHub() {
               </div>
               <div className="flex flex-wrap gap-1 mt-2">
                 {selectedItem.issue_areas?.filter(t => !["Democrat","Republican","Independent"].includes(t)).map(tag => (
-                  <span key={tag} className="text-[9px] px-1.5 py-0.5 bg-[hsl(var(--win98-light))] border border-[hsl(var(--win98-shadow))]">
+                  <span key={tag} className="text-[8px] px-1.5 py-0.5 bg-[hsl(var(--win98-light))] border border-[hsl(var(--win98-shadow))]">
                     {tag}
                   </span>
                 ))}
@@ -162,25 +159,25 @@ export function MessagingHub() {
               )}
             </div>
           </div>
-        </div>
 
-        <div className="candidate-card">
-          {selectedItem.summary && (
-            <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-3 italic">{selectedItem.summary}</p>
-          )}
-          {selectedItem.content ? (
-            <div className="prose-research text-[11px]">
-              <ReactMarkdown>{selectedItem.content}</ReactMarkdown>
-            </div>
-          ) : (
-            <p className="text-[10px] text-[hsl(var(--muted-foreground))] italic">
-              Full content not yet available. Visit the source link for the complete report.
-            </p>
-          )}
+          <div className="border-t border-[hsl(var(--win98-shadow))] pt-3">
+            {selectedItem.summary && (
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-3 italic">{selectedItem.summary}</p>
+            )}
+            {selectedItem.content ? (
+              <div className="prose-research text-[11px]">
+                <ReactMarkdown>{selectedItem.content}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-[10px] text-[hsl(var(--muted-foreground))] italic">
+                Full content not yet available. Visit the source link for the complete report.
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      </Win98Window>
     );
-  }
+  })() : null;
 
   /* ── List View ────────────────────────────────────── */
   return (
