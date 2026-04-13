@@ -272,6 +272,94 @@ export function IntelHub() {
         </button>
       </div>
 
+      {/* Search & Filters */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1">
+          <div className="relative flex-1">
+            <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search articles by title, summary, or source..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-7 pr-7 py-1 text-xs border border-[#808080] bg-white focus:outline-none focus:border-[#000080]"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X size={10} />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`px-2 py-1 text-xs border flex items-center gap-1 ${
+              showFilters || selectedCategory !== "all" || partyLeaning !== "all"
+                ? "bg-[#000080] text-white border-[#000080]"
+                : "bg-[#c0c0c0] text-black border-[#808080] hover:bg-[#d4d4d4]"
+            }`}
+          >
+            <Filter size={12} />
+            Filters
+            {(selectedCategory !== "all" || partyLeaning !== "all") && (
+              <span className="bg-white text-[#000080] text-[9px] px-1 rounded-sm font-bold">
+                {(selectedCategory !== "all" ? 1 : 0) + (partyLeaning !== "all" ? 1 : 0)}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {showFilters && (
+          <div className="border border-[#808080] bg-[#f0f0f0] p-2 space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold text-gray-600 w-12">Topic:</span>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value as Category | "all")}
+                className="text-xs border border-[#808080] bg-white px-1 py-0.5 focus:outline-none"
+              >
+                <option value="all">All Topics</option>
+                {CATEGORY_OPTIONS.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold text-gray-600 w-12">Lean:</span>
+              {(["all", "left", "center", "right"] as PartyLeaning[]).map((lean) => (
+                <button
+                  key={lean}
+                  onClick={() => setPartyLeaning(lean)}
+                  className={`px-2 py-0.5 text-[10px] font-bold border ${
+                    partyLeaning === lean
+                      ? lean === "left" ? "bg-blue-600 text-white border-blue-600"
+                        : lean === "right" ? "bg-red-600 text-white border-red-600"
+                        : lean === "center" ? "bg-purple-600 text-white border-purple-600"
+                        : "bg-[#000080] text-white border-[#000080]"
+                      : "bg-white text-black border-[#808080] hover:bg-[#e8e8e8]"
+                  }`}
+                >
+                  {lean === "all" ? "All" : lean === "left" ? "🔵 Left" : lean === "right" ? "🔴 Right" : "🟣 Center"}
+                </button>
+              ))}
+            </div>
+            {(selectedCategory !== "all" || partyLeaning !== "all") && (
+              <button
+                onClick={() => { setSelectedCategory("all"); setPartyLeaning("all"); }}
+                className="text-[10px] text-[#000080] underline hover:text-blue-700"
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
+        )}
+
+        {(searchQuery || selectedCategory !== "all" || partyLeaning !== "all") && (
+          <div className="text-[10px] text-gray-500">
+            Showing {filteredBriefings.length} of {briefings.length} briefings
+          </div>
+        )}
+      </div>
+
       {lastUpdated && (
         <div className="text-[10px] text-gray-500 flex items-center gap-1">
           <Clock size={10} />
