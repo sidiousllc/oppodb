@@ -101,6 +101,26 @@ export function IntelHub() {
     }
   };
 
+  const handleSelectBriefing = useCallback(async (b: Briefing) => {
+    setSelectedBriefing(b);
+    setFullArticle(null);
+    if (b.source_url) {
+      setLoadingArticle(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("scrape-article", {
+          body: { url: b.source_url },
+        });
+        if (!error && data?.success && data.markdown) {
+          setFullArticle(data.markdown);
+        }
+      } catch (e) {
+        console.error("Failed to scrape article:", e);
+      } finally {
+        setLoadingArticle(false);
+      }
+    }
+  }, []);
+
   const exportPDF = () => {
     const doc = new jsPDF();
     const pw = doc.internal.pageSize.width;
