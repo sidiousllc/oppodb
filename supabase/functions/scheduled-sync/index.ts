@@ -294,7 +294,32 @@ Deno.serve(async (req) => {
 
     results.state_cfb = { states: stateCfbResults };
 
-    // 6. Auto-discover and generate candidate profiles
+    // 6. Prediction markets sync
+    try {
+      const pmRes = await fetch(
+        `${supabaseUrl}/functions/v1/prediction-markets-sync`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseKey}`,
+          },
+          body: "{}",
+        },
+      );
+      const pmData = await pmRes.json();
+      results.prediction_markets = {
+        status: pmRes.ok ? "ok" : "error",
+        total: pmData?.total ?? 0,
+        upserted: pmData?.upserted ?? 0,
+      };
+      console.log(`Prediction markets sync: ${pmData?.upserted ?? 0} upserted`);
+    } catch (e) {
+      results.prediction_markets = { error: e instanceof Error ? e.message : "failed" };
+      console.error("Prediction markets sync error:", e);
+    }
+
+    // 7. Auto-discover and generate candidate profiles
     const CANDIDATES_PER_BATCH = 5;
     try {
       const { data: existingProfiles } = await supabase
