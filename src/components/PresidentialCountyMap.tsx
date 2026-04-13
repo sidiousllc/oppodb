@@ -294,15 +294,25 @@ export function PresidentialCountyMap({ stateAbbr }: PresidentialCountyMapProps)
           <Vote className="h-4 w-4 text-primary" />
           Presidential Results by County
         </h3>
-        <a
-          href="https://electionlab.mit.edu/data"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ExternalLink className="h-3 w-3" />
-          MIT Election Lab
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href="https://electionlab.mit.edu/data"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="h-3 w-3" />
+            MIT Election Lab
+          </a>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing…" : "Sync"}
+          </button>
+        </div>
       </div>
 
       {/* Year selector */}
