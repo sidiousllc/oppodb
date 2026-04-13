@@ -30,6 +30,7 @@ import { PollingSection } from "@/components/PollingSection";
 import { LegHub } from "@/components/LegHub";
 import { OppoHub } from "@/components/OppoHub";
 import { MessagingHub } from "@/components/MessagingHub";
+import { IntelHub } from "@/components/IntelHub";
 
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
@@ -223,6 +224,7 @@ export default function Index() {
     oppohub: candidates.length + localImpactReports.length + narrativeReports.length,
     leghub: stateLegDistricts.length + districts.length,
     polling: pollingCount,
+    intelhub: 0,
     messaging: 0,
     "research-tools": 0,
     "live-elections": 0,
@@ -242,6 +244,7 @@ export default function Index() {
     oppohub: "OppoHub",
     leghub: "LegHub",
     polling: "DataHub",
+    intelhub: "IntelHub",
     messaging: "MessagingHub",
     "research-tools": "Research Tools",
     "live-elections": "Live Elections",
@@ -327,6 +330,9 @@ export default function Index() {
       return <LiveElectionsSection />;
     }
 
+    if (section === "intelhub") {
+      return <IntelHub />;
+    }
 
     if (section === "documentation") {
       return <DocumentationSection />;

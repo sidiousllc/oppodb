@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX idx_intel_briefings_title_source ON public.intel_briefings(title, source_name);
