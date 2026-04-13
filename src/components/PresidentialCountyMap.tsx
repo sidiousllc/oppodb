@@ -360,7 +360,7 @@ export function PresidentialCountyMap({ stateAbbr }: PresidentialCountyMapProps)
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-muted-foreground text-xs">
             <span className="text-3xl mb-2">🗳️</span>
             <p>No county data for {stateAbbr} in {year}.</p>
-            <p className="text-[10px] mt-1">Sync "President (County)" data from the Voter Data → Election History tab.</p>
+            <p className="text-[10px] mt-1">Click "Sync" above to fetch presidential county data from MIT Election Lab.</p>
           </div>
         )}
 
