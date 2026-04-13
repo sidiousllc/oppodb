@@ -37,7 +37,8 @@ interface FECCandidate {
 
 interface FECTotals {
   candidate_id: string;
-  candidate_name: string;
+  candidate_name?: string;
+  name?: string;
   receipts: number;
   disbursements: number;
   cash_on_hand_end_period: number;
