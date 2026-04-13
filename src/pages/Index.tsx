@@ -330,6 +330,9 @@ export default function Index() {
       return <LiveElectionsSection />;
     }
 
+    if (section === "intelhub") {
+      return <IntelHub />;
+    }
 
     if (section === "documentation") {
       return <DocumentationSection />;
