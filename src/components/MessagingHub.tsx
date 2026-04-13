@@ -310,5 +310,6 @@ export function MessagingHub() {
         </>
       )}
     </div>
+    </>
   );
 }
