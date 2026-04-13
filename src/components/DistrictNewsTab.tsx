@@ -9,12 +9,99 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { stateAbbrToName } from "@/lib/stateAbbreviations";
+import ReactMarkdown from "react-markdown";
 
 interface NewsArticle {
   title: string;
   link: string;
   source: string;
   pubDate: string;
+}
+
+function ArticleDetailWindow({
+  article,
+  onClose,
+  formatDate,
+  handlePDF,
+}: {
+  article: NewsArticle;
+  onClose: () => void;
+  formatDate: (raw: string) => string;
+  handlePDF: (a: NewsArticle) => void;
+}) {
+  const [content, setContent] = useState<string | null>(null);
+  const [scraping, setScraping] = useState(true);
+  const [scrapeError, setScrapeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setScraping(true);
+    setScrapeError(null);
+    setContent(null);
+
+    supabase.functions
+      .invoke("scrape-article", { body: { url: article.link } })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data?.success) {
+          setScrapeError("Could not load full article.");
+        } else {
+          setContent(data.markdown || "No content extracted.");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setScrapeError("Could not load full article.");
+      })
+      .finally(() => {
+        if (!cancelled) setScraping(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [article.link]);
+
+  return (
+    <Win98Window
+      title={`📰 ${article.source}`}
+      onClose={onClose}
+      defaultSize={{ width: 620, height: 520 }}
+      defaultPosition={{ x: 60, y: 40 }}
+    >
+      <div className="p-4 space-y-4 overflow-auto h-full">
+        <h2 className="font-display text-lg font-bold text-foreground leading-snug">{article.title}</h2>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="font-semibold text-primary">{article.source}</span>
+          <span>•</span>
+          <span>{formatDate(article.pubDate)}</span>
+        </div>
+        <div className="flex gap-2">
+          <a href={article.link} target="_blank" rel="noopener noreferrer" className="win98-button text-[10px] flex items-center gap-1">
+            <ExternalLink className="h-3 w-3" />
+            Open Original
+          </a>
+          <button onClick={() => handlePDF(article)} className="win98-button text-[10px] flex items-center gap-1">
+            <FileText className="h-3 w-3" />
+            Save as PDF
+          </button>
+        </div>
+        <div className="border-t border-border pt-3">
+          {scraping && (
+            <div className="flex items-center gap-2 text-muted-foreground py-6 justify-center">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-xs">Loading full article…</span>
+            </div>
+          )}
+          {scrapeError && (
+            <p className="text-xs text-muted-foreground italic text-center py-4">{scrapeError}</p>
+          )}
+          {content && (
+            <div className="prose-research prose-sm max-w-none text-sm text-foreground">
+              <ReactMarkdown>{content}</ReactMarkdown>
+            </div>
+          )}
+        </div>
+      </div>
+    </Win98Window>
+  );
 }
 
 interface Props {
@@ -267,36 +354,12 @@ export function DistrictNewsTab({ districtId }: Props) {
       )}
 
       {openArticle && (
-        <Win98Window
-          title={`📰 ${openArticle.source}`}
+        <ArticleDetailWindow
+          article={openArticle}
           onClose={() => setOpenArticle(null)}
-          defaultSize={{ width: 520, height: 420 }}
-          defaultPosition={{ x: 60, y: 40 }}
-        >
-          <div className="p-4 space-y-4 overflow-auto h-full">
-            <h2 className="font-display text-lg font-bold text-foreground leading-snug">{openArticle.title}</h2>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="font-semibold text-primary">{openArticle.source}</span>
-              <span>•</span>
-              <span>{formatDate(openArticle.pubDate)}</span>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <a href={openArticle.link} target="_blank" rel="noopener noreferrer" className="win98-button text-[10px] flex items-center gap-1">
-                <ExternalLink className="h-3 w-3" />
-                Read Full Article
-              </a>
-              <button onClick={() => handlePDF(openArticle)} className="win98-button text-[10px] flex items-center gap-1">
-                <FileText className="h-3 w-3" />
-                Save as PDF
-              </button>
-            </div>
-            <div className="border-t border-border pt-3 mt-3">
-              <p className="text-xs text-muted-foreground italic">
-                Click "Read Full Article" to view the complete story at {openArticle.source}. Use "Save as PDF" to generate a printable version.
-              </p>
-            </div>
-          </div>
-        </Win98Window>
+          formatDate={formatDate}
+          handlePDF={handlePDF}
+        />
       )}
     </>
   );
