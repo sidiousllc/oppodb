@@ -64,8 +64,91 @@ function makeSlug(title: string): string {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 }
 
+/* ── Issue area detection ─────────────────────────────────── */
+
+function detectIssueAreas(text: string, defaultParty: string): string[] {
+  const lower = text.toLowerCase();
+  const areas: string[] = [defaultParty];
+  const keywords: Record<string, string> = {
+    immigration: "Immigration", border: "Border Security", tariff: "Tariffs",
+    trade: "Trade", economy: "Economy", healthcare: "Health Care",
+    "health care": "Health Care", deficit: "Budget", spending: "Budget",
+    election: "Elections", "election integrity": "Election Integrity",
+    "foreign policy": "Foreign Policy", china: "China", fentanyl: "Fentanyl",
+    abortion: "Reproductive Rights", reproductive: "Reproductive Rights",
+    climate: "Climate", energy: "Energy", education: "Education",
+    "ai ": "Technology", "artificial intelligence": "Technology",
+    housing: "Housing", guns: "Gun Policy", "second amendment": "Gun Policy",
+    inflation: "Inflation", crime: "Crime", "social security": "Social Security",
+    medicare: "Medicare", medicaid: "Medicaid", veteran: "Veterans",
+    infrastructure: "Infrastructure", tax: "Tax Policy", democracy: "Democracy",
+    "voting rights": "Voting Rights", ukraine: "Ukraine", israel: "Israel",
+    "student loan": "Student Loans", childcare: "Childcare",
+    opioid: "Opioid Crisis", fentanyl: "Opioid Crisis",
+    labor: "Labor", union: "Labor", "minimum wage": "Labor",
+    "racial justice": "Racial Justice", policing: "Criminal Justice",
+    "criminal justice": "Criminal Justice", prison: "Criminal Justice",
+    environment: "Environment", water: "Environment",
+    "food stamp": "Social Safety Net", snap: "Social Safety Net",
+    "national security": "National Security", terrorism: "National Security",
+    disability: "Disability Rights", "mental health": "Mental Health",
+    rural: "Rural Issues", agriculture: "Agriculture", farming: "Agriculture",
+    internet: "Broadband", broadband: "Broadband",
+    transgender: "LGBTQ+ Rights", lgbtq: "LGBTQ+ Rights",
+    religion: "Religious Liberty", "religious liberty": "Religious Liberty",
+  };
+
+  for (const [keyword, area] of Object.entries(keywords)) {
+    if (lower.includes(keyword) && !areas.includes(area)) {
+      areas.push(area);
+    }
+  }
+  return areas;
+}
+
 /* ── Source scrapers ─────────────────────────────────────── */
 
+// Helper to create a simple search-based scraper
+function makeSearchScraper(
+  siteDomain: string,
+  searchTerms: string,
+  sourceName: string,
+  party: string,
+  researchType: string = "message-guidance",
+  limit: number = 3,
+) {
+  return async (firecrawlKey: string): Promise<ScrapedArticle[]> => {
+    const articles: ScrapedArticle[] = [];
+    try {
+      const results = await firecrawlSearch(
+        `site:${siteDomain} ${searchTerms}`,
+        firecrawlKey,
+        limit,
+      );
+      for (const result of results) {
+        if (result.markdown.length > 100) {
+          articles.push({
+            title: result.title || `${sourceName} Report`,
+            slug: makeSlug(result.title || `${sourceName}-report`),
+            source: sourceName,
+            source_url: result.url,
+            author: sourceName,
+            published_date: null,
+            summary: result.description || result.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
+            content: result.markdown,
+            issue_areas: detectIssueAreas(result.markdown, party),
+            research_type: researchType,
+          });
+        }
+      }
+    } catch (e) {
+      console.error(`Error scraping ${sourceName}:`, e);
+    }
+    return articles;
+  };
+}
+
+// Navigator Research (custom scraper with link crawling)
 async function scrapeNavigator(firecrawlKey: string): Promise<ScrapedArticle[]> {
   const articles: ScrapedArticle[] = [];
   try {
@@ -93,6 +176,7 @@ async function scrapeNavigator(firecrawlKey: string): Promise<ScrapedArticle[]> 
   return articles;
 }
 
+// Heritage Foundation (custom scraper with link crawling)
 async function scrapeHeritage(firecrawlKey: string): Promise<ScrapedArticle[]> {
   const articles: ScrapedArticle[] = [];
   try {
@@ -120,219 +204,44 @@ async function scrapeHeritage(firecrawlKey: string): Promise<ScrapedArticle[]> {
   return articles;
 }
 
-async function scrapeBPC(firecrawlKey: string): Promise<ScrapedArticle[]> {
-  const articles: ScrapedArticle[] = [];
-  try {
-    const results = await firecrawlSearch("site:bipartisanpolicy.org messaging strategy polling guidance", firecrawlKey, 3);
-    for (const result of results) {
-      if (result.markdown.length > 100) {
-        articles.push({
-          title: result.title || "BPC Report", slug: makeSlug(result.title || "bpc-report"),
-          source: "Bipartisan Policy Center", source_url: result.url, author: "BPC Staff",
-          published_date: null, summary: result.description || result.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
-          content: result.markdown, issue_areas: detectIssueAreas(result.markdown, "Independent"),
-          research_type: "message-guidance",
-        });
-      }
-    }
-  } catch (e) { console.error("Error scraping BPC:", e); }
-  return articles;
-}
-
-// New sources
-
-async function scrapeCAP(firecrawlKey: string): Promise<ScrapedArticle[]> {
-  const articles: ScrapedArticle[] = [];
-  try {
-    const results = await firecrawlSearch("site:americanprogress.org messaging framing public opinion polling", firecrawlKey, 3);
-    for (const result of results) {
-      if (result.markdown.length > 100) {
-        articles.push({
-          title: result.title, slug: makeSlug(result.title),
-          source: "Center for American Progress", source_url: result.url, author: "CAP Staff",
-          published_date: null, summary: result.description || result.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
-          content: result.markdown, issue_areas: detectIssueAreas(result.markdown, "Democrat"),
-          research_type: "message-guidance",
-        });
-      }
-    }
-  } catch (e) { console.error("Error scraping CAP:", e); }
-  return articles;
-}
-
-async function scrapeThirdWay(firecrawlKey: string): Promise<ScrapedArticle[]> {
-  const articles: ScrapedArticle[] = [];
-  try {
-    const results = await firecrawlSearch("site:thirdway.org messaging strategy polling memo framing", firecrawlKey, 3);
-    for (const result of results) {
-      if (result.markdown.length > 100) {
-        articles.push({
-          title: result.title, slug: makeSlug(result.title),
-          source: "Third Way", source_url: result.url, author: "Third Way",
-          published_date: null, summary: result.description || result.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
-          content: result.markdown, issue_areas: detectIssueAreas(result.markdown, "Democrat"),
-          research_type: "message-guidance",
-        });
-      }
-    }
-  } catch (e) { console.error("Error scraping Third Way:", e); }
-  return articles;
-}
-
-async function scrapeAEI(firecrawlKey: string): Promise<ScrapedArticle[]> {
-  const articles: ScrapedArticle[] = [];
-  try {
-    const results = await firecrawlSearch("site:aei.org public opinion polling messaging strategy conservative", firecrawlKey, 3);
-    for (const result of results) {
-      if (result.markdown.length > 100) {
-        articles.push({
-          title: result.title, slug: makeSlug(result.title),
-          source: "American Enterprise Institute", source_url: result.url, author: "AEI Staff",
-          published_date: null, summary: result.description || result.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
-          content: result.markdown, issue_areas: detectIssueAreas(result.markdown, "Republican"),
-          research_type: "message-guidance",
-        });
-      }
-    }
-  } catch (e) { console.error("Error scraping AEI:", e); }
-  return articles;
-}
-
-async function scrapeBrookings(firecrawlKey: string): Promise<ScrapedArticle[]> {
-  const articles: ScrapedArticle[] = [];
-  try {
-    const results = await firecrawlSearch("site:brookings.edu public opinion framing messaging polling strategy", firecrawlKey, 3);
-    for (const result of results) {
-      if (result.markdown.length > 100) {
-        articles.push({
-          title: result.title, slug: makeSlug(result.title),
-          source: "Brookings Institution", source_url: result.url, author: "Brookings Staff",
-          published_date: null, summary: result.description || result.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
-          content: result.markdown, issue_areas: detectIssueAreas(result.markdown, "Independent"),
-          research_type: "message-guidance",
-        });
-      }
-    }
-  } catch (e) { console.error("Error scraping Brookings:", e); }
-  return articles;
-}
-
-async function scrapeDataForProgress(firecrawlKey: string): Promise<ScrapedArticle[]> {
-  const articles: ScrapedArticle[] = [];
-  try {
-    const results = await firecrawlSearch("site:dataforprogress.org polling memo messaging framing", firecrawlKey, 3);
-    for (const result of results) {
-      if (result.markdown.length > 100) {
-        articles.push({
-          title: result.title, slug: makeSlug(result.title),
-          source: "Data for Progress", source_url: result.url, author: "DFP Staff",
-          published_date: null, summary: result.description || result.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
-          content: result.markdown, issue_areas: detectIssueAreas(result.markdown, "Democrat"),
-          research_type: "polling-memo",
-        });
-      }
-    }
-  } catch (e) { console.error("Error scraping DFP:", e); }
-  return articles;
-}
-
-async function scrapeNiskanen(firecrawlKey: string): Promise<ScrapedArticle[]> {
-  const articles: ScrapedArticle[] = [];
-  try {
-    const results = await firecrawlSearch("site:niskanencenter.org policy analysis messaging public opinion", firecrawlKey, 2);
-    for (const result of results) {
-      if (result.markdown.length > 100) {
-        articles.push({
-          title: result.title, slug: makeSlug(result.title),
-          source: "Niskanen Center", source_url: result.url, author: "Niskanen Center",
-          published_date: null, summary: result.description || result.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
-          content: result.markdown, issue_areas: detectIssueAreas(result.markdown, "Independent"),
-          research_type: "message-guidance",
-        });
-      }
-    }
-  } catch (e) { console.error("Error scraping Niskanen:", e); }
-  return articles;
-}
-
-async function scrapeNewDem(firecrawlKey: string): Promise<ScrapedArticle[]> {
-  const articles: ScrapedArticle[] = [];
-  try {
-    const results = await firecrawlSearch("site:newdemocratcoalition.house.gov OR site:newdem.org messaging polling strategy", firecrawlKey, 2);
-    for (const result of results) {
-      if (result.markdown.length > 100) {
-        articles.push({
-          title: result.title, slug: makeSlug(result.title),
-          source: "New Democrat Coalition", source_url: result.url, author: "New Dem Coalition",
-          published_date: null, summary: result.description || result.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
-          content: result.markdown, issue_areas: detectIssueAreas(result.markdown, "Democrat"),
-          research_type: "message-guidance",
-        });
-      }
-    }
-  } catch (e) { console.error("Error scraping New Dem:", e); }
-  return articles;
-}
-
-async function scrapeRStreet(firecrawlKey: string): Promise<ScrapedArticle[]> {
-  const articles: ScrapedArticle[] = [];
-  try {
-    const results = await firecrawlSearch("site:rstreet.org policy brief messaging public opinion conservative", firecrawlKey, 2);
-    for (const result of results) {
-      if (result.markdown.length > 100) {
-        articles.push({
-          title: result.title, slug: makeSlug(result.title),
-          source: "R Street Institute", source_url: result.url, author: "R Street",
-          published_date: null, summary: result.description || result.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
-          content: result.markdown, issue_areas: detectIssueAreas(result.markdown, "Republican"),
-          research_type: "message-guidance",
-        });
-      }
-    }
-  } catch (e) { console.error("Error scraping R Street:", e); }
-  return articles;
-}
-
-function detectIssueAreas(text: string, defaultParty: string): string[] {
-  const lower = text.toLowerCase();
-  const areas: string[] = [defaultParty];
-  const keywords: Record<string, string> = {
-    immigration: "Immigration", border: "Border Security", tariff: "Tariffs",
-    trade: "Trade", economy: "Economy", healthcare: "Health Care",
-    "health care": "Health Care", deficit: "Budget", spending: "Budget",
-    election: "Elections", "election integrity": "Election Integrity",
-    "foreign policy": "Foreign Policy", china: "China", fentanyl: "Fentanyl",
-    abortion: "Reproductive Rights", reproductive: "Reproductive Rights",
-    climate: "Climate", energy: "Energy", education: "Education",
-    "ai ": "Technology", "artificial intelligence": "Technology",
-    housing: "Housing", guns: "Gun Policy", "second amendment": "Gun Policy",
-    inflation: "Inflation", crime: "Crime", "social security": "Social Security",
-    medicare: "Medicare", medicaid: "Medicaid", veteran: "Veterans",
-    infrastructure: "Infrastructure", tax: "Tax Policy", democracy: "Democracy",
-    "voting rights": "Voting Rights", ukraine: "Ukraine", israel: "Israel",
-    "student loan": "Student Loans", childcare: "Childcare",
-  };
-
-  for (const [keyword, area] of Object.entries(keywords)) {
-    if (lower.includes(keyword) && !areas.includes(area)) {
-      areas.push(area);
-    }
-  }
-  return areas;
-}
-
 const ALL_SOURCES: Record<string, (key: string) => Promise<ScrapedArticle[]>> = {
+  // Democrat / Left-leaning
   navigator: scrapeNavigator,
+  cap: makeSearchScraper("americanprogress.org", "messaging framing public opinion polling strategy", "Center for American Progress", "Democrat"),
+  thirdway: makeSearchScraper("thirdway.org", "messaging strategy polling memo framing voter", "Third Way", "Democrat"),
+  dfp: makeSearchScraper("dataforprogress.org", "polling memo messaging framing voter opinion", "Data for Progress", "Democrat", "polling-memo"),
+  newdem: makeSearchScraper("newdemocratcoalition.house.gov", "messaging polling strategy economic", "New Democrat Coalition", "Democrat", "message-guidance", 2),
+  democracycorps: makeSearchScraper("democracycorps.com", "polling memo strategy messaging battleground", "Democracy Corps", "Democrat", "polling-memo"),
+  lakoff: makeSearchScraper("georgelakoff.com", "framing messaging moral politics language", "George Lakoff / Framing", "Democrat", "message-guidance", 2),
+  equis: makeSearchScraper("equisresearch.com", "latino polling opinion research voter", "Equis Research", "Democrat", "polling-memo"),
+  catalist: makeSearchScraper("catalist.us", "voter analysis electorate modeling turnout", "Catalist", "Democrat", "polling-memo", 2),
+  civiqs: makeSearchScraper("civiqs.com", "polling tracker opinion approval public", "Civiqs", "Democrat", "polling-memo", 2),
+
+  // Republican / Right-leaning
   heritage: scrapeHeritage,
-  bpc: scrapeBPC,
-  cap: scrapeCAP,
-  thirdway: scrapeThirdWay,
-  aei: scrapeAEI,
-  brookings: scrapeBrookings,
-  dfp: scrapeDataForProgress,
-  niskanen: scrapeNiskanen,
-  newdem: scrapeNewDem,
-  rstreet: scrapeRStreet,
+  aei: makeSearchScraper("aei.org", "public opinion polling messaging strategy conservative voter", "American Enterprise Institute", "Republican"),
+  rstreet: makeSearchScraper("rstreet.org", "policy brief messaging public opinion conservative reform", "R Street Institute", "Republican"),
+  manhattan: makeSearchScraper("manhattan-institute.org", "policy messaging framing public opinion urban", "Manhattan Institute", "Republican"),
+  hoover: makeSearchScraper("hoover.org", "policy strategy messaging opinion conservative economics", "Hoover Institution", "Republican"),
+  claremont: makeSearchScraper("claremontreviewofbooks.com", "conservative messaging politics strategy", "Claremont Institute", "Republican", "message-guidance", 2),
+  aaf: makeSearchScraper("americanactionforum.org", "policy analysis economic healthcare regulation", "American Action Forum", "Republican"),
+  tnr_conservative: makeSearchScraper("nationalaffairs.com", "public policy conservative strategy reform", "National Affairs", "Republican", "message-guidance", 2),
+  winning_message: makeSearchScraper("winningmessage.org", "polling messaging strategy conservative voters", "Winning the Message", "Republican", "polling-memo", 2),
+
+  // Independent / Bipartisan / Nonpartisan
+  bpc: makeSearchScraper("bipartisanpolicy.org", "messaging strategy polling guidance bipartisan", "Bipartisan Policy Center", "Independent"),
+  brookings: makeSearchScraper("brookings.edu", "public opinion framing messaging polling strategy voter", "Brookings Institution", "Independent"),
+  niskanen: makeSearchScraper("niskanencenter.org", "policy analysis messaging public opinion reform", "Niskanen Center", "Independent", "message-guidance", 2),
+  pewresearch: makeSearchScraper("pewresearch.org", "public opinion polling political attitudes voter", "Pew Research Center", "Independent", "polling-memo"),
+  gallup: makeSearchScraper("gallup.com", "polling public opinion approval economy voter", "Gallup", "Independent", "polling-memo"),
+  annenberg: makeSearchScraper("annenbergpublicpolicycenter.org", "public opinion media messaging factcheck", "Annenberg Public Policy Center", "Independent"),
+  urban: makeSearchScraper("urban.org", "policy analysis social safety net economic mobility", "Urban Institute", "Independent"),
+  newamerica: makeSearchScraper("newamerica.org", "policy analysis technology education economic security", "New America", "Independent"),
+  cbo: makeSearchScraper("cbo.gov", "budget analysis economic outlook policy cost estimate", "Congressional Budget Office", "Independent", "policy-analysis", 2),
+  rand: makeSearchScraper("rand.org", "policy analysis research public opinion defense health", "RAND Corporation", "Independent"),
+  aspen: makeSearchScraper("aspeninstitute.org", "policy strategy leadership civic engagement voter", "Aspen Institute", "Independent", "message-guidance", 2),
+  kff: makeSearchScraper("kff.org", "health policy polling public opinion affordable care", "KFF (Kaiser Family Foundation)", "Independent", "polling-memo"),
+  brennan: makeSearchScraper("brennancenter.org", "voting rights election reform democracy messaging", "Brennan Center for Justice", "Independent"),
 };
 
 /* ── Main handler ────────────────────────────────────────── */
@@ -402,7 +311,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true, scraped: allArticles.length, new: inserted,
-        sources, message: `Found ${allArticles.length} articles, inserted ${inserted} new.`,
+        sources: scraperNames, message: `Found ${allArticles.length} articles, inserted ${inserted} new.`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
