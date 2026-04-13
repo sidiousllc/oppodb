@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Vote, Trophy, TrendingUp, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { Vote, Trophy, TrendingUp, ChevronDown, ChevronUp, ExternalLink, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 const PARTY_COLORS: Record<string, string> = {
   DEMOCRAT: "hsl(var(--primary))",
