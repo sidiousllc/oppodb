@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
+import { OfflineStatusIndicator } from "@/components/OfflineStatusIndicator";
 
 interface Win98TaskbarProps {
   minimizedWindow?: string;
@@ -112,6 +113,9 @@ export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarP
         </button>
 
         <div className="flex-1" />
+
+        {/* Offline indicator */}
+        <OfflineStatusIndicator />
 
         {/* Security badge */}
         <a href="https://app.aikido.dev/audit-report/external/8A4IU23ayEgeSwA0wiLzIWS2/request" target="_blank" rel="noopener noreferrer" className="flex items-center h-[20px] opacity-60 hover:opacity-100 transition-opacity" title="Security Audit Report">
