@@ -263,7 +263,55 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
         });
         setNarrativeItems(matched.length > 0 ? matched.slice(0, 8) : data.slice(0, 5));
       });
-  }, [stateAbbr, effectiveTopIssues]);
+
+    // Load polling data relevant to district issues
+    supabase
+      .from("polling_data")
+      .select("id, source, candidate_or_topic, poll_type, approve_pct, disapprove_pct, favor_pct, oppose_pct, date_conducted, sample_size")
+      .order("date_conducted", { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        if (!data) return;
+        const issueSet = new Set(effectiveTopIssues.map(i => i.toLowerCase()));
+        const matched = data.filter(p => {
+          const topic = p.candidate_or_topic.toLowerCase();
+          return [...issueSet].some(i => topic.includes(i) || i.includes(topic));
+        });
+        setPollingItems(matched.length > 0 ? matched.slice(0, 8) : data.slice(0, 4));
+      });
+
+    // Load intel briefings related to this district's state/scope
+    const districtNum = district.district_id.split("-")[1];
+    supabase
+      .from("intel_briefings")
+      .select("id, title, summary, source_name, source_url, published_at, scope")
+      .order("published_at", { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        if (!data) return;
+        const stateNameLower = stateName.toLowerCase();
+        const issueSet = new Set(effectiveTopIssues.map(i => i.toLowerCase()));
+        // Match briefings mentioning this state, district, or key issues
+        const matched = data.filter(b => {
+          const text = (b.title + " " + b.summary).toLowerCase();
+          return text.includes(stateNameLower) || text.includes(stateAbbr.toLowerCase()) ||
+            text.includes(`district ${districtNum}`) ||
+            [...issueSet].some(i => text.includes(i));
+        });
+        setIntelItems(matched.slice(0, 8));
+      });
+
+    // Load election forecasts for this district
+    supabase
+      .from("election_forecasts")
+      .select("id, source, rating, dem_win_prob, rep_win_prob, margin, last_updated")
+      .eq("state_abbr", stateAbbr)
+      .eq("district", districtNum || "0")
+      .eq("race_type", "house")
+      .then(({ data }) => {
+        if (data) setForecastItems(data as ForecastItem[]);
+      });
+  }, [stateAbbr, effectiveTopIssues, district.district_id]);
 
   // Compute additional derived stats
   const renterPct = district.owner_occupied_pct != null ? Math.round((100 - district.owner_occupied_pct) * 10) / 10 : null;
