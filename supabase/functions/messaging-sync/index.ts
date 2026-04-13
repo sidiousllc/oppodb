@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface ScrapedArticle {
@@ -84,7 +84,7 @@ function detectIssueAreas(text: string, defaultParty: string): string[] {
     infrastructure: "Infrastructure", tax: "Tax Policy", democracy: "Democracy",
     "voting rights": "Voting Rights", ukraine: "Ukraine", israel: "Israel",
     "student loan": "Student Loans", childcare: "Childcare",
-    opioid: "Opioid Crisis", fentanyl: "Opioid Crisis",
+    opioid: "Opioid Crisis",
     labor: "Labor", union: "Labor", "minimum wage": "Labor",
     "racial justice": "Racial Justice", policing: "Criminal Justice",
     "criminal justice": "Criminal Justice", prison: "Criminal Justice",
@@ -96,6 +96,28 @@ function detectIssueAreas(text: string, defaultParty: string): string[] {
     internet: "Broadband", broadband: "Broadband",
     transgender: "LGBTQ+ Rights", lgbtq: "LGBTQ+ Rights",
     religion: "Religious Liberty", "religious liberty": "Religious Liberty",
+    // Additional issue areas
+    "drug pricing": "Drug Pricing", "prescription drug": "Drug Pricing",
+    "free speech": "Free Speech", censorship: "Free Speech",
+    "supply chain": "Supply Chain", manufacturing: "Manufacturing",
+    semiconductor: "Technology", chips: "Technology",
+    "book ban": "Education", "school choice": "Education",
+    "police reform": "Criminal Justice", "defund": "Criminal Justice",
+    crypto: "Cryptocurrency", bitcoin: "Cryptocurrency",
+    "social media": "Technology", tiktok: "Technology",
+    "electric vehicle": "Energy", ev: "Energy",
+    nato: "Foreign Policy", "foreign aid": "Foreign Policy",
+    "two-state": "Israel", palestinian: "Israel",
+    "voter id": "Election Integrity", "mail-in": "Elections",
+    "debt ceiling": "Budget", shutdown: "Budget",
+    drought: "Water", wildfire: "Environment",
+    "gun control": "Gun Policy", "assault weapon": "Gun Policy",
+    "death penalty": "Criminal Justice", "capital punishment": "Criminal Justice",
+    "minimum wage": "Labor",
+    statehood: "Statehood", "puerto rico": "Statehood", "dc statehood": "Statehood",
+    reparation: "Racial Justice",
+    marijuana: "Drug Policy", cannabis: "Drug Policy",
+    "supreme court": "Judiciary", "court reform": "Judiciary",
   };
 
   for (const [keyword, area] of Object.entries(keywords)) {
@@ -108,7 +130,6 @@ function detectIssueAreas(text: string, defaultParty: string): string[] {
 
 /* ── Source scrapers ─────────────────────────────────────── */
 
-// Helper to create a simple search-based scraper
 function makeSearchScraper(
   siteDomain: string,
   searchTerms: string,
@@ -205,7 +226,7 @@ async function scrapeHeritage(firecrawlKey: string): Promise<ScrapedArticle[]> {
 }
 
 const ALL_SOURCES: Record<string, (key: string) => Promise<ScrapedArticle[]>> = {
-  // Democrat / Left-leaning
+  /* ── Democrat / Left-leaning ── */
   navigator: scrapeNavigator,
   cap: makeSearchScraper("americanprogress.org", "messaging framing public opinion polling strategy", "Center for American Progress", "Democrat"),
   thirdway: makeSearchScraper("thirdway.org", "messaging strategy polling memo framing voter", "Third Way", "Democrat"),
@@ -216,8 +237,19 @@ const ALL_SOURCES: Record<string, (key: string) => Promise<ScrapedArticle[]>> = 
   equis: makeSearchScraper("equisresearch.com", "latino polling opinion research voter", "Equis Research", "Democrat", "polling-memo"),
   catalist: makeSearchScraper("catalist.us", "voter analysis electorate modeling turnout", "Catalist", "Democrat", "polling-memo", 2),
   civiqs: makeSearchScraper("civiqs.com", "polling tracker opinion approval public", "Civiqs", "Democrat", "polling-memo", 2),
+  // New Democrat sources
+  everytown: makeSearchScraper("everytown.org", "gun violence polling messaging advocacy research", "Everytown for Gun Safety", "Democrat"),
+  indivisible: makeSearchScraper("indivisible.org", "messaging strategy activism grassroots advocacy", "Indivisible", "Democrat", "message-guidance", 2),
+  swingleft: makeSearchScraper("swingleft.org", "messaging battleground district volunteer strategy", "Swing Left", "Democrat", "message-guidance", 2),
+  demos: makeSearchScraper("demos.org", "democracy voting rights economic inequality research", "Demos", "Democrat"),
+  americanbridge: makeSearchScraper("americanbridgepac.org", "research tracking opposition accountability", "American Bridge 21st Century", "Democrat", "opposition-research", 2),
+  cbpp_msg: makeSearchScraper("cbpp.org", "messaging framing budget poverty safety net analysis", "Center on Budget and Policy Priorities", "Democrat"),
+  epi_msg: makeSearchScraper("epi.org", "workers wages inequality messaging research analysis", "Economic Policy Institute", "Democrat"),
+  americanpromise: makeSearchScraper("americanpromise.net", "campaign finance reform dark money citizens united", "American Promise", "Democrat", "message-guidance", 2),
+  futureforward: makeSearchScraper("futureforwardusa.com", "research polling testing messaging voter persuasion", "Future Forward USA", "Democrat", "polling-memo", 2),
+  civic_engagement: makeSearchScraper("civicengagement.org", "voter registration turnout civic participation", "Civic Engagement Fund", "Democrat", "message-guidance", 2),
 
-  // Republican / Right-leaning
+  /* ── Republican / Right-leaning ── */
   heritage: scrapeHeritage,
   aei: makeSearchScraper("aei.org", "public opinion polling messaging strategy conservative voter", "American Enterprise Institute", "Republican"),
   rstreet: makeSearchScraper("rstreet.org", "policy brief messaging public opinion conservative reform", "R Street Institute", "Republican"),
@@ -227,8 +259,20 @@ const ALL_SOURCES: Record<string, (key: string) => Promise<ScrapedArticle[]>> = 
   aaf: makeSearchScraper("americanactionforum.org", "policy analysis economic healthcare regulation", "American Action Forum", "Republican"),
   tnr_conservative: makeSearchScraper("nationalaffairs.com", "public policy conservative strategy reform", "National Affairs", "Republican", "message-guidance", 2),
   winning_message: makeSearchScraper("winningmessage.org", "polling messaging strategy conservative voters", "Winning the Message", "Republican", "polling-memo", 2),
+  // New Republican sources
+  afp: makeSearchScraper("americansforprosperity.org", "policy strategy grassroots conservative economic freedom", "Americans for Prosperity", "Republican"),
+  aba_conservative: makeSearchScraper("amac.us", "conservative seniors policy advocacy messaging", "AMAC (Assoc. of Mature American Citizens)", "Republican", "message-guidance", 2),
+  freedomworks: makeSearchScraper("freedomworks.org", "liberty economic freedom grassroots conservative", "FreedomWorks", "Republican"),
+  taxpayers: makeSearchScraper("ntu.org", "tax policy spending fiscal responsibility conservative", "National Taxpayers Union", "Republican"),
+  cis: makeSearchScraper("cis.org", "immigration policy research enforcement border messaging", "Center for Immigration Studies", "Republican"),
+  clp: makeSearchScraper("competitiveenterprise.org", "regulation deregulation free market policy analysis", "Competitive Enterprise Institute", "Republican"),
+  ipi: makeSearchScraper("ipi.org", "free market economics liberty policy analysis conservative", "Institute for Policy Innovation", "Republican", "message-guidance", 2),
+  pacificresearch: makeSearchScraper("pacificresearch.org", "education school choice healthcare free market western", "Pacific Research Institute", "Republican", "message-guidance", 2),
+  gop_strategy: makeSearchScraper("thebulwark.com", "conservative never-trump analysis strategy commentary", "The Bulwark", "Republican"),
+  texaspolicy: makeSearchScraper("texaspolicy.com", "conservative policy state government limited regulation", "Texas Public Policy Foundation", "Republican"),
+  hudson: makeSearchScraper("hudson.org", "foreign policy national security defense conservative", "Hudson Institute", "Republican"),
 
-  // Independent / Bipartisan / Nonpartisan
+  /* ── Independent / Bipartisan / Nonpartisan ── */
   bpc: makeSearchScraper("bipartisanpolicy.org", "messaging strategy polling guidance bipartisan", "Bipartisan Policy Center", "Independent"),
   brookings: makeSearchScraper("brookings.edu", "public opinion framing messaging polling strategy voter", "Brookings Institution", "Independent"),
   niskanen: makeSearchScraper("niskanencenter.org", "policy analysis messaging public opinion reform", "Niskanen Center", "Independent", "message-guidance", 2),
@@ -242,6 +286,22 @@ const ALL_SOURCES: Record<string, (key: string) => Promise<ScrapedArticle[]>> = 
   aspen: makeSearchScraper("aspeninstitute.org", "policy strategy leadership civic engagement voter", "Aspen Institute", "Independent", "message-guidance", 2),
   kff: makeSearchScraper("kff.org", "health policy polling public opinion affordable care", "KFF (Kaiser Family Foundation)", "Independent", "polling-memo"),
   brennan: makeSearchScraper("brennancenter.org", "voting rights election reform democracy messaging", "Brennan Center for Justice", "Independent"),
+  // New Independent sources
+  ipsos: makeSearchScraper("ipsos.com", "polling public opinion survey research voter attitudes", "Ipsos", "Independent", "polling-memo"),
+  morningconsult: makeSearchScraper("morningconsult.com", "polling tracking public opinion survey data voter", "Morning Consult", "Independent", "polling-memo"),
+  marist: makeSearchScraper("maristpoll.marist.edu", "polling survey public opinion national state voter", "Marist Poll", "Independent", "polling-memo", 2),
+  quinnipiac: makeSearchScraper("poll.qu.edu", "polling public opinion swing state battleground voter", "Quinnipiac Poll", "Independent", "polling-memo", 2),
+  apnorc: makeSearchScraper("apnorc.org", "polling public opinion research survey methodology", "AP-NORC Center", "Independent", "polling-memo"),
+  kaiser_tracking: makeSearchScraper("kff.org", "health tracking poll public opinion aca medicaid", "KFF Health Tracking", "Independent", "polling-memo", 2),
+  crs: makeSearchScraper("sgp.fas.org", "congressional research service policy analysis legislation", "Congressional Research Service", "Independent", "policy-analysis", 2),
+  gao: makeSearchScraper("gao.gov", "government accountability audit analysis program evaluation", "GAO", "Independent", "policy-analysis", 2),
+  cfr: makeSearchScraper("cfr.org", "foreign policy analysis global affairs national security", "Council on Foreign Relations", "Independent"),
+  publicagenda: makeSearchScraper("publicagenda.org", "public opinion issue framing engagement civic", "Public Agenda", "Independent", "message-guidance", 2),
+  issue_one: makeSearchScraper("issueone.org", "money politics ethics reform bipartisan transparency", "Issue One", "Independent"),
+  represent_us: makeSearchScraper("represent.us", "anti-corruption reform ranked choice voting democracy", "RepresentUs", "Independent"),
+  sunlight: makeSearchScraper("sunlightfoundation.com", "transparency open data government accountability", "Sunlight Foundation", "Independent", "message-guidance", 2),
+  maplight: makeSearchScraper("maplight.org", "money politics influence voting transparency", "MapLight", "Independent"),
+  opensecrets: makeSearchScraper("opensecrets.org", "campaign finance dark money lobbying political spending", "OpenSecrets", "Independent"),
 };
 
 /* ── Main handler ────────────────────────────────────────── */
