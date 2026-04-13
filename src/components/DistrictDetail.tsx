@@ -142,6 +142,39 @@ interface NarrativeItem {
   tags: string[];
 }
 
+interface PollingItem {
+  id: string;
+  source: string;
+  candidate_or_topic: string;
+  poll_type: string;
+  approve_pct: number | null;
+  disapprove_pct: number | null;
+  favor_pct: number | null;
+  oppose_pct: number | null;
+  date_conducted: string;
+  sample_size: number | null;
+}
+
+interface IntelBriefingItem {
+  id: string;
+  title: string;
+  summary: string;
+  source_name: string;
+  source_url: string | null;
+  published_at: string | null;
+  scope: string;
+}
+
+interface ForecastItem {
+  id: string;
+  source: string;
+  rating: string | null;
+  dem_win_prob: number | null;
+  rep_win_prob: number | null;
+  margin: number | null;
+  last_updated: string | null;
+}
+
 /** Derive top issues from demographics when the DB field is empty */
 function deriveTopIssues(d: DistrictProfile): string[] {
   const issues: string[] = [];
@@ -165,6 +198,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
   const [localImpacts, setLocalImpacts] = useState<LocalImpact[]>([]);
   const [messagingItems, setMessagingItems] = useState<MessagingItem[]>([]);
   const [narrativeItems, setNarrativeItems] = useState<NarrativeItem[]>([]);
+  const [pollingItems, setPollingItems] = useState<PollingItem[]>([]);
+  const [intelItems, setIntelItems] = useState<IntelBriefingItem[]>([]);
+  const [forecastItems, setForecastItems] = useState<ForecastItem[]>([]);
   const candidateSlugs = getCandidatesForDistrict(district.district_id);
   const linkedCandidates = candidateSlugs
     .map((slug) => getCandidateBySlug(slug))
@@ -227,7 +263,55 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
         });
         setNarrativeItems(matched.length > 0 ? matched.slice(0, 8) : data.slice(0, 5));
       });
-  }, [stateAbbr, effectiveTopIssues]);
+
+    // Load polling data relevant to district issues
+    supabase
+      .from("polling_data")
+      .select("id, source, candidate_or_topic, poll_type, approve_pct, disapprove_pct, favor_pct, oppose_pct, date_conducted, sample_size")
+      .order("date_conducted", { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        if (!data) return;
+        const issueSet = new Set(effectiveTopIssues.map(i => i.toLowerCase()));
+        const matched = data.filter(p => {
+          const topic = p.candidate_or_topic.toLowerCase();
+          return [...issueSet].some(i => topic.includes(i) || i.includes(topic));
+        });
+        setPollingItems(matched.length > 0 ? matched.slice(0, 8) : data.slice(0, 4));
+      });
+
+    // Load intel briefings related to this district's state/scope
+    const districtNum = district.district_id.split("-")[1];
+    supabase
+      .from("intel_briefings")
+      .select("id, title, summary, source_name, source_url, published_at, scope")
+      .order("published_at", { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        if (!data) return;
+        const stateNameLower = stateName.toLowerCase();
+        const issueSet = new Set(effectiveTopIssues.map(i => i.toLowerCase()));
+        // Match briefings mentioning this state, district, or key issues
+        const matched = data.filter(b => {
+          const text = (b.title + " " + b.summary).toLowerCase();
+          return text.includes(stateNameLower) || text.includes(stateAbbr.toLowerCase()) ||
+            text.includes(`district ${districtNum}`) ||
+            [...issueSet].some(i => text.includes(i));
+        });
+        setIntelItems(matched.slice(0, 8));
+      });
+
+    // Load election forecasts for this district
+    supabase
+      .from("election_forecasts")
+      .select("id, source, rating, dem_win_prob, rep_win_prob, margin, last_updated")
+      .eq("state_abbr", stateAbbr)
+      .eq("district", districtNum || "0")
+      .eq("race_type", "house")
+      .then(({ data }) => {
+        if (data) setForecastItems(data as ForecastItem[]);
+      });
+  }, [stateAbbr, effectiveTopIssues, district.district_id]);
 
   // Compute additional derived stats
   const renterPct = district.owner_occupied_pct != null ? Math.round((100 - district.owner_occupied_pct) * 10) / 10 : null;
@@ -602,6 +686,91 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             </div>
           )}
 
+          {/* Election Forecasts */}
+          {forecastItems.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<BarChart3 className="h-5 w-5 text-primary" />}
+                title="Election Forecasts"
+                subtitle="Current race ratings and win probabilities for this district"
+              />
+              <div className="space-y-2">
+                {forecastItems.map((f) => (
+                  <div key={f.id} className="p-3 rounded-lg bg-muted/50 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{f.source}</p>
+                      {f.last_updated && <p className="text-[10px] text-muted-foreground">Updated: {f.last_updated}</p>}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {f.rating && <span className="text-xs font-bold bg-accent/10 text-accent px-2 py-0.5 rounded">{f.rating}</span>}
+                      {f.dem_win_prob != null && <span className="text-[10px] text-blue-600">D: {f.dem_win_prob}%</span>}
+                      {f.rep_win_prob != null && <span className="text-[10px] text-red-600">R: {f.rep_win_prob}%</span>}
+                      {f.margin != null && <span className="text-[10px] text-muted-foreground">Margin: {f.margin > 0 ? "+" : ""}{f.margin}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Issue Polling */}
+          {pollingItems.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<Vote className="h-5 w-5 text-primary" />}
+                title="Relevant Polling"
+                subtitle="Public opinion polls on issues important to this district"
+              />
+              <div className="space-y-2">
+                {pollingItems.map((p) => (
+                  <div key={p.id} className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-medium text-foreground capitalize">{p.candidate_or_topic}</p>
+                      <span className="text-[9px] bg-secondary/50 text-secondary-foreground px-1.5 py-0.5 rounded">{p.source}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      {p.approve_pct != null && <span>Approve: <strong className="text-foreground">{p.approve_pct}%</strong></span>}
+                      {p.disapprove_pct != null && <span>Disapprove: <strong className="text-foreground">{p.disapprove_pct}%</strong></span>}
+                      {p.favor_pct != null && <span>Favor: <strong className="text-foreground">{p.favor_pct}%</strong></span>}
+                      {p.oppose_pct != null && <span>Oppose: <strong className="text-foreground">{p.oppose_pct}%</strong></span>}
+                      {p.sample_size && <span>n={p.sample_size}</span>}
+                      <span>{p.date_conducted}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Intel Briefings */}
+          {intelItems.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<Newspaper className="h-5 w-5 text-primary" />}
+                title="Intelligence Briefings"
+                subtitle="Recent intelligence relevant to this district and its key issues"
+              />
+              <div className="space-y-2">
+                {intelItems.map((b) => (
+                  <div key={b.id} className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-medium text-foreground line-clamp-1">{b.title}</p>
+                      <span className="text-[9px] uppercase bg-accent/10 text-accent px-1.5 py-0.5 rounded shrink-0 ml-2">{b.scope}</span>
+                    </div>
+                    {b.summary && <p className="text-xs text-muted-foreground line-clamp-2 mb-1">{b.summary}</p>}
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <span>{b.source_name}</span>
+                      {b.published_at && <span>• {new Date(b.published_at).toLocaleDateString()}</span>}
+                      {b.source_url && (
+                        <a href={b.source_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline ml-auto">Read →</a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Local Impacts */}
           {localImpacts.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6 mb-6">
@@ -625,7 +794,7 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             </div>
           )}
 
-          {localImpacts.length === 0 && messagingItems.length === 0 && narrativeItems.length === 0 && effectiveTopIssues.length === 0 && (
+          {localImpacts.length === 0 && messagingItems.length === 0 && narrativeItems.length === 0 && effectiveTopIssues.length === 0 && pollingItems.length === 0 && intelItems.length === 0 && forecastItems.length === 0 && (
             <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
               <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No issue or impact data available yet for this district.</p>
