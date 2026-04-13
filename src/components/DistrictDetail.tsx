@@ -198,6 +198,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
   const [localImpacts, setLocalImpacts] = useState<LocalImpact[]>([]);
   const [messagingItems, setMessagingItems] = useState<MessagingItem[]>([]);
   const [narrativeItems, setNarrativeItems] = useState<NarrativeItem[]>([]);
+  const [pollingItems, setPollingItems] = useState<PollingItem[]>([]);
+  const [intelItems, setIntelItems] = useState<IntelBriefingItem[]>([]);
+  const [forecastItems, setForecastItems] = useState<ForecastItem[]>([]);
   const candidateSlugs = getCandidatesForDistrict(district.district_id);
   const linkedCandidates = candidateSlugs
     .map((slug) => getCandidateBySlug(slug))
