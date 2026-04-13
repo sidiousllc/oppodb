@@ -200,7 +200,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -271,6 +271,32 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`title.ilike.${likeQ},summary.ilike.${likeQ},author.ilike.${likeQ}`)
         .order("published_date", { ascending: false })
         .limit(10),
+      supabase.from("intel_briefings")
+        .select("id, title, summary, scope, category, source_name, published_at")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},source_name.ilike.${likeQ},category.ilike.${likeQ}`)
+        .order("published_at", { ascending: false })
+        .limit(10),
+      supabase.from("congress_committees")
+        .select("id, system_code, name, chamber")
+        .or(`name.ilike.${likeQ},system_code.ilike.${likeQ}`)
+        .order("name")
+        .limit(10),
+      supabase.from("congress_votes")
+        .select("id, vote_id, chamber, vote_date, question, result, bill_id, yea_total, nay_total")
+        .or(`description.ilike.${likeQ},question.ilike.${likeQ},bill_id.ilike.${likeQ}`)
+        .order("vote_date", { ascending: false })
+        .limit(10),
+      supabase.from("state_leg_election_results")
+        .select("id, candidate_name, state_abbr, chamber, district_number, election_year, party, votes, vote_pct, is_winner")
+        .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+        .order("election_year", { ascending: false })
+        .limit(10),
+      supabase.from("election_forecast_history")
+        .select("id, source, state_abbr, district, race_type, old_rating, new_rating, changed_at")
+        .or(`state_abbr.ilike.${likeQ},source.ilike.${likeQ}`)
+        .eq("cycle", 2026)
+        .order("changed_at", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
@@ -289,6 +315,11 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       mitElections: mitElRes.data || [],
       trackedBills: trackedBillsRes.data || [],
       messagingGuidance: messagingRes.data || [],
+      intelBriefings: intelRes.data || [],
+      congressCommittees: committeesRes.data || [],
+      congressVotes: votesRes.data || [],
+      stateLegElections: stateLegElRes.data || [],
+      forecastHistory: forecastHistRes.data || [],
     });
     setIsSearching(false);
 
