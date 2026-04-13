@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Intelligence sources organized by scope — 90+ feeds
+// Intelligence sources organized by scope — 150+ feeds
 const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: string }>> = {
   international: [
     // Wire services & major outlets
@@ -27,6 +27,17 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "Nikkei Asia", rssUrl: "https://asia.nikkei.com/rss", scope: "international" },
     { name: "The Africa Report", rssUrl: "https://www.theafricareport.com/feed/", scope: "international" },
     { name: "Latin America Reports", rssUrl: "https://latinamericareports.com/feed/", scope: "international" },
+    // Additional international
+    { name: "The Economist", rssUrl: "https://www.economist.com/international/rss.xml", scope: "international" },
+    { name: "Financial Times World", rssUrl: "https://www.ft.com/world?format=rss", scope: "international" },
+    { name: "UN News", rssUrl: "https://news.un.org/feed/subscribe/en/news/all/rss.xml", scope: "international" },
+    { name: "Euronews", rssUrl: "https://www.euronews.com/rss", scope: "international" },
+    { name: "Times of India", rssUrl: "https://timesofindia.indiatimes.com/rssfeedstopstories.cms", scope: "international" },
+    { name: "Kyiv Independent", rssUrl: "https://kyivindependent.com/feed/", scope: "international" },
+    { name: "Moscow Times", rssUrl: "https://www.themoscowtimes.com/rss/news", scope: "international" },
+    { name: "Haaretz", rssUrl: "https://www.haaretz.com/cmlink/1.628752", scope: "international" },
+    { name: "GlobalVoices", rssUrl: "https://globalvoices.org/feed/", scope: "international" },
+    { name: "IRIN News", rssUrl: "https://www.thenewhumanitarian.org/rss.xml", scope: "international" },
     // Think tanks - international
     { name: "Foreign Affairs", rssUrl: "https://www.foreignaffairs.com/rss.xml", scope: "international" },
     { name: "Carnegie Endowment", rssUrl: "https://carnegieendowment.org/rss/solr/?fa=articles", scope: "international" },
@@ -38,6 +49,10 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "Wilson Center", rssUrl: "https://www.wilsoncenter.org/rss.xml", scope: "international" },
     { name: "RAND Corporation", rssUrl: "https://www.rand.org/pubs/feed.xml", scope: "international" },
     { name: "Stimson Center", rssUrl: "https://www.stimson.org/feed/", scope: "international" },
+    { name: "International Crisis Group", rssUrl: "https://www.crisisgroup.org/feed", scope: "international" },
+    { name: "Brookings Foreign Policy", rssUrl: "https://www.brookings.edu/topic/foreign-policy/feed/", scope: "international" },
+    { name: "War on the Rocks", rssUrl: "https://warontherocks.com/feed/", scope: "international" },
+    { name: "Just Security", rssUrl: "https://www.justsecurity.org/feed/", scope: "international" },
   ],
   national: [
     // Major political news
@@ -56,26 +71,45 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "NBC News Politics", rssUrl: "https://feeds.nbcnews.com/nbcnews/public/politics", scope: "national" },
     { name: "CBS News Politics", rssUrl: "https://www.cbsnews.com/latest/rss/politics", scope: "national" },
     { name: "Washington Post Politics", rssUrl: "https://feeds.washingtonpost.com/rss/politics", scope: "national" },
+    // Additional wire/broadcast
+    { name: "CNN Politics", rssUrl: "https://rss.cnn.com/rss/cnn_allpolitics.rss", scope: "national" },
+    { name: "ABC News Politics", rssUrl: "https://abcnews.go.com/abcnews/politicsheadlines", scope: "national" },
+    { name: "USA Today Politics", rssUrl: "https://rssfeeds.usatoday.com/UsatodaycomWashington-TopStories", scope: "national" },
+    { name: "PBS NewsHour", rssUrl: "https://www.pbs.org/newshour/feeds/rss/politics", scope: "national" },
+    { name: "C-SPAN", rssUrl: "https://www.c-span.org/rss/", scope: "national" },
     // Newsletters & digests
     { name: "Punchbowl News", rssUrl: "https://punchbowl.news/feed/", scope: "national" },
     { name: "Semafor", rssUrl: "https://www.semafor.com/feed", scope: "national" },
     { name: "FiveThirtyEight", rssUrl: "https://fivethirtyeight.com/feed/", scope: "national" },
     { name: "RealClearPolitics", rssUrl: "https://www.realclearpolitics.com/index.xml", scope: "national" },
+    { name: "The Dispatch", rssUrl: "https://thedispatch.com/feed/", scope: "national" },
+    { name: "AllSides", rssUrl: "https://www.allsides.com/rss", scope: "national" },
     // Investigative & policy
     { name: "ProPublica", rssUrl: "https://www.propublica.org/feeds/propublica/main", scope: "national" },
     { name: "The Intercept", rssUrl: "https://theintercept.com/feed/?lang=en", scope: "national" },
     { name: "Vox Policy", rssUrl: "https://www.vox.com/rss/policy-and-politics/index.xml", scope: "national" },
+    { name: "Slate Politics", rssUrl: "https://slate.com/feeds/politics.xml", scope: "national" },
+    { name: "The Atlantic Politics", rssUrl: "https://www.theatlantic.com/feed/channel/politics/", scope: "national" },
     // Multi-partisan / right-leaning
     { name: "Daily Caller", rssUrl: "https://dailycaller.com/feed/", scope: "national" },
     { name: "Washington Examiner", rssUrl: "https://www.washingtonexaminer.com/feed", scope: "national" },
     { name: "National Review", rssUrl: "https://www.nationalreview.com/feed/", scope: "national" },
     { name: "Washington Free Beacon", rssUrl: "https://freebeacon.com/feed/", scope: "national" },
     { name: "The Federalist", rssUrl: "https://thefederalist.com/feed/", scope: "national" },
+    { name: "Townhall", rssUrl: "https://townhall.com/rss/", scope: "national" },
+    { name: "The Daily Wire", rssUrl: "https://www.dailywire.com/feeds/rss.xml", scope: "national" },
+    { name: "Breitbart", rssUrl: "https://feeds.feedburner.com/breitbart", scope: "national" },
+    { name: "RedState", rssUrl: "https://redstate.com/feed", scope: "national" },
     // Left-leaning
     { name: "The Nation", rssUrl: "https://www.thenation.com/feed/", scope: "national" },
     { name: "Mother Jones", rssUrl: "https://www.motherjones.com/feed/", scope: "national" },
     { name: "Talking Points Memo", rssUrl: "https://talkingpointsmemo.com/feed", scope: "national" },
     { name: "The New Republic", rssUrl: "https://newrepublic.com/feed", scope: "national" },
+    { name: "The Daily Beast", rssUrl: "https://feeds.thedailybeast.com/rss/articles", scope: "national" },
+    { name: "HuffPost Politics", rssUrl: "https://www.huffpost.com/section/politics/feed", scope: "national" },
+    { name: "Salon", rssUrl: "https://www.salon.com/feed/", scope: "national" },
+    { name: "Jacobin", rssUrl: "https://jacobin.com/feed/", scope: "national" },
+    { name: "Democracy Now!", rssUrl: "https://www.democracynow.org/democracynow.rss", scope: "national" },
     // Think tanks - national
     { name: "Brookings US Policy", rssUrl: "https://www.brookings.edu/topic/us-politics-government/feed/", scope: "national" },
     { name: "Heritage Foundation", rssUrl: "https://www.heritage.org/rss/commentary", scope: "national" },
@@ -91,9 +125,18 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "Economic Policy Institute", rssUrl: "https://www.epi.org/feed/", scope: "national" },
     { name: "Center on Budget", rssUrl: "https://www.cbpp.org/rss/rss.xml", scope: "national" },
     { name: "Bipartisan Policy Center", rssUrl: "https://bipartisanpolicy.org/feed/", scope: "national" },
+    { name: "Tax Foundation", rssUrl: "https://taxfoundation.org/feed/", scope: "national" },
+    { name: "Committee for Responsible Federal Budget", rssUrl: "https://www.crfb.org/rss.xml", scope: "national" },
+    { name: "American Action Forum", rssUrl: "https://www.americanactionforum.org/feed/", scope: "national" },
+    { name: "New America", rssUrl: "https://www.newamerica.org/feed/", scope: "national" },
     // Legal
     { name: "SCOTUSblog", rssUrl: "https://www.scotusblog.com/feed/", scope: "national" },
     { name: "Lawfare", rssUrl: "https://www.lawfaremedia.org/feed", scope: "national" },
+    { name: "Brennan Center", rssUrl: "https://www.brennancenter.org/rss", scope: "national" },
+    { name: "Volokh Conspiracy", rssUrl: "https://reason.com/volokh/feed/", scope: "national" },
+    // Economy & Business
+    { name: "MarketWatch Economy", rssUrl: "https://feeds.marketwatch.com/marketwatch/economy", scope: "national" },
+    { name: "CNBC Politics", rssUrl: "https://www.cnbc.com/id/10000113/device/rss/rss.html", scope: "national" },
   ],
   state: [
     // National outlets with state focus
@@ -105,6 +148,8 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "States Newsroom", rssUrl: "https://statesnewsroom.com/feed/", scope: "state" },
     { name: "NCSL Blog", rssUrl: "https://www.ncsl.org/blog/feed", scope: "state" },
     { name: "NGA Newsroom", rssUrl: "https://www.nga.org/news/feed/", scope: "state" },
+    { name: "StateScoop", rssUrl: "https://statescoop.com/feed/", scope: "state" },
+    { name: "CSG Knowledge Center", rssUrl: "https://web.csg.org/feed/", scope: "state" },
     // Issue-specific state coverage
     { name: "Kaiser Health News", rssUrl: "https://kffhealthnews.org/feed/", scope: "state" },
     { name: "The 19th", rssUrl: "https://19thnews.org/feed/", scope: "state" },
@@ -114,6 +159,8 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "Grist", rssUrl: "https://grist.org/feed/", scope: "state" },
     { name: "Inside Climate News", rssUrl: "https://insideclimatenews.org/feed/", scope: "state" },
     { name: "Pew Research State", rssUrl: "https://www.pewresearch.org/topic/politics-policy/political-issues/state-policy/feed/", scope: "state" },
+    { name: "Hechinger Report", rssUrl: "https://hechingerreport.org/feed/", scope: "state" },
+    { name: "POLITICO State", rssUrl: "https://rss.politico.com/states.xml", scope: "state" },
     // Criminal justice & social policy
     { name: "The Marshall Project", rssUrl: "https://www.themarshallproject.org/rss/index.rss", scope: "state" },
     { name: "The Appeal", rssUrl: "https://theappeal.org/feed/", scope: "state" },
@@ -122,7 +169,8 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "Cook Political Report", rssUrl: "https://www.cookpolitical.com/feed", scope: "state" },
     { name: "Sabato Crystal Ball", rssUrl: "https://centerforpolitics.org/crystalball/feed/", scope: "state" },
     { name: "Inside Elections", rssUrl: "https://insideelections.com/feed", scope: "state" },
-    // State-specific networks
+    { name: "Decision Desk HQ", rssUrl: "https://decisiondeskhq.com/feed/", scope: "state" },
+    // State-specific networks (expanded)
     { name: "CalMatters", rssUrl: "https://calmatters.org/feed/", scope: "state" },
     { name: "Texas Tribune", rssUrl: "https://www.texastribune.org/feeds/latest/", scope: "state" },
     { name: "The Nevada Independent", rssUrl: "https://thenevadaindependent.com/feed", scope: "state" },
@@ -138,6 +186,23 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "Virginia Mercury", rssUrl: "https://virginiamercury.com/feed/", scope: "state" },
     { name: "New Hampshire Bulletin", rssUrl: "https://newhampshirebulletin.com/feed/", scope: "state" },
     { name: "Iowa Capital Dispatch", rssUrl: "https://iowacapitaldispatch.com/feed/", scope: "state" },
+    { name: "Colorado Sun", rssUrl: "https://coloradosun.com/feed/", scope: "state" },
+    { name: "Oregon Capital Chronicle", rssUrl: "https://oregoncapitalchronicle.com/feed/", scope: "state" },
+    { name: "Kansas Reflector", rssUrl: "https://kansasreflector.com/feed/", scope: "state" },
+    { name: "Missouri Independent", rssUrl: "https://missouriindependent.com/feed/", scope: "state" },
+    { name: "New Jersey Monitor", rssUrl: "https://newjerseymonitor.com/feed/", scope: "state" },
+    { name: "Connecticut Mirror", rssUrl: "https://ctmirror.org/feed/", scope: "state" },
+    { name: "Kentucky Lantern", rssUrl: "https://kentuckylantern.com/feed/", scope: "state" },
+    { name: "Indiana Capital Chronicle", rssUrl: "https://indianacapitalchronicle.com/feed/", scope: "state" },
+    { name: "Maryland Matters", rssUrl: "https://www.marylandmatters.org/feed/", scope: "state" },
+    { name: "Louisiana Illuminator", rssUrl: "https://lailluminator.com/feed/", scope: "state" },
+    { name: "Alaska Beacon", rssUrl: "https://alaskabeacon.com/feed/", scope: "state" },
+    { name: "Montana Free Press", rssUrl: "https://montanafreepress.org/feed/", scope: "state" },
+    { name: "South Dakota Searchlight", rssUrl: "https://southdakotasearchlight.com/feed/", scope: "state" },
+    { name: "Idaho Capital Sun", rssUrl: "https://idahocapitalsun.com/feed/", scope: "state" },
+    { name: "Wyoming News Exchange", rssUrl: "https://wyomingnewsexchange.com/feed/", scope: "state" },
+    { name: "Nebraska Examiner", rssUrl: "https://nebraskaexaminer.com/feed/", scope: "state" },
+    { name: "Maine Morning Star", rssUrl: "https://mainemorningstar.com/feed/", scope: "state" },
   ],
   local: [
     { name: "CityLab", rssUrl: "https://www.bloomberg.com/citylab/feed/", scope: "local" },
@@ -153,6 +218,20 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "Route Fifty Local", rssUrl: "https://www.route-fifty.com/management/rss/", scope: "local" },
     { name: "Community Builders", rssUrl: "https://www.tcbinc.org/feed/", scope: "local" },
     { name: "CityMetric", rssUrl: "https://www.citymetric.com/feed", scope: "local" },
+    // Additional local sources
+    { name: "Local News Initiative", rssUrl: "https://localnewsinitiative.northwestern.edu/feed/", scope: "local" },
+    { name: "NLIHC Housing", rssUrl: "https://nlihc.org/feed", scope: "local" },
+    { name: "County News (NACo)", rssUrl: "https://www.naco.org/feed", scope: "local" },
+    { name: "Education Dive", rssUrl: "https://www.educationdive.com/feeds/news/", scope: "local" },
+    { name: "Smart Growth America", rssUrl: "https://smartgrowthamerica.org/feed/", scope: "local" },
+    { name: "Transportation Riders United", rssUrl: "https://www.transitcenter.org/feed/", scope: "local" },
+    { name: "Streetsblog USA", rssUrl: "https://usa.streetsblog.org/feed/", scope: "local" },
+    { name: "PublicSource", rssUrl: "https://www.publicsource.org/feed/", scope: "local" },
+    { name: "Documented", rssUrl: "https://documentedny.com/feed/", scope: "local" },
+    { name: "City Bureau", rssUrl: "https://www.citybureau.org/feed", scope: "local" },
+    { name: "The Oaklandside", rssUrl: "https://oaklandside.org/feed/", scope: "local" },
+    { name: "Block Club Chicago", rssUrl: "https://blockclubchicago.org/feed/", scope: "local" },
+    { name: "THE CITY NYC", rssUrl: "https://www.thecity.nyc/feed/", scope: "local" },
   ],
 };
 
@@ -182,17 +261,24 @@ async function parseRSS(url: string, sourceName: string, scope: string): Promise
     // Detect category from content
     function detectCategory(title: string, desc: string): string {
       const text = (title + " " + desc).toLowerCase();
-      if (text.match(/economy|gdp|inflation|market|trade|tariff|jobs|unemployment/)) return "economy";
-      if (text.match(/election|ballot|vote|campaign|primary|caucus/)) return "elections";
-      if (text.match(/court|judicial|scotus|legal|law|ruling|justice/)) return "legal";
-      if (text.match(/military|defense|nato|pentagon|war|security/)) return "defense";
-      if (text.match(/health|covid|pandemic|hospital|medicare|medicaid/)) return "health";
-      if (text.match(/climate|environment|energy|epa|emission/)) return "environment";
-      if (text.match(/immigration|border|asylum|migrant|refugee/)) return "immigration";
-      if (text.match(/education|school|student|university|college/)) return "education";
-      if (text.match(/housing|rent|mortgage|homelessness/)) return "housing";
-      if (text.match(/crime|police|prison|gun|shooting/)) return "public-safety";
-      if (text.match(/tech|ai|artificial intelligence|cyber|data privacy/)) return "technology";
+      if (text.match(/economy|gdp|inflation|market|trade|tariff|jobs|unemployment|recession|interest rate/)) return "economy";
+      if (text.match(/election|ballot|vote|campaign|primary|caucus|gerrymandering|redistrict/)) return "elections";
+      if (text.match(/court|judicial|scotus|legal|law|ruling|justice|indictment|lawsuit/)) return "legal";
+      if (text.match(/military|defense|nato|pentagon|war|security|weapon|drone/)) return "defense";
+      if (text.match(/health|covid|pandemic|hospital|medicare|medicaid|opioid|fentanyl/)) return "health";
+      if (text.match(/climate|environment|energy|epa|emission|renewable|solar|wind|fossil/)) return "environment";
+      if (text.match(/immigration|border|asylum|migrant|refugee|deportation|ice/)) return "immigration";
+      if (text.match(/education|school|student|university|college|teacher|tuition/)) return "education";
+      if (text.match(/housing|rent|mortgage|homelessness|eviction|affordable housing/)) return "housing";
+      if (text.match(/crime|police|prison|gun|shooting|fbi|doj|carjack/)) return "public-safety";
+      if (text.match(/tech|ai|artificial intelligence|cyber|data privacy|social media|tiktok/)) return "technology";
+      if (text.match(/tax|budget|deficit|debt ceiling|appropriation|spending bill/)) return "fiscal";
+      if (text.match(/labor|union|strike|minimum wage|worker|overtime/)) return "labor";
+      if (text.match(/infrastructure|bridge|highway|broadband|rail|transit/)) return "infrastructure";
+      if (text.match(/veteran|va |military family|service member/)) return "veterans";
+      if (text.match(/abortion|reproductive|roe|dobbs|ivf|contraception/)) return "reproductive-rights";
+      if (text.match(/social security|retirement|pension|401k/)) return "social-security";
+      if (text.match(/agriculture|farm|crop|usda|rural/)) return "agriculture";
       return "general";
     }
 
