@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { stateAbbrToName } from "@/lib/stateAbbreviations";
+import ReactMarkdown from "react-markdown";
 
 interface NewsArticle {
   title: string;
@@ -267,36 +268,12 @@ export function DistrictNewsTab({ districtId }: Props) {
       )}
 
       {openArticle && (
-        <Win98Window
-          title={`📰 ${openArticle.source}`}
+        <ArticleDetailWindow
+          article={openArticle}
           onClose={() => setOpenArticle(null)}
-          defaultSize={{ width: 520, height: 420 }}
-          defaultPosition={{ x: 60, y: 40 }}
-        >
-          <div className="p-4 space-y-4 overflow-auto h-full">
-            <h2 className="font-display text-lg font-bold text-foreground leading-snug">{openArticle.title}</h2>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="font-semibold text-primary">{openArticle.source}</span>
-              <span>•</span>
-              <span>{formatDate(openArticle.pubDate)}</span>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <a href={openArticle.link} target="_blank" rel="noopener noreferrer" className="win98-button text-[10px] flex items-center gap-1">
-                <ExternalLink className="h-3 w-3" />
-                Read Full Article
-              </a>
-              <button onClick={() => handlePDF(openArticle)} className="win98-button text-[10px] flex items-center gap-1">
-                <FileText className="h-3 w-3" />
-                Save as PDF
-              </button>
-            </div>
-            <div className="border-t border-border pt-3 mt-3">
-              <p className="text-xs text-muted-foreground italic">
-                Click "Read Full Article" to view the complete story at {openArticle.source}. Use "Save as PDF" to generate a printable version.
-              </p>
-            </div>
-          </div>
-        </Win98Window>
+          formatDate={formatDate}
+          handlePDF={handlePDF}
+        />
       )}
     </>
   );
