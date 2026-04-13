@@ -69,6 +69,10 @@ export function IntelHub() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [fullArticle, setFullArticle] = useState<string | null>(null);
   const [loadingArticle, setLoadingArticle] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all");
+  const [partyLeaning, setPartyLeaning] = useState<PartyLeaning>("all");
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchBriefings = useCallback(async () => {
     setLoading(true);
