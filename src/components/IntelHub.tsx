@@ -3,12 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Win98Window } from "@/components/Win98Window";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
-import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, ExternalLink, Clock, Loader2 } from "lucide-react";
+import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, ExternalLink, Clock, Loader2, Search, Filter, X } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import { applyPdfBranding } from "@/lib/pdfBranding";
 
 type Scope = "local" | "state" | "national" | "international";
+
+type Category = "economy" | "elections" | "legal" | "defense" | "health" | "environment" | "immigration" | "education" | "housing" | "public-safety" | "technology" | "fiscal" | "labor" | "infrastructure" | "veterans" | "reproductive-rights" | "social-security" | "agriculture" | "general";
+
+type PartyLeaning = "left" | "right" | "center" | "all";
+
+const LEFT_SOURCES = ["The Nation", "Mother Jones", "Talking Points Memo", "The New Republic", "Daily Beast", "HuffPost", "Salon", "Jacobin", "Democracy Now!", "The Intercept", "Vox", "Slate", "CAP", "EPI", "CBPP", "Brookings", "Urban Institute", "Third Way", "Brennan Center"];
+const RIGHT_SOURCES = ["Daily Caller", "Washington Examiner", "National Review", "Washington Free Beacon", "The Federalist", "Townhall", "Daily Wire", "Breitbart", "RedState", "Heritage Foundation", "AEI", "Cato Institute", "Manhattan Institute", "Hoover Institution", "R Street", "American Action Forum"];
 
 interface Briefing {
   id: string;
@@ -23,6 +30,28 @@ interface Briefing {
   region: string | null;
   created_at: string;
 }
+
+const CATEGORY_OPTIONS: { value: Category; label: string }[] = [
+  { value: "general", label: "General" },
+  { value: "economy", label: "Economy" },
+  { value: "elections", label: "Elections" },
+  { value: "legal", label: "Legal" },
+  { value: "defense", label: "Defense" },
+  { value: "health", label: "Health" },
+  { value: "environment", label: "Environment" },
+  { value: "immigration", label: "Immigration" },
+  { value: "education", label: "Education" },
+  { value: "housing", label: "Housing" },
+  { value: "public-safety", label: "Public Safety" },
+  { value: "technology", label: "Technology" },
+  { value: "fiscal", label: "Fiscal" },
+  { value: "labor", label: "Labor" },
+  { value: "infrastructure", label: "Infrastructure" },
+  { value: "veterans", label: "Veterans" },
+  { value: "reproductive-rights", label: "Reproductive Rights" },
+  { value: "social-security", label: "Social Security" },
+  { value: "agriculture", label: "Agriculture" },
+];
 
 const SCOPE_CONFIG: Record<Scope, { label: string; icon: React.ReactNode; emoji: string }> = {
   local: { label: "Local", icon: <MapPin size={14} />, emoji: "📍" },
@@ -40,6 +69,10 @@ export function IntelHub() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [fullArticle, setFullArticle] = useState<string | null>(null);
   const [loadingArticle, setLoadingArticle] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all");
+  const [partyLeaning, setPartyLeaning] = useState<PartyLeaning>("all");
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchBriefings = useCallback(async () => {
     setLoading(true);
@@ -136,7 +169,7 @@ export function IntelHub() {
     doc.text(`Generated: ${format(new Date(), "PPpp")}`, pw / 2, y, { align: "center" });
     y += 10;
 
-    for (const b of briefings) {
+    for (const b of filteredBriefings) {
       if (y > 260) {
         doc.addPage();
         y = 18;
@@ -171,7 +204,21 @@ export function IntelHub() {
     toast.success("PDF exported");
   };
 
-  const groupedBySource = briefings.reduce<Record<string, Briefing[]>>((acc, b) => {
+  const filteredBriefings = briefings.filter((b) => {
+    const q = searchQuery.toLowerCase();
+    if (q && !b.title.toLowerCase().includes(q) && !b.summary.toLowerCase().includes(q) && !b.source_name.toLowerCase().includes(q)) return false;
+    if (selectedCategory !== "all" && b.category !== selectedCategory) return false;
+    if (partyLeaning === "left" && !LEFT_SOURCES.some(s => b.source_name.toLowerCase().includes(s.toLowerCase()))) return false;
+    if (partyLeaning === "right" && !RIGHT_SOURCES.some(s => b.source_name.toLowerCase().includes(s.toLowerCase()))) return false;
+    if (partyLeaning === "center") {
+      const isLeft = LEFT_SOURCES.some(s => b.source_name.toLowerCase().includes(s.toLowerCase()));
+      const isRight = RIGHT_SOURCES.some(s => b.source_name.toLowerCase().includes(s.toLowerCase()));
+      if (isLeft || isRight) return false;
+    }
+    return true;
+  });
+
+  const groupedBySource = filteredBriefings.reduce<Record<string, Briefing[]>>((acc, b) => {
     if (!acc[b.source_name]) acc[b.source_name] = [];
     acc[b.source_name].push(b);
     return acc;
@@ -225,6 +272,94 @@ export function IntelHub() {
         </button>
       </div>
 
+      {/* Search & Filters */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1">
+          <div className="relative flex-1">
+            <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search articles by title, summary, or source..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-7 pr-7 py-1 text-xs border border-[#808080] bg-white focus:outline-none focus:border-[#000080]"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X size={10} />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`px-2 py-1 text-xs border flex items-center gap-1 ${
+              showFilters || selectedCategory !== "all" || partyLeaning !== "all"
+                ? "bg-[#000080] text-white border-[#000080]"
+                : "bg-[#c0c0c0] text-black border-[#808080] hover:bg-[#d4d4d4]"
+            }`}
+          >
+            <Filter size={12} />
+            Filters
+            {(selectedCategory !== "all" || partyLeaning !== "all") && (
+              <span className="bg-white text-[#000080] text-[9px] px-1 rounded-sm font-bold">
+                {(selectedCategory !== "all" ? 1 : 0) + (partyLeaning !== "all" ? 1 : 0)}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {showFilters && (
+          <div className="border border-[#808080] bg-[#f0f0f0] p-2 space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold text-gray-600 w-12">Topic:</span>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value as Category | "all")}
+                className="text-xs border border-[#808080] bg-white px-1 py-0.5 focus:outline-none"
+              >
+                <option value="all">All Topics</option>
+                {CATEGORY_OPTIONS.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold text-gray-600 w-12">Lean:</span>
+              {(["all", "left", "center", "right"] as PartyLeaning[]).map((lean) => (
+                <button
+                  key={lean}
+                  onClick={() => setPartyLeaning(lean)}
+                  className={`px-2 py-0.5 text-[10px] font-bold border ${
+                    partyLeaning === lean
+                      ? lean === "left" ? "bg-blue-600 text-white border-blue-600"
+                        : lean === "right" ? "bg-red-600 text-white border-red-600"
+                        : lean === "center" ? "bg-purple-600 text-white border-purple-600"
+                        : "bg-[#000080] text-white border-[#000080]"
+                      : "bg-white text-black border-[#808080] hover:bg-[#e8e8e8]"
+                  }`}
+                >
+                  {lean === "all" ? "All" : lean === "left" ? "🔵 Left" : lean === "right" ? "🔴 Right" : "🟣 Center"}
+                </button>
+              ))}
+            </div>
+            {(selectedCategory !== "all" || partyLeaning !== "all") && (
+              <button
+                onClick={() => { setSelectedCategory("all"); setPartyLeaning("all"); }}
+                className="text-[10px] text-[#000080] underline hover:text-blue-700"
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
+        )}
+
+        {(searchQuery || selectedCategory !== "all" || partyLeaning !== "all") && (
+          <div className="text-[10px] text-gray-500">
+            Showing {filteredBriefings.length} of {briefings.length} briefings
+          </div>
+        )}
+      </div>
+
       {lastUpdated && (
         <div className="text-[10px] text-gray-500 flex items-center gap-1">
           <Clock size={10} />
@@ -235,9 +370,11 @@ export function IntelHub() {
       {/* Briefing List */}
       {loading ? (
         <div className="text-xs text-gray-500 py-8 text-center">Loading intelligence briefings...</div>
-      ) : briefings.length === 0 ? (
+      ) : filteredBriefings.length === 0 ? (
         <div className="text-xs text-gray-500 py-8 text-center">
-          No briefings found for {SCOPE_CONFIG[activeScope].label}. Click "Sync" to fetch latest intelligence.
+          {briefings.length === 0
+            ? `No briefings found for ${SCOPE_CONFIG[activeScope].label}. Click "Sync" to fetch latest intelligence.`
+            : "No briefings match your search/filter criteria."}
         </div>
       ) : (
         <div className="space-y-4">
@@ -259,8 +396,11 @@ export function IntelHub() {
                     {b.summary && (
                       <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{b.summary}</div>
                     )}
-                    <div className="text-[9px] text-gray-400 mt-0.5">
+                    <div className="text-[9px] text-gray-400 mt-0.5 flex items-center gap-1">
                       {b.published_at ? format(new Date(b.published_at), "PPp") : ""}
+                      {b.category && b.category !== "general" && (
+                        <span className="bg-[#e8e8ff] text-[#000080] px-1 rounded text-[8px] font-bold uppercase">{b.category}</span>
+                      )}
                     </div>
                   </button>
                 ))}
