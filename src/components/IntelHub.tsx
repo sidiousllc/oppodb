@@ -169,7 +169,7 @@ export function IntelHub() {
     doc.text(`Generated: ${format(new Date(), "PPpp")}`, pw / 2, y, { align: "center" });
     y += 10;
 
-    for (const b of briefings) {
+    for (const b of filteredBriefings) {
       if (y > 260) {
         doc.addPage();
         y = 18;
