@@ -175,6 +175,55 @@ interface ForecastItem {
   last_updated: string | null;
 }
 
+interface DistrictFinanceItem {
+  id: string;
+  candidate_name: string;
+  party: string | null;
+  total_raised: number | null;
+  total_spent: number | null;
+  cash_on_hand: number | null;
+  source: string;
+  cycle: number;
+}
+
+interface CongressMemberItem {
+  name: string;
+  party: string | null;
+  bioguide_id: string;
+  official_url: string | null;
+}
+
+interface CongressBillItem {
+  id: string;
+  bill_id: string;
+  short_title: string | null;
+  title: string;
+  sponsor_name: string | null;
+  status: string | null;
+  latest_action_text: string | null;
+  latest_action_date: string | null;
+  policy_area: string | null;
+}
+
+interface StateLegElectionItem {
+  id: string;
+  candidate_name: string;
+  party: string | null;
+  chamber: string;
+  district_number: string;
+  election_year: number;
+  votes: number | null;
+  vote_pct: number | null;
+  is_winner: boolean | null;
+}
+
+interface MagaFileItem {
+  id: string;
+  name: string;
+  slug: string;
+  tags: string[];
+}
+
 /** Derive top issues from demographics when the DB field is empty */
 function deriveTopIssues(d: DistrictProfile): string[] {
   const issues: string[] = [];
