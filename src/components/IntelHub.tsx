@@ -252,7 +252,7 @@ export function IntelHub() {
                 {items.map((b) => (
                   <button
                     key={b.id}
-                    onClick={() => setSelectedBriefing(b)}
+                    onClick={() => handleSelectBriefing(b)}
                     className="w-full text-left px-2 py-1.5 hover:bg-[#e8e8ff] transition-colors"
                   >
                     <div className="text-xs font-bold text-[#000080] line-clamp-1">{b.title}</div>
