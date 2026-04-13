@@ -295,9 +295,30 @@ export function IntelHub() {
                 </div>
               )}
 
-              <div className="whitespace-pre-wrap text-xs leading-relaxed">
-                {selectedBriefing.content || selectedBriefing.summary || "No content available."}
-              </div>
+              {loadingArticle ? (
+                <div className="flex items-center gap-2 py-4 text-xs text-gray-500">
+                  <Loader2 size={14} className="animate-spin" />
+                  Loading full article...
+                </div>
+              ) : fullArticle ? (
+                <div className="prose-research text-xs leading-relaxed">
+                  <ReactMarkdown
+                    components={{
+                      a: ({ href, children }) => (
+                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#000080] underline hover:text-blue-700">
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {fullArticle}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <div className="whitespace-pre-wrap text-xs leading-relaxed">
+                  {selectedBriefing.content || selectedBriefing.summary || "No content available."}
+                </div>
+              )}
 
               <div className="mt-3 pt-2 border-t border-[#c0c0c0] flex items-center gap-2">
                 {selectedBriefing.source_url && (
