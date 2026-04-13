@@ -10,6 +10,13 @@ import { applyPdfBranding } from "@/lib/pdfBranding";
 
 type Scope = "local" | "state" | "national" | "international";
 
+type Category = "economy" | "elections" | "legal" | "defense" | "health" | "environment" | "immigration" | "education" | "housing" | "public-safety" | "technology" | "fiscal" | "labor" | "infrastructure" | "veterans" | "reproductive-rights" | "social-security" | "agriculture" | "general";
+
+type PartyLeaning = "left" | "right" | "center" | "all";
+
+const LEFT_SOURCES = ["The Nation", "Mother Jones", "Talking Points Memo", "The New Republic", "Daily Beast", "HuffPost", "Salon", "Jacobin", "Democracy Now!", "The Intercept", "Vox", "Slate", "CAP", "EPI", "CBPP", "Brookings", "Urban Institute", "Third Way", "Brennan Center"];
+const RIGHT_SOURCES = ["Daily Caller", "Washington Examiner", "National Review", "Washington Free Beacon", "The Federalist", "Townhall", "Daily Wire", "Breitbart", "RedState", "Heritage Foundation", "AEI", "Cato Institute", "Manhattan Institute", "Hoover Institution", "R Street", "American Action Forum"];
+
 interface Briefing {
   id: string;
   scope: string;
@@ -23,6 +30,28 @@ interface Briefing {
   region: string | null;
   created_at: string;
 }
+
+const CATEGORY_OPTIONS: { value: Category; label: string }[] = [
+  { value: "general", label: "General" },
+  { value: "economy", label: "Economy" },
+  { value: "elections", label: "Elections" },
+  { value: "legal", label: "Legal" },
+  { value: "defense", label: "Defense" },
+  { value: "health", label: "Health" },
+  { value: "environment", label: "Environment" },
+  { value: "immigration", label: "Immigration" },
+  { value: "education", label: "Education" },
+  { value: "housing", label: "Housing" },
+  { value: "public-safety", label: "Public Safety" },
+  { value: "technology", label: "Technology" },
+  { value: "fiscal", label: "Fiscal" },
+  { value: "labor", label: "Labor" },
+  { value: "infrastructure", label: "Infrastructure" },
+  { value: "veterans", label: "Veterans" },
+  { value: "reproductive-rights", label: "Reproductive Rights" },
+  { value: "social-security", label: "Social Security" },
+  { value: "agriculture", label: "Agriculture" },
+];
 
 const SCOPE_CONFIG: Record<Scope, { label: string; icon: React.ReactNode; emoji: string }> = {
   local: { label: "Local", icon: <MapPin size={14} />, emoji: "📍" },
