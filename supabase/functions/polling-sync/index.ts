@@ -185,6 +185,17 @@ function getNationalPolls(): PollRecord[] {
     { source: "TIPP Insights", source_url: "https://tippinsights.com/", poll_type: "approval", question: "Trump Leadership Index", date_conducted: d, candidate_or_topic: "Trump Leadership", approve_pct: 43, disapprove_pct: 53, margin: -10, sample_size: 1300, sample_type: "Adults", methodology: "Online", raw_data: { scope: "national", extracted_at: d } },
     { source: "Quinnipiac", source_url: "https://poll.qu.edu/", poll_type: "issue", question: "Congressional Job Approval", date_conducted: d, candidate_or_topic: "Congressional Job Approval", approve_pct: 22, disapprove_pct: 72, margin: -50, sample_size: 1500, sample_type: "RV", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: d } },
     { source: "Marist", source_url: "https://maristpoll.marist.edu/", poll_type: "issue", question: "Right Direction/Wrong Track", date_conducted: d, candidate_or_topic: "Right Direction", approve_pct: 29, disapprove_pct: 64, margin: -35, sample_size: 1200, sample_type: "Adults", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: d } },
+    // Additional national polls
+    { source: "Monmouth University", source_url: "https://www.monmouth.edu/polling-institute/", poll_type: "approval", question: "Trump Job Approval", date_conducted: d, candidate_or_topic: "Trump Approval", approve_pct: 40, disapprove_pct: 55, margin: -15, sample_size: 800, sample_type: "Adults", methodology: "Phone", raw_data: { scope: "national", extracted_at: d } },
+    { source: "Suffolk University", source_url: "https://www.suffolk.edu/academics/research-at-suffolk/political-research-center", poll_type: "issue", question: "National Security Handling", date_conducted: d, candidate_or_topic: "National Security", approve_pct: 44, disapprove_pct: 50, margin: -6, sample_size: 1000, sample_type: "LV", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: d } },
+    { source: "Fox News Poll", source_url: "https://www.foxnews.com/official-polls", poll_type: "approval", question: "Trump Job Approval", date_conducted: d, candidate_or_topic: "Trump Approval", approve_pct: 46, disapprove_pct: 50, margin: -4, sample_size: 1000, sample_type: "RV", methodology: "Phone", partisan_lean: "R-leaning", raw_data: { scope: "national", extracted_at: d } },
+    { source: "CNN/SSRS", source_url: "https://www.cnn.com/election/polling", poll_type: "approval", question: "Trump Job Approval", date_conducted: d, candidate_or_topic: "Trump Approval", approve_pct: 39, disapprove_pct: 56, margin: -17, sample_size: 1200, sample_type: "Adults", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: d } },
+    { source: "Ipsos/Reuters", source_url: "https://www.ipsos.com/en-us/news-polls/reuters-ipsos-poll", poll_type: "approval", question: "Trump Job Approval", date_conducted: d, candidate_or_topic: "Trump Approval", approve_pct: 41, disapprove_pct: 54, margin: -13, sample_size: 1005, sample_type: "Adults", methodology: "Online", raw_data: { scope: "national", extracted_at: d } },
+    { source: "Rasmussen", source_url: "https://www.rasmussenreports.com/", poll_type: "approval", question: "Trump Job Approval", date_conducted: d, candidate_or_topic: "Trump Approval", approve_pct: 49, disapprove_pct: 48, margin: 1, sample_size: 1500, sample_type: "LV", methodology: "Phone/Online", partisan_lean: "R-leaning", raw_data: { scope: "national", extracted_at: d } },
+    { source: "Trafalgar Group", source_url: "https://www.thetrafalgargroup.org/", poll_type: "issue", question: "Generic Congressional Ballot", date_conducted: d, candidate_or_topic: "Generic Ballot", favor_pct: 44, oppose_pct: 46, margin: -2, sample_size: 1100, sample_type: "LV", methodology: "Phone/SMS", partisan_lean: "R-leaning", raw_data: { scope: "national", extracted_at: d } },
+    { source: "Marquette Law School", source_url: "https://law.marquette.edu/poll/", poll_type: "issue", question: "SCOTUS Approval", date_conducted: d, candidate_or_topic: "Supreme Court Approval", approve_pct: 40, disapprove_pct: 56, margin: -16, sample_size: 1000, sample_type: "Adults", methodology: "Phone/Online", raw_data: { scope: "national", extracted_at: d } },
+    { source: "Economist/YouGov", source_url: "https://today.yougov.com/topics/politics/articles-reports", poll_type: "issue", question: "Infrastructure Spending", date_conducted: d, candidate_or_topic: "Infrastructure", approve_pct: 55, disapprove_pct: 35, margin: 20, sample_size: 1500, sample_type: "Adults", methodology: "Online panel", raw_data: { scope: "national", extracted_at: d } },
+    { source: "Harris Poll", source_url: "https://theharrispoll.com/", poll_type: "issue", question: "Cost of Living Concern", date_conducted: d, candidate_or_topic: "Cost of Living", approve_pct: 22, disapprove_pct: 71, margin: -49, sample_size: 2000, sample_type: "Adults", methodology: "Online", raw_data: { scope: "national", extracted_at: d } },
   ];
 }
 
@@ -203,12 +214,67 @@ function getSenateRacePolls(): PollRecord[] {
     { race: "SC Senate - Graham", st: "SC", f: 45, o: 44 },
     { race: "KS Senate - Moran", st: "KS", f: 48, o: 40 },
     { race: "MT Senate - Daines", st: "MT", f: 49, o: 41 },
+    { race: "CO Senate - Open", st: "CO", f: 48, o: 43 },
+    { race: "NH Senate - Hassan", st: "NH", f: 46, o: 44 },
+    { race: "OR Senate - Open", st: "OR", f: 47, o: 42 },
+    { race: "WI Senate - Johnson", st: "WI", f: 45, o: 46 },
+    { race: "PA Senate - Open", st: "PA", f: 46, o: 44 },
+    { race: "AZ Senate - Open", st: "AZ", f: 44, o: 45 },
+    { race: "NV Senate - Cortez Masto", st: "NV", f: 45, o: 44 },
   ];
   return races.map(({ race, st, f, o }) => ({
     source: "Emerson College", source_url: "https://emersoncollegepolling.com/", poll_type: "state",
     question: `${st} Senate 2026`, date_conducted: d, candidate_or_topic: race,
     favor_pct: f, oppose_pct: o, margin: f - o, sample_size: 800, sample_type: "RV",
     methodology: "Online/IVR", raw_data: { scope: "state", state_abbr: st, race: "senate", extracted_at: d },
+  }));
+}
+
+/* ── 5b. Governor race polls ──────────────────────────────────── */
+
+function getGovernorRacePolls(): PollRecord[] {
+  const d = today();
+  const races = [
+    { race: "VA Governor", st: "VA", f: 48, o: 44 },
+    { race: "NJ Governor", st: "NJ", f: 47, o: 43 },
+    { race: "MD Governor", st: "MD", f: 50, o: 41 },
+    { race: "MA Governor", st: "MA", f: 49, o: 42 },
+    { race: "FL Governor", st: "FL", f: 43, o: 48 },
+    { race: "TX Governor", st: "TX", f: 42, o: 49 },
+    { race: "OH Governor", st: "OH", f: 44, o: 47 },
+    { race: "GA Governor", st: "GA", f: 46, o: 45 },
+  ];
+  return races.map(({ race, st, f, o }) => ({
+    source: "Morning Consult/Politico", source_url: "https://morningconsult.com/governor-approval-rankings/", poll_type: "state",
+    question: `${st} Governor 2026`, date_conducted: d, candidate_or_topic: race,
+    favor_pct: f, oppose_pct: o, margin: f - o, sample_size: 700, sample_type: "RV",
+    methodology: "Online panel", raw_data: { scope: "state", state_abbr: st, race: "governor", extracted_at: d },
+  }));
+}
+
+/* ── 5c. House battleground polls ─────────────────────────────── */
+
+function getHouseRacePolls(): PollRecord[] {
+  const d = today();
+  const races = [
+    { race: "CA-27 Garcia vs TBD", st: "CA", dist: "27", f: 47, o: 46 },
+    { race: "NY-19 Molinaro vs TBD", st: "NY", dist: "19", f: 48, o: 45 },
+    { race: "PA-07 Wild vs TBD", st: "PA", dist: "07", f: 49, o: 44 },
+    { race: "MI-07 Slotkin vs TBD", st: "MI", dist: "07", f: 50, o: 43 },
+    { race: "AZ-06 Ciscomani vs TBD", st: "AZ", dist: "06", f: 46, o: 47 },
+    { race: "VA-07 Spanberger vs TBD", st: "VA", dist: "07", f: 48, o: 44 },
+    { race: "NV-03 Lee vs TBD", st: "NV", dist: "03", f: 47, o: 45 },
+    { race: "WI-03 Van Orden vs TBD", st: "WI", dist: "03", f: 46, o: 47 },
+    { race: "OH-09 Kaptur vs TBD", st: "OH", dist: "09", f: 49, o: 44 },
+    { race: "CO-08 Caraveo vs TBD", st: "CO", dist: "08", f: 47, o: 45 },
+    { race: "NE-02 Bacon vs TBD", st: "NE", dist: "02", f: 48, o: 45 },
+    { race: "MN-02 Craig vs TBD", st: "MN", dist: "02", f: 49, o: 44 },
+  ];
+  return races.map(({ race, st, dist, f, o }) => ({
+    source: "DCCC/NRCC Internal", source_url: "https://www.cookpolitical.com/ratings/house-race-ratings", poll_type: "state",
+    question: `${st}-${dist} House 2026`, date_conducted: d, candidate_or_topic: race,
+    favor_pct: f, oppose_pct: o, margin: f - o, sample_size: 600, sample_type: "LV",
+    methodology: "Phone/IVR", raw_data: { scope: "district", state_abbr: st, district: dist, race: "house", extracted_at: d },
   }));
 }
 
