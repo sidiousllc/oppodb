@@ -351,7 +351,7 @@ export function IntelHub() {
 
                     doc.setFont("helvetica", "normal");
                     doc.setFontSize(10);
-                    const contentText = selectedBriefing.content || selectedBriefing.summary || "";
+                    const contentText = fullArticle || selectedBriefing.content || selectedBriefing.summary || "";
                     const contentLines = doc.splitTextToSize(contentText, pw - 30);
                     doc.text(contentLines, 15, y);
 
