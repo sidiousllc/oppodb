@@ -104,7 +104,7 @@ function ArticleDetailWindow({
   );
 }
 
-
+interface Props {
   districtId: string;
 }
 
