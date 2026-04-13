@@ -142,6 +142,39 @@ interface NarrativeItem {
   tags: string[];
 }
 
+interface PollingItem {
+  id: string;
+  source: string;
+  candidate_or_topic: string;
+  poll_type: string;
+  approve_pct: number | null;
+  disapprove_pct: number | null;
+  favor_pct: number | null;
+  oppose_pct: number | null;
+  date_conducted: string;
+  sample_size: number | null;
+}
+
+interface IntelBriefingItem {
+  id: string;
+  title: string;
+  summary: string;
+  source_name: string;
+  source_url: string | null;
+  published_at: string | null;
+  scope: string;
+}
+
+interface ForecastItem {
+  id: string;
+  source: string;
+  rating: string | null;
+  dem_win_prob: number | null;
+  rep_win_prob: number | null;
+  margin: number | null;
+  last_updated: string | null;
+}
+
 /** Derive top issues from demographics when the DB field is empty */
 function deriveTopIssues(d: DistrictProfile): string[] {
   const issues: string[] = [];
