@@ -164,7 +164,13 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             </div>
           </div>
           <button
-            onClick={() => exportDistrictPDF(district, cookRating)}
+            onClick={async () => {
+              try {
+                await exportDistrictPDF(district, cookRating);
+              } catch (e) {
+                console.error("PDF export failed:", e);
+              }
+            }}
             className="win98-button text-[10px] flex items-center gap-1 shrink-0"
           >
             <Download className="h-3 w-3" />
