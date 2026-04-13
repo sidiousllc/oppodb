@@ -38,6 +38,8 @@ export function IntelHub() {
   const [syncing, setSyncing] = useState(false);
   const [selectedBriefing, setSelectedBriefing] = useState<Briefing | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [fullArticle, setFullArticle] = useState<string | null>(null);
+  const [loadingArticle, setLoadingArticle] = useState(false);
 
   const fetchBriefings = useCallback(async () => {
     setLoading(true);
