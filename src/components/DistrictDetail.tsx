@@ -126,9 +126,45 @@ interface LocalImpact {
   tags: string[];
 }
 
+interface MessagingItem {
+  id: string;
+  title: string;
+  slug: string;
+  source: string;
+  summary: string;
+  issue_areas: string[];
+}
+
+interface NarrativeItem {
+  id: string;
+  name: string;
+  slug: string;
+  tags: string[];
+}
+
+/** Derive top issues from demographics when the DB field is empty */
+function deriveTopIssues(d: DistrictProfile): string[] {
+  const issues: string[] = [];
+  if (d.poverty_rate != null && d.poverty_rate > 15) issues.push("poverty");
+  if (d.unemployment_rate != null && d.unemployment_rate > 6) issues.push("jobs");
+  if (d.uninsured_pct != null && d.uninsured_pct > 10) issues.push("healthcare");
+  if (d.median_home_value != null && d.median_income != null && d.median_home_value / d.median_income > 5) issues.push("housing costs");
+  if (d.education_bachelor_pct != null && d.education_bachelor_pct < 20) issues.push("education");
+  if (d.foreign_born_pct != null && d.foreign_born_pct > 15) issues.push("immigration");
+  if (d.veteran_pct != null && d.veteran_pct > 10) issues.push("veterans");
+  if (d.median_income != null && d.median_income < 45000) issues.push("income inequality");
+  if (d.owner_occupied_pct != null && d.owner_occupied_pct < 45) issues.push("housing");
+  if (d.median_rent != null && d.median_income != null && (d.median_rent * 12) / d.median_income > 0.3) issues.push("cost of living");
+  // Always include economy as a baseline
+  if (issues.length === 0) issues.push("economy", "healthcare", "education");
+  return issues.slice(0, 6);
+}
+
 export function DistrictDetail({ district, onBack, onSelectCandidate }: DistrictDetailProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [localImpacts, setLocalImpacts] = useState<LocalImpact[]>([]);
+  const [messagingItems, setMessagingItems] = useState<MessagingItem[]>([]);
+  const [narrativeItems, setNarrativeItems] = useState<NarrativeItem[]>([]);
   const candidateSlugs = getCandidatesForDistrict(district.district_id);
   const linkedCandidates = candidateSlugs
     .map((slug) => getCandidateBySlug(slug))
@@ -137,21 +173,57 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
   const cookRating = getCookRating(district.district_id);
   const stateAbbr = district.district_id.split("-")[0];
 
+  // Use DB top_issues or derive from demographics
+  const effectiveTopIssues = district.top_issues.length > 0 ? district.top_issues : deriveTopIssues(district);
+
   const fmt = (n: number | null | undefined) => n != null ? n.toLocaleString() : null;
   const pct = (n: number | null | undefined) => n != null ? `${n}%` : null;
   const dollar = (n: number | null | undefined) => n != null ? `$${n.toLocaleString()}` : null;
 
-  // Load local impacts for the state
+  // Load local impacts, messaging guidance, and narrative reports
   useEffect(() => {
+    const stateName = stateAbbrToName(stateAbbr);
+
     supabase
       .from("local_impacts")
       .select("slug, state, summary, tags")
-      .eq("state", stateAbbrToName(stateAbbr))
+      .eq("state", stateName)
       .limit(20)
+      .then(({ data }) => { if (data) setLocalImpacts(data); });
+
+    // Load messaging guidance matching district issues
+    supabase
+      .from("messaging_guidance")
+      .select("id, title, slug, source, summary, issue_areas")
+      .order("published_date", { ascending: false })
+      .limit(200)
       .then(({ data }) => {
-        if (data) setLocalImpacts(data);
+        if (!data) return;
+        const issueSet = new Set(effectiveTopIssues.map(i => i.toLowerCase()));
+        const matched = data.filter(m =>
+          m.issue_areas.some(a => {
+            const al = a.toLowerCase();
+            return issueSet.has(al) || [...issueSet].some(i => al.includes(i) || i.includes(al));
+          })
+        );
+        setMessagingItems(matched.slice(0, 10));
       });
-  }, [stateAbbr]);
+
+    // Load narrative reports
+    supabase
+      .from("narrative_reports")
+      .select("id, name, slug, tags")
+      .limit(100)
+      .then(({ data }) => {
+        if (!data) return;
+        const issueSet = new Set(effectiveTopIssues.map(i => i.toLowerCase()));
+        const matched = data.filter(n => {
+          const nameLower = n.name.toLowerCase();
+          return [...issueSet].some(i => nameLower.includes(i) || n.tags.some(t => t.toLowerCase().includes(i)));
+        });
+        setNarrativeItems(matched.length > 0 ? matched.slice(0, 8) : data.slice(0, 5));
+      });
+  }, [stateAbbr, effectiveTopIssues]);
 
   // Compute additional derived stats
   const renterPct = district.owner_occupied_pct != null ? Math.round((100 - district.owner_occupied_pct) * 10) / 10 : null;
@@ -311,11 +383,11 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
           )}
 
           {/* Top Issues */}
-          {district.top_issues.length > 0 && (
+          {effectiveTopIssues.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6 mb-6">
               <SectionHeader icon={<AlertCircle className="h-5 w-5 text-accent" />} title="Top Issues" subtitle="Key voter concerns in this district" />
               <div className="space-y-3">
-                {district.top_issues.map((issue, i) => (
+                {effectiveTopIssues.map((issue, i) => (
                   <div key={issue} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">{i + 1}</span>
                     <span className="text-sm font-medium text-foreground capitalize">{issue}</span>
@@ -462,14 +534,64 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
         {/* Issues & Impact Tab */}
         <TabsContent value="issues" className="mt-4">
           {/* Top Issues */}
-          {district.top_issues.length > 0 && (
+          {effectiveTopIssues.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6 mb-6">
-              <SectionHeader icon={<AlertCircle className="h-5 w-5 text-accent" />} title="Top Issues" subtitle="Key voter concerns identified in this district" />
+              <SectionHeader icon={<AlertCircle className="h-5 w-5 text-accent" />} title="Top Issues" subtitle={district.top_issues.length > 0 ? "Key voter concerns identified in this district" : "Derived from district demographics"} />
               <div className="space-y-3">
-                {district.top_issues.map((issue, i) => (
+                {effectiveTopIssues.map((issue, i) => (
                   <div key={issue} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">{i + 1}</span>
                     <span className="text-sm font-medium text-foreground capitalize">{issue}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Messaging Guidance */}
+          {messagingItems.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<FileText className="h-5 w-5 text-primary" />}
+                title="Messaging Guidance"
+                subtitle="Research-backed messaging relevant to this district's key issues"
+              />
+              <div className="space-y-2">
+                {messagingItems.map((item) => (
+                  <div key={item.id} className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm font-medium text-foreground mb-1">{item.title}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-1.5">{item.summary}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[9px] bg-secondary/50 text-secondary-foreground px-1.5 py-0.5 rounded">{item.source}</span>
+                      {item.issue_areas.slice(0, 3).map((a) => (
+                        <span key={a} className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">{a}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Narrative Reports */}
+          {narrativeItems.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<Globe className="h-5 w-5 text-primary" />}
+                title="Narrative Reports"
+                subtitle="In-depth policy impact reports relevant to district concerns"
+              />
+              <div className="space-y-2">
+                {narrativeItems.map((item) => (
+                  <div key={item.id} className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm font-medium text-foreground">{item.name}</p>
+                    {item.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {item.tags.slice(0, 4).map((tag) => (
+                          <span key={tag} className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">{tag}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -499,7 +621,7 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             </div>
           )}
 
-          {localImpacts.length === 0 && district.top_issues.length === 0 && (
+          {localImpacts.length === 0 && messagingItems.length === 0 && narrativeItems.length === 0 && effectiveTopIssues.length === 0 && (
             <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
               <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No issue or impact data available yet for this district.</p>
