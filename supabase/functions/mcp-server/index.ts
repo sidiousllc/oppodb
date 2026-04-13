@@ -533,8 +533,281 @@ mcpServer.tool("get_mn_finance", {
   },
 });
 
+mcpServer.tool("get_prediction_markets", {
+  description: "Get real-time prediction market data from Polymarket, Kalshi, Metaculus, Manifold, PredictIt. Filter by state, category, source.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      search: { type: "string" as const, description: "Search by market title or candidate name" },
+      state: { type: "string" as const, description: "Filter by state abbreviation" },
+      category: { type: "string" as const, description: "Filter by category: house, senate, president, governor" },
+      source: { type: "string" as const, description: "Filter by source: polymarket, kalshi, metaculus, manifold, predictit" },
+      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const search = args.search as string | undefined;
+    const state = args.state as string | undefined;
+    const category = args.category as string | undefined;
+    const source = args.source as string | undefined;
+    const limit = Math.min((args.limit as number) || 20, 100);
+    const offset = (args.offset as number) || 0;
+    let q = supabase.from("prediction_markets")
+      .select("id,market_id,source,title,category,state_abbr,district,candidate_name,yes_price,no_price,volume,liquidity,last_traded_at,market_url,status", { count: "exact" })
+      .eq("status", "active").range(offset, offset + limit - 1).order("volume", { ascending: false });
+    if (search) q = q.or(`title.ilike.%${search}%,candidate_name.ilike.%${search}%`);
+    if (state) q = q.eq("state_abbr", state.toUpperCase());
+    if (category) q = q.eq("category", category);
+    if (source) q = q.eq("source", source);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_messaging_guidance", {
+  description: "Get polling-based messaging guidance and strategic communications research from multiple partisan and non-partisan sources.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      search: { type: "string" as const, description: "Search by title, summary, or author" },
+      issue_area: { type: "string" as const, description: "Filter by issue area" },
+      slug: { type: "string" as const, description: "Get specific report by slug" },
+      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const search = args.search as string | undefined;
+    const issueArea = args.issue_area as string | undefined;
+    const slug = args.slug as string | undefined;
+    const limit = Math.min((args.limit as number) || 20, 100);
+    if (slug) {
+      const { data, error } = await supabase.from("messaging_guidance").select("*").eq("slug", slug);
+      if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+    }
+    let q = supabase.from("messaging_guidance")
+      .select("id,title,slug,source,author,published_date,summary,issue_areas,research_type", { count: "exact" })
+      .range(0, limit - 1).order("published_date", { ascending: false });
+    if (search) q = q.or(`title.ilike.%${search}%,summary.ilike.%${search}%,author.ilike.%${search}%`);
+    if (issueArea) q = q.contains("issue_areas", [issueArea]);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_intel_briefings", {
+  description: "Get intelligence briefings from 150+ news sources. Filter by scope (local/state/national/international), category, and search by title/source.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      search: { type: "string" as const, description: "Search by title, source, or category" },
+      scope: { type: "string" as const, description: "Filter by scope: local, state, national, international" },
+      category: { type: "string" as const, description: "Filter by category: economy, health, fiscal, infrastructure, etc." },
+      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const search = args.search as string | undefined;
+    const scope = args.scope as string | undefined;
+    const category = args.category as string | undefined;
+    const limit = Math.min((args.limit as number) || 20, 100);
+    const offset = (args.offset as number) || 0;
+    let q = supabase.from("intel_briefings")
+      .select("id,title,summary,scope,category,source_name,source_url,region,published_at", { count: "exact" })
+      .range(offset, offset + limit - 1).order("published_at", { ascending: false });
+    if (search) q = q.or(`title.ilike.%${search}%,summary.ilike.%${search}%,source_name.ilike.%${search}%,category.ilike.%${search}%`);
+    if (scope) q = q.eq("scope", scope);
+    if (category) q = q.eq("category", category);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_tracked_bills", {
+  description: "Get state-level tracked legislation from LegiScan. Search by title, bill number, or state.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      search: { type: "string" as const, description: "Search by title or bill number" },
+      state: { type: "string" as const, description: "Filter by state abbreviation" },
+      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const search = args.search as string | undefined;
+    const state = args.state as string | undefined;
+    const limit = Math.min((args.limit as number) || 20, 100);
+    const offset = (args.offset as number) || 0;
+    let q = supabase.from("tracked_bills")
+      .select("id,bill_number,title,state,status_desc,last_action,last_action_date,url", { count: "exact" })
+      .range(offset, offset + limit - 1).order("last_action_date", { ascending: false });
+    if (search) q = q.or(`title.ilike.%${search}%,bill_number.ilike.%${search}%,state.ilike.%${search}%`);
+    if (state) q = q.eq("state", state.toUpperCase());
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_mit_elections", {
+  description: "Get MIT Election Lab historical election results (1976-2024) at county level. Filter by state, year, office.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      search: { type: "string" as const, description: "Search by candidate name or state" },
+      state: { type: "string" as const, description: "Filter by state abbreviation (state_po)" },
+      year: { type: "number" as const, description: "Filter by election year" },
+      office: { type: "string" as const, description: "Filter by office (US PRESIDENT, US HOUSE, US SENATE)" },
+      limit: { type: "number" as const, description: "Max results (default 50, max 200)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const search = args.search as string | undefined;
+    const state = args.state as string | undefined;
+    const year = args.year as number | undefined;
+    const office = args.office as string | undefined;
+    const limit = Math.min((args.limit as number) || 50, 200);
+    const offset = (args.offset as number) || 0;
+    let q = supabase.from("mit_election_results")
+      .select("id,candidate,state,state_po,office,year,party,district,county_name,candidatevotes,totalvotes,stage,special", { count: "exact" })
+      .range(offset, offset + limit - 1).order("year", { ascending: false });
+    if (search) q = q.or(`candidate.ilike.%${search}%,state.ilike.%${search}%,state_po.ilike.%${search}%`);
+    if (state) q = q.eq("state_po", state.toUpperCase());
+    if (year) q = q.eq("year", year);
+    if (office) q = q.ilike("office", `%${office}%`);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_congress_committees", {
+  description: "Get congressional committee data including members and subcommittees.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      search: { type: "string" as const, description: "Search by committee name or code" },
+      chamber: { type: "string" as const, description: "Filter by chamber: house, senate, joint" },
+      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const search = args.search as string | undefined;
+    const chamber = args.chamber as string | undefined;
+    const limit = Math.min((args.limit as number) || 20, 100);
+    let q = supabase.from("congress_committees")
+      .select("id,system_code,name,chamber,committee_type,url,subcommittees,members", { count: "exact" })
+      .range(0, limit - 1).order("name");
+    if (search) q = q.or(`name.ilike.%${search}%,system_code.ilike.%${search}%`);
+    if (chamber) q = q.eq("chamber", chamber);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_congress_votes", {
+  description: "Get congressional roll call votes with results. Filter by congress session, chamber, bill ID.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      search: { type: "string" as const, description: "Search by description, question, or bill ID" },
+      congress: { type: "number" as const, description: "Congress number (e.g. 119)" },
+      chamber: { type: "string" as const, description: "'house' or 'senate'" },
+      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const search = args.search as string | undefined;
+    const congress = args.congress as number | undefined;
+    const chamber = args.chamber as string | undefined;
+    const limit = Math.min((args.limit as number) || 20, 100);
+    const offset = (args.offset as number) || 0;
+    let q = supabase.from("congress_votes")
+      .select("id,vote_id,congress,session,chamber,roll_number,vote_date,question,description,result,bill_id,yea_total,nay_total,not_voting_total", { count: "exact" })
+      .range(offset, offset + limit - 1).order("vote_date", { ascending: false });
+    if (search) q = q.or(`description.ilike.%${search}%,question.ilike.%${search}%,bill_id.ilike.%${search}%`);
+    if (congress) q = q.eq("congress", congress);
+    if (chamber) q = q.eq("chamber", chamber);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_state_leg_elections", {
+  description: "Get state legislative election results. Filter by state, chamber, year, district.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      state: { type: "string" as const, description: "Filter by state abbreviation" },
+      chamber: { type: "string" as const, description: "'house' or 'senate'" },
+      year: { type: "number" as const, description: "Election year" },
+      district: { type: "string" as const, description: "District number" },
+      limit: { type: "number" as const, description: "Max results (default 50, max 200)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const state = args.state as string | undefined;
+    const chamber = args.chamber as string | undefined;
+    const year = args.year as number | undefined;
+    const district = args.district as string | undefined;
+    const limit = Math.min((args.limit as number) || 50, 200);
+    const offset = (args.offset as number) || 0;
+    let q = supabase.from("state_leg_election_results")
+      .select("id,candidate_name,state_abbr,chamber,district_number,election_year,party,votes,vote_pct,total_votes,is_winner,is_incumbent,turnout", { count: "exact" })
+      .range(offset, offset + limit - 1).order("election_year", { ascending: false });
+    if (state) q = q.eq("state_abbr", state.toUpperCase());
+    if (chamber) q = q.eq("chamber", chamber);
+    if (year) q = q.eq("election_year", year);
+    if (district) q = q.eq("district_number", district);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_forecast_history", {
+  description: "Get historical changes in election forecast ratings over time. Track when Cook, Sabato, etc. shifted race ratings.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      state: { type: "string" as const, description: "Filter by state abbreviation" },
+      race_type: { type: "string" as const, description: "'house', 'senate', or 'governor'" },
+      source: { type: "string" as const, description: "Filter by forecast source" },
+      cycle: { type: "number" as const, description: "Election cycle year (default 2026)" },
+      limit: { type: "number" as const, description: "Max results (default 50, max 200)" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const state = args.state as string | undefined;
+    const raceType = args.race_type as string | undefined;
+    const source = args.source as string | undefined;
+    const cycle = (args.cycle as number) || 2026;
+    const limit = Math.min((args.limit as number) || 50, 200);
+    let q = supabase.from("election_forecast_history")
+      .select("id,forecast_id,source,race_type,state_abbr,district,cycle,old_rating,new_rating,changed_at", { count: "exact" })
+      .eq("cycle", cycle).range(0, limit - 1).order("changed_at", { ascending: false });
+    if (state) q = q.eq("state_abbr", state.toUpperCase());
+    if (raceType) q = q.eq("race_type", raceType);
+    if (source) q = q.eq("source", source);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
 mcpServer.tool("master_search", {
-  description: "Unified search across ALL OppoDB databases simultaneously: candidates, congress members, bills, polling, campaign finance, election results, forecasts, MAGA files, narrative reports, local impacts, and voter registration stats. Returns results grouped by category. Use the 'categories' param to filter which categories to search.",
+  description: "Unified search across ALL 24 OppoDB databases simultaneously: candidates, congress members, bills, polling, campaign finance, election results, forecasts, MAGA files, narrative reports, local impacts, voter stats, prediction markets, messaging guidance, intel briefings, tracked bills, MIT elections, committees, votes, state leg elections, and forecast history. Returns results grouped by category.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -542,7 +815,7 @@ mcpServer.tool("master_search", {
       categories: {
         type: "array" as const,
         items: { type: "string" as const },
-        description: "Optional list of categories to search. Available: candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats, mn_finance. Defaults to all.",
+        description: "Optional list of categories to search. Available: candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats, mn_finance, prediction_markets, messaging_guidance, intel_briefings, tracked_bills, mit_elections, congress_committees, congress_votes, state_leg_elections, forecast_history. Defaults to all.",
       },
       limit: { type: "number" as const, description: "Max results per category (default 10, max 20)" },
     },
@@ -562,6 +835,10 @@ mcpServer.tool("master_search", {
       "campaign_finance", "state_finance", "election_results",
       "forecasts", "maga_files", "narrative_reports",
       "local_impacts", "voter_stats", "mn_finance",
+      "prediction_markets", "messaging_guidance",
+      "intel_briefings", "tracked_bills", "mit_elections",
+      "congress_committees", "congress_votes", "state_leg_elections",
+      "forecast_history",
     ];
 
     const requestedCategories = args.categories as string[] | undefined;
