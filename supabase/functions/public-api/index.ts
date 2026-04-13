@@ -22,11 +22,18 @@ const VALID_ENDPOINTS = [
   "voter-registration-stats",
   "congress-members",
   "congress-bills",
+  "congress-committees",
+  "congress-votes",
   "campaign-finance",
   "election-forecasts",
+  "forecast-history",
   "congressional-elections",
   "state-finance",
   "mn-finance",
+  "intel-briefings",
+  "tracked-bills",
+  "mit-elections",
+  "state-leg-elections",
   "search",
 ];
 
@@ -638,6 +645,122 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "intel-briefings": {
+        let q = supabase
+          .from("intel_briefings")
+          .select("id,title,summary,content,scope,category,source_name,source_url,region,published_at,created_at,updated_at", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("published_at", { ascending: false });
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,summary.ilike.%${searchQuery}%,source_name.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`);
+        const scopeParam = url.searchParams.get("scope");
+        if (scopeParam) q = q.eq("scope", scopeParam);
+        const catParam2 = url.searchParams.get("category");
+        if (catParam2) q = q.eq("category", catParam2);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "tracked-bills": {
+        let q = supabase
+          .from("tracked_bills")
+          .select("id,bill_number,title,state,status_desc,last_action,last_action_date,bill_id,session_id,url", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("last_action_date", { ascending: false });
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,bill_number.ilike.%${searchQuery}%,state.ilike.%${searchQuery}%`);
+        if (stateFilter) q = q.eq("state", stateFilter);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "mit-elections": {
+        let q = supabase
+          .from("mit_election_results")
+          .select("id,candidate,state,state_po,office,year,party,district,county_name,county_fips,candidatevotes,totalvotes,stage,special,writein", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("year", { ascending: false });
+        if (searchQuery) q = q.or(`candidate.ilike.%${searchQuery}%,state.ilike.%${searchQuery}%,state_po.ilike.%${searchQuery}%`);
+        if (stateFilter) q = q.eq("state_po", stateFilter);
+        const yearParam = url.searchParams.get("year");
+        if (yearParam) q = q.eq("year", parseInt(yearParam));
+        const officeParam2 = url.searchParams.get("office");
+        if (officeParam2) q = q.ilike("office", `%${officeParam2}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "congress-committees": {
+        let q = supabase
+          .from("congress_committees")
+          .select("id,system_code,name,chamber,committee_type,parent_system_code,url,subcommittees,members", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("name");
+        if (searchQuery) q = q.or(`name.ilike.%${searchQuery}%,system_code.ilike.%${searchQuery}%`);
+        if (chamber) q = q.eq("chamber", chamber);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "congress-votes": {
+        let q = supabase
+          .from("congress_votes")
+          .select("id,vote_id,congress,session,chamber,roll_number,vote_date,question,description,result,bill_id,yea_total,nay_total,not_voting_total,present_total", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("vote_date", { ascending: false });
+        if (searchQuery) q = q.or(`description.ilike.%${searchQuery}%,question.ilike.%${searchQuery}%,bill_id.ilike.%${searchQuery}%`);
+        const congressParam2 = url.searchParams.get("congress");
+        if (congressParam2) q = q.eq("congress", parseInt(congressParam2));
+        if (chamber) q = q.eq("chamber", chamber);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "state-leg-elections": {
+        let q = supabase
+          .from("state_leg_election_results")
+          .select("id,candidate_name,state_abbr,chamber,district_number,election_year,election_type,election_date,party,votes,vote_pct,total_votes,is_winner,is_incumbent,turnout", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("election_year", { ascending: false });
+        if (stateFilter) q = q.eq("state_abbr", stateFilter);
+        if (chamber) q = q.eq("chamber", chamber);
+        if (searchQuery) q = q.or(`candidate_name.ilike.%${searchQuery}%,state_abbr.ilike.%${searchQuery}%`);
+        const yearParam2 = url.searchParams.get("year");
+        if (yearParam2) q = q.eq("election_year", parseInt(yearParam2));
+        const districtParam = url.searchParams.get("district");
+        if (districtParam) q = q.eq("district_number", districtParam);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "forecast-history": {
+        let q = supabase
+          .from("election_forecast_history")
+          .select("id,forecast_id,source,race_type,state_abbr,district,cycle,old_rating,new_rating,changed_at", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("changed_at", { ascending: false });
+        if (stateFilter) q = q.eq("state_abbr", stateFilter);
+        if (searchQuery) q = q.or(`state_abbr.ilike.%${searchQuery}%,source.ilike.%${searchQuery}%`);
+        const raceType2 = url.searchParams.get("race_type");
+        if (raceType2) q = q.eq("race_type", raceType2);
+        const cycleParam = url.searchParams.get("cycle");
+        q = q.eq("cycle", cycleParam ? parseInt(cycleParam) : 2026);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
       case "search": {
         const q = searchQuery;
         if (!q || q.length < 2) {
@@ -656,6 +779,9 @@ Deno.serve(async (req) => {
           "forecasts", "maga_files", "narrative_reports",
           "local_impacts", "voter_stats", "mn_finance",
           "prediction_markets", "messaging_guidance",
+          "intel_briefings", "tracked_bills", "mit_elections",
+          "congress_committees", "congress_votes", "state_leg_elections",
+          "forecast_history",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
@@ -763,6 +889,56 @@ Deno.serve(async (req) => {
             .order("published_date", { ascending: false }).limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "Messaging Guidance" }));
         }
+        if (activeCategories.includes("intel_briefings")) {
+          categoryQueries.intel_briefings = supabase.from("intel_briefings")
+            .select("id,title,summary,scope,category,source_name,published_at")
+            .or(`title.ilike.${likeQ},summary.ilike.${likeQ},source_name.ilike.${likeQ},category.ilike.${likeQ}`)
+            .order("published_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Intel Briefings" }));
+        }
+        if (activeCategories.includes("tracked_bills")) {
+          categoryQueries.tracked_bills = supabase.from("tracked_bills")
+            .select("id,bill_number,title,state,status_desc,last_action_date")
+            .or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},state.ilike.${likeQ}`)
+            .order("last_action_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Tracked Bills (LegiScan)" }));
+        }
+        if (activeCategories.includes("mit_elections")) {
+          categoryQueries.mit_elections = supabase.from("mit_election_results")
+            .select("id,candidate,state,state_po,office,year,party,candidatevotes,totalvotes")
+            .or(`candidate.ilike.${likeQ},state.ilike.${likeQ},state_po.ilike.${likeQ}`)
+            .order("year", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "MIT Election History" }));
+        }
+        if (activeCategories.includes("congress_committees")) {
+          categoryQueries.congress_committees = supabase.from("congress_committees")
+            .select("id,system_code,name,chamber")
+            .or(`name.ilike.${likeQ},system_code.ilike.${likeQ}`)
+            .order("name").limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Congress Committees" }));
+        }
+        if (activeCategories.includes("congress_votes")) {
+          categoryQueries.congress_votes = supabase.from("congress_votes")
+            .select("id,vote_id,chamber,vote_date,question,result,bill_id,yea_total,nay_total")
+            .or(`description.ilike.${likeQ},question.ilike.${likeQ},bill_id.ilike.${likeQ}`)
+            .order("vote_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Congress Votes" }));
+        }
+        if (activeCategories.includes("state_leg_elections")) {
+          categoryQueries.state_leg_elections = supabase.from("state_leg_election_results")
+            .select("id,candidate_name,state_abbr,chamber,district_number,election_year,party,votes,vote_pct,is_winner")
+            .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+            .order("election_year", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "State Leg Elections" }));
+        }
+        if (activeCategories.includes("forecast_history")) {
+          categoryQueries.forecast_history = supabase.from("election_forecast_history")
+            .select("id,source,state_abbr,district,race_type,old_rating,new_rating,changed_at")
+            .or(`state_abbr.ilike.${likeQ},source.ilike.${likeQ}`)
+            .eq("cycle", 2026)
+            .order("changed_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Forecast Rating Changes" }));
+        }
 
         const entries = Object.entries(categoryQueries);
         const settled = await Promise.all(entries.map(async ([key, promise]) => {
@@ -856,7 +1032,14 @@ function endpointDescription(endpoint: string): string {
     "congressional-elections": "Congressional election results with vote counts and winners",
     "state-finance": "State-level campaign finance data across all states",
     "mn-finance": "Minnesota Campaign Finance Board candidate data",
-    search: "Unified search across all databases (requires ?search= param, optional ?categories= filter, now includes prediction_markets)",
+    "intel-briefings": "Intelligence briefings from 150+ news sources categorized by scope and topic",
+    "tracked-bills": "LegiScan tracked state legislation with status and actions",
+    "mit-elections": "MIT Election Lab historical election results (1976-2024) with county-level data",
+    "congress-committees": "Congressional committees with members and subcommittees",
+    "congress-votes": "Congressional roll call votes with vote totals and results",
+    "state-leg-elections": "State legislative election results with vote counts and winners",
+    "forecast-history": "Historical changes in election forecast ratings over time",
+    search: "Unified search across all 24 databases (requires ?search= param, optional ?categories= filter)",
   };
   return descs[endpoint] || "";
 }

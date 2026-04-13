@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users, Filter, TrendingUp, Building2, History } from "lucide-react";
+import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users, Filter, TrendingUp, Building2, History, Newspaper, Gavel, ArrowLeftRight } from "lucide-react";
 import { exportSearchCSV, exportSearchPDF } from "@/lib/masterSearchExport";
 import { supabase } from "@/integrations/supabase/client";
 import { searchCandidates } from "@/data/candidates";
@@ -36,7 +36,7 @@ function saveToStorage(key: string, items: string[]) {
   localStorage.setItem(key, JSON.stringify(items));
 }
 
-const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [] };
+const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [] };
 
 
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
@@ -61,7 +61,12 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     mitElections: any[];
     trackedBills: any[];
     messagingGuidance: any[];
-  }>({ polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [] });
+    intelBriefings: any[];
+    congressCommittees: any[];
+    congressVotes: any[];
+    stateLegElections: any[];
+    forecastHistory: any[];
+  }>(EMPTY_DB as any);
   const [hasSearched, setHasSearched] = useState(false);
 
   // Ctrl+K shortcut to focus search
@@ -195,7 +200,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -266,6 +271,32 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`title.ilike.${likeQ},summary.ilike.${likeQ},author.ilike.${likeQ}`)
         .order("published_date", { ascending: false })
         .limit(10),
+      supabase.from("intel_briefings")
+        .select("id, title, summary, scope, category, source_name, published_at")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},source_name.ilike.${likeQ},category.ilike.${likeQ}`)
+        .order("published_at", { ascending: false })
+        .limit(10),
+      supabase.from("congress_committees")
+        .select("id, system_code, name, chamber")
+        .or(`name.ilike.${likeQ},system_code.ilike.${likeQ}`)
+        .order("name")
+        .limit(10),
+      supabase.from("congress_votes")
+        .select("id, vote_id, chamber, vote_date, question, result, bill_id, yea_total, nay_total")
+        .or(`description.ilike.${likeQ},question.ilike.${likeQ},bill_id.ilike.${likeQ}`)
+        .order("vote_date", { ascending: false })
+        .limit(10),
+      supabase.from("state_leg_election_results")
+        .select("id, candidate_name, state_abbr, chamber, district_number, election_year, party, votes, vote_pct, is_winner")
+        .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+        .order("election_year", { ascending: false })
+        .limit(10),
+      supabase.from("election_forecast_history")
+        .select("id, source, state_abbr, district, race_type, old_rating, new_rating, changed_at")
+        .or(`state_abbr.ilike.${likeQ},source.ilike.${likeQ}`)
+        .eq("cycle", 2026)
+        .order("changed_at", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
@@ -284,6 +315,11 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       mitElections: mitElRes.data || [],
       trackedBills: trackedBillsRes.data || [],
       messagingGuidance: messagingRes.data || [],
+      intelBriefings: intelRes.data || [],
+      congressCommittees: committeesRes.data || [],
+      congressVotes: votesRes.data || [],
+      stateLegElections: stateLegElRes.data || [],
+      forecastHistory: forecastHistRes.data || [],
     });
     setIsSearching(false);
 
@@ -562,6 +598,76 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           title: g.title,
           subtitle: `${g.source || "Navigator Research"} • ${g.author || ""} • ${g.published_date || ""}${g.issue_areas?.length ? ` • ${g.issue_areas.join(", ")}` : ""}`,
           slug: g.slug,
+        })),
+      });
+    }
+
+    if (dbResults.intelBriefings.length > 0) {
+      groups.push({
+        key: "intel-briefings",
+        label: "Intel Briefings",
+        icon: <Newspaper className="h-3.5 w-3.5" />,
+        section: "intelhub",
+        results: dbResults.intelBriefings.map((b: any) => ({
+          id: b.id,
+          title: b.title,
+          subtitle: `${b.source_name} • ${b.scope} • ${b.category} • ${b.published_at ? new Date(b.published_at).toLocaleDateString() : ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.congressCommittees.length > 0) {
+      groups.push({
+        key: "congress-committees",
+        label: "Congress Committees",
+        icon: <Building2 className="h-3.5 w-3.5" />,
+        section: "leghub",
+        results: dbResults.congressCommittees.map((c: any) => ({
+          id: c.id,
+          title: c.name,
+          subtitle: `${c.chamber} • ${c.system_code}`,
+        })),
+      });
+    }
+
+    if (dbResults.congressVotes.length > 0) {
+      groups.push({
+        key: "congress-votes",
+        label: "Congress Votes",
+        icon: <Gavel className="h-3.5 w-3.5" />,
+        section: "leghub",
+        results: dbResults.congressVotes.map((v: any) => ({
+          id: v.id,
+          title: v.question || v.bill_id || v.vote_id,
+          subtitle: `${v.chamber} • ${v.vote_date || ""} • ${v.result || ""} • Yea: ${v.yea_total || 0} Nay: ${v.nay_total || 0}`,
+        })),
+      });
+    }
+
+    if (dbResults.stateLegElections.length > 0) {
+      groups.push({
+        key: "state-leg-elections",
+        label: "State Leg Elections",
+        icon: <Vote className="h-3.5 w-3.5" />,
+        section: "leghub",
+        results: dbResults.stateLegElections.map((e: any) => ({
+          id: e.id,
+          title: e.candidate_name,
+          subtitle: `${e.state_abbr} ${e.chamber}-${e.district_number} • ${e.party || ""} • ${e.election_year}${e.is_winner ? " ✓" : ""} • ${e.vote_pct ? `${e.vote_pct}%` : ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.forecastHistory.length > 0) {
+      groups.push({
+        key: "forecast-history",
+        label: "Forecast Rating Changes",
+        icon: <ArrowLeftRight className="h-3.5 w-3.5" />,
+        section: "district-intel",
+        results: dbResults.forecastHistory.map((f: any) => ({
+          id: f.id,
+          title: `${f.state_abbr}-${f.district || "AL"} (${f.source})`,
+          subtitle: `${f.old_rating || "New"} → ${f.new_rating} • ${f.race_type} • ${f.changed_at ? new Date(f.changed_at).toLocaleDateString() : ""}`,
         })),
       });
     }
