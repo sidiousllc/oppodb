@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { type DistrictProfile } from "@/data/districtIntel";
 import { DistrictBoundaryMap } from "@/components/DistrictBoundaryMap";
 import { CookRatingHistory } from "@/components/CookRatingHistory";
@@ -174,7 +174,10 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
   const stateAbbr = district.district_id.split("-")[0];
 
   // Use DB top_issues or derive from demographics
-  const effectiveTopIssues = district.top_issues.length > 0 ? district.top_issues : deriveTopIssues(district);
+  const effectiveTopIssues = useMemo(
+    () => district.top_issues.length > 0 ? district.top_issues : deriveTopIssues(district),
+    [district]
+  );
 
   const fmt = (n: number | null | undefined) => n != null ? n.toLocaleString() : null;
   const pct = (n: number | null | undefined) => n != null ? `${n}%` : null;
