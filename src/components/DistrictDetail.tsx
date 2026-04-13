@@ -534,14 +534,64 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
         {/* Issues & Impact Tab */}
         <TabsContent value="issues" className="mt-4">
           {/* Top Issues */}
-          {district.top_issues.length > 0 && (
+          {effectiveTopIssues.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6 mb-6">
-              <SectionHeader icon={<AlertCircle className="h-5 w-5 text-accent" />} title="Top Issues" subtitle="Key voter concerns identified in this district" />
+              <SectionHeader icon={<AlertCircle className="h-5 w-5 text-accent" />} title="Top Issues" subtitle={district.top_issues.length > 0 ? "Key voter concerns identified in this district" : "Derived from district demographics"} />
               <div className="space-y-3">
-                {district.top_issues.map((issue, i) => (
+                {effectiveTopIssues.map((issue, i) => (
                   <div key={issue} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">{i + 1}</span>
                     <span className="text-sm font-medium text-foreground capitalize">{issue}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Messaging Guidance */}
+          {messagingItems.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<FileText className="h-5 w-5 text-primary" />}
+                title="Messaging Guidance"
+                subtitle="Research-backed messaging relevant to this district's key issues"
+              />
+              <div className="space-y-2">
+                {messagingItems.map((item) => (
+                  <div key={item.id} className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm font-medium text-foreground mb-1">{item.title}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-1.5">{item.summary}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[9px] bg-secondary/50 text-secondary-foreground px-1.5 py-0.5 rounded">{item.source}</span>
+                      {item.issue_areas.slice(0, 3).map((a) => (
+                        <span key={a} className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">{a}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Narrative Reports */}
+          {narrativeItems.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<Globe className="h-5 w-5 text-primary" />}
+                title="Narrative Reports"
+                subtitle="In-depth policy impact reports relevant to district concerns"
+              />
+              <div className="space-y-2">
+                {narrativeItems.map((item) => (
+                  <div key={item.id} className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm font-medium text-foreground">{item.name}</p>
+                    {item.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {item.tags.slice(0, 4).map((tag) => (
+                          <span key={tag} className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">{tag}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -571,7 +621,7 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             </div>
           )}
 
-          {localImpacts.length === 0 && district.top_issues.length === 0 && (
+          {localImpacts.length === 0 && messagingItems.length === 0 && narrativeItems.length === 0 && effectiveTopIssues.length === 0 && (
             <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
               <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No issue or impact data available yet for this district.</p>
