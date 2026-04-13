@@ -109,12 +109,12 @@ export function OfflineStatusIndicator() {
             {status.pendingWrites > 0 && (
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Pending writes</span>
-                <span className="text-amber-500 font-semibold">{status.pendingWrites}</span>
+                <span className="text-accent font-semibold">{status.pendingWrites}</span>
               </div>
             )}
 
             {status.pendingWrites === 0 && status.lastSyncAt && (
-              <div className="flex items-center gap-1 text-xs text-emerald-500">
+              <div className="flex items-center gap-1 text-xs text-primary">
                 <CheckCircle2 className="h-3 w-3" />
                 All changes synced
               </div>
