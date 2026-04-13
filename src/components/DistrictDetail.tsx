@@ -1120,7 +1120,91 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             </div>
           )}
 
-          {localImpacts.length === 0 && messagingItems.length === 0 && narrativeItems.length === 0 && effectiveTopIssues.length === 0 && pollingItems.length === 0 && intelItems.length === 0 && forecastItems.length === 0 && districtFinance.length === 0 && congressBills.length === 0 && (
+          {/* Prediction Markets */}
+          {predictionMarkets.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<TrendingDown className="h-5 w-5 text-primary" />}
+                title="Prediction Markets"
+                subtitle="Market-based odds for races in this state/district"
+              />
+              <div className="space-y-2">
+                {predictionMarkets.map((m) => (
+                  <div key={m.id} className="p-3 rounded-lg bg-muted/50 flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground line-clamp-1">{m.title}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                        <span>{m.source}</span>
+                        {m.volume != null && <span>Vol: ${m.volume.toLocaleString()}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 ml-2">
+                      {m.yes_price != null && <span className="text-xs font-bold text-accent">Yes: {(m.yes_price * 100).toFixed(0)}¢</span>}
+                      {m.no_price != null && <span className="text-xs text-muted-foreground">No: {(m.no_price * 100).toFixed(0)}¢</span>}
+                      {m.market_url && (
+                        <a href={m.market_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline">View →</a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Candidate Profiles */}
+          {candidateProfiles.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<UserCheck className="h-5 w-5 text-primary" />}
+                title="Candidate Research Profiles"
+                subtitle="In-depth opposition research files for candidates in this area"
+              />
+              <div className="space-y-2">
+                {candidateProfiles.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => onSelectCandidate?.(c.slug)}
+                    className="w-full text-left p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <p className="text-sm font-medium text-foreground">{c.name}</p>
+                    {c.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {c.tags.slice(0, 4).map((tag) => (
+                          <span key={tag} className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* State Legislative Demographics */}
+          {stateLegProfiles.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<Landmark className="h-5 w-5 text-primary" />}
+                title="State Legislative Districts"
+                subtitle={`Demographic snapshot of state-level districts in ${stateAbbrToName(stateAbbr)}`}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {stateLegProfiles.slice(0, 8).map((s) => (
+                  <div key={s.id} className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs font-bold text-foreground mb-1">{s.chamber} Dist. {s.district_number}</p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
+                      {s.population != null && <span>Pop: {s.population.toLocaleString()}</span>}
+                      {s.median_income != null && <span>Income: ${s.median_income.toLocaleString()}</span>}
+                      {s.poverty_rate != null && <span>Poverty: {s.poverty_rate}%</span>}
+                      {s.unemployment_rate != null && <span>Unemp: {s.unemployment_rate}%</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {localImpacts.length === 0 && messagingItems.length === 0 && narrativeItems.length === 0 && effectiveTopIssues.length === 0 && pollingItems.length === 0 && intelItems.length === 0 && forecastItems.length === 0 && districtFinance.length === 0 && congressBills.length === 0 && predictionMarkets.length === 0 && candidateProfiles.length === 0 && (
             <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
               <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No issue or impact data available yet for this district.</p>
