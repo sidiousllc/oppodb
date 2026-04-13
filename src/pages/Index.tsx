@@ -30,6 +30,7 @@ import { PollingSection } from "@/components/PollingSection";
 import { LegHub } from "@/components/LegHub";
 import { OppoHub } from "@/components/OppoHub";
 import { MessagingHub } from "@/components/MessagingHub";
+import { IntelHub } from "@/components/IntelHub";
 
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
@@ -242,6 +243,7 @@ export default function Index() {
     oppohub: "OppoHub",
     leghub: "LegHub",
     polling: "DataHub",
+    intelhub: "IntelHub",
     messaging: "MessagingHub",
     "research-tools": "Research Tools",
     "live-elections": "Live Elections",
