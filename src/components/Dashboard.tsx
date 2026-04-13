@@ -380,10 +380,11 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
         <h2 className="text-sm font-bold mb-2">📂 Quick Navigation</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
+            { label: "Dashboard", emoji: "🏠", section: "dashboard" },
             { label: "OppoHub", emoji: "🎯", section: "oppohub" },
-            { label: "District Intel", emoji: "🧭", section: "leghub" },
             { label: "LegHub", emoji: "⚖️", section: "leghub" },
             { label: "DataHub", emoji: "📊", section: "polling" },
+            { label: "IntelHub", emoji: "🕵️", section: "intelhub" },
             { label: "MessagingHub", emoji: "📢", section: "messaging" },
             { label: "Research Tools", emoji: "🔬", section: "research-tools" },
             { label: "Live Elections", emoji: "🏛️", section: "live-elections" },
