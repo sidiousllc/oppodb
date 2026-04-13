@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -15,6 +16,7 @@ import ProfilePage from "./pages/ProfilePage.tsx";
 import ApiPage from "./pages/ApiPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import UnsubscribePage from "./pages/UnsubscribePage.tsx";
+import { initOfflineSync } from "./lib/offlineSync";
 
 const queryClient = new QueryClient();
 
@@ -44,7 +46,13 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const App = () => (
+const App = () => {
+  useEffect(() => {
+    const cleanup = initOfflineSync();
+    return cleanup;
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -71,6 +79,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
