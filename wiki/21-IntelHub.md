@@ -2,7 +2,7 @@
 
 ## Description
 
-IntelHub is the intelligence briefings section of OppoDB, aggregating news and analysis from 90+ RSS/Atom sources across four scopes: Local, State, National, and International. It provides automated category detection, full article text rendering, and PDF export capabilities.
+IntelHub is the intelligence briefings section of OppoDB, aggregating news and analysis from **150+ RSS/Atom sources** across four scopes: Local, State, National, and International. It provides automated category detection across 19 categories, full article text rendering, and PDF export capabilities.
 
 ---
 
@@ -37,46 +37,83 @@ interface Briefing {
 
 ---
 
-## Data Sources (90+ RSS/Atom Feeds)
+## Data Sources (150+ RSS/Atom Feeds)
 
-### International Sources
-DW News, France 24, Al Jazeera, BBC World, Reuters, South China Morning Post, The Guardian World, Foreign Policy, Japan Times, Middle East Eye
+### International Sources (40+)
+**Wire Services & Major Outlets:** Reuters World, AP World News, BBC World, Al Jazeera, The Guardian World, The Economist, Financial Times World, UN News, Euronews
 
-### National Sources
-Washington Post, Punchbowl News, ProPublica, Politico, The Hill, Roll Call, NPR Politics, AP News, Reuters US, Axios, Vox, Slate, The Intercept, Mother Jones, The Atlantic, National Review, The Federalist, Daily Caller, Reason Magazine, and more
+**Regional Outlets:** Deutsche Welle, France 24, Japan Times, South China Morning Post, Middle East Eye, The Diplomat, Nikkei Asia, Times of India, Kyiv Independent, Moscow Times, Haaretz, GlobalVoices, The New Humanitarian, The Africa Report, Latin America Reports, World Politics Review
 
-### State Sources
-Kaiser Health News, The 19th, Stateline (Pew), Route Fifty, Ballotpedia, StateScoop, and state-specific outlets
+**Think Tanks:** Foreign Affairs, Carnegie Endowment, Council on Foreign Relations, CSIS, Brookings Global/Foreign Policy, Chatham House, Atlantic Council, Wilson Center, RAND Corporation, Stimson Center, International Crisis Group, War on the Rocks, Just Security
 
-### Local Sources
-Strong Towns, National League of Cities, ICMA, CityLab, Next City, Governing Magazine, and local news aggregators
+### National Sources (60+)
+**Major Political News:** Politico Playbook, Politico Congress, The Hill, Roll Call, Axios, 1440 Daily Digest, Ground News, CQ Roll Call
+
+**Wire & Broadcast:** AP News Politics, Reuters US Politics, NPR Politics, NBC/CBS/CNN/ABC/PBS News Politics, Washington Post, USA Today, C-SPAN
+
+**Newsletters & Digests:** Punchbowl News, Semafor, FiveThirtyEight, RealClearPolitics, The Dispatch, AllSides
+
+**Investigative:** ProPublica, The Intercept, Vox Policy, Slate Politics, The Atlantic Politics
+
+**Right-Leaning:** Daily Caller, Washington Examiner, National Review, Washington Free Beacon, The Federalist, Townhall, Daily Wire, Breitbart, RedState
+
+**Left-Leaning:** The Nation, Mother Jones, Talking Points Memo, The New Republic, Daily Beast, HuffPost, Salon, Jacobin, Democracy Now!
+
+**Think Tanks:** Brookings, Heritage Foundation, CAP, AEI, Cato, Urban Institute, Niskanen, Third Way, R Street, Manhattan Institute, Hoover, EPI, CBPP, BPC, Tax Foundation, CRFB, American Action Forum, New America
+
+**Legal & Economy:** SCOTUSblog, Lawfare, Brennan Center, Volokh Conspiracy, MarketWatch Economy, CNBC Politics
+
+### State Sources (55+)
+**State-Focused National:** Stateline (Pew), Route Fifty, Governing, NCSL, Ballotpedia, States Newsroom, StateScoop, CSG, POLITICO State
+
+**Issue-Specific:** Kaiser Health News, The 19th, Education Week, Chalkbeat, Tax Foundation, Grist, Inside Climate News, Hechinger Report, Marshall Project, The Appeal, Reason Foundation
+
+**Election-Specific:** Cook Political Report, Sabato Crystal Ball, Inside Elections, Decision Desk HQ
+
+**State-Specific Networks (30+ states):** CalMatters, Texas Tribune, Nevada Independent, Bridge Michigan, Wisconsin Watch, PA Capital-Star, NC Policy Watch, Georgia Recorder, Arizona Mirror, Florida Phoenix, Minnesota Reformer, Ohio Capital Journal, Virginia Mercury, NH Bulletin, Iowa Capital Dispatch, Colorado Sun, Oregon Capital Chronicle, Kansas Reflector, Missouri Independent, NJ Monitor, CT Mirror, Kentucky Lantern, Indiana Capital Chronicle, Maryland Matters, Louisiana Illuminator, Alaska Beacon, Montana Free Press, SD Searchlight, Idaho Capital Sun, Wyoming News Exchange, Nebraska Examiner, Maine Morning Star
+
+### Local Sources (25+)
+**National Local Outlets:** CityLab, Next City, Patch National, ICMA, Strong Towns, NLC, US Conference of Mayors, Smart Cities Dive, Governing Local, Shelterforce, Route Fifty Local, County News (NACo)
+
+**Local Issue Coverage:** NLIHC Housing, Education Dive, Smart Growth America, TransitCenter, Streetsblog USA
+
+**Community Journalism:** PublicSource, Documented, City Bureau, The Oaklandside, Block Club Chicago, THE CITY NYC
 
 ---
 
 ## Edge Function: `intel-briefing`
 
 ### Sync Process
-1. Fetches RSS/Atom feeds from all configured sources (90+)
+1. Fetches RSS/Atom feeds from all configured sources (150+)
 2. Parses XML entries for title, link, summary, publication date
-3. Applies automated category detection via keyword matching
+3. Applies automated category detection via keyword matching across 19 categories
 4. Parallelized fetching in batches of 10 for performance
-5. Deduplicates by title before upserting to `intel_briefings` table
+5. Deduplicates by title + source_name before upserting to `intel_briefings` table
 6. Assigns scope based on source configuration
+7. Auto-prunes entries older than 48 hours
 
-### Category Detection
-
-The system automatically categorizes articles using keyword matching across title and summary text:
+### Category Detection (19 Categories)
 
 | Category | Keywords |
 |----------|----------|
-| economy | economy, inflation, jobs, unemployment, trade, tariff, GDP, recession |
-| health | health, medicare, medicaid, hospital, insurance, pandemic, drug |
-| immigration | immigration, border, ICE, asylum, migrant, deportation |
-| education | education, school, student, university, college, teacher |
-| environment | climate, environment, EPA, pollution, energy, renewable |
-| defense | military, defense, Pentagon, veteran, NATO, troops |
-| justice | court, judge, justice, police, crime, prison, law enforcement |
-| technology | tech, AI, cybersecurity, data, digital, internet, privacy |
+| economy | economy, GDP, inflation, market, trade, tariff, jobs, unemployment, recession, interest rate |
+| elections | election, ballot, vote, campaign, primary, caucus, gerrymandering, redistrict |
+| legal | court, judicial, SCOTUS, legal, law, ruling, justice, indictment, lawsuit |
+| defense | military, defense, NATO, Pentagon, war, security, weapon, drone |
+| health | health, COVID, pandemic, hospital, Medicare, Medicaid, opioid, fentanyl |
+| environment | climate, environment, energy, EPA, emission, renewable, solar, wind, fossil |
+| immigration | immigration, border, asylum, migrant, refugee, deportation, ICE |
+| education | education, school, student, university, college, teacher, tuition |
+| housing | housing, rent, mortgage, homelessness, eviction, affordable housing |
+| public-safety | crime, police, prison, gun, shooting, FBI, DOJ |
+| technology | tech, AI, artificial intelligence, cyber, data privacy, social media, TikTok |
+| fiscal | tax, budget, deficit, debt ceiling, appropriation, spending bill |
+| labor | labor, union, strike, minimum wage, worker, overtime |
+| infrastructure | infrastructure, bridge, highway, broadband, rail, transit |
+| veterans | veteran, VA, military family, service member |
+| reproductive-rights | abortion, reproductive, Roe, Dobbs, IVF, contraception |
+| social-security | Social Security, retirement, pension, 401k |
+| agriculture | agriculture, farm, crop, USDA, rural |
 | general | (default fallback) |
 
 ---
@@ -91,31 +128,26 @@ When a user clicks a briefing, IntelHub fetches the full article text:
 4. Renders as Markdown in a Win98-style draggable window
 5. Falls back to summary text if scraping fails
 
-### Article Caching
-- Articles are cached in `localStorage` for offline viewing
-- Cache key: article URL hash
-- Supports offline-first pattern for previously viewed articles
-
 ---
 
 ## UI Features
 
 ### List View
-- Briefings sorted by publication date (newest first)
-- Category badges with color coding
+- Briefings grouped by source, sorted by publication date (newest first)
 - Source name and publication date
-- Search filter across title and summary
-- Manual "Pull Updates" sync button (admin)
+- Scope tab filtering (Local/State/National/International)
+- Per-scope and "Sync All" buttons
+- PDF export of all briefings in current scope
 
 ### Detail View (Win98 Window)
-- Full article text rendered as Markdown
+- Full article text rendered as Markdown via ReactMarkdown
 - Source attribution with external link
-- Publication date and category badge
+- Publication date and scope badge
 - Loading spinner during article fetch
-- PDF export button
+- Individual PDF export button
 
 ### PDF Export
-- Generates branded PDF of the selected briefing
+- Generates branded PDF of selected briefing or full scope
 - Includes title, source, date, category, and full content
 - Uses `jsPDF` with `applyPdfBranding()` utility
 
@@ -127,7 +159,7 @@ When a user clicks a briefing, IntelHub fetches the full article text:
 |--------|------|-------------|
 | `id` | uuid | Primary key |
 | `scope` | text | local, state, national, international |
-| `category` | text | Auto-detected category (economy, health, etc.) |
+| `category` | text | Auto-detected category (19 options) |
 | `title` | text | Article title |
 | `summary` | text | Brief description |
 | `content` | text | Full article text (when scraped) |
