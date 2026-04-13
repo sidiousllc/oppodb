@@ -224,6 +224,35 @@ interface MagaFileItem {
   tags: string[];
 }
 
+interface PredictionMarketItem {
+  id: string;
+  title: string;
+  yes_price: number | null;
+  no_price: number | null;
+  volume: number | null;
+  source: string;
+  market_url: string | null;
+  last_traded_at: string | null;
+}
+
+interface CandidateProfileItem {
+  id: string;
+  name: string;
+  slug: string;
+  tags: string[];
+}
+
+interface StateLegProfileItem {
+  id: string;
+  district_id: string;
+  chamber: string;
+  district_number: string;
+  population: number | null;
+  median_income: number | null;
+  poverty_rate: number | null;
+  unemployment_rate: number | null;
+}
+
 /** Derive top issues from demographics when the DB field is empty */
 function deriveTopIssues(d: DistrictProfile): string[] {
   const issues: string[] = [];
@@ -255,6 +284,9 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
   const [congressBills, setCongressBills] = useState<CongressBillItem[]>([]);
   const [stateLegResults, setStateLegResults] = useState<StateLegElectionItem[]>([]);
   const [magaFiles, setMagaFiles] = useState<MagaFileItem[]>([]);
+  const [predictionMarkets, setPredictionMarkets] = useState<PredictionMarketItem[]>([]);
+  const [candidateProfiles, setCandidateProfiles] = useState<CandidateProfileItem[]>([]);
+  const [stateLegProfiles, setStateLegProfiles] = useState<StateLegProfileItem[]>([]);
   const candidateSlugs = getCandidatesForDistrict(district.district_id);
   const linkedCandidates = candidateSlugs
     .map((slug) => getCandidateBySlug(slug))
