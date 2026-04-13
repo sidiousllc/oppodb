@@ -1032,7 +1032,14 @@ function endpointDescription(endpoint: string): string {
     "congressional-elections": "Congressional election results with vote counts and winners",
     "state-finance": "State-level campaign finance data across all states",
     "mn-finance": "Minnesota Campaign Finance Board candidate data",
-    search: "Unified search across all databases (requires ?search= param, optional ?categories= filter, now includes prediction_markets)",
+    "intel-briefings": "Intelligence briefings from 150+ news sources categorized by scope and topic",
+    "tracked-bills": "LegiScan tracked state legislation with status and actions",
+    "mit-elections": "MIT Election Lab historical election results (1976-2024) with county-level data",
+    "congress-committees": "Congressional committees with members and subcommittees",
+    "congress-votes": "Congressional roll call votes with vote totals and results",
+    "state-leg-elections": "State legislative election results with vote counts and winners",
+    "forecast-history": "Historical changes in election forecast ratings over time",
+    search: "Unified search across all 24 databases (requires ?search= param, optional ?categories= filter)",
   };
   return descs[endpoint] || "";
 }
