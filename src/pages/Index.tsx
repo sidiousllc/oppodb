@@ -224,6 +224,7 @@ export default function Index() {
     oppohub: candidates.length + localImpactReports.length + narrativeReports.length,
     leghub: stateLegDistricts.length + districts.length,
     polling: pollingCount,
+    intelhub: 0,
     messaging: 0,
     "research-tools": 0,
     "live-elections": 0,
