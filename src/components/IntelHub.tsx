@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Win98Window } from "@/components/Win98Window";
 import { toast } from "sonner";
-import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, ExternalLink, Clock } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, ExternalLink, Clock, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import { applyPdfBranding } from "@/lib/pdfBranding";
@@ -37,6 +38,8 @@ export function IntelHub() {
   const [syncing, setSyncing] = useState(false);
   const [selectedBriefing, setSelectedBriefing] = useState<Briefing | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [fullArticle, setFullArticle] = useState<string | null>(null);
+  const [loadingArticle, setLoadingArticle] = useState(false);
 
   const fetchBriefings = useCallback(async () => {
     setLoading(true);
@@ -97,6 +100,26 @@ export function IntelHub() {
       setSyncing(false);
     }
   };
+
+  const handleSelectBriefing = useCallback(async (b: Briefing) => {
+    setSelectedBriefing(b);
+    setFullArticle(null);
+    if (b.source_url) {
+      setLoadingArticle(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("scrape-article", {
+          body: { url: b.source_url },
+        });
+        if (!error && data?.success && data.markdown) {
+          setFullArticle(data.markdown);
+        }
+      } catch (e) {
+        console.error("Failed to scrape article:", e);
+      } finally {
+        setLoadingArticle(false);
+      }
+    }
+  }, []);
 
   const exportPDF = () => {
     const doc = new jsPDF();
@@ -229,7 +252,7 @@ export function IntelHub() {
                 {items.map((b) => (
                   <button
                     key={b.id}
-                    onClick={() => setSelectedBriefing(b)}
+                    onClick={() => handleSelectBriefing(b)}
                     className="w-full text-left px-2 py-1.5 hover:bg-[#e8e8ff] transition-colors"
                   >
                     <div className="text-xs font-bold text-[#000080] line-clamp-1">{b.title}</div>
@@ -272,9 +295,30 @@ export function IntelHub() {
                 </div>
               )}
 
-              <div className="whitespace-pre-wrap text-xs leading-relaxed">
-                {selectedBriefing.content || selectedBriefing.summary || "No content available."}
-              </div>
+              {loadingArticle ? (
+                <div className="flex items-center gap-2 py-4 text-xs text-gray-500">
+                  <Loader2 size={14} className="animate-spin" />
+                  Loading full article...
+                </div>
+              ) : fullArticle ? (
+                <div className="prose-research text-xs leading-relaxed">
+                  <ReactMarkdown
+                    components={{
+                      a: ({ href, children }) => (
+                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#000080] underline hover:text-blue-700">
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {fullArticle}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <div className="whitespace-pre-wrap text-xs leading-relaxed">
+                  {selectedBriefing.content || selectedBriefing.summary || "No content available."}
+                </div>
+              )}
 
               <div className="mt-3 pt-2 border-t border-[#c0c0c0] flex items-center gap-2">
                 {selectedBriefing.source_url && (
@@ -307,7 +351,7 @@ export function IntelHub() {
 
                     doc.setFont("helvetica", "normal");
                     doc.setFontSize(10);
-                    const contentText = selectedBriefing.content || selectedBriefing.summary || "";
+                    const contentText = fullArticle || selectedBriefing.content || selectedBriefing.summary || "";
                     const contentLines = doc.splitTextToSize(contentText, pw - 30);
                     doc.text(contentLines, 15, y);
 
