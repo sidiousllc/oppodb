@@ -55,14 +55,15 @@ Deno.serve(async (req) => {
         console.log("Firecrawl status:", response.status, "has markdown:", !!(data?.data?.markdown));
 
         if (response.ok) {
-          const markdown = data?.data?.markdown || data?.markdown || "";
+          let markdown = data?.data?.markdown || data?.markdown || "";
+          // Strip navigation, ads, cookie banners, and non-article noise
+          markdown = cleanMarkdown(markdown);
           if (markdown.length > 20) {
             return new Response(
               JSON.stringify({ success: true, markdown }),
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           }
-          // If Firecrawl returned empty/short content, fall through to manual scraping
           console.log("Firecrawl returned insufficient content, falling back to manual scrape");
         } else {
           console.log("Firecrawl error:", data?.error || response.status);
