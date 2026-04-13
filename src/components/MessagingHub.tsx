@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, ExternalLink, Loader2, Calendar, RefreshCw, ArrowLeft, FileDown } from "lucide-react";
+import { Search, ExternalLink, Loader2, Calendar, RefreshCw, FileDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { exportMessagingPDF } from "@/lib/messagingExport";
+import { Win98Window } from "@/components/Win98Window";
 
 interface MessagingGuidance {
   id: string;
