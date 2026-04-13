@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Newspaper, ExternalLink, FileText, Loader2, AlertCircle, Search, X, CalendarDays } from "lucide-react";
+import { Newspaper, ExternalLink, FileText, Loader2, AlertCircle, Search, X, CalendarDays, RefreshCw } from "lucide-react";
 import { Win98Window } from "@/components/Win98Window";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -8,6 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { stateAbbrToName } from "@/lib/stateAbbreviations";
 
 interface NewsArticle {
   title: string;
@@ -26,56 +27,95 @@ export function DistrictNewsTab({ districtId }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
+  const [retrying, setRetrying] = useState(false);
 
   // Filters
   const [keyword, setKeyword] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchNews = async () => {
+    setLoading(true);
+    setError(null);
 
-    async function load() {
-      setLoading(true);
-      setError(null);
+    try {
+      const [stateAbbr, distNum] = districtId.split("-");
+      const stateName = stateAbbrToName(stateAbbr);
+      const districtNumber = distNum === "AL" ? "0" : String(parseInt(distNum, 10));
 
-      try {
-        const [stateAbbr, distNum] = districtId.split("-");
-        const districtNumber = distNum === "AL" ? "0" : String(parseInt(distNum, 10));
+      // Try multiple queries to find the representative
+      const { data: members } = await supabase
+        .from("congress_members")
+        .select("name, bioguide_id, party, chamber")
+        .eq("state", stateName)
+        .eq("chamber", "House of Representatives")
+        .eq("district", districtNumber)
+        .limit(1);
 
-        const { data: members } = await supabase
+      let member = members?.[0];
+
+      // Fallback: try with At-Large districts
+      if (!member && distNum === "AL") {
+        const { data: atLargeMems } = await supabase
           .from("congress_members")
           .select("name, bioguide_id, party, chamber")
-          .eq("state", stateAbbr)
-          .eq("chamber", "House")
-          .eq("district", districtNumber)
+          .eq("state", stateName)
+          .eq("chamber", "House of Representatives")
           .limit(1);
+        member = atLargeMems?.[0];
+      }
 
-        const member = members?.[0];
-        if (!member) {
-          if (!cancelled) { setError("No current House member found for this district."); setLoading(false); }
-          return;
-        }
+      // Fallback: try with district "at-large" or null
+      if (!member) {
+        const { data: fallbackMems } = await supabase
+          .from("congress_members")
+          .select("name, bioguide_id, party, chamber")
+          .eq("state", stateName)
+          .eq("chamber", "House of Representatives")
+          .is("district", null)
+          .limit(1);
+        member = fallbackMems?.[0];
+      }
 
-        if (!cancelled) setMemberName(member.name);
-
+      if (!member) {
+        // Use district name as search query instead
+        const districtQuery = `${stateName} congressional district ${distNum}`;
+        setMemberName(districtQuery);
+        
         const { data, error: fnErr } = await supabase.functions.invoke("district-news", {
-          body: { memberName: member.name },
+          body: { memberName: districtQuery },
         });
 
-        if (cancelled) return;
         if (fnErr) { setError("Failed to fetch news."); setLoading(false); return; }
         setArticles(data?.articles || []);
-      } catch {
-        if (!cancelled) setError("Failed to load news.");
-      } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
+        return;
       }
-    }
 
-    load();
-    return () => { cancelled = true; };
+      setMemberName(member.name);
+
+      const { data, error: fnErr } = await supabase.functions.invoke("district-news", {
+        body: { memberName: member.name },
+      });
+
+      if (fnErr) { setError("Failed to fetch news."); setLoading(false); return; }
+      setArticles(data?.articles || []);
+    } catch {
+      setError("Failed to load news.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNews();
   }, [districtId]);
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    await fetchNews();
+    setRetrying(false);
+  };
 
   const filtered = useMemo(() => {
     const kw = keyword.toLowerCase().trim();
@@ -126,9 +166,13 @@ export function DistrictNewsTab({ districtId }: Props) {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
         <AlertCircle className="h-5 w-5" />
         <span className="text-sm">{error}</span>
+        <Button variant="outline" size="sm" onClick={handleRetry} disabled={retrying}>
+          <RefreshCw className={`h-3 w-3 mr-1 ${retrying ? "animate-spin" : ""}`} />
+          Retry
+        </Button>
       </div>
     );
   }
@@ -138,10 +182,13 @@ export function DistrictNewsTab({ districtId }: Props) {
       {memberName && (
         <div className="bg-card rounded-xl border border-border p-4 mb-4 flex items-center gap-3">
           <Newspaper className="h-5 w-5 text-primary" />
-          <div>
+          <div className="flex-1">
             <p className="text-xs text-muted-foreground">News for</p>
             <p className="font-display text-sm font-bold text-foreground">{memberName}</p>
           </div>
+          <Button variant="ghost" size="sm" onClick={handleRetry} disabled={retrying} className="h-7 px-2">
+            <RefreshCw className={`h-3 w-3 ${retrying ? "animate-spin" : ""}`} />
+          </Button>
         </div>
       )}
 
