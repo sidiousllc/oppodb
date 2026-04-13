@@ -204,7 +204,21 @@ export function IntelHub() {
     toast.success("PDF exported");
   };
 
-  const groupedBySource = briefings.reduce<Record<string, Briefing[]>>((acc, b) => {
+  const filteredBriefings = briefings.filter((b) => {
+    const q = searchQuery.toLowerCase();
+    if (q && !b.title.toLowerCase().includes(q) && !b.summary.toLowerCase().includes(q) && !b.source_name.toLowerCase().includes(q)) return false;
+    if (selectedCategory !== "all" && b.category !== selectedCategory) return false;
+    if (partyLeaning === "left" && !LEFT_SOURCES.some(s => b.source_name.toLowerCase().includes(s.toLowerCase()))) return false;
+    if (partyLeaning === "right" && !RIGHT_SOURCES.some(s => b.source_name.toLowerCase().includes(s.toLowerCase()))) return false;
+    if (partyLeaning === "center") {
+      const isLeft = LEFT_SOURCES.some(s => b.source_name.toLowerCase().includes(s.toLowerCase()));
+      const isRight = RIGHT_SOURCES.some(s => b.source_name.toLowerCase().includes(s.toLowerCase()));
+      if (isLeft || isRight) return false;
+    }
+    return true;
+  });
+
+  const groupedBySource = filteredBriefings.reduce<Record<string, Briefing[]>>((acc, b) => {
     if (!acc[b.source_name]) acc[b.source_name] = [];
     acc[b.source_name].push(b);
     return acc;
