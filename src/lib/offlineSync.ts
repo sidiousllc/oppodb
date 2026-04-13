@@ -13,7 +13,7 @@ import {
   queueWrite,
 } from "./encryptedStore";
 
-/** Tables to sync for offline use, with their select columns */
+/** Tables to sync for offline use */
 const SYNC_TABLES = [
   { table: "district_profiles", select: "*", orderBy: "district_id" },
   { table: "candidate_profiles", select: "id,slug,name,tags,content,is_subpage,parent_slug,subpage_title,github_path", orderBy: "name" },
@@ -27,9 +27,7 @@ const SYNC_TABLES = [
   { table: "maga_files", select: "*", orderBy: "name" },
   { table: "narrative_reports", select: "*", orderBy: "name" },
   { table: "prediction_markets", select: "*", orderBy: "title" },
-] as const;
-
-type SyncTable = (typeof SYNC_TABLES)[number]["table"];
+];
 
 export interface SyncStatus {
   isOnline: boolean;
@@ -66,20 +64,19 @@ export function getSyncStatus(): SyncStatus {
 }
 
 /** Sync a single table from Supabase to encrypted IndexedDB */
-async function syncTable(table: string, select: string, orderBy: string): Promise<number> {
-  // Supabase has a 1000 row default limit; paginate
+async function syncTable(tableName: string, select: string, orderBy: string): Promise<number> {
   let allData: Record<string, unknown>[] = [];
   let offset = 0;
   const pageSize = 1000;
 
   while (true) {
-    const { data, error } = await supabase
-      .from(table)
+    const { data, error } = await (supabase as any)
+      .from(tableName)
       .select(select)
       .order(orderBy)
       .range(offset, offset + pageSize - 1);
 
-    if (error) throw new Error(`Failed to sync ${table}: ${error.message}`);
+    if (error) throw new Error(`Failed to sync ${tableName}: ${error.message}`);
     if (!data || data.length === 0) break;
 
     allData = allData.concat(data as Record<string, unknown>[]);
@@ -88,10 +85,10 @@ async function syncTable(table: string, select: string, orderBy: string): Promis
   }
 
   if (allData.length > 0) {
-    await storeEncrypted(table, allData);
+    await storeEncrypted(tableName, allData);
   }
 
-  await setSyncMeta(`lastSync:${table}`, Date.now());
+  await setSyncMeta(`lastSync:${tableName}`, Date.now());
   return allData.length;
 }
 
@@ -144,15 +141,16 @@ export async function replayPendingWrites(): Promise<{ replayed: number; failed:
 
   for (const write of pending) {
     try {
+      const sb = supabase as any;
       if (write.operation === "insert") {
-        const { error } = await supabase.from(write.table).insert(write.data);
+        const { error } = await sb.from(write.table).insert(write.data);
         if (error) throw error;
       } else if (write.operation === "update") {
         const { id, ...rest } = write.data;
-        const { error } = await supabase.from(write.table).update(rest).eq("id", id);
+        const { error } = await sb.from(write.table).update(rest).eq("id", String(id));
         if (error) throw error;
       } else if (write.operation === "delete") {
-        const { error } = await supabase.from(write.table).delete().eq("id", write.data.id);
+        const { error } = await sb.from(write.table).delete().eq("id", String(write.data.id));
         if (error) throw error;
       }
 
@@ -170,12 +168,11 @@ export async function replayPendingWrites(): Promise<{ replayed: number; failed:
 }
 
 /** Get offline data for a table (falls back to encrypted store when offline) */
-export async function getOfflineData<T = Record<string, unknown>>(table: SyncTable): Promise<T[]> {
+export async function getOfflineData<T = Record<string, unknown>>(table: string): Promise<T[]> {
   if (navigator.onLine) {
-    // Try live data first
     try {
       const config = SYNC_TABLES.find((t) => t.table === table);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from(table)
         .select(config?.select || "*")
         .order(config?.orderBy || "id")
@@ -186,7 +183,6 @@ export async function getOfflineData<T = Record<string, unknown>>(table: SyncTab
     }
   }
 
-  // Use encrypted offline store
   return getDecrypted<T>(table);
 }
 
@@ -198,15 +194,16 @@ export async function offlineWrite(
 ): Promise<void> {
   if (navigator.onLine) {
     try {
+      const sb = supabase as any;
       if (operation === "insert") {
-        const { error } = await supabase.from(table).insert(data);
+        const { error } = await sb.from(table).insert(data);
         if (!error) return;
       } else if (operation === "update") {
         const { id, ...rest } = data;
-        const { error } = await supabase.from(table).update(rest).eq("id", id);
+        const { error } = await sb.from(table).update(rest).eq("id", String(id));
         if (!error) return;
       } else if (operation === "delete") {
-        const { error } = await supabase.from(table).delete().eq("id", data.id);
+        const { error } = await sb.from(table).delete().eq("id", String(data.id));
         if (!error) return;
       }
     } catch {
@@ -224,7 +221,6 @@ export function initOfflineSync(): () => void {
   const handleOnline = async () => {
     syncStatus.isOnline = true;
     notify();
-    // Replay pending writes when coming back online
     await replayPendingWrites();
   };
 
