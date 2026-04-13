@@ -38,6 +38,15 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "Haaretz", rssUrl: "https://www.haaretz.com/cmlink/1.628752", scope: "international" },
     { name: "GlobalVoices", rssUrl: "https://globalvoices.org/feed/", scope: "international" },
     { name: "IRIN News", rssUrl: "https://www.thenewhumanitarian.org/rss.xml", scope: "international" },
+    // Additional international outlets
+    { name: "NK News", rssUrl: "https://www.nknews.org/feed/", scope: "international" },
+    { name: "Inkstick Media", rssUrl: "https://inkstickmedia.com/feed/", scope: "international" },
+    { name: "The National Interest", rssUrl: "https://nationalinterest.org/feed", scope: "international" },
+    { name: "Defense One", rssUrl: "https://www.defenseone.com/rss/all/", scope: "international" },
+    { name: "The Cipher Brief", rssUrl: "https://www.thecipherbrief.com/feed", scope: "international" },
+    { name: "Asia Times", rssUrl: "https://asiatimes.com/feed/", scope: "international" },
+    { name: "Americas Quarterly", rssUrl: "https://www.americasquarterly.org/feed/", scope: "international" },
+    { name: "Responsible Statecraft", rssUrl: "https://responsiblestatecraft.org/feed/", scope: "international" },
     // Think tanks - international
     { name: "Foreign Affairs", rssUrl: "https://www.foreignaffairs.com/rss.xml", scope: "international" },
     { name: "Carnegie Endowment", rssUrl: "https://carnegieendowment.org/rss/solr/?fa=articles", scope: "international" },
@@ -53,6 +62,9 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "Brookings Foreign Policy", rssUrl: "https://www.brookings.edu/topic/foreign-policy/feed/", scope: "international" },
     { name: "War on the Rocks", rssUrl: "https://warontherocks.com/feed/", scope: "international" },
     { name: "Just Security", rssUrl: "https://www.justsecurity.org/feed/", scope: "international" },
+    { name: "German Marshall Fund", rssUrl: "https://www.gmfus.org/feed", scope: "international" },
+    { name: "European Council on Foreign Relations", rssUrl: "https://ecfr.eu/feed/", scope: "international" },
+    { name: "Belfer Center", rssUrl: "https://www.belfercenter.org/rss.xml", scope: "international" },
   ],
   national: [
     // Major political news
@@ -137,6 +149,22 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     // Economy & Business
     { name: "MarketWatch Economy", rssUrl: "https://feeds.marketwatch.com/marketwatch/economy", scope: "national" },
     { name: "CNBC Politics", rssUrl: "https://www.cnbc.com/id/10000113/device/rss/rss.html", scope: "national" },
+    // Additional national sources
+    { name: "Techdirt", rssUrl: "https://www.techdirt.com/feed/", scope: "national" },
+    { name: "The Markup", rssUrl: "https://themarkup.org/feeds/rss.xml", scope: "national" },
+    { name: "Defense News", rssUrl: "https://www.defensenews.com/arc/outboundfeeds/rss/?outputType=xml", scope: "national" },
+    { name: "Military Times", rssUrl: "https://www.militarytimes.com/arc/outboundfeeds/rss/?outputType=xml", scope: "national" },
+    { name: "E&E News", rssUrl: "https://www.eenews.net/feed/", scope: "national" },
+    { name: "Utility Dive", rssUrl: "https://www.utilitydive.com/feeds/news/", scope: "national" },
+    { name: "Transport Topics", rssUrl: "https://www.ttnews.com/rss.xml", scope: "national" },
+    { name: "Modern Healthcare", rssUrl: "https://www.modernhealthcare.com/section/rss", scope: "national" },
+    { name: "Responsible Statecraft", rssUrl: "https://responsiblestatecraft.org/feed/", scope: "national" },
+    { name: "The Bulwark", rssUrl: "https://www.thebulwark.com/feed/", scope: "national" },
+    { name: "The American Conservative", rssUrl: "https://www.theamericanconservative.com/feed/", scope: "national" },
+    { name: "Washington Monthly", rssUrl: "https://washingtonmonthly.com/feed/", scope: "national" },
+    { name: "National Journal", rssUrl: "https://www.nationaljournal.com/feed", scope: "national" },
+    { name: "Government Executive", rssUrl: "https://www.govexec.com/rss/all/", scope: "national" },
+    { name: "FedScoop", rssUrl: "https://fedscoop.com/feed/", scope: "national" },
   ],
   state: [
     // National outlets with state focus
@@ -218,7 +246,6 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "Route Fifty Local", rssUrl: "https://www.route-fifty.com/management/rss/", scope: "local" },
     { name: "Community Builders", rssUrl: "https://www.tcbinc.org/feed/", scope: "local" },
     { name: "CityMetric", rssUrl: "https://www.citymetric.com/feed", scope: "local" },
-    // Additional local sources
     { name: "Local News Initiative", rssUrl: "https://localnewsinitiative.northwestern.edu/feed/", scope: "local" },
     { name: "NLIHC Housing", rssUrl: "https://nlihc.org/feed", scope: "local" },
     { name: "County News (NACo)", rssUrl: "https://www.naco.org/feed", scope: "local" },
@@ -232,6 +259,21 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "The Oaklandside", rssUrl: "https://oaklandside.org/feed/", scope: "local" },
     { name: "Block Club Chicago", rssUrl: "https://blockclubchicago.org/feed/", scope: "local" },
     { name: "THE CITY NYC", rssUrl: "https://www.thecity.nyc/feed/", scope: "local" },
+    // Additional local sources
+    { name: "Gothamist", rssUrl: "https://gothamist.com/feed", scope: "local" },
+    { name: "LAist", rssUrl: "https://laist.com/feed", scope: "local" },
+    { name: "WNYC News", rssUrl: "https://www.wnyc.org/feeds/articles", scope: "local" },
+    { name: "Berkeleyside", rssUrl: "https://www.berkeleyside.org/feed", scope: "local" },
+    { name: "Billy Penn", rssUrl: "https://billypenn.com/feed/", scope: "local" },
+    { name: "Denverite", rssUrl: "https://denverite.com/feed/", scope: "local" },
+    { name: "VTDigger", rssUrl: "https://vtdigger.org/feed/", scope: "local" },
+    { name: "MinnPost", rssUrl: "https://www.minnpost.com/feed/", scope: "local" },
+    { name: "Voice of San Diego", rssUrl: "https://voiceofsandiego.org/feed/", scope: "local" },
+    { name: "Texas Observer", rssUrl: "https://www.texasobserver.org/feed/", scope: "local" },
+    { name: "Mississippi Today", rssUrl: "https://mississippitoday.org/feed/", scope: "local" },
+    { name: "NC Health News", rssUrl: "https://www.northcarolinahealthnews.org/feed/", scope: "local" },
+    { name: "Detroit Free Press", rssUrl: "https://rssfeeds.freep.com/freep/home", scope: "local" },
+    { name: "Honolulu Civil Beat", rssUrl: "https://www.civilbeat.org/feed/", scope: "local" },
   ],
 };
 
