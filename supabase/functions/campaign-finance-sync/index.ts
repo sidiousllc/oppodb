@@ -37,7 +37,8 @@ interface FECCandidate {
 
 interface FECTotals {
   candidate_id: string;
-  candidate_name: string;
+  candidate_name?: string;
+  name?: string;
   receipts: number;
   disbursements: number;
   cash_on_hand_end_period: number;
@@ -163,13 +164,16 @@ async function syncStateFinance(
               ? Math.round((c.candidate_contribution / c.receipts) * 100)
               : null;
 
-          const slug = slugify(c.candidate_name ?? "unknown") + "-" + (c.candidate_id ?? "").toLowerCase();
+          const candidateName = c.name || c.candidate_name || "";
+          if (!candidateName) continue; // Skip records with no name
+
+          const slug = slugify(candidateName) + "-" + (c.candidate_id ?? "").toLowerCase();
           const upsertKey = `${slug}|${stateAbbr}|${cycle}|${officeType}`;
           if (seenKeys.has(upsertKey)) continue;
           seenKeys.add(upsertKey);
 
           rows.push({
-            candidate_name: c.candidate_name ?? "Unknown",
+            candidate_name: candidateName,
             candidate_slug: slug,
             office: officeType,
             state_abbr: stateAbbr,
