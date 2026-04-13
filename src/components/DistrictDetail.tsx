@@ -365,6 +365,71 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
       .then(({ data }) => {
         if (data) setForecastItems(data as ForecastItem[]);
       });
+
+    // Load campaign finance for candidates in this district
+    supabase
+      .from("campaign_finance")
+      .select("id, candidate_name, party, total_raised, total_spent, cash_on_hand, source, cycle")
+      .eq("state_abbr", stateAbbr)
+      .eq("district", district.district_id)
+      .order("total_raised", { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        if (data) setDistrictFinance(data as DistrictFinanceItem[]);
+      });
+
+    // Load congress members for this district
+    supabase
+      .from("congress_members")
+      .select("name, party, bioguide_id, official_url")
+      .eq("state", stateAbbr)
+      .eq("district", districtNum || "0")
+      .limit(5)
+      .then(({ data }) => {
+        if (data) setCongressMembers(data as CongressMemberItem[]);
+      });
+
+    // Load recent bills relevant to district top issues
+    supabase
+      .from("congress_bills")
+      .select("id, bill_id, short_title, title, sponsor_name, status, latest_action_text, latest_action_date, policy_area")
+      .order("latest_action_date", { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        if (!data) return;
+        const issueSet2 = new Set(effectiveTopIssues.map(i => i.toLowerCase()));
+        const matched = data.filter(b => {
+          const text = ((b.policy_area || "") + " " + (b.short_title || "") + " " + b.title).toLowerCase();
+          return [...issueSet2].some(i => text.includes(i));
+        });
+        setCongressBills(matched.slice(0, 8));
+      });
+
+    // Load state legislative election results for this state
+    supabase
+      .from("state_leg_election_results")
+      .select("id, candidate_name, party, chamber, district_number, election_year, votes, vote_pct, is_winner")
+      .eq("state_abbr", stateAbbr)
+      .order("election_year", { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        if (data) setStateLegResults(data as StateLegElectionItem[]);
+      });
+
+    // Load MAGA files relevant to district issues
+    supabase
+      .from("maga_files")
+      .select("id, name, slug, tags")
+      .limit(100)
+      .then(({ data }) => {
+        if (!data) return;
+        const issueSet3 = new Set(effectiveTopIssues.map(i => i.toLowerCase()));
+        const matched = data.filter(m => {
+          const text = m.name.toLowerCase();
+          return [...issueSet3].some(i => text.includes(i) || m.tags.some(t => t.toLowerCase().includes(i)));
+        });
+        setMagaFiles(matched.slice(0, 6));
+      });
   }, [stateAbbr, effectiveTopIssues, district.district_id]);
 
   // Compute additional derived stats
