@@ -913,7 +913,140 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
             </div>
           )}
 
-          {localImpacts.length === 0 && messagingItems.length === 0 && narrativeItems.length === 0 && effectiveTopIssues.length === 0 && pollingItems.length === 0 && intelItems.length === 0 && forecastItems.length === 0 && (
+          {/* District Campaign Finance Summary */}
+          {districtFinance.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<DollarSign className="h-5 w-5 text-primary" />}
+                title="District Campaign Finance"
+                subtitle="Fundraising overview for candidates in this district"
+              />
+              <div className="space-y-2">
+                {districtFinance.filter(f => f.candidate_name !== `${stateAbbr} Aggregate`).slice(0, 6).map((f) => (
+                  <div key={f.id} className="p-3 rounded-lg bg-muted/50 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{f.candidate_name}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        {f.party && <span className="font-bold">{f.party}</span>}
+                        <span>{f.source} · {f.cycle}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {f.total_raised != null && <p className="text-xs font-bold text-foreground">${(f.total_raised / 1000).toFixed(0)}K raised</p>}
+                      {f.cash_on_hand != null && <p className="text-[10px] text-muted-foreground">${(f.cash_on_hand / 1000).toFixed(0)}K COH</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Current Representatives */}
+          {congressMembers.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<Building2 className="h-5 w-5 text-primary" />}
+                title="Current Representatives"
+                subtitle="Congress members representing this district"
+              />
+              <div className="space-y-2">
+                {congressMembers.map((m) => (
+                  <div key={m.bioguide_id} className="p-3 rounded-lg bg-muted/50 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{m.name}</p>
+                      {m.party && <span className="text-[10px] text-muted-foreground">{m.party}</span>}
+                    </div>
+                    {m.official_url && (
+                      <a href={m.official_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline">Official Site →</a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Relevant Legislation */}
+          {congressBills.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<FileText className="h-5 w-5 text-primary" />}
+                title="Relevant Legislation"
+                subtitle="Recent bills related to this district's top issues"
+              />
+              <div className="space-y-2">
+                {congressBills.map((b) => (
+                  <div key={b.id} className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm font-medium text-foreground line-clamp-1">{b.short_title || b.title}</p>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-1 flex-wrap">
+                      <span className="bg-secondary/50 text-secondary-foreground px-1.5 py-0.5 rounded">{b.bill_id}</span>
+                      {b.policy_area && <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded">{b.policy_area}</span>}
+                      {b.status && <span>{b.status}</span>}
+                      {b.sponsor_name && <span>by {b.sponsor_name}</span>}
+                    </div>
+                    {b.latest_action_text && (
+                      <p className="text-[10px] text-muted-foreground mt-1 line-clamp-1">Latest: {b.latest_action_text}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* State Legislative Election History */}
+          {stateLegResults.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<Vote className="h-5 w-5 text-primary" />}
+                title="State Legislative Elections"
+                subtitle={`Recent state-level election results in ${stateAbbrToName(stateAbbr)}`}
+              />
+              <div className="space-y-2">
+                {stateLegResults.slice(0, 10).map((r) => (
+                  <div key={r.id} className="p-3 rounded-lg bg-muted/50 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{r.candidate_name}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        {r.party && <span className="font-bold">{r.party}</span>}
+                        <span>{r.chamber} Dist. {r.district_number}</span>
+                        <span>{r.election_year}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {r.vote_pct != null && <p className="text-xs font-bold text-foreground">{r.vote_pct}%</p>}
+                      {r.is_winner && <span className="text-[9px] bg-accent/10 text-accent px-1.5 py-0.5 rounded">Won</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* MAGA Files */}
+          {magaFiles.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <SectionHeader
+                icon={<Shield className="h-5 w-5 text-destructive" />}
+                title="Opposition Research Files"
+                subtitle="Relevant opposition research for this district's key issues"
+              />
+              <div className="space-y-2">
+                {magaFiles.map((m) => (
+                  <div key={m.id} className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm font-medium text-foreground">{m.name}</p>
+                    {m.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {m.tags.slice(0, 4).map((tag) => (
+                          <span key={tag} className="text-[9px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {localImpacts.length === 0 && messagingItems.length === 0 && narrativeItems.length === 0 && effectiveTopIssues.length === 0 && pollingItems.length === 0 && intelItems.length === 0 && forecastItems.length === 0 && districtFinance.length === 0 && congressBills.length === 0 && (
             <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
               <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No issue or impact data available yet for this district.</p>
