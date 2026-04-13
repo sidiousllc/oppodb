@@ -922,6 +922,51 @@ export type Database = {
         }
         Relationships: []
       }
+      intel_briefings: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          published_at: string | null
+          region: string | null
+          scope: string
+          source_name: string
+          source_url: string | null
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          region?: string | null
+          scope?: string
+          source_name?: string
+          source_url?: string | null
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          region?: string | null
+          scope?: string
+          source_name?: string
+          source_url?: string | null
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       local_impacts: {
         Row: {
           content: string
