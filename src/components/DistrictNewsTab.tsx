@@ -39,18 +39,47 @@ function ArticleDetailWindow({
     setScrapeError(null);
     setContent(null);
 
+    const cacheKey = `article_cache_${btoa(article.link).slice(0, 64)}`;
+
+    // Try offline cache first
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed.markdown) {
+          setContent(parsed.markdown);
+          setScraping(false);
+          // Still try to refresh in background if online
+          if (!navigator.onLine) return;
+        }
+      } catch { /* ignore parse errors */ }
+    }
+
+    if (!navigator.onLine) {
+      if (!cached) setScrapeError("Article not available offline.");
+      setScraping(false);
+      return;
+    }
+
     supabase.functions
       .invoke("scrape-article", { body: { url: article.link } })
       .then(({ data, error }) => {
         if (cancelled) return;
+        console.log("scrape-article response:", { data, error });
         if (error || !data?.success) {
-          setScrapeError("Could not load full article.");
+          if (!cached) setScrapeError("Could not load full article.");
         } else {
-          setContent(data.markdown || "No content extracted.");
+          const md = data.markdown || "No content extracted.";
+          setContent(md);
+          // Cache for offline use
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ markdown: md, cachedAt: Date.now() }));
+          } catch { /* storage full */ }
         }
       })
-      .catch(() => {
-        if (!cancelled) setScrapeError("Could not load full article.");
+      .catch((err) => {
+        console.error("scrape-article error:", err);
+        if (!cancelled && !cached) setScrapeError("Could not load full article.");
       })
       .finally(() => {
         if (!cancelled) setScraping(false);
