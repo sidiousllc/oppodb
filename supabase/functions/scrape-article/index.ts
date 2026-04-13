@@ -30,22 +30,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Resolve Google News redirect URLs to actual article URLs
     let resolvedUrl = parsedUrl.toString();
-    if (resolvedUrl.includes("news.google.com")) {
-      try {
-        const redirectRes = await fetch(resolvedUrl, {
-          headers: { "User-Agent": "Mozilla/5.0 (compatible; OppoDBBot/1.0)" },
-          redirect: "follow",
-        });
-        // The final URL after redirects is the actual article
-        resolvedUrl = redirectRes.url;
-        await redirectRes.text(); // consume body
-        console.log("Resolved Google News URL to:", resolvedUrl);
-      } catch (e) {
-        console.error("Failed to resolve Google News URL:", e);
-      }
-    }
+    console.log("Scraping URL:", resolvedUrl);
 
     const apiKey = Deno.env.get("FIRECRAWL_API_KEY");
     
