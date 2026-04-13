@@ -779,6 +779,9 @@ Deno.serve(async (req) => {
           "forecasts", "maga_files", "narrative_reports",
           "local_impacts", "voter_stats", "mn_finance",
           "prediction_markets", "messaging_guidance",
+          "intel_briefings", "tracked_bills", "mit_elections",
+          "congress_committees", "congress_votes", "state_leg_elections",
+          "forecast_history",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
@@ -885,6 +888,56 @@ Deno.serve(async (req) => {
             .or(`title.ilike.${likeQ},summary.ilike.${likeQ},author.ilike.${likeQ}`)
             .order("published_date", { ascending: false }).limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "Messaging Guidance" }));
+        }
+        if (activeCategories.includes("intel_briefings")) {
+          categoryQueries.intel_briefings = supabase.from("intel_briefings")
+            .select("id,title,summary,scope,category,source_name,published_at")
+            .or(`title.ilike.${likeQ},summary.ilike.${likeQ},source_name.ilike.${likeQ},category.ilike.${likeQ}`)
+            .order("published_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Intel Briefings" }));
+        }
+        if (activeCategories.includes("tracked_bills")) {
+          categoryQueries.tracked_bills = supabase.from("tracked_bills")
+            .select("id,bill_number,title,state,status_desc,last_action_date")
+            .or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},state.ilike.${likeQ}`)
+            .order("last_action_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Tracked Bills (LegiScan)" }));
+        }
+        if (activeCategories.includes("mit_elections")) {
+          categoryQueries.mit_elections = supabase.from("mit_election_results")
+            .select("id,candidate,state,state_po,office,year,party,candidatevotes,totalvotes")
+            .or(`candidate.ilike.${likeQ},state.ilike.${likeQ},state_po.ilike.${likeQ}`)
+            .order("year", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "MIT Election History" }));
+        }
+        if (activeCategories.includes("congress_committees")) {
+          categoryQueries.congress_committees = supabase.from("congress_committees")
+            .select("id,system_code,name,chamber")
+            .or(`name.ilike.${likeQ},system_code.ilike.${likeQ}`)
+            .order("name").limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Congress Committees" }));
+        }
+        if (activeCategories.includes("congress_votes")) {
+          categoryQueries.congress_votes = supabase.from("congress_votes")
+            .select("id,vote_id,chamber,vote_date,question,result,bill_id,yea_total,nay_total")
+            .or(`description.ilike.${likeQ},question.ilike.${likeQ},bill_id.ilike.${likeQ}`)
+            .order("vote_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Congress Votes" }));
+        }
+        if (activeCategories.includes("state_leg_elections")) {
+          categoryQueries.state_leg_elections = supabase.from("state_leg_election_results")
+            .select("id,candidate_name,state_abbr,chamber,district_number,election_year,party,votes,vote_pct,is_winner")
+            .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+            .order("election_year", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "State Leg Elections" }));
+        }
+        if (activeCategories.includes("forecast_history")) {
+          categoryQueries.forecast_history = supabase.from("election_forecast_history")
+            .select("id,source,state_abbr,district,race_type,old_rating,new_rating,changed_at")
+            .or(`state_abbr.ilike.${likeQ},source.ilike.${likeQ}`)
+            .eq("cycle", 2026)
+            .order("changed_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Forecast Rating Changes" }));
         }
 
         const entries = Object.entries(categoryQueries);
