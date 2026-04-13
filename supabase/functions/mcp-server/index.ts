@@ -929,8 +929,72 @@ mcpServer.tool("master_search", {
         .order("total_contributions", { ascending: false }).limit(perLimit)
         .then(r => ({ label: "MN Campaign Finance", data: r.data || [] }));
     }
+    if (activeCategories.includes("prediction_markets")) {
+      queries.prediction_markets = supabase.from("prediction_markets")
+        .select("title,source,category,yes_price,volume,state_abbr,candidate_name")
+        .eq("status", "active")
+        .or(`title.ilike.${likeQ},candidate_name.ilike.${likeQ}`)
+        .order("volume", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Prediction Markets", data: r.data || [] }));
+    }
+    if (activeCategories.includes("messaging_guidance")) {
+      queries.messaging_guidance = supabase.from("messaging_guidance")
+        .select("title,slug,source,author,published_date,summary,issue_areas")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},author.ilike.${likeQ}`)
+        .order("published_date", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Messaging Guidance", data: r.data || [] }));
+    }
+    if (activeCategories.includes("intel_briefings")) {
+      queries.intel_briefings = supabase.from("intel_briefings")
+        .select("title,summary,scope,category,source_name,published_at")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},source_name.ilike.${likeQ},category.ilike.${likeQ}`)
+        .order("published_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Intel Briefings", data: r.data || [] }));
+    }
+    if (activeCategories.includes("tracked_bills")) {
+      queries.tracked_bills = supabase.from("tracked_bills")
+        .select("bill_number,title,state,status_desc,last_action_date")
+        .or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},state.ilike.${likeQ}`)
+        .order("last_action_date", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Tracked Bills (LegiScan)", data: r.data || [] }));
+    }
+    if (activeCategories.includes("mit_elections")) {
+      queries.mit_elections = supabase.from("mit_election_results")
+        .select("candidate,state,state_po,office,year,party,candidatevotes,totalvotes")
+        .or(`candidate.ilike.${likeQ},state.ilike.${likeQ},state_po.ilike.${likeQ}`)
+        .order("year", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "MIT Election History", data: r.data || [] }));
+    }
+    if (activeCategories.includes("congress_committees")) {
+      queries.congress_committees = supabase.from("congress_committees")
+        .select("system_code,name,chamber")
+        .or(`name.ilike.${likeQ},system_code.ilike.${likeQ}`)
+        .order("name").limit(perLimit)
+        .then(r => ({ label: "Congress Committees", data: r.data || [] }));
+    }
+    if (activeCategories.includes("congress_votes")) {
+      queries.congress_votes = supabase.from("congress_votes")
+        .select("vote_id,chamber,vote_date,question,result,bill_id,yea_total,nay_total")
+        .or(`description.ilike.${likeQ},question.ilike.${likeQ},bill_id.ilike.${likeQ}`)
+        .order("vote_date", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Congress Votes", data: r.data || [] }));
+    }
+    if (activeCategories.includes("state_leg_elections")) {
+      queries.state_leg_elections = supabase.from("state_leg_election_results")
+        .select("candidate_name,state_abbr,chamber,district_number,election_year,party,votes,vote_pct,is_winner")
+        .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+        .order("election_year", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "State Leg Elections", data: r.data || [] }));
+    }
+    if (activeCategories.includes("forecast_history")) {
+      queries.forecast_history = supabase.from("election_forecast_history")
+        .select("source,state_abbr,district,race_type,old_rating,new_rating,changed_at")
+        .or(`state_abbr.ilike.${likeQ},source.ilike.${likeQ}`)
+        .eq("cycle", 2026)
+        .order("changed_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Forecast Rating Changes", data: r.data || [] }));
+    }
 
-    const entries = Object.entries(queries);
     const settled = await Promise.all(entries.map(async ([key, promise]) => {
       const res = await promise;
       return { key, label: res.label, count: res.data.length, results: res.data };
