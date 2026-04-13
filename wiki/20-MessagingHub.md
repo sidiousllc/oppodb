@@ -2,7 +2,7 @@
 
 ## Description
 
-MessagingHub is a dedicated section for polling-based message guidance and communications strategy research. It aggregates messaging reports from Navigator Research and other sources, providing searchable, tag-filterable access to polling-backed communications guidance for political campaigns.
+MessagingHub is a dedicated section for multi-partisan message guidance and communications strategy research. It aggregates 95+ messaging reports from 30+ organizations spanning Democrat, Republican, and Independent/nonpartisan sources, providing searchable, tag-filterable access to polling-backed communications guidance for political campaigns.
 
 ---
 
@@ -21,145 +21,130 @@ MessagingHub is a dedicated section for polling-based message guidance and commu
 | `published_date` | date | null | Publication date |
 | `summary` | text | `''` | Short description/preview |
 | `content` | text | `''` | Full markdown content |
-| `issue_areas` | text[] | `'{}'` | Array of issue/party tags (e.g., "Immigration", "Tariffs", "Democrat", "Republican") |
+| `issue_areas` | text[] | `'{}'` | Array of issue/party tags |
 | `research_type` | text | `'message-guidance'` | Type of research |
 | `created_at` | timestamptz | `now()` | Creation timestamp |
 | `updated_at` | timestamptz | `now()` | Last update timestamp |
 
-### Indexes
-- `idx_messaging_guidance_slug` — B-tree on `slug` for fast lookups
-- `idx_messaging_guidance_issue_areas` — GIN on `issue_areas` for tag filtering
+---
 
-### RLS Policies
+## Data Sources (30+ Organizations)
 
-| Policy | For | To | Rule |
-|--------|-----|-----|------|
-| Anyone can read | SELECT | public | `true` |
-| Admins and mods can insert | INSERT | authenticated | `has_role('admin') OR has_role('moderator')` |
-| Admins and mods can update | UPDATE | authenticated | `has_role('admin') OR has_role('moderator')` |
-| Admins can delete | DELETE | authenticated | `has_role('admin')` |
+### Democrat-Aligned
+| Organization | Focus |
+|-------------|-------|
+| Navigator Research | Polling-backed progressive messaging |
+| Center for American Progress (CAP) | Progressive policy research |
+| Third Way | Center-left policy and messaging |
+| Data for Progress | Progressive polling and messaging |
+| American Progress Action Fund | Progressive advocacy |
+| Democratic Policy Committee | Congressional Democratic messaging |
+
+### Republican-Aligned
+| Organization | Focus |
+|-------------|-------|
+| American Enterprise Institute (AEI) | Conservative policy research |
+| Heritage Foundation | Conservative policy and messaging |
+| Manhattan Institute | Free-market policy |
+| Cato Institute | Libertarian policy |
+
+### Nonpartisan / Bipartisan
+| Organization | Focus |
+|-------------|-------|
+| Brookings Institution | Centrist policy analysis |
+| Bipartisan Policy Center | Cross-party governance |
+| RAND Corporation | Defense and security research |
+| Urban Institute | Social and economic policy |
+| Pew Research Center | Public opinion data |
+
+---
+
+## Edge Function: `messaging-sync`
+
+### Architecture
+Uses the `makeSearchScraper` factory pattern for consistent scraper creation:
+
+```typescript
+function makeSearchScraper(
+  name: string,
+  searchUrl: string,
+  source: string,
+  researchType: string
+): Scraper
+```
+
+### Sync Process
+1. Iterates through 30+ configured scrapers
+2. Each scraper uses Firecrawl API (`FIRECRAWL_API_KEY`) to fetch and parse source pages
+3. Extracts title, URL, summary, and content
+4. Applies automated issue area detection via 40+ keyword matching
+5. Tags with party affiliation (Democrat, Republican, Independent)
+6. Upserts by slug to prevent duplicates
+
+### Issue Area Detection (40+ Keywords)
+
+| Issue Area | Keywords |
+|-----------|----------|
+| Immigration | immigration, border, ICE, asylum, migrant, deportation, DACA |
+| Economy | economy, inflation, jobs, wages, unemployment, recession, GDP |
+| Healthcare | health, medicare, medicaid, ACA, insurance, hospital, drug |
+| Tariffs | tariff, trade, customs, import, export, trade war |
+| Education | education, school, student, college, teacher, Title I |
+| Climate | climate, environment, EPA, emissions, renewable, energy |
+| Defense | military, defense, Pentagon, veteran, NATO |
+| Abortion | abortion, reproductive, Roe, Dobbs, pro-choice, pro-life |
+| Gun Policy | gun, firearm, Second Amendment, NRA, shooting |
+| Social Security | social security, Medicare, retirement, entitlement |
+| And 30+ more | ... |
 
 ---
 
 ## Component: `MessagingHub.tsx`
 
 ### Features
-- **Data Loading**: Fetches all records from `messaging_guidance` table on mount, ordered by `published_date` descending
+- **Data Loading**: Fetches all records from `messaging_guidance` table, ordered by `published_date` descending
 - **Search**: Client-side text search across title, summary, author, and issue area tags
-- **Tag Filtering**: Dynamically generated tag buttons from all unique `issue_areas` across loaded data
-- **Detail View**: Click any report to view full details with source link, metadata, and content
-- **External Links**: Each report links to its original source URL
+- **Tag Filtering**: Dynamic tag buttons generated from all unique `issue_areas`
+- **Party Filtering**: Filter by Democrat, Republican, or nonpartisan sources
+- **Detail View**: Full report with source link, metadata, and markdown content in Win98-style mini-window
+- **Pull Updates**: Manual sync button triggers `messaging-sync` edge function
+- **PDF Export**: Theme-aware PDF generation via jsPDF
 
-### UI Layout
-
-```
-┌──────────────────────────────────────────┐
-│ 📢 MessagingHub — Message guidance...    │
-├──────────────────────────────────────────┤
-│ 🔍 [Search messaging guidance...]       │
-├──────────────────────────────────────────┤
-│ [All Topics] [Immigration] [Tariffs] ... │
-├──────────────────────────────────────────┤
-│ 7 reports                                │
-├──────────────────────────────────────────┤
-│ ┌─ The More Americans Learn About...  ─┐│
-│ │ Summary text preview...               ││
-│ │ 📅 3/19/2026 • Maryann Cousens       ││
-│ │ [Election Integrity] [Elections]      ││
-│ └───────────────────────────────────────┘│
-│ ┌─ Perceptions And Concerns About... ──┐│
-│ │ ...                                   ││
-│ └───────────────────────────────────────┘│
-└──────────────────────────────────────────┘
-```
-
-### Detail View
-
-When a report is selected:
-- Back button returns to list
-- Header card with title, source, author, date, and issue tags
-- Source link button (opens external URL)
-- Content card with summary and full report body
-- Fallback message if full content not yet available
-
----
-
-## Data Sources
-
-### Navigator Research (`navigatorresearch.org`)
-
-Navigator Research is a project of Global Strategy Group and GS Strategy Group focused on providing polling-backed messaging guidance for progressive communicators.
-
-**Seeded Reports** (initial dataset):
-
-| Title | Published | Issue Areas |
-|-------|-----------|-------------|
-| The More Americans Learn About the SAVE Act... | 2026-03-19 | Election Integrity, Elections, Congress, Democrat, Republican |
-| Perceptions And Concerns About Trump's War Against Iran | 2026-03-18 | Foreign Policy, Trump, National Security, Democrat |
-| Message Guidance on Tariff SCOTUS Ruling | 2026-02-20 | Tariffs, Supreme Court, Economy, Democrat |
-| Do's and Don'ts about Discussing ICE and Immigration | 2026-02-09 | Immigration, Trump, Democrat |
-| All eyes are on ICE | 2026-02-05 | Immigration, Trump, Democrat |
-| State of the Shutdown: Families are Paying the Price... | 2025-10-31 | Shutdown, Budget, Congress, Republicans, Democrat, Republican |
-| Winning Messages on Reproductive Rights Post-Dobbs | 2025-09-15 | Abortion, Reproductive Rights, Health Care, Democrat |
-
-**Party Tags**: Reports are tagged with `Democrat` and/or `Republican` to indicate which party's messaging strategy they address. All Navigator Research reports include `Democrat`; reports directly addressing GOP policy positions also include `Republican`.
-
-### Adding New Sources
-
-New messaging guidance can be added:
-1. **Admin Panel**: Via the Messaging Guidance content management tab
-2. **Direct DB Insert**: Via Supabase with appropriate role
-3. **API**: Via the `/messaging-guidance` public API endpoint (when implemented)
+### Win98 Mini-Windows
+Reports open in draggable Win98-style windows supporting:
+- Resize and minimize
+- Z-index management via WindowManagerContext
+- Full markdown rendering with "Do/Don't" framing
+- Audience segmentation sections
 
 ---
 
 ## Search Integration
 
-MessagingHub data is included in the **OppoDB Master Search** (`MasterSearch.tsx`):
-- Queries `messaging_guidance` table with `ilike` on `title` and `summary` columns
-- Results appear under the "📢 Messaging Guidance" category
-- Clicking a result navigates to the `messaging` section
+MessagingHub data is included in **OppoDB Master Search**:
+- Queries `messaging_guidance` with `ilike` on `title` and `summary`
+- Results appear under "📢 Messaging Guidance" category
+- Clicking navigates to the `messaging` section
 
 ---
 
 ## API Access
 
-### Public REST API Endpoint: `/messaging-guidance`
+### REST: `/messaging-guidance`
 
 | Parameter | Description |
 |-----------|-------------|
-| `search` | Search by title or summary (case-insensitive) |
+| `search` | Search by title or summary |
 | `issue_area` | Filter by issue area tag |
 
-**Fields**: `id, title, slug, source, source_url, author, published_date, summary, content, issue_areas, research_type, created_at, updated_at`
-
-```bash
-curl -H "X-API-Key: KEY" "https://.../public-api/messaging-guidance?search=tariff"
-curl -H "X-API-Key: KEY" "https://.../public-api/messaging-guidance?issue_area=Immigration"
-```
+### MCP: `master_search`
+Included in unified search under `messaging_guidance` category.
 
 ---
 
 ## Admin Panel Integration
 
-MessagingHub content is manageable from the **Admin Panel → Messaging Guidance** tab:
-
-### Content Management
-- **List View**: Shows all guidance with title, source, published date, issue areas
-- **Create**: Form with title, slug (auto-generated), source, source_url, author, published_date, summary, content, issue_areas, research_type
-- **Edit**: Pre-filled form for existing entries
-- **Delete**: Admin-only with confirmation
-
-### Fields
-| Field | Input Type | Required |
-|-------|-----------|----------|
-| Title | Text | ✓ |
-| Slug | Text (auto-generated from title) | ✓ |
-| Source | Text | ✓ (default: "Navigator Research") |
-| Source URL | URL | ✗ |
-| Author | Text | ✗ |
-| Published Date | Date picker | ✗ |
-| Summary | Textarea | ✓ |
-| Content | Textarea (Markdown) | ✗ |
-| Issue Areas | Comma-separated tags | ✗ |
-| Research Type | Dropdown | ✓ (default: "message-guidance") |
+In **Admin Panel → Messaging Guidance** tab:
+- Create, edit, delete messaging guidance entries
+- Fields: title, slug, source, source_url, author, published_date, summary, content, issue_areas, research_type
+- Tags stored in `issue_areas` column (comma-separated input, stored as text array)

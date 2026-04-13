@@ -2,7 +2,7 @@
 
 ## Description
 
-District Intelligence provides comprehensive data on all 435 U.S. Congressional Districts. It combines demographic data from the U.S. Census, partisan lean metrics from Cook Political Report, election history, and polling data into a single viewable profile for each district.
+District Intelligence provides comprehensive data on all 435 U.S. Congressional Districts. It combines demographic data from the U.S. Census, partisan lean metrics from Cook Political Report, election history, polling data, campaign finance, and legislative tracking into a single viewable profile for each district.
 
 ## Data Model
 
@@ -39,99 +39,141 @@ interface DistrictProfile {
 
 ## District List View
 
-The District Intel section supports:
-
 ### Filters
 - **Tracked Only** toggle — shows only districts with linked candidates
 - **Cook Rating filter** — filter by rating (Solid D, Likely D, Lean D, Tossup, Lean R, Likely R, Solid R)
-- **PVI (Partisan Voting Index) filter** — filter by PVI ranges (D+10+, D+5-9, D+1-4, Even, R+1-4, R+5-9, R+10+)
+- **PVI filter** — filter by PVI ranges (D+10+, D+5-9, D+1-4, Even, R+1-4, R+5-9, R+10+)
 
 ### Census Sync Button
-Admin-triggered sync of district demographics from the Census Bureau ACS 5-Year Estimates.
+Admin-triggered sync of district demographics from Census Bureau ACS 5-Year Estimates.
 
 ### Election Sync Button
-Bulk sync of congressional election results across all 50 states via the OpenElections API. Progress is shown state-by-state.
+Bulk sync of congressional election results across all 50 states. Progress shown state-by-state.
 
 ### District Map
-Interactive SVG-based district map that:
-- Colors districts by PVI (blue-to-red gradient)
-- Is filterable by PVI ranges
-- Clickable districts navigate to the detail view
+Interactive SVG-based map with PVI-based coloring (blue-to-red gradient), filterable and clickable.
 
 ### District Compare Mode
-Allows comparing multiple districts side-by-side with:
-- Demographic bar charts
-- Cook rating comparison
-- PVI comparison
-- Key economic metrics
+Side-by-side comparison of multiple districts with demographic bar charts, Cook ratings, PVI, and economic metrics.
+
+---
 
 ## District Detail Page Components
 
 ### 1. District Header
-- District ID (e.g., "IA-01")
-- State badge
-- Cook rating badge
-- **PDF Export** button
+- District ID, state badge, Cook rating badge, PDF Export button
 
 ### 2. District Boundary Map (`DistrictBoundaryMap`)
-- SVG district boundary rendered via `DistrictBoundaryMap.tsx`
-- Highlighted district shape within state context
+- SVG district boundary rendered with highlighted district shape within state context
 
 ### 3. Cook Rating Banner
-- Displays current Cook Political Report rating
-- Color-coded banner with Cook rating text
+- Current Cook Political Report rating with color-coded banner
 
 ### 4. Cook Rating History (`CookRatingHistory`)
-- Historical Cook ratings over time for the district
-- Shows rating changes across election cycles
+- Historical Cook ratings across election cycles
 
 ### 5. Cook PVI Chart (`CookPVIChart`)
-- Partisan Voting Index visualization
-- Shows district's partisan lean relative to national average
+- Partisan Voting Index visualization relative to national average
 
 ### 6. Congressional Delegation (`DistrictCongressPanel`)
-- Current representatives for the district
-- Links to candidate profiles
+- Current representatives with links to candidate profiles
 
 ### 7. District Polling (`DistrictPollingPanel`)
-- District-specific polling data
-- Generic ballot tests for the district
+- District-specific polling data and generic ballot tests
 
 ### 8. Campaign Finance (`AreaFinancePanel`)
-- Top-line fundraising numbers for candidates in the district
-- Donor composition (individual, PAC, party, small donor)
-- Top industries and contributors
-- Source: FEC data via OpenSecrets patterns
+- Top-line fundraising for district candidates, donor composition, top industries/contributors
 
 ### 9. Forecast Model Comparison (`ForecastComparisonPanel`)
-- Compares district-level predictions across forecasting models
-- Shows win probability ranges
+- Cross-model predictions (Cook, 538, Inside Elections, Sabato, Race Ranking)
 
 ### 10. Election History (`CongressionalElectionsSection`)
-- Historical election results for the district
-- Vote totals by party across cycles
-- Incumbent win/loss record
+- Historical results, vote totals by party, incumbent records
 
 ### 11. MIT Election Lab Data (`MITElectionHistoryPanel`)
-- MIT Election Data + Science Lab historical results
-- Presidential and congressional ticket performance
+- Historical presidential and congressional results with county-level data
 
 ### 12. Presidential County Map (`PresidentialCountyMap`)
-- County-level breakdown of presidential results in the district
-- Shows which counties vote most heavily for each party
+- County-level presidential result breakdown within the district
 
 ### 13. Demographics Sections
-- **Economic Indicators**: Population, Median Income, Median Age, Poverty Rate, Unemployment, Household Data
-- **Racial & Ethnic Demographics**: White, Black, Hispanic, Asian, Foreign-born percentages
-- **Housing**: Owner-occupied vs renter-occupied, median home value, median rent
+- **Economic**: Population, Median Income, Age, Poverty, Unemployment, Households
+- **Racial & Ethnic**: White, Black, Hispanic, Asian, Foreign-born %
+- **Housing**: Owner-occupied, median home value, median rent
 - **Health & Veterans**: Uninsured rate, veteran population
 
 ### 14. Tracked Representatives
-- Lists all OppoDB-tracked candidates for this district
-- Clickable to navigate to candidate profile
+- All OppoDB-tracked candidates for the district, clickable to profile
 
 ### 15. Top Issues
-- Algorithmically determined top issues based on district characteristics
+- Algorithmically derived top issues based on district characteristics
+- Derives from demographic metrics when explicit data is missing (e.g., high poverty → "Economy", high uninsured → "Healthcare")
+
+---
+
+## Issues & Impact Tab (Enhanced April 2026)
+
+The Issues & Impact tab within the District Detail view provides comprehensive cross-referenced data for each district. It fetches six additional data sections dynamically:
+
+### 1. Election Forecasts
+- Fetches from `election_forecasts` table filtered by state, district, and `race_type = "house"`
+- Displays source (Cook, Sabato, etc.), rating, and win probabilities (Dem/Rep)
+- Color-coded badges for ratings
+
+### 2. Relevant Polling
+- Matches district's `effectiveTopIssues` against `polling_data` table
+- Searches `candidate_or_topic` field for issue keywords
+- Shows recent polls relevant to district voter concerns
+
+### 3. Intelligence Briefings
+- Fetches from `intel_briefings` filtered by state abbreviation as region
+- Matches briefings relevant to the district's geographic area
+- Links to full briefing text in IntelHub
+
+### 4. Campaign Finance
+- Fetches from `campaign_finance` filtered by district ID (e.g., "MN-01")
+- Shows per-candidate raised/spent/COH for the current cycle
+- Source attribution (FEC)
+
+### 5. Current Representatives
+- Fetches from `congress_members` filtered by state and district
+- Displays name, party, official URL, depiction
+
+### 6. Relevant Legislation
+- Fetches from `congress_bills` and matches `policy_area`, `short_title`, and `title` against district `effectiveTopIssues`
+- Shows bills relevant to local voter concerns
+
+### 7. State Legislative History
+- Fetches from `state_leg_election_results` for the state
+- Shows recent winners and margins for state-level races
+
+### 8. Opposition Research (MAGA Files)
+- Matches relevant MAGA Files content to district concerns
+
+### Effective Top Issues Derivation
+
+When `top_issues` is empty in the database, the system derives issues from demographics:
+```typescript
+if (poverty_rate > 15) → "Economy"
+if (uninsured_pct > 10) → "Healthcare"
+if (median_home_value > 400000) → "Housing"
+if (education_bachelor_pct < 20) → "Education"
+if (unemployment_rate > 5) → "Jobs"
+// ... additional heuristics
+```
+
+---
+
+## District News Tab
+
+The News tab aggregates representative-specific news:
+- RSS proxy via `district-news` edge function
+- Full article text rendered as Markdown via `scrape-article` edge function
+- Win98-style draggable windows for article reading
+- `localStorage` caching for offline viewing
+- Cached in `district_news_cache` table
+
+---
 
 ## Data Sources
 
@@ -141,9 +183,13 @@ Allows comparing multiple districts side-by-side with:
 | Cook Ratings | Cook Political Report (March 2026) |
 | PVI | Cook Political Report PVI (2024) |
 | Election Results | OpenElections, MIT Election Lab |
-| Campaign Finance | FEC via OpenSecrets patterns |
+| Campaign Finance | FEC via campaign-finance-sync, OpenSecrets |
 | District Boundaries | GeoJSON shapes (compiled) |
+| News | RSS aggregation via district-news edge function |
+| Forecasts | Cook, 538, Sabato, Inside Elections |
+| Intelligence | intel_briefings (90+ sources) |
+| Legislation | congress_bills (Congress.gov) |
 
 ## Supabase Table: `district_profiles`
 
-All district data is stored in the `district_profiles` Supabase table and queried via `fetchAllDistricts()` and `searchDistricts()` in `districtIntel.ts`.
+All district data stored in `district_profiles` and queried via `fetchAllDistricts()` and `searchDistricts()` in `districtIntel.ts`.
