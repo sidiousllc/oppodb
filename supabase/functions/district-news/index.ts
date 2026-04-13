@@ -74,7 +74,8 @@ Deno.serve(async (req) => {
       const block = match[1];
       const titleMatch = block.match(/<title><!\[CDATA\[(.*?)\]\]>|<title>(.*?)<\/title>/);
       const linkMatch = block.match(/<link>(.*?)<\/link>/);
-      const sourceMatch = block.match(/<source[^>]*>(.*?)<\/source>/);
+      const sourceMatch = block.match(/<source[^>]*url="([^"]*)"[^>]*>(.*?)<\/source>/);
+      const sourceNameOnly = block.match(/<source[^>]*>(.*?)<\/source>/);
       const pubDateMatch = block.match(/<pubDate>(.*?)<\/pubDate>/);
 
       const rawTitle = titleMatch ? (titleMatch[1] || titleMatch[2] || "") : "";
@@ -82,10 +83,15 @@ Deno.serve(async (req) => {
       const title = dashIdx > 0 ? rawTitle.substring(0, dashIdx).trim() : rawTitle.trim();
       const fallbackSource = dashIdx > 0 ? rawTitle.substring(dashIdx + 3).trim() : "";
 
+      // Prefer the real article URL from <source url="..."> over the Google redirect
+      const sourceUrl = sourceMatch ? sourceMatch[1].trim() : "";
+      const googleLink = linkMatch ? linkMatch[1].trim() : "";
+      const actualLink = sourceUrl || googleLink;
+
       items.push({
         title,
-        link: linkMatch ? linkMatch[1].trim() : "",
-        source: sourceMatch ? sourceMatch[1].trim() : fallbackSource,
+        link: actualLink,
+        source: sourceMatch ? sourceMatch[2].trim() : (sourceNameOnly ? sourceNameOnly[1].trim() : fallbackSource),
         pubDate: pubDateMatch ? pubDateMatch[1].trim() : "",
       });
     }
