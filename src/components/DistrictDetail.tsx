@@ -462,6 +462,48 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
         });
         setMagaFiles(matched.slice(0, 6));
       });
+
+    // Load prediction markets for this district/state
+    supabase
+      .from("prediction_markets")
+      .select("id, title, yes_price, no_price, volume, source, market_url, last_traded_at")
+      .or(`state_abbr.eq.${stateAbbr},title.ilike.%${stateAbbrToName(stateAbbr)}%`)
+      .eq("status", "active")
+      .order("volume", { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        if (data) setPredictionMarkets(data as PredictionMarketItem[]);
+      });
+
+    // Load candidate profiles relevant to this district
+    supabase
+      .from("candidate_profiles")
+      .select("id, name, slug, tags")
+      .eq("is_subpage", false)
+      .limit(500)
+      .then(({ data }) => {
+        if (!data) return;
+        const stateNameLower = stateAbbrToName(stateAbbr).toLowerCase();
+        const districtNum = district.district_id.split("-")[1];
+        const matched = data.filter(c => {
+          const text = c.name.toLowerCase();
+          return text.includes(stateNameLower) || text.includes(stateAbbr.toLowerCase()) ||
+            c.tags.some(t => t.toLowerCase().includes(stateNameLower) || t.toLowerCase().includes(stateAbbr.toLowerCase())) ||
+            candidateSlugs.includes(c.slug);
+        });
+        setCandidateProfiles(matched.slice(0, 10));
+      });
+
+    // Load state legislative profiles for this state
+    supabase
+      .from("state_legislative_profiles")
+      .select("id, district_id, chamber, district_number, population, median_income, poverty_rate, unemployment_rate")
+      .eq("state_abbr", stateAbbr)
+      .order("district_number")
+      .limit(20)
+      .then(({ data }) => {
+        if (data) setStateLegProfiles(data as StateLegProfileItem[]);
+      });
   }, [stateAbbr, effectiveTopIssues, district.district_id]);
 
   // Compute additional derived stats
