@@ -22,11 +22,18 @@ const VALID_ENDPOINTS = [
   "voter-registration-stats",
   "congress-members",
   "congress-bills",
+  "congress-committees",
+  "congress-votes",
   "campaign-finance",
   "election-forecasts",
+  "forecast-history",
   "congressional-elections",
   "state-finance",
   "mn-finance",
+  "intel-briefings",
+  "tracked-bills",
+  "mit-elections",
+  "state-leg-elections",
   "search",
 ];
 
