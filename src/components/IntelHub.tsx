@@ -396,8 +396,11 @@ export function IntelHub() {
                     {b.summary && (
                       <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{b.summary}</div>
                     )}
-                    <div className="text-[9px] text-gray-400 mt-0.5">
+                    <div className="text-[9px] text-gray-400 mt-0.5 flex items-center gap-1">
                       {b.published_at ? format(new Date(b.published_at), "PPp") : ""}
+                      {b.category && b.category !== "general" && (
+                        <span className="bg-[#e8e8ff] text-[#000080] px-1 rounded text-[8px] font-bold uppercase">{b.category}</span>
+                      )}
                     </div>
                   </button>
                 ))}
