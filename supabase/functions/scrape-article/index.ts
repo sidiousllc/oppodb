@@ -133,6 +133,10 @@ Deno.serve(async (req) => {
       if (mainMatch) contentHtml = mainMatch[1];
     }
 
+    // Strip nav, header, footer, aside, and ad-related elements before extraction
+    contentHtml = contentHtml.replace(/<(nav|header|footer|aside|form|iframe|script|style|noscript)[^>]*>[\s\S]*?<\/\1>/gi, "");
+    contentHtml = contentHtml.replace(/<div[^>]*class="[^"]*(?:ad-|advertisement|sidebar|nav-|menu|cookie|banner|popup|modal|newsletter|signup)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
+
     // Extract text from paragraphs, headings, and list items
     const blocks: string[] = [];
     const blockRegex = /<(p|h[1-6]|li)[^>]*>([\s\S]*?)<\/\1>/gi;
