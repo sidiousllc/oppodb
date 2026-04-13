@@ -233,6 +233,7 @@ export function PresidentialCountyMap({ stateAbbr }: PresidentialCountyMapProps)
   const [year, setYear] = useState(2024);
   const [winners, setWinners] = useState<Map<string, CountyWinner>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [tooltip, setTooltip] = useState<{ winner: CountyWinner; x: number; y: number } | null>(null);
   const [zoom, setZoom] = useState(1);
 
@@ -240,13 +241,36 @@ export function PresidentialCountyMap({ stateAbbr }: PresidentialCountyMapProps)
   const center = STATE_CENTERS[stateAbbr] || [-98.5, 39.8];
   const baseZoom = STATE_ZOOMS[stateAbbr] || 5;
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     setLoading(true);
     setTooltip(null);
     fetchCountyResults(stateAbbr, year)
       .then(setWinners)
       .finally(() => setLoading(false));
   }, [stateAbbr, year]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        `mit-election-sync?dataset=president_county&state=${stateAbbr}&min_year=2000`
+      );
+      if (error) {
+        toast.error("Sync failed: " + error.message);
+      } else {
+        toast.success(`Synced ${data?.total_synced || 0} county presidential records for ${stateAbbr}`);
+        loadData();
+      }
+    } catch (e) {
+      toast.error("Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleMouseEnter = useCallback((fips: string, event: React.MouseEvent) => {
     const w = winners.get(fips);
