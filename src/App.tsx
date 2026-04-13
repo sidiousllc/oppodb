@@ -66,6 +66,7 @@ const App = () => {
                 <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/index" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/api" element={<ProtectedRoute><ApiPage /></ProtectedRoute>} />
