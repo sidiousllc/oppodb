@@ -967,6 +967,219 @@ export type Database = {
         }
         Relationships: []
       }
+      international_elections: {
+        Row: {
+          candidates: Json | null
+          country_code: string
+          created_at: string
+          election_date: string | null
+          election_type: string
+          election_year: number
+          id: string
+          raw_data: Json | null
+          results: Json | null
+          source: string | null
+          source_url: string | null
+          turnout_pct: number | null
+          updated_at: string
+          winner_name: string | null
+          winner_party: string | null
+        }
+        Insert: {
+          candidates?: Json | null
+          country_code: string
+          created_at?: string
+          election_date?: string | null
+          election_type?: string
+          election_year: number
+          id?: string
+          raw_data?: Json | null
+          results?: Json | null
+          source?: string | null
+          source_url?: string | null
+          turnout_pct?: number | null
+          updated_at?: string
+          winner_name?: string | null
+          winner_party?: string | null
+        }
+        Update: {
+          candidates?: Json | null
+          country_code?: string
+          created_at?: string
+          election_date?: string | null
+          election_type?: string
+          election_year?: number
+          id?: string
+          raw_data?: Json | null
+          results?: Json | null
+          source?: string | null
+          source_url?: string | null
+          turnout_pct?: number | null
+          updated_at?: string
+          winner_name?: string | null
+          winner_party?: string | null
+        }
+        Relationships: []
+      }
+      international_leaders: {
+        Row: {
+          bio: string | null
+          controversies: Json | null
+          country_code: string
+          created_at: string
+          id: string
+          image_url: string | null
+          in_office_since: string | null
+          name: string
+          party: string | null
+          previous_positions: Json | null
+          raw_data: Json | null
+          term_ends: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          controversies?: Json | null
+          country_code: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          in_office_since?: string | null
+          name: string
+          party?: string | null
+          previous_positions?: Json | null
+          raw_data?: Json | null
+          term_ends?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          controversies?: Json | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          in_office_since?: string | null
+          name?: string
+          party?: string | null
+          previous_positions?: Json | null
+          raw_data?: Json | null
+          term_ends?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      international_profiles: {
+        Row: {
+          area_sq_km: number | null
+          capital: string | null
+          continent: string
+          corruption_index: number | null
+          country_code: string
+          country_name: string
+          created_at: string
+          currency: string | null
+          election_results: Json | null
+          election_type: string | null
+          gdp: number | null
+          gdp_per_capita: number | null
+          government_type: string | null
+          head_of_government: string | null
+          head_of_state: string | null
+          human_dev_index: number | null
+          id: string
+          inflation_rate: number | null
+          last_election_date: string | null
+          major_industries: string[] | null
+          median_age: number | null
+          next_election_date: string | null
+          official_languages: string[] | null
+          opposition_parties: Json | null
+          population: number | null
+          poverty_rate: number | null
+          press_freedom_rank: number | null
+          raw_data: Json | null
+          region: string | null
+          ruling_party: string | null
+          trade_partners: Json | null
+          unemployment_rate: number | null
+          updated_at: string
+        }
+        Insert: {
+          area_sq_km?: number | null
+          capital?: string | null
+          continent: string
+          corruption_index?: number | null
+          country_code: string
+          country_name: string
+          created_at?: string
+          currency?: string | null
+          election_results?: Json | null
+          election_type?: string | null
+          gdp?: number | null
+          gdp_per_capita?: number | null
+          government_type?: string | null
+          head_of_government?: string | null
+          head_of_state?: string | null
+          human_dev_index?: number | null
+          id?: string
+          inflation_rate?: number | null
+          last_election_date?: string | null
+          major_industries?: string[] | null
+          median_age?: number | null
+          next_election_date?: string | null
+          official_languages?: string[] | null
+          opposition_parties?: Json | null
+          population?: number | null
+          poverty_rate?: number | null
+          press_freedom_rank?: number | null
+          raw_data?: Json | null
+          region?: string | null
+          ruling_party?: string | null
+          trade_partners?: Json | null
+          unemployment_rate?: number | null
+          updated_at?: string
+        }
+        Update: {
+          area_sq_km?: number | null
+          capital?: string | null
+          continent?: string
+          corruption_index?: number | null
+          country_code?: string
+          country_name?: string
+          created_at?: string
+          currency?: string | null
+          election_results?: Json | null
+          election_type?: string | null
+          gdp?: number | null
+          gdp_per_capita?: number | null
+          government_type?: string | null
+          head_of_government?: string | null
+          head_of_state?: string | null
+          human_dev_index?: number | null
+          id?: string
+          inflation_rate?: number | null
+          last_election_date?: string | null
+          major_industries?: string[] | null
+          median_age?: number | null
+          next_election_date?: string | null
+          official_languages?: string[] | null
+          opposition_parties?: Json | null
+          population?: number | null
+          poverty_rate?: number | null
+          press_freedom_rank?: number | null
+          raw_data?: Json | null
+          region?: string | null
+          ruling_party?: string | null
+          trade_partners?: Json | null
+          unemployment_rate?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       local_impacts: {
         Row: {
           content: string
