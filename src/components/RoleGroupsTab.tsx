@@ -29,9 +29,8 @@ interface GroupMember {
 export function RoleGroupsTab() {
   const [groups, setGroups] = useState<RoleGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<RoleGroup | null>(null);
   const [creating, setCreating] = useState(false);
-  const [viewingMembers, setViewingMembers] = useState<RoleGroup | null>(null);
+  const [openGroupWindows, setOpenGroupWindows] = useState<RoleGroup[]>([]);
 
   const loadGroups = useCallback(async () => {
     setLoading(true);
@@ -40,7 +39,12 @@ export function RoleGroupsTab() {
       .select("*")
       .order("name");
     if (error) { toast.error(error.message); }
-    setGroups((data || []) as RoleGroup[]);
+    const loaded = (data || []) as RoleGroup[];
+    setGroups(loaded);
+    setOpenGroupWindows(prev => prev.map(og => {
+      const fresh = loaded.find(g => g.id === og.id);
+      return fresh || og;
+    }));
     setLoading(false);
   }, []);
 
@@ -51,27 +55,25 @@ export function RoleGroupsTab() {
     const { error } = await supabase.from("role_groups").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success(`Deleted "${name}"`);
+    setOpenGroupWindows(prev => prev.filter(g => g.id !== id));
     loadGroups();
+  };
+
+  const handleOpenGroup = (g: RoleGroup) => {
+    if (!openGroupWindows.some(og => og.id === g.id)) {
+      setOpenGroupWindows(prev => [...prev, g]);
+    }
   };
 
   if (loading) return <div className="text-center py-8 text-[10px]">Loading role groups...</div>;
 
-  if (editing || creating) {
+  if (creating) {
     return (
       <RoleGroupEditor
-        group={editing || { id: "", name: "", description: "", color: "#c0c0c0", roles: [], created_at: "", updated_at: "" }}
-        isNew={creating}
-        onSave={() => { setEditing(null); setCreating(false); loadGroups(); }}
-        onCancel={() => { setEditing(null); setCreating(false); }}
-      />
-    );
-  }
-
-  if (viewingMembers) {
-    return (
-      <GroupMembersPanel
-        group={viewingMembers}
-        onBack={() => setViewingMembers(null)}
+        group={{ id: "", name: "", description: "", color: "#c0c0c0", roles: [], created_at: "", updated_at: "" }}
+        isNew={true}
+        onSave={() => { setCreating(false); loadGroups(); }}
+        onCancel={() => setCreating(false)}
       />
     );
   }
@@ -79,11 +81,22 @@ export function RoleGroupsTab() {
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{groups.length} role groups</span>
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{groups.length} role groups — click to manage</span>
         <button onClick={() => setCreating(true)} className="win98-button text-[10px] flex items-center gap-1 font-bold">
           <Plus className="h-3 w-3" /> Create Group
         </button>
       </div>
+
+      {/* Group detail windows */}
+      {openGroupWindows.map((g, idx) => (
+        <AdminRoleGroupWindow
+          key={g.id}
+          group={g}
+          onClose={() => setOpenGroupWindows(prev => prev.filter(og => og.id !== g.id))}
+          onGroupUpdated={loadGroups}
+          windowIndex={idx}
+        />
+      ))}
 
       {groups.length === 0 ? (
         <div className="win98-sunken bg-white p-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
@@ -92,8 +105,10 @@ export function RoleGroupsTab() {
         </div>
       ) : (
         <div className="space-y-2">
-          {groups.map(g => (
-            <div key={g.id} className="win98-raised bg-[hsl(var(--win98-face))] p-2">
+          {groups.map(g => {
+            const isOpen = openGroupWindows.some(og => og.id === g.id);
+            return (
+            <div key={g.id} className={`win98-raised bg-[hsl(var(--win98-face))] p-2 cursor-pointer hover:bg-[hsl(var(--win98-light))] ${isOpen ? "bg-[hsl(var(--win98-light))]" : ""}`} onClick={() => handleOpenGroup(g)}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-3 h-3 rounded-sm border border-[hsl(var(--win98-shadow))]" style={{ backgroundColor: g.color }} />
@@ -111,19 +126,14 @@ export function RoleGroupsTab() {
                     ))}
                     {g.roles.length === 0 && <span className="text-[8px] text-[hsl(var(--muted-foreground))] italic">no roles</span>}
                   </div>
-                  <button onClick={() => setViewingMembers(g)} className="win98-button px-1 py-0 text-[9px]" title="Members">
-                    <Users className="h-2.5 w-2.5" />
-                  </button>
-                  <button onClick={() => setEditing(g)} className="win98-button px-1 py-0 text-[9px]" title="Edit">
-                    <Edit3 className="h-2.5 w-2.5" />
-                  </button>
-                  <button onClick={() => handleDelete(g.id, g.name)} className="win98-button px-1 py-0 text-[9px]" title="Delete">
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(g.id, g.name); }} className="win98-button px-1 py-0 text-[9px]" title="Delete">
                     <Trash2 className="h-2.5 w-2.5" />
                   </button>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
