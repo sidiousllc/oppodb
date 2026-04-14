@@ -838,7 +838,7 @@ mcpServer.tool("master_search", {
       "prediction_markets", "messaging_guidance",
       "intel_briefings", "tracked_bills", "mit_elections",
       "congress_committees", "congress_votes", "state_leg_elections",
-      "forecast_history",
+      "forecast_history", "international_profiles",
     ];
 
     const requestedCategories = args.categories as string[] | undefined;
@@ -993,6 +993,13 @@ mcpServer.tool("master_search", {
         .eq("cycle", 2026)
         .order("changed_at", { ascending: false }).limit(perLimit)
         .then(r => ({ label: "Forecast Rating Changes", data: r.data || [] }));
+    }
+    if (activeCategories.includes("international_profiles")) {
+      queries.international_profiles = supabase.from("international_profiles")
+        .select("country_code,country_name,continent,region,population,gdp_per_capita,government_type,head_of_state")
+        .or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ}`)
+        .order("country_name").limit(perLimit)
+        .then(r => ({ label: "International Profiles", data: r.data || [] }));
     }
 
     const settled = await Promise.all(entries.map(async ([key, promise]) => {

@@ -41,6 +41,9 @@ const SYNC_TABLES = [
   { table: "district_news_cache", select: "*", orderBy: "member_name" },
   { table: "wiki_pages", select: "*", orderBy: "title" },
   { table: "section_permissions", select: "*", orderBy: "section_id" },
+  { table: "international_profiles", select: "*", orderBy: "country_code" },
+  { table: "international_elections", select: "*", orderBy: "election_year" },
+  { table: "international_leaders", select: "*", orderBy: "country_code" },
 ];
 
 export interface SyncStatus {
