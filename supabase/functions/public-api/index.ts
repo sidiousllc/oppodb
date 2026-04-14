@@ -781,7 +781,7 @@ Deno.serve(async (req) => {
           "prediction_markets", "messaging_guidance",
           "intel_briefings", "tracked_bills", "mit_elections",
           "congress_committees", "congress_votes", "state_leg_elections",
-          "forecast_history",
+          "forecast_history", "international_profiles",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
@@ -938,6 +938,13 @@ Deno.serve(async (req) => {
             .eq("cycle", 2026)
             .order("changed_at", { ascending: false }).limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "Forecast Rating Changes" }));
+        }
+        if (activeCategories.includes("international_profiles")) {
+          categoryQueries.international_profiles = supabase.from("international_profiles")
+            .select("id,country_code,country_name,continent,region,population,gdp_per_capita,government_type,head_of_state,ruling_party")
+            .or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ}`)
+            .order("country_name").limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Profiles" }));
         }
 
         const entries = Object.entries(categoryQueries);
