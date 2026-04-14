@@ -1464,6 +1464,42 @@ export type Database = {
         }
         Relationships: []
       }
+      section_permissions: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          section_id: string
+          subsection_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          allowed?: boolean
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          section_id: string
+          subsection_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          section_id?: string
+          subsection_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       state_cfb_candidates: {
         Row: {
           candidate_name: string
@@ -2255,6 +2291,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_section_access: {
+        Args: { _section_id: string; _subsection_id?: string; _user_id: string }
+        Returns: boolean
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
