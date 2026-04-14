@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import * as amplitude from "@amplitude/unified";
 import App from "./App.tsx";
 import "./index.css";
 import "./themes.css";
@@ -21,5 +22,11 @@ if (isPreviewHost || isInIframe) {
     registrations.forEach((r) => r.unregister());
   });
 }
+
+// Initialize Amplitude Analytics and Session Replay
+amplitude.initAll("e8159d2da0817143b5c1f636427f8c2e", {
+  analytics: { autocapture: true },
+  sessionReplay: { sampleRate: 1 },
+});
 
 createRoot(document.getElementById("root")!).render(<App />);

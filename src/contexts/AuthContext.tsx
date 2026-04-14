@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import * as amplitude from "@amplitude/unified";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -24,10 +25,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Track auth events in Amplitude
+        if (event === "SIGNED_IN" && session?.user) {
+          amplitude.setUserId(session.user.id);
+          amplitude.track("user_signed_in", {
+            user_id: session.user.id,
+            email: session.user.email,
+          });
+        } else if (event === "SIGNED_OUT") {
+          amplitude.setUserId(null);
+          amplitude.track("user_signed_out");
+        }
       }
     );
 
@@ -41,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    amplitude.track("user_sign_out_attempted", { user_id: user?.id });
     await supabase.auth.signOut();
   };
 

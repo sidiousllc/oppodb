@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as amplitude from "@amplitude/unified";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Win98Window } from "@/components/Win98Window";
@@ -57,8 +58,10 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+    amplitude.track("auth_login_attempted", { email, mode });
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
+      amplitude.track("auth_login_failed", { email, error: error.message });
       const msg = error.message || "";
       if (msg.toLowerCase().includes("banned") || msg.toLowerCase().includes("user is banned")) {
         setMessage({ type: "error", text: "🚫 Your account has been suspended. Contact an administrator for assistance." });
@@ -73,9 +76,11 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+    amplitude.track("auth_signup_attempted", { email, mode });
 
     // If no invite token, don't allow direct signup
     if (!inviteToken) {
+      amplitude.track("auth_signup_failed", { reason: "no_invite_token" });
       setMessage({ type: "error", text: "An invitation is required to create an account. You can request access instead." });
       setLoading(false);
       return;
@@ -86,6 +91,7 @@ export default function AuthPage() {
       body: { action: "validate_invite", token: inviteToken },
     });
     if (!validation?.valid) {
+      amplitude.track("auth_signup_failed", { reason: "invalid_invite", error: validation?.error });
       setMessage({ type: "error", text: validation?.error || "Invalid or expired invite" });
       setLoading(false);
       return;
@@ -97,8 +103,10 @@ export default function AuthPage() {
     });
 
     if (error) {
+      amplitude.track("auth_signup_failed", { email, error: error.message });
       setMessage({ type: "error", text: error.message });
     } else {
+      amplitude.track("auth_signup_completed", { email, user_id: signupData.user?.id });
       // Mark invite as used
       if (signupData.user) {
         await supabase.functions.invoke("admin-users", {
@@ -123,14 +131,17 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+    amplitude.track("auth_access_request_attempted", { email });
 
     try {
       const { data, error } = await supabase.functions.invoke("admin-users", {
         body: { action: "submit_access_request", email, display_name: displayName, reason },
       });
       if (error) throw error;
+      amplitude.track("auth_access_request_completed", { email });
       setMessage({ type: "success", text: data.message || "Access request submitted!" });
     } catch (e: any) {
+      amplitude.track("auth_access_request_failed", { email, error: e.message });
       setMessage({ type: "error", text: e.message || "Failed to submit request" });
     }
     setLoading(false);
@@ -140,11 +151,17 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+    amplitude.track("auth_password_reset_requested", { email });
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${getRedirectOrigin()}/reset-password`,
     });
-    if (error) setMessage({ type: "error", text: error.message });
-    else setMessage({ type: "success", text: "Check your email for a password reset link." });
+    if (error) {
+      amplitude.track("auth_password_reset_failed", { email, error: error.message });
+      setMessage({ type: "error", text: error.message });
+    } else {
+      amplitude.track("auth_password_reset_sent", { email });
+      setMessage({ type: "success", text: "Check your email for a password reset link." });
+    }
     setLoading(false);
   };
 
