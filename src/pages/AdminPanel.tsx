@@ -10,6 +10,8 @@ import { RoleGroupsTab } from "@/components/RoleGroupsTab";
 import { AccessControlTab } from "@/components/AccessControlTab";
 import { ActivityLogsTab } from "@/components/ActivityLogsTab";
 import { SectionPermissionsTab } from "@/components/SectionPermissionsTab";
+import { AdminUserWindow } from "@/components/AdminUserWindow";
+import { AdminRoleGroupWindow } from "@/components/AdminRoleGroupWindow";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
