@@ -20,6 +20,13 @@ export function ResearchToolsDashboard({ onNavigateSubsection }: ResearchToolsDa
       description: "Search millions of U.S. court case records via JudyRecords — covers federal, state, and local courts.",
       features: ["Federal & state court cases", "Name-based search", "Case number lookup", "Party & attorney search", "Direct links to case details"],
     },
+    {
+      id: "state-report",
+      emoji: "📊",
+      label: "State Report Generator",
+      description: "Generate comprehensive intelligence reports for any state, pulling data from all databases.",
+      features: ["Districts & demographics", "Election history & forecasts", "Campaign finance", "Polling & prediction markets", "Intel briefings & oppo research"],
+    },
   ];
 
   return (
