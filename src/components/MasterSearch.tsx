@@ -326,6 +326,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       congressVotes: votesRes.data || [],
       stateLegElections: stateLegElRes.data || [],
       forecastHistory: forecastHistRes.data || [],
+      internationalProfiles: intlProfilesRes.data || [],
     });
     setIsSearching(false);
 
@@ -674,6 +675,21 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           id: f.id,
           title: `${f.state_abbr}-${f.district || "AL"} (${f.source})`,
           subtitle: `${f.old_rating || "New"} → ${f.new_rating} • ${f.race_type} • ${f.changed_at ? new Date(f.changed_at).toLocaleDateString() : ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.internationalProfiles.length > 0) {
+      groups.push({
+        key: "international-profiles",
+        label: "🌐 International Profiles",
+        icon: <Globe className="h-3.5 w-3.5" />,
+        section: "internationalhub",
+        results: dbResults.internationalProfiles.map((p: any) => ({
+          id: p.id,
+          title: p.country_name,
+          subtitle: `${p.continent} • ${p.region || ""} • ${p.government_type || ""} • ${p.head_of_state ? `Leader: ${p.head_of_state}` : ""}${p.tags?.length ? ` • Tags: ${p.tags.join(", ")}` : ""}`,
+          slug: p.country_code,
         })),
       });
     }
