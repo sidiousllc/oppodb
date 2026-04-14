@@ -17,6 +17,7 @@ import { useState, useEffect } from "react";
 import { getLastSyncTime } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSectionAccess } from "@/hooks/useSectionAccess";
 
 export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
 export type Section =
@@ -71,6 +72,7 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const { canAccess } = useSectionAccess();
 
   useEffect(() => {
     getLastSyncTime().then(setLastSync);
@@ -130,7 +132,7 @@ export function AppSidebar({
 
           {/* Sections as tree items */}
           <div className="ml-3 border-l border-l-[hsl(var(--win98-shadow))]">
-            {sections.map((s, i) => (
+            {sections.filter(s => canAccess(s.id)).map((s, i) => (
               <div key={s.id}>
                 <button
                   onClick={() => onSectionChange(s.id)}
