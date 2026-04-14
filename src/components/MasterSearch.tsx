@@ -7,6 +7,7 @@ import { searchMagaFiles } from "@/data/magaFiles";
 import { searchLocalImpact } from "@/data/localImpact";
 import { searchNarrativeReports } from "@/data/narrativeReports";
 import { searchDistricts, type DistrictProfile } from "@/data/districtIntel";
+import { searchCountries } from "@/data/internationalCountries";
 
 interface MasterSearchProps {
   onNavigate: (section: string, slug?: string) => void;
@@ -36,7 +37,7 @@ function saveToStorage(key: string, items: string[]) {
   localStorage.setItem(key, JSON.stringify(items));
 }
 
-const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [] };
+const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [], internationalProfiles: [] };
 
 
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
@@ -66,6 +67,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     congressVotes: any[];
     stateLegElections: any[];
     forecastHistory: any[];
+    internationalProfiles: any[];
   }>(EMPTY_DB as any);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -161,6 +163,22 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    const countries = searchCountries(q).slice(0, 8);
+    if (countries.length > 0 && q.length >= 2) {
+      groups.push({
+        key: "countries",
+        label: "🌐 Countries",
+        icon: <Globe className="h-3.5 w-3.5" />,
+        section: "internationalhub",
+        results: countries.map(c => ({
+          id: c.code,
+          title: `${c.flag} ${c.name}`,
+          subtitle: `${c.continent} • ${c.region}`,
+          slug: c.code,
+        })),
+      });
+    }
+
     return groups;
   }, [query, districts]);
 
@@ -200,7 +218,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes, intlProfilesRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -297,6 +315,11 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .eq("cycle", 2026)
         .order("changed_at", { ascending: false })
         .limit(10),
+      supabase.from("international_profiles")
+        .select("id, country_code, country_name, continent, region, population, gdp_per_capita, government_type, head_of_state, ruling_party, tags")
+        .or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ},region.ilike.${likeQ},head_of_state.ilike.${likeQ},ruling_party.ilike.${likeQ}`)
+        .order("country_name")
+        .limit(10),
     ]);
 
     setDbResults({
@@ -320,6 +343,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       congressVotes: votesRes.data || [],
       stateLegElections: stateLegElRes.data || [],
       forecastHistory: forecastHistRes.data || [],
+      internationalProfiles: intlProfilesRes.data || [],
     });
     setIsSearching(false);
 
@@ -668,6 +692,21 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           id: f.id,
           title: `${f.state_abbr}-${f.district || "AL"} (${f.source})`,
           subtitle: `${f.old_rating || "New"} → ${f.new_rating} • ${f.race_type} • ${f.changed_at ? new Date(f.changed_at).toLocaleDateString() : ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.internationalProfiles.length > 0) {
+      groups.push({
+        key: "international-profiles",
+        label: "🌐 International Profiles",
+        icon: <Globe className="h-3.5 w-3.5" />,
+        section: "internationalhub",
+        results: dbResults.internationalProfiles.map((p: any) => ({
+          id: p.id,
+          title: p.country_name,
+          subtitle: `${p.continent} • ${p.region || ""} • ${p.government_type || ""} • ${p.head_of_state ? `Leader: ${p.head_of_state}` : ""}${p.tags?.length ? ` • Tags: ${p.tags.join(", ")}` : ""}`,
+          slug: p.country_code,
         })),
       });
     }

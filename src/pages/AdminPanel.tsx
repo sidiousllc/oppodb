@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +15,7 @@ import { AdminRoleGroupWindow } from "@/components/AdminRoleGroupWindow";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "roles" | "access" | "permissions" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs";
+type Tab = "users" | "roles" | "access" | "permissions" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs" | "international";
 
 interface ContentItem {
   id: string;
@@ -65,6 +65,7 @@ export default function AdminPanel() {
     { id: "local", label: "Local Impact", emoji: "🌐" },
     { id: "narratives", label: "Narratives", emoji: "📄" },
     { id: "messaging", label: "Messaging", emoji: "📢" },
+    { id: "international", label: "International", emoji: "🌐" },
     { id: "docs", label: "Documentation", emoji: "📖" },
   ];
 
@@ -113,6 +114,7 @@ export default function AdminPanel() {
         {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
         {tab === "narratives" && <ContentTab table="narrative_reports" nameField="name" />}
         {tab === "messaging" && <MessagingGuidanceTab />}
+        {tab === "international" && <InternationalTab />}
         {tab === "docs" && <WikiPagesTab />}
       </div>
 
@@ -329,6 +331,331 @@ function UsersTab() {
 }
 
 // Old modals removed — replaced by AdminUserWindow component
+
+// ============== InternationalTab ==============
+function InternationalTab() {
+  const { isAdmin } = useUserRole();
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [leaders, setLeaders] = useState<any[]>([]);
+  const [elections, setElections] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<any | null>(null);
+  const [filterContinent, setFilterContinent] = useState("");
+  const [filterTag, setFilterTag] = useState("");
+  const [search, setSearch] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [pRes, lRes, eRes] = await Promise.all([
+      supabase.from("international_profiles").select("*").order("country_name"),
+      supabase.from("international_leaders").select("*").order("country_code"),
+      supabase.from("international_elections").select("*").order("election_year", { ascending: false }).limit(100),
+    ]);
+    setProfiles(pRes.data || []);
+    setLeaders(lRes.data || []);
+    setElections(eRes.data || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSyncAll = async () => {
+    setSyncing(true);
+    const countryCodes = ["US","CA","MX","GB","FR","DE","IT","ES","JP","KR","CN","IN","BR","AR","AU","ZA","NG","EG"];
+    let synced = 0;
+    for (const code of countryCodes) {
+      try {
+        await supabase.functions.invoke("international-sync", { body: { country_code: code } });
+        synced++;
+      } catch { /* continue */ }
+    }
+    toast.success(`Synced ${synced}/${countryCodes.length} countries`);
+    await load();
+    setSyncing(false);
+  };
+
+  const handleSyncOne = async (code: string) => {
+    try {
+      await supabase.functions.invoke("international-sync", { body: { country_code: code } });
+      toast.success(`Synced ${code}`);
+      await load();
+    } catch (e: any) {
+      toast.error(`Sync failed: ${e.message}`);
+    }
+  };
+
+  const handleUpdateTags = async (id: string, tags: string[]) => {
+    try {
+      await updateContent("international_profiles", id, { tags });
+      toast.success("Tags updated");
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const handleDeleteProfile = async (id: string) => {
+    if (!confirm("Delete this profile?")) return;
+    try {
+      await deleteContent("international_profiles", id);
+      toast.success("Deleted");
+      load();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  // Collect all unique tags
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of profiles) {
+      for (const t of (p.tags || [])) set.add(t);
+    }
+    return [...set].sort();
+  }, [profiles]);
+
+  // Collect all continents
+  const continents = useMemo(() => [...new Set(profiles.map((p: any) => p.continent).filter(Boolean))].sort(), [profiles]);
+
+  // Filter profiles
+  const filtered = useMemo(() => {
+    let list = profiles;
+    if (filterContinent) list = list.filter((p: any) => p.continent === filterContinent);
+    if (filterTag) list = list.filter((p: any) => p.tags?.includes(filterTag));
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter((p: any) =>
+        p.country_name?.toLowerCase().includes(q) ||
+        p.country_code?.toLowerCase().includes(q) ||
+        p.head_of_state?.toLowerCase().includes(q) ||
+        p.ruling_party?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [profiles, filterContinent, filterTag, search]);
+
+  if (loading) return <div className="text-center py-8 text-[10px]">Loading international data…</div>;
+
+  if (editingProfile) {
+    return (
+      <InternationalProfileEditor
+        profile={editingProfile}
+        onSave={async (updated) => {
+          try {
+            await updateContent("international_profiles", updated.id, updated);
+            toast.success("Profile updated");
+            setEditingProfile(null);
+            load();
+          } catch (e: any) { toast.error(e.message); }
+        }}
+        onCancel={() => setEditingProfile(null)}
+      />
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">
+          {filtered.length} profiles • {leaders.length} leaders • {elections.length} elections
+        </span>
+        <div className="flex gap-1">
+          {isAdmin && (
+            <button onClick={handleSyncAll} disabled={syncing} className="win98-button text-[10px] flex items-center gap-1">
+              {syncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              Sync Top Countries
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-2 mb-2 flex-wrap">
+        <div className="flex items-center gap-1">
+          <label className="text-[9px] font-bold">Continent:</label>
+          <select value={filterContinent} onChange={e => setFilterContinent(e.target.value)} className="win98-input text-[10px] py-0.5">
+            <option value="">All</option>
+            {continents.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-1">
+          <label className="text-[9px] font-bold">Tag:</label>
+          <select value={filterTag} onChange={e => setFilterTag(e.target.value)} className="win98-input text-[10px] py-0.5">
+            <option value="">All</option>
+            {allTags.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search…"
+          className="win98-input text-[10px] py-0.5 w-36"
+        />
+      </div>
+
+      <div className="win98-sunken bg-white max-h-[500px] overflow-y-auto">
+        {filtered.map((p: any) => (
+          <div key={p.id} className="flex items-center justify-between px-2 py-1.5 border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] text-[10px]">
+            <div className="min-w-0 flex-1">
+              <div className="font-bold truncate">{p.country_name} <span className="font-normal text-[hsl(var(--muted-foreground))]">({p.country_code})</span></div>
+              <div className="text-[9px] text-[hsl(var(--muted-foreground))] truncate">
+                {p.continent} • {p.region || "N/A"} • Pop: {p.population?.toLocaleString() || "N/A"} • {p.government_type || "N/A"}
+                {p.head_of_state && ` • ${p.head_of_state}`}
+              </div>
+              {p.tags?.length > 0 && (
+                <div className="flex gap-0.5 mt-0.5 flex-wrap">
+                  {p.tags.map((t: string) => (
+                    <span key={t} className="text-[8px] px-1 py-0 rounded bg-[hsl(var(--win98-light))] border border-[hsl(var(--border))]">{t}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-0.5 shrink-0 ml-2">
+              <button onClick={() => handleSyncOne(p.country_code)} className="win98-button px-1 py-0 text-[9px]" title="Sync">
+                <RefreshCw className="h-2.5 w-2.5" />
+              </button>
+              <button onClick={() => setEditingProfile(p)} className="win98-button px-1 py-0 text-[9px]" title="Edit">
+                <Edit3 className="h-2.5 w-2.5" />
+              </button>
+              {isAdmin && (
+                <button onClick={() => handleDeleteProfile(p.id)} className="win98-button px-1 py-0 text-[9px]" title="Delete">
+                  <Trash2 className="h-2.5 w-2.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="px-2 py-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
+            No international profiles found. Click "Sync Top Countries" to fetch data.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============== InternationalProfileEditor ==============
+function InternationalProfileEditor({ profile, onSave, onCancel }: {
+  profile: any; onSave: (p: any) => void; onCancel: () => void;
+}) {
+  const [form, setForm] = useState({
+    ...profile,
+    tagsText: (profile.tags || []).join(", "),
+    industriesText: (profile.major_industries || []).join(", "),
+    languagesText: (profile.official_languages || []).join(", "),
+  });
+
+  return (
+    <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[11px] font-bold">Edit: {form.country_name} ({form.country_code})</span>
+        <button onClick={onCancel} className="win98-titlebar-btn">✕</button>
+      </div>
+      <div className="space-y-2 max-h-[600px] overflow-y-auto">
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Country Name:</label>
+            <input value={form.country_name || ""} onChange={e => setForm((f: any) => ({ ...f, country_name: e.target.value }))} className="win98-input w-full" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Continent:</label>
+            <select value={form.continent || ""} onChange={e => setForm((f: any) => ({ ...f, continent: e.target.value }))} className="win98-input w-full">
+              <option value="">Select…</option>
+              {["North America","South America","Europe","Asia","Africa","Oceania"].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Region:</label>
+            <input value={form.region || ""} onChange={e => setForm((f: any) => ({ ...f, region: e.target.value }))} className="win98-input w-full" />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold mb-0.5">Tags (continent, country, sub-region, county, state — comma-separated):</label>
+          <input value={form.tagsText} onChange={e => setForm((f: any) => ({ ...f, tagsText: e.target.value }))} className="win98-input w-full" placeholder="Europe, EU, Western Europe, G7, NATO" />
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Capital:</label>
+            <input value={form.capital || ""} onChange={e => setForm((f: any) => ({ ...f, capital: e.target.value }))} className="win98-input w-full" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Currency:</label>
+            <input value={form.currency || ""} onChange={e => setForm((f: any) => ({ ...f, currency: e.target.value }))} className="win98-input w-full" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Government Type:</label>
+            <input value={form.government_type || ""} onChange={e => setForm((f: any) => ({ ...f, government_type: e.target.value }))} className="win98-input w-full" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Head of State:</label>
+            <input value={form.head_of_state || ""} onChange={e => setForm((f: any) => ({ ...f, head_of_state: e.target.value }))} className="win98-input w-full" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Head of Government:</label>
+            <input value={form.head_of_government || ""} onChange={e => setForm((f: any) => ({ ...f, head_of_government: e.target.value }))} className="win98-input w-full" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Ruling Party:</label>
+            <input value={form.ruling_party || ""} onChange={e => setForm((f: any) => ({ ...f, ruling_party: e.target.value }))} className="win98-input w-full" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Population:</label>
+            <input type="number" value={form.population || ""} onChange={e => setForm((f: any) => ({ ...f, population: parseInt(e.target.value) || null }))} className="win98-input w-full" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">GDP:</label>
+            <input type="number" value={form.gdp || ""} onChange={e => setForm((f: any) => ({ ...f, gdp: parseFloat(e.target.value) || null }))} className="win98-input w-full" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">GDP Per Capita:</label>
+            <input type="number" value={form.gdp_per_capita || ""} onChange={e => setForm((f: any) => ({ ...f, gdp_per_capita: parseFloat(e.target.value) || null }))} className="win98-input w-full" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold mb-0.5">Unemployment %:</label>
+            <input type="number" step="0.1" value={form.unemployment_rate || ""} onChange={e => setForm((f: any) => ({ ...f, unemployment_rate: parseFloat(e.target.value) || null }))} className="win98-input w-full" />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold mb-0.5">Languages (comma-separated):</label>
+          <input value={form.languagesText} onChange={e => setForm((f: any) => ({ ...f, languagesText: e.target.value }))} className="win98-input w-full" />
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold mb-0.5">Major Industries (comma-separated):</label>
+          <input value={form.industriesText} onChange={e => setForm((f: any) => ({ ...f, industriesText: e.target.value }))} className="win98-input w-full" />
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={() => onSave({
+              ...form,
+              tags: form.tagsText.split(",").map((s: string) => s.trim()).filter(Boolean),
+              major_industries: form.industriesText.split(",").map((s: string) => s.trim()).filter(Boolean),
+              official_languages: form.languagesText.split(",").map((s: string) => s.trim()).filter(Boolean),
+            })}
+            className="win98-button text-[10px] font-bold"
+          >
+            <Save className="h-3 w-3 inline mr-1" /> Save
+          </button>
+          <button onClick={onCancel} className="win98-button text-[10px]">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 
 // ============== CandidatesTab ==============
