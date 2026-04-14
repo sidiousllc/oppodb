@@ -980,6 +980,7 @@ export type Database = {
           results: Json | null
           source: string | null
           source_url: string | null
+          tags: string[]
           turnout_pct: number | null
           updated_at: string
           winner_name: string | null
@@ -997,6 +998,7 @@ export type Database = {
           results?: Json | null
           source?: string | null
           source_url?: string | null
+          tags?: string[]
           turnout_pct?: number | null
           updated_at?: string
           winner_name?: string | null
@@ -1014,6 +1016,7 @@ export type Database = {
           results?: Json | null
           source?: string | null
           source_url?: string | null
+          tags?: string[]
           turnout_pct?: number | null
           updated_at?: string
           winner_name?: string | null
@@ -1034,6 +1037,7 @@ export type Database = {
           party: string | null
           previous_positions: Json | null
           raw_data: Json | null
+          tags: string[]
           term_ends: string | null
           title: string
           updated_at: string
@@ -1050,6 +1054,7 @@ export type Database = {
           party?: string | null
           previous_positions?: Json | null
           raw_data?: Json | null
+          tags?: string[]
           term_ends?: string | null
           title: string
           updated_at?: string
@@ -1066,6 +1071,7 @@ export type Database = {
           party?: string | null
           previous_positions?: Json | null
           raw_data?: Json | null
+          tags?: string[]
           term_ends?: string | null
           title?: string
           updated_at?: string
@@ -1104,6 +1110,7 @@ export type Database = {
           raw_data: Json | null
           region: string | null
           ruling_party: string | null
+          tags: string[]
           trade_partners: Json | null
           unemployment_rate: number | null
           updated_at: string
@@ -1139,6 +1146,7 @@ export type Database = {
           raw_data?: Json | null
           region?: string | null
           ruling_party?: string | null
+          tags?: string[]
           trade_partners?: Json | null
           unemployment_rate?: number | null
           updated_at?: string
@@ -1174,6 +1182,7 @@ export type Database = {
           raw_data?: Json | null
           region?: string | null
           ruling_party?: string | null
+          tags?: string[]
           trade_partners?: Json | null
           unemployment_rate?: number | null
           updated_at?: string
