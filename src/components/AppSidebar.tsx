@@ -28,6 +28,7 @@ export type Section =
   | "intelhub"
   | "messaging"
   | "research-tools"
+  | "internationalhub"
   | "live-elections"
   | "documentation";
 
@@ -57,6 +58,7 @@ const sections: Array<{ id: Section; label: string; emoji: string }> = [
   { id: "intelhub", label: "IntelHub", emoji: "🕵️" },
   { id: "messaging", label: "MessagingHub", emoji: "📢" },
   { id: "research-tools", label: "Research Tools", emoji: "🔬" },
+  { id: "internationalhub", label: "InternationalHub", emoji: "🌐" },
   { id: "live-elections", label: "Live Elections", emoji: "🏛️" },
   { id: "documentation", label: "Documentation", emoji: "📖" },
 ];
