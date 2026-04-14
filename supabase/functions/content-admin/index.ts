@@ -14,6 +14,9 @@ const ALLOWED_TABLES = new Set([
   "narrative_reports",
   "messaging_guidance",
   "wiki_pages",
+  "international_profiles",
+  "international_elections",
+  "international_leaders",
 ]);
 
 serve(async (req) => {
