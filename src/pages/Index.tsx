@@ -39,12 +39,13 @@ import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
-
+import { useSectionAccess } from "@/hooks/useSectionAccess";
 
 export default function Index() {
   const { isAdmin } = useIsAdmin();
   const { isMailOpen, closeMail } = useMail();
   const { trackPageView, trackMapView } = useActivityTracker();
+  const { canAccess } = useSectionAccess();
   const [loaded, setLoaded] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
   const [search, setSearch] = useState("");
@@ -256,6 +257,19 @@ export default function Index() {
   }
 
   function renderList() {
+    // Check section-level access
+    if (!canAccess(section)) {
+      return (
+        <div className="text-center py-12">
+          <div className="text-4xl mb-3">🔒</div>
+          <p className="text-[11px] font-bold mb-2">Access Restricted</p>
+          <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
+            You don't have permission to view this section. Contact an administrator for access.
+          </p>
+        </div>
+      );
+    }
+
     if (section === "dashboard") {
       return (
         <Dashboard

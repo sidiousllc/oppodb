@@ -40,6 +40,7 @@ const SYNC_TABLES = [
   { table: "prediction_markets", select: "*", orderBy: "title" },
   { table: "district_news_cache", select: "*", orderBy: "member_name" },
   { table: "wiki_pages", select: "*", orderBy: "title" },
+  { table: "section_permissions", select: "*", orderBy: "section_id" },
 ];
 
 export interface SyncStatus {
