@@ -56,6 +56,11 @@ function buildValidatedUrl(
   regNum?: string
 ): string {
   try {
+    // Minimal path validation (Do this before new URL(baseUrl), as URL() resolves dot-segments.)
+    if (baseUrl.includes('/../') || /\/%2e%2e\//i.test(baseUrl)) {
+      throw new Error('Invalid path');
+    }
+    
     const url = new URL(baseUrl);
     
     // Validate project ID as a slug
