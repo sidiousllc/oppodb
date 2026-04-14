@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2, Edit3, Save, X, Users, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { AdminRoleGroupWindow } from "@/components/AdminRoleGroupWindow";
 
 const AVAILABLE_ROLES = ["admin", "moderator", "premium", "user"];
 const PRESET_COLORS = ["#c0c0c0", "#cce", "#cec", "#fec", "#fcc", "#ccf", "#ecc", "#cff"];
