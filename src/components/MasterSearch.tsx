@@ -7,6 +7,7 @@ import { searchMagaFiles } from "@/data/magaFiles";
 import { searchLocalImpact } from "@/data/localImpact";
 import { searchNarrativeReports } from "@/data/narrativeReports";
 import { searchDistricts, type DistrictProfile } from "@/data/districtIntel";
+import { searchCountries } from "@/data/internationalCountries";
 
 interface MasterSearchProps {
   onNavigate: (section: string, slug?: string) => void;
@@ -159,6 +160,22 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         icon: <FileText className="h-3.5 w-3.5" />,
         section: "oppohub",
         results: narr.map(n => ({ id: n.slug, title: n.name, slug: n.slug })),
+      });
+    }
+
+    const countries = searchCountries(q).slice(0, 8);
+    if (countries.length > 0 && q.length >= 2) {
+      groups.push({
+        key: "countries",
+        label: "🌐 Countries",
+        icon: <Globe className="h-3.5 w-3.5" />,
+        section: "internationalhub",
+        results: countries.map(c => ({
+          id: c.code,
+          title: `${c.flag} ${c.name}`,
+          subtitle: `${c.continent} • ${c.region}`,
+          slug: c.code,
+        })),
       });
     }
 
