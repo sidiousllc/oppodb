@@ -36,6 +36,7 @@ import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
 import { ResearchToolsDashboard } from "@/components/ResearchToolsDashboard";
 import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
+import { StateReportGenerator } from "@/components/StateReportGenerator";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
@@ -332,6 +333,9 @@ export default function Index() {
       }
       if (researchSubsection === "court-records") {
         return <CourtRecordsSearch onBack={() => setResearchSubsection(null)} />;
+      }
+      if (researchSubsection === "state-report") {
+        return <StateReportGenerator onBack={() => setResearchSubsection(null)} />;
       }
       return (
         <ResearchToolsDashboard
