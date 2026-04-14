@@ -319,7 +319,28 @@ Deno.serve(async (req) => {
       console.error("Prediction markets sync error:", e);
     }
 
-    // 7. Auto-discover and generate candidate profiles
+    // 7. International profiles sync (top countries)
+    try {
+      const intlCodes = ["US","CA","MX","GB","FR","DE","IT","ES","JP","KR","CN","IN","BR","AR","AU","ZA","NG","EG"];
+      let intlSynced = 0;
+      for (const code of intlCodes) {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/international-sync`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ country_code: code }),
+          });
+          if (res.ok) intlSynced++;
+        } catch { /* continue */ }
+      }
+      results.international_sync = { synced: intlSynced, total: intlCodes.length };
+      console.log(`International sync: ${intlSynced}/${intlCodes.length} countries`);
+    } catch (e) {
+      results.international_sync = { error: e instanceof Error ? e.message : "failed" };
+      console.error("International sync error:", e);
+    }
+
+    // 8. Auto-discover and generate candidate profiles
     const CANDIDATES_PER_BATCH = 5;
     try {
       const { data: existingProfiles } = await supabase
