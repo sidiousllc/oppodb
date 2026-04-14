@@ -15,7 +15,7 @@ import { AdminRoleGroupWindow } from "@/components/AdminRoleGroupWindow";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "roles" | "access" | "permissions" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs";
+type Tab = "users" | "roles" | "access" | "permissions" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs" | "international";
 
 interface ContentItem {
   id: string;
@@ -65,6 +65,7 @@ export default function AdminPanel() {
     { id: "local", label: "Local Impact", emoji: "🌐" },
     { id: "narratives", label: "Narratives", emoji: "📄" },
     { id: "messaging", label: "Messaging", emoji: "📢" },
+    { id: "international", label: "International", emoji: "🌐" },
     { id: "docs", label: "Documentation", emoji: "📖" },
   ];
 
@@ -113,6 +114,7 @@ export default function AdminPanel() {
         {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
         {tab === "narratives" && <ContentTab table="narrative_reports" nameField="name" />}
         {tab === "messaging" && <MessagingGuidanceTab />}
+        {tab === "international" && <InternationalTab />}
         {tab === "docs" && <WikiPagesTab />}
       </div>
 
