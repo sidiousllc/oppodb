@@ -37,6 +37,7 @@ import { VoterDataSection } from "@/components/VoterDataSection";
 import { ResearchToolsDashboard } from "@/components/ResearchToolsDashboard";
 import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { StateReportGenerator } from "@/components/StateReportGenerator";
+import { InternationalHub } from "@/components/InternationalHub";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
@@ -229,6 +230,7 @@ export default function Index() {
     intelhub: 0,
     messaging: 0,
     "research-tools": 0,
+    internationalhub: 0,
     "live-elections": 0,
     documentation: 20,
   }), [dataVersion, districts, stateLegDistricts, pollingCount]);
@@ -249,6 +251,7 @@ export default function Index() {
     intelhub: "IntelHub",
     messaging: "MessagingHub",
     "research-tools": "Research Tools",
+    internationalhub: "InternationalHub",
     "live-elections": "Live Elections",
     documentation: "Documentation",
   };
