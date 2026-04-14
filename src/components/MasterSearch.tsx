@@ -201,7 +201,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes, intlProfilesRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -297,6 +297,11 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`state_abbr.ilike.${likeQ},source.ilike.${likeQ}`)
         .eq("cycle", 2026)
         .order("changed_at", { ascending: false })
+        .limit(10),
+      supabase.from("international_profiles")
+        .select("id, country_code, country_name, continent, region, population, gdp_per_capita, government_type, head_of_state, ruling_party, tags")
+        .or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ},region.ilike.${likeQ},head_of_state.ilike.${likeQ},ruling_party.ilike.${likeQ}`)
+        .order("country_name")
         .limit(10),
     ]);
 
