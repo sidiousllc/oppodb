@@ -9,10 +9,11 @@ import { Users, FileText, Globe, AlertTriangle, BookOpen, Shield, Trash2, Plus, 
 import { RoleGroupsTab } from "@/components/RoleGroupsTab";
 import { AccessControlTab } from "@/components/AccessControlTab";
 import { ActivityLogsTab } from "@/components/ActivityLogsTab";
+import { SectionPermissionsTab } from "@/components/SectionPermissionsTab";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "roles" | "access" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs";
+type Tab = "users" | "roles" | "access" | "permissions" | "logs" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs";
 
 interface ContentItem {
   id: string;
@@ -55,6 +56,7 @@ export default function AdminPanel() {
     { id: "users", label: "Users", emoji: "👥", adminOnly: true },
     { id: "roles", label: "Role Groups", emoji: "🛡️", adminOnly: true },
     { id: "access", label: "Access Control", emoji: "🔑", adminOnly: true },
+    { id: "permissions", label: "Permissions", emoji: "🔒", adminOnly: true },
     { id: "logs", label: "Activity Logs", emoji: "📊", adminOnly: true },
     { id: "candidates", label: "Candidates", emoji: "📋" },
     { id: "maga", label: "MAGA Files", emoji: "⚠️" },
@@ -102,6 +104,7 @@ export default function AdminPanel() {
         {tab === "users" && isAdmin && <UsersTab />}
         {tab === "roles" && isAdmin && <RoleGroupsTab />}
         {tab === "access" && isAdmin && <AccessControlTab />}
+        {tab === "permissions" && isAdmin && <SectionPermissionsTab />}
         {tab === "logs" && isAdmin && <ActivityLogsTab />}
         {tab === "candidates" && <CandidatesTab />}
         {tab === "maga" && <ContentTab table="maga_files" nameField="name" />}
