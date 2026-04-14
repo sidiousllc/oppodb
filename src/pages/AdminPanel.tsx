@@ -135,9 +135,7 @@ function UsersTab() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("user");
   const [creating, setCreating] = useState(false);
-  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
-  const [suspendUser, setSuspendUser] = useState<AdminUser | null>(null);
+  const [openUserWindows, setOpenUserWindows] = useState<AdminUser[]>([]);
   const [userGroupMap, setUserGroupMap] = useState<Record<string, Array<{ name: string; color: string }>>>({});
 
   const loadUsers = useCallback(async () => {
@@ -145,6 +143,10 @@ function UsersTab() {
     try {
       const u = await listUsers();
       setUsers(u);
+      setOpenUserWindows(prev => prev.map(ou => {
+        const fresh = u.find(fu => fu.id === ou.id);
+        return fresh || ou;
+      }));
     } catch (e: any) {
       toast.error("Failed to load users: " + e.message);
     } finally {
@@ -156,10 +158,8 @@ function UsersTab() {
     const { data: groups } = await supabase.from("role_groups").select("id, name, color");
     const { data: members } = await supabase.from("role_group_members").select("user_id, group_id");
     if (!groups || !members) return;
-
     const groupLookup: Record<string, { name: string; color: string }> = {};
     for (const g of groups) groupLookup[g.id] = { name: g.name, color: g.color };
-
     const map: Record<string, Array<{ name: string; color: string }>> = {};
     for (const m of members) {
       const g = groupLookup[m.group_id];
@@ -172,43 +172,19 @@ function UsersTab() {
 
   useEffect(() => { loadUsers(); loadGroupMemberships(); }, [loadUsers, loadGroupMemberships]);
 
-  const handleToggleRole = async (userId: string, role: string, hasRole: boolean) => {
-    try {
-      await setUserRole(userId, role, hasRole);
-      toast.success(hasRole ? `Removed ${role} role` : `Granted ${role} role`);
-      loadUsers();
-    } catch (e: any) { toast.error(e.message); }
-  };
-
-  const handleDelete = async (userId: string, email: string) => {
-    if (!confirm(`Delete user ${email}? This cannot be undone.`)) return;
-    try {
-      await deleteUser(userId);
-      toast.success("User deleted");
-      loadUsers();
-    } catch (e: any) { toast.error(e.message); }
-  };
-
-  const handleToggleBan = async (u: AdminUser) => {
-    const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
-    if (isBanned) {
-      try {
-        await unbanUser(u.id);
-        toast.success(`Access restored for ${u.email}`);
-        loadUsers();
-      } catch (e: any) { toast.error(e.message); }
-    } else {
-      setSuspendUser(u);
+  const handleOpenUser = (u: AdminUser) => {
+    if (!openUserWindows.some(ou => ou.id === u.id)) {
+      setOpenUserWindows(prev => [...prev, u]);
     }
   };
 
-  const handleSuspendWithDuration = async (userId: string, duration: string, label: string) => {
-    try {
-      await banUser(userId, duration);
-      toast.success(`Suspended for ${label}`);
-      setSuspendUser(null);
-      loadUsers();
-    } catch (e: any) { toast.error(e.message); }
+  const handleCloseUserWindow = (userId: string) => {
+    setOpenUserWindows(prev => prev.filter(u => u.id !== userId));
+  };
+
+  const handleUserUpdated = () => {
+    loadUsers();
+    loadGroupMemberships();
   };
 
   const handleCreateUser = async () => {
@@ -233,7 +209,7 @@ function UsersTab() {
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{users.length} users</span>
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{users.length} users — click a user to manage</span>
         <button onClick={() => setShowAddUser(!showAddUser)} className="win98-button text-[10px] flex items-center gap-1">
           {showAddUser ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
           {showAddUser ? "Cancel" : "Add User"}
@@ -268,9 +244,16 @@ function UsersTab() {
         </div>
       )}
 
-      {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSaved={() => { setEditingUser(null); loadUsers(); }} />}
-      {resetPasswordUser && <ResetPasswordModal user={resetPasswordUser} onClose={() => setResetPasswordUser(null)} onSaved={() => setResetPasswordUser(null)} />}
-      {suspendUser && <SuspendUserModal user={suspendUser} onClose={() => setSuspendUser(null)} onSuspend={handleSuspendWithDuration} />}
+      {/* User management windows */}
+      {openUserWindows.map((u, idx) => (
+        <AdminUserWindow
+          key={u.id}
+          user={u}
+          onClose={() => handleCloseUserWindow(u.id)}
+          onUserUpdated={handleUserUpdated}
+          windowIndex={idx}
+        />
+      ))}
 
       {/* Users table */}
       <div className="win98-sunken bg-white">
@@ -282,14 +265,18 @@ function UsersTab() {
               <th className="text-left px-2 py-1 font-bold">Joined</th>
               <th className="text-left px-2 py-1 font-bold">Last Sign In</th>
               <th className="text-left px-2 py-1 font-bold">Roles</th>
-              <th className="text-right px-2 py-1 font-bold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map(u => {
               const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
+              const isOpen = openUserWindows.some(ou => ou.id === u.id);
               return (
-              <tr key={u.id} className={`border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] ${isBanned ? "opacity-60" : ""}`}>
+              <tr
+                key={u.id}
+                onClick={() => handleOpenUser(u)}
+                className={`border-b border-[hsl(var(--win98-light))] hover:bg-[hsl(var(--win98-light))] cursor-pointer ${isBanned ? "opacity-60" : ""} ${isOpen ? "bg-[hsl(var(--win98-light))]" : ""}`}
+              >
                 <td className="px-2 py-1.5">
                   <div className="font-bold">{u.email}</div>
                   {u.display_name && <div className="text-[9px] text-[hsl(var(--muted-foreground))]">{u.display_name}</div>}
@@ -321,24 +308,14 @@ function UsersTab() {
                     {["admin", "moderator", "premium"].map(role => {
                       const has = u.roles.includes(role);
                       return (
-                        <button key={role} onClick={() => handleToggleRole(u.id, role, has)}
-                          className={`win98-button text-[9px] px-1 py-0 ${has ? "font-bold" : "opacity-50"}`}
+                        <span key={role}
+                          className={`text-[9px] px-1 py-0 ${has ? "font-bold win98-raised" : "opacity-30"}`}
                           style={has ? { backgroundColor: role === "admin" ? "#cce" : role === "premium" ? "#fec" : "#cec" } : {}}
                         >
                           {has ? "✓" : ""}{role}
-                        </button>
+                        </span>
                       );
                     })}
-                  </div>
-                </td>
-                <td className="px-2 py-1.5 text-right">
-                  <div className="flex items-center justify-end gap-0.5">
-                    <button onClick={() => handleToggleBan(u)} className={`win98-button px-1 py-0 text-[9px]`} title={isBanned ? "Restore Access" : "Suspend Access"}>
-                      {isBanned ? <ShieldCheck className="h-2.5 w-2.5" style={{ color: "hsl(140, 60%, 30%)" }} /> : <Ban className="h-2.5 w-2.5" style={{ color: "hsl(0, 70%, 45%)" }} />}
-                    </button>
-                    <button onClick={() => setEditingUser(u)} className="win98-button px-1 py-0 text-[9px]" title="Edit"><Pencil className="h-2.5 w-2.5" /></button>
-                    <button onClick={() => setResetPasswordUser(u)} className="win98-button px-1 py-0 text-[9px]" title="Reset Password"><KeyRound className="h-2.5 w-2.5" /></button>
-                    <button onClick={() => handleDelete(u.id, u.email || "")} className="win98-button px-1 py-0 text-[9px]" title="Delete"><Trash2 className="h-2.5 w-2.5" /></button>
                   </div>
                 </td>
               </tr>
