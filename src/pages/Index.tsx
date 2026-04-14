@@ -347,6 +347,10 @@ export default function Index() {
       );
     }
 
+    if (section === "internationalhub") {
+      return <InternationalHub />;
+    }
+
     if (section === "live-elections") {
       return <LiveElectionsSection />;
     }
