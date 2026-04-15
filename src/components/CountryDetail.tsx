@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Download, Loader2, RefreshCw, Scale, AlertTriangle, FileText, Globe2 } from "lucide-react";
+import { ArrowLeft, Download, Loader2, RefreshCw, Scale, AlertTriangle, FileText, Globe2, TrendingUp, Newspaper, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCountryByCode } from "@/data/internationalCountries";
 import { Win98Window } from "./Win98Window";
@@ -16,28 +16,52 @@ interface CountryData {
   leaders: any[];
   legislation: any[];
   policyIssues: any[];
+  intelBriefings: any[];
 }
 
 type TabId = "overview" | "government" | "elections" | "economy" | "legislation" | "issues" | "intel";
 
+interface DetailWindow {
+  id: string;
+  type: "issue" | "election" | "economy" | "intel" | "legislation" | "leader";
+  data: any;
+  posIndex: number;
+}
+
 export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
   const country = getCountryByCode(countryCode);
   const [tab, setTab] = useState<TabId>("overview");
-  const [data, setData] = useState<CountryData>({ profile: null, elections: [], leaders: [], legislation: [], policyIssues: [] });
+  const [data, setData] = useState<CountryData>({ profile: null, elections: [], leaders: [], legislation: [], policyIssues: [], intelBriefings: [] });
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [reportWindow, setReportWindow] = useState(false);
   const [legFilter, setLegFilter] = useState<string>("all");
   const [issueFilter, setIssueFilter] = useState<string>("all");
+  const [detailWindows, setDetailWindows] = useState<DetailWindow[]>([]);
+  const [winCounter, setWinCounter] = useState(0);
+
+  const openDetailWindow = useCallback((type: DetailWindow["type"], item: any) => {
+    const id = `${type}-${item.id || Date.now()}`;
+    setDetailWindows(prev => {
+      if (prev.find(w => w.id === id)) return prev;
+      return [...prev, { id, type, data: item, posIndex: prev.length }];
+    });
+    setWinCounter(c => c + 1);
+  }, []);
+
+  const closeDetailWindow = useCallback((id: string) => {
+    setDetailWindows(prev => prev.filter(w => w.id !== id));
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [profileRes, electionsRes, leadersRes, legRes, issuesRes] = await Promise.all([
+    const [profileRes, electionsRes, leadersRes, legRes, issuesRes, intelRes] = await Promise.all([
       supabase.from("international_profiles").select("*").eq("country_code", countryCode).maybeSingle(),
       supabase.from("international_elections").select("*").eq("country_code", countryCode).order("election_year", { ascending: false }).limit(20),
       supabase.from("international_leaders").select("*").eq("country_code", countryCode),
       supabase.from("international_legislation").select("*").eq("country_code", countryCode).order("introduced_date", { ascending: false }).limit(100),
       supabase.from("international_policy_issues").select("*").eq("country_code", countryCode).order("created_at", { ascending: false }).limit(100),
+      supabase.from("intel_briefings").select("*").eq("region", countryCode).order("published_at", { ascending: false }).limit(50),
     ]);
     setData({
       profile: profileRes.data,
@@ -45,6 +69,7 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
       leaders: leadersRes.data || [],
       legislation: legRes.data || [],
       policyIssues: issuesRes.data || [],
+      intelBriefings: intelRes.data || [],
     });
     setLoading(false);
   }, [countryCode]);
@@ -72,7 +97,6 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
     lines.push(`# ${country?.flag || ""} ${country?.name || countryCode} — Country Intelligence Report`);
     lines.push(`Generated ${new Date().toLocaleDateString()}`);
     lines.push("");
-
     if (p) {
       lines.push("## Overview");
       lines.push(`- **Capital:** ${p.capital || "N/A"}`);
@@ -82,32 +106,14 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
       lines.push(`- **Currency:** ${p.currency || "N/A"}`);
       lines.push(`- **Government:** ${p.government_type || "N/A"}`);
       lines.push("");
-      lines.push("## Demographics");
-      lines.push(`- **Median Age:** ${p.median_age ?? "N/A"}`);
+      lines.push("## Economy");
       lines.push(`- **GDP:** ${money(p.gdp)}`);
       lines.push(`- **GDP Per Capita:** ${money(p.gdp_per_capita)}`);
       lines.push(`- **Unemployment:** ${pct(p.unemployment_rate)}`);
       lines.push(`- **Poverty Rate:** ${pct(p.poverty_rate)}`);
       lines.push(`- **Inflation:** ${pct(p.inflation_rate)}`);
       lines.push("");
-      lines.push("## Governance & Transparency");
-      lines.push(`- **Head of State:** ${p.head_of_state || "N/A"}`);
-      lines.push(`- **Head of Government:** ${p.head_of_government || "N/A"}`);
-      lines.push(`- **Ruling Party:** ${p.ruling_party || "N/A"}`);
-      lines.push(`- **Human Development Index:** ${p.human_dev_index ?? "N/A"}`);
-      lines.push(`- **Press Freedom Rank:** ${p.press_freedom_rank ?? "N/A"}`);
-      lines.push(`- **Corruption Perception Index:** ${p.corruption_index ?? "N/A"}`);
-      lines.push("");
-      if (p.major_industries?.length) {
-        lines.push("## Major Industries");
-        for (const ind of p.major_industries) lines.push(`- ${ind}`);
-        lines.push("");
-      }
-    } else {
-      lines.push("No profile data available. Click **Sync Data** to fetch latest information.");
-      lines.push("");
     }
-
     if (data.leaders.length > 0) {
       lines.push("## Current Leaders");
       for (const l of data.leaders) {
@@ -118,40 +124,15 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
         lines.push("");
       }
     }
-
-    if (data.legislation.length > 0) {
-      lines.push("## Key Legislation");
-      for (const l of data.legislation.slice(0, 15)) {
-        lines.push(`### ${l.title}`);
-        lines.push(`- **Type:** ${l.bill_type} | **Status:** ${l.status}`);
-        if (l.body) lines.push(`- **Body:** ${l.body}`);
-        if (l.introduced_date) lines.push(`- **Introduced:** ${l.introduced_date}`);
-        if (l.summary) lines.push(l.summary);
-        lines.push("");
-      }
-    }
-
-    if (data.policyIssues.length > 0) {
-      lines.push("## Active Policy Issues");
-      for (const issue of data.policyIssues.slice(0, 15)) {
-        lines.push(`### ${issue.title}`);
-        lines.push(`- **Category:** ${issue.category} | **Severity:** ${issue.severity} | **Status:** ${issue.status}`);
-        if (issue.description) lines.push(issue.description);
-        lines.push("");
-      }
-    }
-
     if (data.elections.length > 0) {
       lines.push("## Election History");
       for (const e of data.elections) {
         lines.push(`### ${e.election_year} — ${e.election_type}`);
         if (e.winner_name) lines.push(`- **Winner:** ${e.winner_name} (${e.winner_party || "N/A"})`);
         if (e.turnout_pct) lines.push(`- **Turnout:** ${pct(e.turnout_pct)}`);
-        if (e.source) lines.push(`- **Source:** ${e.source}`);
         lines.push("");
       }
     }
-
     return lines.join("\n");
   }, [data, country, countryCode]);
 
@@ -176,7 +157,7 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
     { id: "issues", label: "Issues", icon: <AlertTriangle className="h-3 w-3" />, count: data.policyIssues.length },
     { id: "elections", label: "Elections", count: data.elections.length },
     { id: "economy", label: "Economy" },
-    { id: "intel", label: "Intel" },
+    { id: "intel", label: "Intel", icon: <Newspaper className="h-3 w-3" />, count: data.intelBriefings.length },
   ];
 
   const severityColor = (s: string) => {
@@ -283,7 +264,6 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                 ["Corruption Index", p?.corruption_index?.toFixed(1)],
                 ["Median Age", p?.median_age?.toFixed(1)],
               ]} />
-              {/* Quick stats summary */}
               <div className="col-span-full grid grid-cols-4 gap-2">
                 {[
                   { label: "Legislation", value: data.legislation.length, tab: "legislation" as TabId },
@@ -321,11 +301,12 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                 <div className="candidate-card p-3">
                   <h3 className="text-[11px] font-bold mb-2">Current Leaders</h3>
                   {data.leaders.map(l => (
-                    <div key={l.id} className="mb-2 pb-2 border-b border-[hsl(var(--border))] last:border-0">
+                    <button key={l.id} onClick={() => openDetailWindow("leader", l)} className="w-full text-left mb-2 pb-2 border-b border-[hsl(var(--border))] last:border-0 hover:bg-[hsl(var(--accent))] transition-colors rounded p-1 -m-1">
                       <div className="text-[11px] font-bold">{l.name}</div>
                       <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{l.title} · {l.party || "Independent"}</div>
                       {l.bio && <p className="text-[9px] mt-1">{l.bio.slice(0, 200)}…</p>}
-                    </div>
+                      <span className="text-[8px] text-blue-600 mt-0.5 inline-block">Click for details →</span>
+                    </button>
                   ))}
                 </div>
               )}
@@ -339,147 +320,75 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
 
           {tab === "legislation" && (
             <div className="space-y-3">
-              {/* Filter bar */}
               <div className="flex items-center gap-2 flex-wrap">
-                <select
-                  value={legFilter}
-                  onChange={e => setLegFilter(e.target.value)}
-                  className="win98-sunken text-[10px] px-2 py-1 bg-white"
-                >
+                <select value={legFilter} onChange={e => setLegFilter(e.target.value)} className="win98-sunken text-[10px] px-2 py-1 bg-white">
                   <option value="all">All Types</option>
                   {legTypes.map(t => <option key={t} value={t}>{t}</option>)}
                   <optgroup label="Source">
                     {legSources.map(s => <option key={s} value={s}>{s}</option>)}
                   </optgroup>
                 </select>
-                <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
-                  {filteredLegislation.length} items
-                </span>
+                <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{filteredLegislation.length} items</span>
               </div>
-
               {filteredLegislation.length === 0 ? (
                 <div className="candidate-card p-4 text-center">
                   <Scale className="h-6 w-6 mx-auto mb-2 text-[hsl(var(--muted-foreground))]" />
-                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">
-                    No legislation data available for {country.name}.
-                  </p>
-                  <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1">
-                    <RefreshCw className="h-3 w-3 inline mr-1" /> Sync Legislation
-                  </button>
+                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">No legislation data available for {country.name}.</p>
+                  <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1"><RefreshCw className="h-3 w-3 inline mr-1" /> Sync</button>
                 </div>
               ) : filteredLegislation.map(l => (
-                <div key={l.id} className="candidate-card p-3">
+                <button key={l.id} onClick={() => openDetailWindow("legislation", l)} className="candidate-card p-3 w-full text-left hover:bg-[hsl(var(--accent))] transition-colors">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="flex-1">
                       <div className="text-[11px] font-bold leading-tight">{l.title}</div>
-                      {l.bill_number && (
-                        <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{l.bill_number}</span>
-                      )}
+                      {l.bill_number && <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{l.bill_number}</span>}
                     </div>
-                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${statusColor(l.status)}`}>
-                      {l.status.replace(/_/g, " ")}
-                    </span>
+                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${statusColor(l.status)}`}>{l.status.replace(/_/g, " ")}</span>
                   </div>
                   <div className="flex items-center gap-2 text-[9px] text-[hsl(var(--muted-foreground))] mb-1 flex-wrap">
                     <span className="bg-[hsl(var(--muted))] px-1 rounded">{l.bill_type}</span>
                     {l.body && <span>📜 {l.body}</span>}
-                    {l.source && l.source !== "national" && <span>🏛️ {l.source}</span>}
-                    {l.policy_area && <span>📋 {l.policy_area}</span>}
                     {l.introduced_date && <span>📅 {l.introduced_date}</span>}
-                    {l.sponsor && <span>👤 {l.sponsor}</span>}
                   </div>
-                  {l.summary && (
-                    <p className="text-[10px] leading-relaxed mt-1">{l.summary.slice(0, 300)}{l.summary.length > 300 ? "…" : ""}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-1.5">
-                    {l.full_text_url && (
-                      <a href={l.full_text_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5">
-                        <FileText className="h-3 w-3" /> Full Text
-                      </a>
-                    )}
-                    {l.source_url && (
-                      <a href={l.source_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5">
-                        <Globe2 className="h-3 w-3" /> Source
-                      </a>
-                    )}
-                    {l.tags?.length > 0 && (
-                      <div className="flex gap-0.5 flex-wrap ml-auto">
-                        {l.tags.slice(0, 4).map((tag: string) => (
-                          <span key={tag} className="text-[8px] bg-[hsl(var(--muted))] px-1 rounded">{tag}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  {l.summary && <p className="text-[10px] leading-relaxed mt-1">{l.summary.slice(0, 200)}…</p>}
+                  <span className="text-[8px] text-blue-600 mt-1 inline-block">Click for full details →</span>
+                </button>
               ))}
             </div>
           )}
 
           {tab === "issues" && (
             <div className="space-y-3">
-              {/* Filter bar */}
               <div className="flex items-center gap-2 flex-wrap">
-                <select
-                  value={issueFilter}
-                  onChange={e => setIssueFilter(e.target.value)}
-                  className="win98-sunken text-[10px] px-2 py-1 bg-white"
-                >
+                <select value={issueFilter} onChange={e => setIssueFilter(e.target.value)} className="win98-sunken text-[10px] px-2 py-1 bg-white">
                   <option value="all">All Categories</option>
                   {issueCategories.map(c => <option key={c} value={c}>{c}</option>)}
                   <optgroup label="Severity">
                     {["critical", "high", "medium", "low"].map(s => <option key={s} value={s}>{s}</option>)}
                   </optgroup>
                 </select>
-                <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
-                  {filteredIssues.length} issues
-                </span>
+                <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{filteredIssues.length} issues</span>
               </div>
-
               {filteredIssues.length === 0 ? (
                 <div className="candidate-card p-4 text-center">
                   <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-[hsl(var(--muted-foreground))]" />
-                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">
-                    No policy issues tracked for {country.name}.
-                  </p>
-                  <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1">
-                    <RefreshCw className="h-3 w-3 inline mr-1" /> Sync Issues
-                  </button>
+                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">No policy issues tracked for {country.name}.</p>
+                  <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1"><RefreshCw className="h-3 w-3 inline mr-1" /> Sync</button>
                 </div>
               ) : filteredIssues.map(issue => (
-                <div key={issue.id} className="candidate-card p-3">
+                <button key={issue.id} onClick={() => openDetailWindow("issue", issue)} className="candidate-card p-3 w-full text-left hover:bg-[hsl(var(--accent))] transition-colors">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="text-[11px] font-bold leading-tight flex-1">{issue.title}</div>
-                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${severityColor(issue.severity)}`}>
-                      {issue.severity.toUpperCase()}
-                    </span>
+                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${severityColor(issue.severity)}`}>{issue.severity.toUpperCase()}</span>
                   </div>
                   <div className="flex items-center gap-2 text-[9px] text-[hsl(var(--muted-foreground))] mb-1 flex-wrap">
                     <span className="bg-[hsl(var(--muted))] px-1 rounded">{issue.category}</span>
-                    <span className={`px-1 rounded ${issue.status === "escalating" ? "bg-red-100 text-red-700" : issue.status === "resolved" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
-                      {issue.status}
-                    </span>
+                    <span className={`px-1 rounded ${issue.status === "escalating" ? "bg-red-100 text-red-700" : issue.status === "resolved" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>{issue.status}</span>
                     {issue.started_date && <span>📅 Since {issue.started_date}</span>}
                   </div>
-                  {issue.description && (
-                    <p className="text-[10px] leading-relaxed mt-1">{issue.description.slice(0, 400)}{issue.description.length > 400 ? "…" : ""}</p>
-                  )}
-                  {issue.sources?.length > 0 && (
-                    <div className="flex gap-2 mt-1.5 flex-wrap">
-                      {(issue.sources as any[]).slice(0, 3).map((src: any, i: number) => (
-                        <a key={i} href={src.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline">
-                          📰 {src.name || "Source"}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                  {issue.tags?.length > 0 && (
-                    <div className="flex gap-0.5 mt-1 flex-wrap">
-                      {issue.tags.slice(0, 5).map((tag: string) => (
-                        <span key={tag} className="text-[8px] bg-[hsl(var(--muted))] px-1 rounded">{tag}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                  {issue.description && <p className="text-[10px] leading-relaxed mt-1">{issue.description.slice(0, 200)}…</p>}
+                  <span className="text-[8px] text-blue-600 mt-1 inline-block">Click for full details →</span>
+                </button>
               ))}
             </div>
           )}
@@ -491,52 +400,77 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                   No election data available. Sync to fetch.
                 </div>
               ) : data.elections.map(e => (
-                <div key={e.id} className="candidate-card p-3">
+                <button key={e.id} onClick={() => openDetailWindow("election", e)} className="candidate-card p-3 w-full text-left hover:bg-[hsl(var(--accent))] transition-colors">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[11px] font-bold">{e.election_year} — {e.election_type}</span>
                     {e.election_date && <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{e.election_date}</span>}
                   </div>
-                  {e.winner_name && (
-                    <div className="text-[10px]">
-                      <strong>Winner:</strong> {e.winner_name} ({e.winner_party || "N/A"})
-                    </div>
-                  )}
+                  {e.winner_name && <div className="text-[10px]"><strong>Winner:</strong> {e.winner_name} ({e.winner_party || "N/A"})</div>}
                   {e.turnout_pct != null && <div className="text-[10px]"><strong>Turnout:</strong> {pct(e.turnout_pct)}</div>}
-                  {e.source && <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">Source: {e.source}</div>}
-                </div>
+                  <span className="text-[8px] text-blue-600 mt-1 inline-block">Click for full details →</span>
+                </button>
               ))}
             </div>
           )}
 
           {tab === "economy" && (
             <div className="grid gap-3 sm:grid-cols-2">
-              <InfoCard title="Economic Indicators" items={[
-                ["GDP", money(p?.gdp)],
-                ["GDP Per Capita", money(p?.gdp_per_capita)],
-                ["Unemployment", pct(p?.unemployment_rate)],
-                ["Poverty Rate", pct(p?.poverty_rate)],
-                ["Inflation", pct(p?.inflation_rate)],
-              ]} />
+              <button onClick={() => p && openDetailWindow("economy", { ...p, section: "indicators" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
+                <InfoCard title="Economic Indicators — Click for details" items={[
+                  ["GDP", money(p?.gdp)],
+                  ["GDP Per Capita", money(p?.gdp_per_capita)],
+                  ["Unemployment", pct(p?.unemployment_rate)],
+                  ["Poverty Rate", pct(p?.poverty_rate)],
+                  ["Inflation", pct(p?.inflation_rate)],
+                ]} />
+              </button>
               {p?.major_industries?.length > 0 && (
-                <div className="candidate-card p-3">
-                  <h3 className="text-[11px] font-bold mb-2">Major Industries</h3>
-                  {p.major_industries.map((ind: string, i: number) => (
-                    <div key={i} className="text-[10px] flex items-center gap-1 mb-0.5">
-                      <span className="text-[hsl(var(--muted-foreground))]">•</span> {ind}
-                    </div>
-                  ))}
-                </div>
+                <button onClick={() => openDetailWindow("economy", { ...p, section: "industries" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
+                  <div className="candidate-card p-3">
+                    <h3 className="text-[11px] font-bold mb-2">Major Industries — Click for details</h3>
+                    {p.major_industries.slice(0, 6).map((ind: string, i: number) => (
+                      <div key={i} className="text-[10px] flex items-center gap-1 mb-0.5">
+                        <span className="text-[hsl(var(--muted-foreground))]">•</span> {ind}
+                      </div>
+                    ))}
+                    {p.major_industries.length > 6 && <div className="text-[9px] text-blue-600 mt-1">+{p.major_industries.length - 6} more…</div>}
+                  </div>
+                </button>
+              )}
+              {p?.trade_partners && (Array.isArray(p.trade_partners) ? p.trade_partners : []).length > 0 && (
+                <button onClick={() => openDetailWindow("economy", { ...p, section: "trade" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
+                  <div className="candidate-card p-3">
+                    <h3 className="text-[11px] font-bold mb-2">Trade Partners — Click for details</h3>
+                    {(p.trade_partners as any[]).slice(0, 5).map((tp: any, i: number) => (
+                      <div key={i} className="text-[10px] mb-0.5">• {typeof tp === "string" ? tp : tp.name || tp.country || JSON.stringify(tp)}</div>
+                    ))}
+                  </div>
+                </button>
               )}
             </div>
           )}
 
           {tab === "intel" && (
-            <div className="candidate-card p-3 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
-              Intel briefings for {country.name} will appear here once synced from international news sources.
-              <br />
-              <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1 mt-2">
-                <RefreshCw className="h-3 w-3 inline mr-1" /> Sync Intel
-              </button>
+            <div className="space-y-3">
+              {data.intelBriefings.length === 0 ? (
+                <div className="candidate-card p-3 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
+                  No intel briefings for {country.name}.
+                  <br />
+                  <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1 mt-2"><RefreshCw className="h-3 w-3 inline mr-1" /> Sync Intel</button>
+                </div>
+              ) : data.intelBriefings.map(b => (
+                <button key={b.id} onClick={() => openDetailWindow("intel", b)} className="candidate-card p-3 w-full text-left hover:bg-[hsl(var(--accent))] transition-colors">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="text-[11px] font-bold leading-tight flex-1">{b.title}</div>
+                    <span className="text-[8px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded whitespace-nowrap">{b.category}</span>
+                  </div>
+                  <div className="text-[9px] text-[hsl(var(--muted-foreground))] mb-1">
+                    {b.source_name} · {b.scope} · {b.published_at ? new Date(b.published_at).toLocaleDateString() : ""}
+                  </div>
+                  {b.summary && <p className="text-[10px] leading-relaxed">{b.summary.slice(0, 200)}…</p>}
+                  <span className="text-[8px] text-blue-600 mt-1 inline-block">Click for full briefing →</span>
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -579,6 +513,279 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
           </div>
         </Win98Window>
       )}
+
+      {/* Detail Mini-Windows */}
+      {detailWindows.map(win => (
+        <DetailMiniWindow key={win.id} win={win} country={country} onClose={() => closeDetailWindow(win.id)} fmt={fmt} pct={pct} money={money} severityColor={severityColor} statusColor={statusColor} />
+      ))}
+    </div>
+  );
+}
+
+function DetailMiniWindow({ win, country, onClose, fmt, pct, money, severityColor, statusColor }: {
+  win: DetailWindow;
+  country: any;
+  onClose: () => void;
+  fmt: (n: any) => string;
+  pct: (n: any) => string;
+  money: (n: any) => string;
+  severityColor: (s: string) => string;
+  statusColor: (s: string) => string;
+}) {
+  const d = win.data;
+  const offset = win.posIndex * 30;
+
+  if (win.type === "issue") {
+    return (
+      <Win98Window title={`⚠️ Issue: ${d.title?.slice(0, 40)}`} onClose={onClose} defaultSize={{ width: 560, height: 440 }} defaultPosition={{ x: 120 + offset, y: 60 + offset }} minSize={{ width: 350, height: 250 }}>
+        <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="text-sm font-bold leading-tight">{d.title}</h2>
+            <span className={`text-[9px] px-2 py-0.5 rounded font-bold whitespace-nowrap ${severityColor(d.severity)}`}>{d.severity?.toUpperCase()}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <DetailRow label="Category" value={d.category} />
+            <DetailRow label="Status" value={d.status} />
+            <DetailRow label="Started" value={d.started_date || "N/A"} />
+            <DetailRow label="Resolved" value={d.resolved_date || "Ongoing"} />
+          </div>
+          {d.affected_regions?.length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Affected Regions</div>
+              <div className="flex flex-wrap gap-1">{d.affected_regions.map((r: string) => <span key={r} className="text-[9px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded">{r}</span>)}</div>
+            </div>
+          )}
+          {d.description && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Full Description</div>
+              <p className="text-[10px] leading-relaxed whitespace-pre-wrap">{d.description}</p>
+            </div>
+          )}
+          {d.sources?.length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Sources ({(d.sources as any[]).length})</div>
+              {(d.sources as any[]).map((src: any, i: number) => (
+                <a key={i} href={src.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline block mb-0.5">📰 {src.name || src.url}</a>
+              ))}
+            </div>
+          )}
+          {d.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-1">{d.tags.map((t: string) => <span key={t} className="text-[8px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded">{t}</span>)}</div>
+          )}
+          <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">
+            ID: {d.id} · Updated: {d.updated_at ? new Date(d.updated_at).toLocaleString() : "N/A"}
+          </div>
+        </div>
+      </Win98Window>
+    );
+  }
+
+  if (win.type === "election") {
+    const candidates = Array.isArray(d.candidates) ? d.candidates : [];
+    const results = d.results && typeof d.results === "object" ? d.results : {};
+    return (
+      <Win98Window title={`🗳️ ${d.election_year} ${d.election_type}`} onClose={onClose} defaultSize={{ width: 560, height: 460 }} defaultPosition={{ x: 140 + offset, y: 50 + offset }} minSize={{ width: 350, height: 250 }}>
+        <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
+          <h2 className="text-sm font-bold">{country.flag} {d.election_year} {d.election_type} Election</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <DetailRow label="Date" value={d.election_date || "N/A"} />
+            <DetailRow label="Type" value={d.election_type} />
+            <DetailRow label="Winner" value={d.winner_name || "N/A"} />
+            <DetailRow label="Winner Party" value={d.winner_party || "N/A"} />
+            <DetailRow label="Turnout" value={d.turnout_pct != null ? pct(d.turnout_pct) : "N/A"} />
+            <DetailRow label="Source" value={d.source || "N/A"} />
+          </div>
+          {candidates.length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Candidates ({candidates.length})</div>
+              <div className="space-y-1">
+                {candidates.map((c: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between text-[10px] border-b border-[hsl(var(--border))] py-1 last:border-0">
+                    <div>
+                      <span className="font-medium">{c.name || c.candidate || "Unknown"}</span>
+                      {c.party && <span className="text-[hsl(var(--muted-foreground))] ml-1">({c.party})</span>}
+                    </div>
+                    {c.votes != null && <span>{fmt(c.votes)} votes</span>}
+                    {c.vote_pct != null && <span className="font-bold">{pct(c.vote_pct)}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {Object.keys(results).length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Results Data</div>
+              {Object.entries(results).map(([key, val]) => (
+                <DetailRow key={key} label={key} value={String(val)} />
+              ))}
+            </div>
+          )}
+          {d.source_url && <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline block">🔗 View source</a>}
+          {d.tags?.length > 0 && <div className="flex flex-wrap gap-1">{d.tags.map((t: string) => <span key={t} className="text-[8px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded">{t}</span>)}</div>}
+          <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">ID: {d.id}</div>
+        </div>
+      </Win98Window>
+    );
+  }
+
+  if (win.type === "economy") {
+    return (
+      <Win98Window title={`📊 ${country.flag} ${country.name} — Economy`} onClose={onClose} defaultSize={{ width: 520, height: 480 }} defaultPosition={{ x: 100 + offset, y: 70 + offset }} minSize={{ width: 350, height: 250 }}>
+        <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
+          <h2 className="text-sm font-bold">{country.flag} Economic Profile</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <DetailRow label="GDP" value={money(d.gdp)} />
+            <DetailRow label="GDP Per Capita" value={money(d.gdp_per_capita)} />
+            <DetailRow label="Unemployment" value={pct(d.unemployment_rate)} />
+            <DetailRow label="Poverty Rate" value={pct(d.poverty_rate)} />
+            <DetailRow label="Inflation" value={pct(d.inflation_rate)} />
+            <DetailRow label="Population" value={fmt(d.population)} />
+            <DetailRow label="Currency" value={d.currency || "N/A"} />
+            <DetailRow label="HDI" value={d.human_dev_index?.toFixed(3) || "N/A"} />
+            <DetailRow label="Corruption Index" value={d.corruption_index?.toFixed(1) || "N/A"} />
+            <DetailRow label="Press Freedom" value={d.press_freedom_rank ? `#${d.press_freedom_rank}` : "N/A"} />
+          </div>
+          {d.major_industries?.length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Major Industries ({d.major_industries.length})</div>
+              <div className="grid grid-cols-2 gap-1">
+                {d.major_industries.map((ind: string, i: number) => (
+                  <div key={i} className="text-[10px] bg-[hsl(var(--muted))] px-2 py-1 rounded">🏭 {ind}</div>
+                ))}
+              </div>
+            </div>
+          )}
+          {d.trade_partners && (Array.isArray(d.trade_partners) ? d.trade_partners : []).length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Trade Partners</div>
+              {(d.trade_partners as any[]).map((tp: any, i: number) => (
+                <div key={i} className="text-[10px] mb-0.5">🤝 {typeof tp === "string" ? tp : tp.name || tp.country || JSON.stringify(tp)}</div>
+              ))}
+            </div>
+          )}
+          <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">
+            Last updated: {d.updated_at ? new Date(d.updated_at).toLocaleString() : "N/A"}
+          </div>
+        </div>
+      </Win98Window>
+    );
+  }
+
+  if (win.type === "intel") {
+    return (
+      <Win98Window title={`🕵️ ${d.title?.slice(0, 45)}`} onClose={onClose} defaultSize={{ width: 580, height: 460 }} defaultPosition={{ x: 110 + offset, y: 55 + offset }} minSize={{ width: 350, height: 250 }}>
+        <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
+          <h2 className="text-sm font-bold leading-tight">{d.title}</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <DetailRow label="Category" value={d.category} />
+            <DetailRow label="Scope" value={d.scope} />
+            <DetailRow label="Source" value={d.source_name} />
+            <DetailRow label="Published" value={d.published_at ? new Date(d.published_at).toLocaleDateString() : "N/A"} />
+            <DetailRow label="Region" value={d.region || "Global"} />
+          </div>
+          {d.summary && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Summary</div>
+              <p className="text-[10px] leading-relaxed bg-[hsl(var(--muted))] p-2 rounded">{d.summary}</p>
+            </div>
+          )}
+          {d.content && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Full Content</div>
+              <div className="text-[10px] leading-relaxed whitespace-pre-wrap">{d.content}</div>
+            </div>
+          )}
+          {d.source_url && <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline block">🔗 View original source</a>}
+          <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">ID: {d.id}</div>
+        </div>
+      </Win98Window>
+    );
+  }
+
+  if (win.type === "legislation") {
+    return (
+      <Win98Window title={`📜 ${d.title?.slice(0, 45)}`} onClose={onClose} defaultSize={{ width: 580, height: 480 }} defaultPosition={{ x: 130 + offset, y: 45 + offset }} minSize={{ width: 350, height: 250 }}>
+        <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="text-sm font-bold leading-tight">{d.title}</h2>
+            <span className={`text-[9px] px-2 py-0.5 rounded font-medium whitespace-nowrap ${statusColor(d.status)}`}>{d.status?.replace(/_/g, " ")}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <DetailRow label="Bill Number" value={d.bill_number || "N/A"} />
+            <DetailRow label="Type" value={d.bill_type} />
+            <DetailRow label="Body" value={d.body || "N/A"} />
+            <DetailRow label="Source" value={d.source} />
+            <DetailRow label="Introduced" value={d.introduced_date || "N/A"} />
+            <DetailRow label="Enacted" value={d.enacted_date || "N/A"} />
+            <DetailRow label="Sponsor" value={d.sponsor || "N/A"} />
+            <DetailRow label="Policy Area" value={d.policy_area || "N/A"} />
+          </div>
+          {d.summary && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Summary</div>
+              <p className="text-[10px] leading-relaxed whitespace-pre-wrap">{d.summary}</p>
+            </div>
+          )}
+          <div className="flex gap-2 flex-wrap">
+            {d.full_text_url && <a href={d.full_text_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5"><FileText className="h-3 w-3" /> Full Text</a>}
+            {d.source_url && <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5"><Globe2 className="h-3 w-3" /> Source</a>}
+          </div>
+          {d.tags?.length > 0 && <div className="flex flex-wrap gap-1">{d.tags.map((t: string) => <span key={t} className="text-[8px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded">{t}</span>)}</div>}
+          <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">ID: {d.id}</div>
+        </div>
+      </Win98Window>
+    );
+  }
+
+  if (win.type === "leader") {
+    return (
+      <Win98Window title={`👤 ${d.name}`} onClose={onClose} defaultSize={{ width: 520, height: 420 }} defaultPosition={{ x: 150 + offset, y: 65 + offset }} minSize={{ width: 320, height: 220 }}>
+        <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
+          <h2 className="text-sm font-bold">{d.name}</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <DetailRow label="Title" value={d.title} />
+            <DetailRow label="Party" value={d.party || "Independent"} />
+            <DetailRow label="In Office Since" value={d.in_office_since || "N/A"} />
+            <DetailRow label="Term Ends" value={d.term_ends || "N/A"} />
+          </div>
+          {d.bio && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Biography</div>
+              <p className="text-[10px] leading-relaxed whitespace-pre-wrap">{d.bio}</p>
+            </div>
+          )}
+          {d.previous_positions && (d.previous_positions as any[]).length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Previous Positions</div>
+              {(d.previous_positions as any[]).map((pos: any, i: number) => (
+                <div key={i} className="text-[10px] mb-0.5">• {typeof pos === "string" ? pos : pos.title || JSON.stringify(pos)}</div>
+              ))}
+            </div>
+          )}
+          {d.controversies && (d.controversies as any[]).length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold mb-1 text-red-600">Controversies</div>
+              {(d.controversies as any[]).map((c: any, i: number) => (
+                <div key={i} className="text-[10px] mb-1 p-1.5 bg-red-50 rounded">{typeof c === "string" ? c : c.description || JSON.stringify(c)}</div>
+              ))}
+            </div>
+          )}
+          {d.image_url && <img src={d.image_url} alt={d.name} className="w-20 h-20 object-cover rounded" />}
+          {d.tags?.length > 0 && <div className="flex flex-wrap gap-1">{d.tags.map((t: string) => <span key={t} className="text-[8px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded">{t}</span>)}</div>}
+          <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">ID: {d.id}</div>
+        </div>
+      </Win98Window>
+    );
+  }
+
+  return null;
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between text-[10px] py-0.5 border-b border-[hsl(var(--border))]">
+      <span className="text-[hsl(var(--muted-foreground))]">{label}</span>
+      <span className="font-medium text-right max-w-[60%] truncate">{value || "N/A"}</span>
     </div>
   );
 }
