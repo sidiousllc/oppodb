@@ -131,13 +131,15 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const xml = await res.text();
-        if (!xml || xml.length < 100) {
+        const text = await res.text();
+        if (!text || text.length < 100) {
           errors.push(`${feed.inspector}: empty response`);
           continue;
         }
 
-        const items = parseRssItems(xml);
+        const items = feed.format === "html"
+          ? parseHtmlReportLinks(text, feed.url)
+          : parseRssItems(text);
         if (items.length === 0) {
           errors.push(`${feed.inspector}: no items parsed`);
           continue;
