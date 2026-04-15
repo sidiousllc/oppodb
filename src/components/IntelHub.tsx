@@ -935,26 +935,3 @@ function ScopeOverviewWindow({ briefings, scope, sourceBreakdown, leaningCounts,
   );
 }
 
-function getSourceLeaning(source: string): "left" | "right" | "center" {
-  if (LEFT_SOURCES.some(s => source.toLowerCase().includes(s.toLowerCase()))) return "left";
-  if (RIGHT_SOURCES.some(s => source.toLowerCase().includes(s.toLowerCase()))) return "right";
-  return "center";
-}
-
-function categoryEmoji(cat: string): string {
-  const CATEGORY_EMOJIS: Record<string, string> = {
-    general: "📰", economy: "💰", elections: "🗳️", legal: "⚖️", defense: "🛡️",
-    health: "🏥", environment: "🌿", immigration: "🛂", education: "🎓",
-    housing: "🏠", "public-safety": "🚔", technology: "💻", fiscal: "📊",
-    labor: "👷", infrastructure: "🏗️", veterans: "🎖️",
-    "reproductive-rights": "⚕️", "social-security": "🏦", agriculture: "🌾",
-  };
-  return CATEGORY_EMOJIS[cat] || "📰";
-}
-
-function timeSince(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  if (diff < 3600000) return `${Math.round(diff / 60000)}m ago`;
-  if (diff < 86400000) return `${Math.round(diff / 3600000)}h ago`;
-  return `${Math.round(diff / 86400000)}d ago`;
-}
