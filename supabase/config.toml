@@ -59,3 +59,7 @@ project_id = "yysbtxpupmwkxovgkama"
     verify_jwt = false
   [functions.handle-email-suppression]
     verify_jwt = false
+  [functions.fara-sync]
+    verify_jwt = false
+  [functions.openstates-sync]
+    verify_jwt = false
