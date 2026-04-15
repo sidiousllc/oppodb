@@ -569,6 +569,26 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                   ["Corruption", p?.corruption_index?.toFixed(1) || "N/A"],
                 ]} />
               </div>
+              {/* Policy Issues (moved from Issues tab) */}
+              {data.policyIssues.length > 0 && (
+                <div className="candidate-card p-3">
+                  <h3 className="text-[11px] font-bold mb-2">⚠️ Policy & Governance Issues ({data.policyIssues.length})</h3>
+                  <div className="space-y-1.5">
+                    {data.policyIssues.slice(0, 8).map(issue => (
+                      <button key={issue.id} onClick={() => openDetailWindow("issue", issue)} className="w-full text-left flex items-start gap-2 p-1.5 rounded hover:bg-[hsl(var(--accent))] transition-colors border-b border-[hsl(var(--border))] last:border-0">
+                        <span className={`text-[8px] px-1 py-0.5 rounded font-bold whitespace-nowrap mt-0.5 ${severityColor(issue.severity)}`}>{issue.severity?.toUpperCase()}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-bold leading-tight truncate">{issue.title}</div>
+                          <div className="text-[9px] text-[hsl(var(--muted-foreground))]">{issue.category} · {issue.status}</div>
+                        </div>
+                      </button>
+                    ))}
+                    {data.policyIssues.length > 8 && (
+                      <div className="text-[9px] text-blue-600 text-center">+{data.policyIssues.length - 8} more issues</div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {!p && (
                 <div className="candidate-card p-4 text-center">
