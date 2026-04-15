@@ -1198,6 +1198,81 @@ export type Database = {
         }
         Relationships: []
       }
+      international_polling: {
+        Row: {
+          approve_pct: number | null
+          country_code: string
+          created_at: string
+          date_conducted: string | null
+          disapprove_pct: number | null
+          end_date: string | null
+          favor_pct: number | null
+          id: string
+          key_finding: string | null
+          margin: number | null
+          margin_of_error: number | null
+          methodology: string | null
+          oppose_pct: number | null
+          poll_topic: string
+          poll_type: string
+          question: string | null
+          raw_data: Json | null
+          sample_size: number | null
+          source: string
+          source_url: string | null
+          tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          approve_pct?: number | null
+          country_code: string
+          created_at?: string
+          date_conducted?: string | null
+          disapprove_pct?: number | null
+          end_date?: string | null
+          favor_pct?: number | null
+          id?: string
+          key_finding?: string | null
+          margin?: number | null
+          margin_of_error?: number | null
+          methodology?: string | null
+          oppose_pct?: number | null
+          poll_topic: string
+          poll_type?: string
+          question?: string | null
+          raw_data?: Json | null
+          sample_size?: number | null
+          source?: string
+          source_url?: string | null
+          tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          approve_pct?: number | null
+          country_code?: string
+          created_at?: string
+          date_conducted?: string | null
+          disapprove_pct?: number | null
+          end_date?: string | null
+          favor_pct?: number | null
+          id?: string
+          key_finding?: string | null
+          margin?: number | null
+          margin_of_error?: number | null
+          methodology?: string | null
+          oppose_pct?: number | null
+          poll_topic?: string
+          poll_type?: string
+          question?: string | null
+          raw_data?: Json | null
+          sample_size?: number | null
+          source?: string
+          source_url?: string | null
+          tags?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       international_profiles: {
         Row: {
           area_sq_km: number | null
