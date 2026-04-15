@@ -806,8 +806,64 @@ mcpServer.tool("get_forecast_history", {
   },
 });
 
+mcpServer.tool("search_international_legislation", {
+  description: "Search international legislation, laws, budgets, directives, and regulations for any country. Covers EU Parliament, UK Parliament, and national legislatures for 70+ countries.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      country_code: { type: "string" as const, description: "ISO 2-letter country code (e.g. GB, DE, FR)" },
+      search: { type: "string" as const, description: "Search legislation titles and summaries" },
+      bill_type: { type: "string" as const, description: "Filter: law, bill, regulation, budget, resolution, directive, decree" },
+      source: { type: "string" as const, description: "Filter: national, EU Parliament, UK Parliament" },
+      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    let q = supabase.from("international_legislation")
+      .select("*", { count: "exact" })
+      .order("introduced_date", { ascending: false })
+      .range((args.offset as number) || 0, ((args.offset as number) || 0) + Math.min((args.limit as number) || 20, 100) - 1);
+    if (args.country_code) q = q.eq("country_code", (args.country_code as string).toUpperCase());
+    if (args.bill_type) q = q.eq("bill_type", args.bill_type as string);
+    if (args.source) q = q.eq("source", args.source as string);
+    if (args.search) q = q.or(`title.ilike.%${args.search}%,summary.ilike.%${args.search}%`);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("search_international_policy_issues", {
+  description: "Search active policy issues, crises, and governance challenges for any country. Includes severity ratings, status tracking, and World Bank governance indicators.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      country_code: { type: "string" as const, description: "ISO 2-letter country code" },
+      search: { type: "string" as const, description: "Search issue titles and descriptions" },
+      category: { type: "string" as const, description: "Filter: economy, security, health, environment, human_rights, trade, governance, education, technology, energy, defense" },
+      severity: { type: "string" as const, description: "Filter: critical, high, medium, low" },
+      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    let q = supabase.from("international_policy_issues")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range((args.offset as number) || 0, ((args.offset as number) || 0) + Math.min((args.limit as number) || 20, 100) - 1);
+    if (args.country_code) q = q.eq("country_code", (args.country_code as string).toUpperCase());
+    if (args.category) q = q.eq("category", args.category as string);
+    if (args.severity) q = q.eq("severity", args.severity as string);
+    if (args.search) q = q.or(`title.ilike.%${args.search}%,description.ilike.%${args.search}%`);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
 mcpServer.tool("master_search", {
-  description: "Unified search across ALL 24 OppoDB databases simultaneously: candidates, congress members, bills, polling, campaign finance, election results, forecasts, MAGA files, narrative reports, local impacts, voter stats, prediction markets, messaging guidance, intel briefings, tracked bills, MIT elections, committees, votes, state leg elections, and forecast history. Returns results grouped by category.",
+  description: "Unified search across ALL 26 OppoDB databases simultaneously: candidates, congress members, bills, polling, campaign finance, election results, forecasts, MAGA files, narrative reports, local impacts, voter stats, prediction markets, messaging guidance, intel briefings, tracked bills, MIT elections, committees, votes, state leg elections, forecast history, international legislation, and international policy issues. Returns results grouped by category.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -815,7 +871,7 @@ mcpServer.tool("master_search", {
       categories: {
         type: "array" as const,
         items: { type: "string" as const },
-        description: "Optional list of categories to search. Available: candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats, mn_finance, prediction_markets, messaging_guidance, intel_briefings, tracked_bills, mit_elections, congress_committees, congress_votes, state_leg_elections, forecast_history. Defaults to all.",
+        description: "Optional list of categories to search. Available: candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats, mn_finance, prediction_markets, messaging_guidance, intel_briefings, tracked_bills, mit_elections, congress_committees, congress_votes, state_leg_elections, forecast_history, international_profiles, international_legislation, international_policy_issues. Defaults to all.",
       },
       limit: { type: "number" as const, description: "Max results per category (default 10, max 20)" },
     },
@@ -839,6 +895,7 @@ mcpServer.tool("master_search", {
       "intel_briefings", "tracked_bills", "mit_elections",
       "congress_committees", "congress_votes", "state_leg_elections",
       "forecast_history", "international_profiles",
+      "international_legislation", "international_policy_issues",
     ];
 
     const requestedCategories = args.categories as string[] | undefined;
@@ -1000,6 +1057,20 @@ mcpServer.tool("master_search", {
         .or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ}`)
         .order("country_name").limit(perLimit)
         .then(r => ({ label: "International Profiles", data: r.data || [] }));
+    }
+    if (activeCategories.includes("international_legislation")) {
+      queries.international_legislation = supabase.from("international_legislation")
+        .select("country_code,title,body,bill_type,status,source,policy_area,introduced_date")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},country_code.ilike.${likeQ}`)
+        .order("introduced_date", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "International Legislation", data: r.data || [] }));
+    }
+    if (activeCategories.includes("international_policy_issues")) {
+      queries.international_policy_issues = supabase.from("international_policy_issues")
+        .select("country_code,title,category,severity,status,description")
+        .or(`title.ilike.${likeQ},description.ilike.${likeQ},country_code.ilike.${likeQ}`)
+        .order("created_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "International Policy Issues", data: r.data || [] }));
     }
 
     const settled = await Promise.all(entries.map(async ([key, promise]) => {

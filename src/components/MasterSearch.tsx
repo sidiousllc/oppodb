@@ -37,7 +37,7 @@ function saveToStorage(key: string, items: string[]) {
   localStorage.setItem(key, JSON.stringify(items));
 }
 
-const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [], internationalProfiles: [] };
+const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [], internationalProfiles: [], internationalLegislation: [], internationalPolicyIssues: [] };
 
 
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
@@ -68,6 +68,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     stateLegElections: any[];
     forecastHistory: any[];
     internationalProfiles: any[];
+    internationalLegislation: any[];
+    internationalPolicyIssues: any[];
   }>(EMPTY_DB as any);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -218,7 +220,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes, intlProfilesRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes, intlProfilesRes, intlLegislationRes, intlPolicyIssuesRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -320,6 +322,16 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ},region.ilike.${likeQ},head_of_state.ilike.${likeQ},ruling_party.ilike.${likeQ}`)
         .order("country_name")
         .limit(10),
+      supabase.from("international_legislation")
+        .select("id, country_code, title, body, bill_type, status, source, policy_area, introduced_date, sponsor")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},country_code.ilike.${likeQ},sponsor.ilike.${likeQ}`)
+        .order("introduced_date", { ascending: false })
+        .limit(10),
+      supabase.from("international_policy_issues")
+        .select("id, country_code, title, category, severity, status, description")
+        .or(`title.ilike.${likeQ},description.ilike.${likeQ},country_code.ilike.${likeQ}`)
+        .order("created_at", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
@@ -344,6 +356,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       stateLegElections: stateLegElRes.data || [],
       forecastHistory: forecastHistRes.data || [],
       internationalProfiles: intlProfilesRes.data || [],
+      internationalLegislation: intlLegislationRes.data || [],
+      internationalPolicyIssues: intlPolicyIssuesRes.data || [],
     });
     setIsSearching(false);
 
@@ -707,6 +721,36 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           title: p.country_name,
           subtitle: `${p.continent} • ${p.region || ""} • ${p.government_type || ""} • ${p.head_of_state ? `Leader: ${p.head_of_state}` : ""}${p.tags?.length ? ` • Tags: ${p.tags.join(", ")}` : ""}`,
           slug: p.country_code,
+        })),
+      });
+    }
+
+    if (dbResults.internationalLegislation.length > 0) {
+      groups.push({
+        key: "international-legislation",
+        label: "⚖️ International Legislation",
+        icon: <Scale className="h-3.5 w-3.5" />,
+        section: "internationalhub",
+        results: dbResults.internationalLegislation.map((l: any) => ({
+          id: l.id,
+          title: l.title,
+          subtitle: `${l.country_code} • ${l.bill_type} • ${l.status} • ${l.source || "national"}${l.policy_area ? ` • ${l.policy_area}` : ""}`,
+          slug: l.country_code,
+        })),
+      });
+    }
+
+    if (dbResults.internationalPolicyIssues.length > 0) {
+      groups.push({
+        key: "international-policy-issues",
+        label: "⚠️ International Policy Issues",
+        icon: <AlertTriangle className="h-3.5 w-3.5" />,
+        section: "internationalhub",
+        results: dbResults.internationalPolicyIssues.map((i: any) => ({
+          id: i.id,
+          title: i.title,
+          subtitle: `${i.country_code} • ${i.category} • ${i.severity} severity • ${i.status}`,
+          slug: i.country_code,
         })),
       });
     }

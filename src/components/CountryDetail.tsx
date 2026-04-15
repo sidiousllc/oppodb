@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Download, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, Loader2, RefreshCw, Scale, AlertTriangle, FileText, Globe2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCountryByCode } from "@/data/internationalCountries";
 import { Win98Window } from "./Win98Window";
@@ -14,27 +14,37 @@ interface CountryData {
   profile: any | null;
   elections: any[];
   leaders: any[];
+  legislation: any[];
+  policyIssues: any[];
 }
+
+type TabId = "overview" | "government" | "elections" | "economy" | "legislation" | "issues" | "intel";
 
 export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
   const country = getCountryByCode(countryCode);
-  const [tab, setTab] = useState<"overview" | "government" | "elections" | "economy" | "intel">("overview");
-  const [data, setData] = useState<CountryData>({ profile: null, elections: [], leaders: [] });
+  const [tab, setTab] = useState<TabId>("overview");
+  const [data, setData] = useState<CountryData>({ profile: null, elections: [], leaders: [], legislation: [], policyIssues: [] });
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [reportWindow, setReportWindow] = useState(false);
+  const [legFilter, setLegFilter] = useState<string>("all");
+  const [issueFilter, setIssueFilter] = useState<string>("all");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [profileRes, electionsRes, leadersRes] = await Promise.all([
+    const [profileRes, electionsRes, leadersRes, legRes, issuesRes] = await Promise.all([
       supabase.from("international_profiles").select("*").eq("country_code", countryCode).maybeSingle(),
       supabase.from("international_elections").select("*").eq("country_code", countryCode).order("election_year", { ascending: false }).limit(20),
       supabase.from("international_leaders").select("*").eq("country_code", countryCode),
+      supabase.from("international_legislation").select("*").eq("country_code", countryCode).order("introduced_date", { ascending: false }).limit(100),
+      supabase.from("international_policy_issues").select("*").eq("country_code", countryCode).order("created_at", { ascending: false }).limit(100),
     ]);
     setData({
       profile: profileRes.data,
       elections: electionsRes.data || [],
       leaders: leadersRes.data || [],
+      legislation: legRes.data || [],
+      policyIssues: issuesRes.data || [],
     });
     setLoading(false);
   }, [countryCode]);
@@ -109,6 +119,28 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
       }
     }
 
+    if (data.legislation.length > 0) {
+      lines.push("## Key Legislation");
+      for (const l of data.legislation.slice(0, 15)) {
+        lines.push(`### ${l.title}`);
+        lines.push(`- **Type:** ${l.bill_type} | **Status:** ${l.status}`);
+        if (l.body) lines.push(`- **Body:** ${l.body}`);
+        if (l.introduced_date) lines.push(`- **Introduced:** ${l.introduced_date}`);
+        if (l.summary) lines.push(l.summary);
+        lines.push("");
+      }
+    }
+
+    if (data.policyIssues.length > 0) {
+      lines.push("## Active Policy Issues");
+      for (const issue of data.policyIssues.slice(0, 15)) {
+        lines.push(`### ${issue.title}`);
+        lines.push(`- **Category:** ${issue.category} | **Severity:** ${issue.severity} | **Status:** ${issue.status}`);
+        if (issue.description) lines.push(issue.description);
+        lines.push("");
+      }
+    }
+
     if (data.elections.length > 0) {
       lines.push("## Election History");
       for (const e of data.elections) {
@@ -137,13 +169,47 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
   if (!country) return <div className="text-[11px]">Country not found.</div>;
 
   const p = data.profile;
-  const tabs = [
-    { id: "overview" as const, label: "Overview" },
-    { id: "government" as const, label: "Government" },
-    { id: "elections" as const, label: "Elections" },
-    { id: "economy" as const, label: "Economy" },
-    { id: "intel" as const, label: "Intel" },
+  const tabs: { id: TabId; label: string; icon?: React.ReactNode; count?: number }[] = [
+    { id: "overview", label: "Overview" },
+    { id: "government", label: "Government" },
+    { id: "legislation", label: "Legislation", icon: <Scale className="h-3 w-3" />, count: data.legislation.length },
+    { id: "issues", label: "Issues", icon: <AlertTriangle className="h-3 w-3" />, count: data.policyIssues.length },
+    { id: "elections", label: "Elections", count: data.elections.length },
+    { id: "economy", label: "Economy" },
+    { id: "intel", label: "Intel" },
   ];
+
+  const severityColor = (s: string) => {
+    switch (s) {
+      case "critical": return "bg-red-600 text-white";
+      case "high": return "bg-orange-500 text-white";
+      case "medium": return "bg-yellow-500 text-black";
+      case "low": return "bg-green-600 text-white";
+      default: return "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]";
+    }
+  };
+
+  const statusColor = (s: string) => {
+    switch (s) {
+      case "enacted": case "passed": case "royal_assent": return "text-green-700 bg-green-100";
+      case "rejected": return "text-red-700 bg-red-100";
+      case "introduced": case "pending": return "text-blue-700 bg-blue-100";
+      case "in_committee": return "text-yellow-700 bg-yellow-100";
+      default: return "text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))]";
+    }
+  };
+
+  const filteredLegislation = legFilter === "all"
+    ? data.legislation
+    : data.legislation.filter(l => l.bill_type === legFilter || l.source === legFilter);
+
+  const filteredIssues = issueFilter === "all"
+    ? data.policyIssues
+    : data.policyIssues.filter(i => i.category === issueFilter || i.severity === issueFilter);
+
+  const legTypes = [...new Set(data.legislation.map(l => l.bill_type))];
+  const legSources = [...new Set(data.legislation.map(l => l.source))];
+  const issueCategories = [...new Set(data.policyIssues.map(i => i.category))];
 
   return (
     <div className="space-y-3">
@@ -174,18 +240,22 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0.5 border-b border-[hsl(var(--border))]">
+      <div className="flex gap-0.5 border-b border-[hsl(var(--border))] overflow-x-auto">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`text-[10px] px-3 py-1.5 border border-b-0 rounded-t transition-colors ${
+            className={`text-[10px] px-3 py-1.5 border border-b-0 rounded-t transition-colors whitespace-nowrap flex items-center gap-1 ${
               tab === t.id
                 ? "bg-white font-bold border-[hsl(var(--border))]"
                 : "bg-[hsl(var(--win98-light))] text-[hsl(var(--muted-foreground))] border-transparent hover:bg-[hsl(var(--win98-bg))]"
             }`}
           >
+            {t.icon}
             {t.label}
+            {t.count != null && t.count > 0 && (
+              <span className="text-[8px] bg-[hsl(var(--muted))] px-1 rounded">{t.count}</span>
+            )}
           </button>
         ))}
       </div>
@@ -213,6 +283,20 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                 ["Corruption Index", p?.corruption_index?.toFixed(1)],
                 ["Median Age", p?.median_age?.toFixed(1)],
               ]} />
+              {/* Quick stats summary */}
+              <div className="col-span-full grid grid-cols-4 gap-2">
+                {[
+                  { label: "Legislation", value: data.legislation.length, tab: "legislation" as TabId },
+                  { label: "Policy Issues", value: data.policyIssues.length, tab: "issues" as TabId },
+                  { label: "Elections", value: data.elections.length, tab: "elections" as TabId },
+                  { label: "Leaders", value: data.leaders.length, tab: "government" as TabId },
+                ].map(s => (
+                  <button key={s.label} onClick={() => setTab(s.tab)} className="candidate-card p-2 text-center hover:bg-[hsl(var(--accent))] transition-colors">
+                    <div className="text-lg font-bold">{s.value}</div>
+                    <div className="text-[9px] text-[hsl(var(--muted-foreground))]">{s.label}</div>
+                  </button>
+                ))}
+              </div>
               {!p && (
                 <div className="col-span-full candidate-card p-4 text-center">
                   <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">No data loaded yet for {country.name}.</p>
@@ -250,6 +334,153 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                   No leader data available. Sync to fetch.
                 </div>
               )}
+            </div>
+          )}
+
+          {tab === "legislation" && (
+            <div className="space-y-3">
+              {/* Filter bar */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <select
+                  value={legFilter}
+                  onChange={e => setLegFilter(e.target.value)}
+                  className="win98-sunken text-[10px] px-2 py-1 bg-white"
+                >
+                  <option value="all">All Types</option>
+                  {legTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  <optgroup label="Source">
+                    {legSources.map(s => <option key={s} value={s}>{s}</option>)}
+                  </optgroup>
+                </select>
+                <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
+                  {filteredLegislation.length} items
+                </span>
+              </div>
+
+              {filteredLegislation.length === 0 ? (
+                <div className="candidate-card p-4 text-center">
+                  <Scale className="h-6 w-6 mx-auto mb-2 text-[hsl(var(--muted-foreground))]" />
+                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">
+                    No legislation data available for {country.name}.
+                  </p>
+                  <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1">
+                    <RefreshCw className="h-3 w-3 inline mr-1" /> Sync Legislation
+                  </button>
+                </div>
+              ) : filteredLegislation.map(l => (
+                <div key={l.id} className="candidate-card p-3">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="flex-1">
+                      <div className="text-[11px] font-bold leading-tight">{l.title}</div>
+                      {l.bill_number && (
+                        <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{l.bill_number}</span>
+                      )}
+                    </div>
+                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${statusColor(l.status)}`}>
+                      {l.status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[9px] text-[hsl(var(--muted-foreground))] mb-1 flex-wrap">
+                    <span className="bg-[hsl(var(--muted))] px-1 rounded">{l.bill_type}</span>
+                    {l.body && <span>📜 {l.body}</span>}
+                    {l.source && l.source !== "national" && <span>🏛️ {l.source}</span>}
+                    {l.policy_area && <span>📋 {l.policy_area}</span>}
+                    {l.introduced_date && <span>📅 {l.introduced_date}</span>}
+                    {l.sponsor && <span>👤 {l.sponsor}</span>}
+                  </div>
+                  {l.summary && (
+                    <p className="text-[10px] leading-relaxed mt-1">{l.summary.slice(0, 300)}{l.summary.length > 300 ? "…" : ""}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1.5">
+                    {l.full_text_url && (
+                      <a href={l.full_text_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5">
+                        <FileText className="h-3 w-3" /> Full Text
+                      </a>
+                    )}
+                    {l.source_url && (
+                      <a href={l.source_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5">
+                        <Globe2 className="h-3 w-3" /> Source
+                      </a>
+                    )}
+                    {l.tags?.length > 0 && (
+                      <div className="flex gap-0.5 flex-wrap ml-auto">
+                        {l.tags.slice(0, 4).map((tag: string) => (
+                          <span key={tag} className="text-[8px] bg-[hsl(var(--muted))] px-1 rounded">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "issues" && (
+            <div className="space-y-3">
+              {/* Filter bar */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <select
+                  value={issueFilter}
+                  onChange={e => setIssueFilter(e.target.value)}
+                  className="win98-sunken text-[10px] px-2 py-1 bg-white"
+                >
+                  <option value="all">All Categories</option>
+                  {issueCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                  <optgroup label="Severity">
+                    {["critical", "high", "medium", "low"].map(s => <option key={s} value={s}>{s}</option>)}
+                  </optgroup>
+                </select>
+                <span className="text-[9px] text-[hsl(var(--muted-foreground))]">
+                  {filteredIssues.length} issues
+                </span>
+              </div>
+
+              {filteredIssues.length === 0 ? (
+                <div className="candidate-card p-4 text-center">
+                  <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-[hsl(var(--muted-foreground))]" />
+                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">
+                    No policy issues tracked for {country.name}.
+                  </p>
+                  <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1">
+                    <RefreshCw className="h-3 w-3 inline mr-1" /> Sync Issues
+                  </button>
+                </div>
+              ) : filteredIssues.map(issue => (
+                <div key={issue.id} className="candidate-card p-3">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="text-[11px] font-bold leading-tight flex-1">{issue.title}</div>
+                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${severityColor(issue.severity)}`}>
+                      {issue.severity.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[9px] text-[hsl(var(--muted-foreground))] mb-1 flex-wrap">
+                    <span className="bg-[hsl(var(--muted))] px-1 rounded">{issue.category}</span>
+                    <span className={`px-1 rounded ${issue.status === "escalating" ? "bg-red-100 text-red-700" : issue.status === "resolved" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
+                      {issue.status}
+                    </span>
+                    {issue.started_date && <span>📅 Since {issue.started_date}</span>}
+                  </div>
+                  {issue.description && (
+                    <p className="text-[10px] leading-relaxed mt-1">{issue.description.slice(0, 400)}{issue.description.length > 400 ? "…" : ""}</p>
+                  )}
+                  {issue.sources?.length > 0 && (
+                    <div className="flex gap-2 mt-1.5 flex-wrap">
+                      {(issue.sources as any[]).slice(0, 3).map((src: any, i: number) => (
+                        <a key={i} href={src.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline">
+                          📰 {src.name || "Source"}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {issue.tags?.length > 0 && (
+                    <div className="flex gap-0.5 mt-1 flex-wrap">
+                      {issue.tags.slice(0, 5).map((tag: string) => (
+                        <span key={tag} className="text-[8px] bg-[hsl(var(--muted))] px-1 rounded">{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 

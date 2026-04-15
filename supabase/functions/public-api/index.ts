@@ -34,6 +34,8 @@ const VALID_ENDPOINTS = [
   "tracked-bills",
   "mit-elections",
   "state-leg-elections",
+  "international-legislation",
+  "international-policy-issues",
   "search",
 ];
 
@@ -761,6 +763,44 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "international-legislation": {
+        let q = supabase
+          .from("international_legislation")
+          .select("id,country_code,title,body,bill_number,bill_type,status,introduced_date,enacted_date,sponsor,summary,source,source_url,policy_area,tags", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("introduced_date", { ascending: false });
+        const countryFilter = url.searchParams.get("country_code");
+        if (countryFilter) q = q.eq("country_code", countryFilter.toUpperCase());
+        const typeFilter = url.searchParams.get("bill_type");
+        if (typeFilter) q = q.eq("bill_type", typeFilter);
+        const sourceFilter2 = url.searchParams.get("source");
+        if (sourceFilter2) q = q.eq("source", sourceFilter2);
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,summary.ilike.%${searchQuery}%,sponsor.ilike.%${searchQuery}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "international-policy-issues": {
+        let q = supabase
+          .from("international_policy_issues")
+          .select("id,country_code,title,category,severity,status,description,sources,started_date,resolved_date,tags", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("created_at", { ascending: false });
+        const countryFilter2 = url.searchParams.get("country_code");
+        if (countryFilter2) q = q.eq("country_code", countryFilter2.toUpperCase());
+        const catFilter = url.searchParams.get("category");
+        if (catFilter) q = q.eq("category", catFilter);
+        const sevFilter = url.searchParams.get("severity");
+        if (sevFilter) q = q.eq("severity", sevFilter);
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
       case "search": {
         const q = searchQuery;
         if (!q || q.length < 2) {
@@ -782,6 +822,7 @@ Deno.serve(async (req) => {
           "intel_briefings", "tracked_bills", "mit_elections",
           "congress_committees", "congress_votes", "state_leg_elections",
           "forecast_history", "international_profiles",
+          "international_legislation", "international_policy_issues",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
@@ -946,8 +987,22 @@ Deno.serve(async (req) => {
             .order("country_name").limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "International Profiles" }));
         }
+        if (activeCategories.includes("international_legislation")) {
+          categoryQueries.international_legislation = supabase.from("international_legislation")
+            .select("id,country_code,title,body,bill_type,status,source,policy_area,introduced_date")
+            .or(`title.ilike.${likeQ},summary.ilike.${likeQ},sponsor.ilike.${likeQ},country_code.ilike.${likeQ}`)
+            .order("introduced_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Legislation" }));
+        }
+        if (activeCategories.includes("international_policy_issues")) {
+          categoryQueries.international_policy_issues = supabase.from("international_policy_issues")
+            .select("id,country_code,title,category,severity,status,description")
+            .or(`title.ilike.${likeQ},description.ilike.${likeQ},country_code.ilike.${likeQ}`)
+            .order("created_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Policy Issues" }));
+        }
 
-        const entries = Object.entries(categoryQueries);
+
         const settled = await Promise.all(entries.map(async ([key, promise]) => {
           const res = await promise;
           return { key, label: res.label, count: res.data.length, results: res.data };
