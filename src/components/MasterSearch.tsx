@@ -322,6 +322,16 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ},region.ilike.${likeQ},head_of_state.ilike.${likeQ},ruling_party.ilike.${likeQ}`)
         .order("country_name")
         .limit(10),
+      supabase.from("international_legislation")
+        .select("id, country_code, title, body, bill_type, status, source, policy_area, introduced_date, sponsor")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},country_code.ilike.${likeQ},sponsor.ilike.${likeQ}`)
+        .order("introduced_date", { ascending: false })
+        .limit(10),
+      supabase.from("international_policy_issues")
+        .select("id, country_code, title, category, severity, status, description")
+        .or(`title.ilike.${likeQ},description.ilike.${likeQ},country_code.ilike.${likeQ}`)
+        .order("created_at", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
