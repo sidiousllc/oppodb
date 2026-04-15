@@ -1125,7 +1125,22 @@ mcpServer.tool("master_search", {
         .order("created_at", { ascending: false }).limit(perLimit)
         .then(r => ({ label: "International Policy Issues", data: r.data || [] }));
     }
+    if (activeCategories.includes("federal_spending")) {
+      queries.federal_spending = supabase.from("federal_spending")
+        .select("recipient_name,recipient_state,award_type,award_amount,awarding_agency,fiscal_year")
+        .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ}`)
+        .order("award_amount", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Federal Spending", data: r.data || [] }));
+    }
+    if (activeCategories.includes("ig_reports")) {
+      queries.ig_reports = supabase.from("ig_reports")
+        .select("title,inspector,agency_name,published_on,type,summary")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},agency_name.ilike.${likeQ}`)
+        .order("published_on", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "IG Reports", data: r.data || [] }));
+    }
 
+    const entries = Object.entries(queries);
     const settled = await Promise.all(entries.map(async ([key, promise]) => {
       const res = await promise;
       return { key, label: res.label, count: res.data.length, results: res.data };
