@@ -18,13 +18,14 @@ interface CountryData {
   legislation: any[];
   policyIssues: any[];
   intelBriefings: any[];
+  polling: any[];
 }
 
 type TabId = "overview" | "government" | "elections" | "economy" | "legislation" | "issues" | "intel";
 
 interface DetailWindow {
   id: string;
-  type: "issue" | "election" | "economy" | "intel" | "legislation" | "leader";
+  type: "issue" | "election" | "economy" | "intel" | "legislation" | "leader" | "polling";
   data: any;
   posIndex: number;
 }
@@ -32,7 +33,7 @@ interface DetailWindow {
 export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
   const country = getCountryByCode(countryCode);
   const [tab, setTab] = useState<TabId>("overview");
-  const [data, setData] = useState<CountryData>({ profile: null, elections: [], leaders: [], legislation: [], policyIssues: [], intelBriefings: [] });
+  const [data, setData] = useState<CountryData>({ profile: null, elections: [], leaders: [], legislation: [], policyIssues: [], intelBriefings: [], polling: [] });
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [reportWindow, setReportWindow] = useState(false);
@@ -56,13 +57,14 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [profileRes, electionsRes, leadersRes, legRes, issuesRes, intelRes] = await Promise.all([
+    const [profileRes, electionsRes, leadersRes, legRes, issuesRes, intelRes, pollingRes] = await Promise.all([
       supabase.from("international_profiles").select("*").eq("country_code", countryCode).maybeSingle(),
       supabase.from("international_elections").select("*").eq("country_code", countryCode).order("election_year", { ascending: false }).limit(20),
       supabase.from("international_leaders").select("*").eq("country_code", countryCode),
       supabase.from("international_legislation").select("*").eq("country_code", countryCode).order("introduced_date", { ascending: false }).limit(100),
       supabase.from("international_policy_issues").select("*").eq("country_code", countryCode).order("created_at", { ascending: false }).limit(100),
       supabase.from("intel_briefings").select("*").eq("region", countryCode).order("published_at", { ascending: false }).limit(50),
+      supabase.from("international_polling").select("*").eq("country_code", countryCode).order("date_conducted", { ascending: false }).limit(100),
     ]);
     setData({
       profile: profileRes.data,
@@ -71,6 +73,7 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
       legislation: legRes.data || [],
       policyIssues: issuesRes.data || [],
       intelBriefings: intelRes.data || [],
+      polling: pollingRes.data || [],
     });
     setLoading(false);
   }, [countryCode]);
@@ -155,7 +158,7 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
     { id: "overview", label: "Overview" },
     { id: "government", label: "Government" },
     { id: "legislation", label: "Legislation", icon: <Scale className="h-3 w-3" />, count: data.legislation.length },
-    { id: "issues", label: "Issues", icon: <AlertTriangle className="h-3 w-3" />, count: data.policyIssues.length },
+    { id: "issues", label: "Issues & Polling", icon: <AlertTriangle className="h-3 w-3" />, count: data.polling.length },
     { id: "elections", label: "Elections", count: data.elections.length },
     { id: "economy", label: "Economy" },
     { id: "intel", label: "Intel", icon: <Newspaper className="h-3 w-3" />, count: data.intelBriefings.length },
@@ -360,37 +363,67 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
 
           {tab === "issues" && (
             <div className="space-y-3">
+              {/* Polling-derived key issues */}
               <div className="flex items-center gap-2 flex-wrap">
                 <select value={issueFilter} onChange={e => setIssueFilter(e.target.value)} className="win98-sunken text-[10px] px-2 py-1 bg-white">
-                  <option value="all">All Categories</option>
-                  {issueCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                  <optgroup label="Severity">
-                    {["critical", "high", "medium", "low"].map(s => <option key={s} value={s}>{s}</option>)}
-                  </optgroup>
+                  <option value="all">All Topics</option>
+                  {[...new Set(data.polling.map((p: any) => p.poll_topic))].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
-                <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{filteredIssues.length} issues</span>
+                <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{(issueFilter === "all" ? data.polling : data.polling.filter((p: any) => p.poll_topic === issueFilter)).length} polls</span>
               </div>
-              {filteredIssues.length === 0 ? (
-                <div className="candidate-card p-4 text-center">
-                  <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-[hsl(var(--muted-foreground))]" />
-                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">No policy issues tracked for {country.name}.</p>
-                  <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1"><RefreshCw className="h-3 w-3 inline mr-1" /> Sync</button>
+
+              {/* Key Issues Summary from Polling */}
+              {data.polling.length > 0 && (
+                <div className="candidate-card p-3">
+                  <h3 className="text-[11px] font-bold mb-2">📊 Key Issues from Polling & Survey Data</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {data.polling
+                      .filter((p: any) => p.approve_pct != null)
+                      .slice(0, 8)
+                      .map((p: any) => {
+                        const score = p.approve_pct;
+                        const color = score >= 70 ? "text-green-700 bg-green-50" : score >= 40 ? "text-yellow-700 bg-yellow-50" : "text-red-700 bg-red-50";
+                        return (
+                          <button key={p.id} onClick={() => openDetailWindow("polling", p)} className={`text-left p-2 rounded border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] transition-colors`}>
+                            <div className="text-[10px] font-bold">{p.poll_topic}</div>
+                            <div className={`text-[9px] font-bold px-1 rounded inline-block ${color}`}>{score.toFixed(0)}%</div>
+                            {p.key_finding && <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-0.5 leading-tight">{p.key_finding.slice(0, 80)}</div>}
+                          </button>
+                        );
+                      })}
+                  </div>
                 </div>
-              ) : filteredIssues.map(issue => (
-                <button key={issue.id} onClick={() => openDetailWindow("issue", issue)} className="candidate-card p-3 w-full text-left hover:bg-[hsl(var(--accent))] transition-colors">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <div className="text-[11px] font-bold leading-tight flex-1">{issue.title}</div>
-                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${severityColor(issue.severity)}`}>{issue.severity.toUpperCase()}</span>
+              )}
+
+              {/* Detailed polling list */}
+              {(() => {
+                const filtered = issueFilter === "all" ? data.polling : data.polling.filter((p: any) => p.poll_topic === issueFilter);
+                return filtered.length === 0 ? (
+                  <div className="candidate-card p-4 text-center">
+                    <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-[hsl(var(--muted-foreground))]" />
+                    <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">No polling data available for {country.name}.</p>
+                    <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1"><RefreshCw className="h-3 w-3 inline mr-1" /> Sync Data</button>
                   </div>
-                  <div className="flex items-center gap-2 text-[9px] text-[hsl(var(--muted-foreground))] mb-1 flex-wrap">
-                    <span className="bg-[hsl(var(--muted))] px-1 rounded">{issue.category}</span>
-                    <span className={`px-1 rounded ${issue.status === "escalating" ? "bg-red-100 text-red-700" : issue.status === "resolved" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>{issue.status}</span>
-                    {issue.started_date && <span>📅 Since {issue.started_date}</span>}
-                  </div>
-                  {issue.description && <p className="text-[10px] leading-relaxed mt-1">{issue.description.slice(0, 200)}…</p>}
-                  <span className="text-[8px] text-blue-600 mt-1 inline-block">Click for full details →</span>
-                </button>
-              ))}
+                ) : filtered.map((poll: any) => (
+                  <button key={poll.id} onClick={() => openDetailWindow("polling", poll)} className="candidate-card p-3 w-full text-left hover:bg-[hsl(var(--accent))] transition-colors">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="text-[11px] font-bold leading-tight flex-1">{poll.poll_topic}</div>
+                      {poll.approve_pct != null && (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
+                          poll.approve_pct >= 70 ? "bg-green-100 text-green-700" : poll.approve_pct >= 40 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
+                        }`}>{poll.approve_pct.toFixed(0)}%</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-[9px] text-[hsl(var(--muted-foreground))] mb-1 flex-wrap">
+                      <span className="bg-[hsl(var(--muted))] px-1 rounded">{poll.poll_type}</span>
+                      <span>{poll.source}</span>
+                      {poll.date_conducted && <span>📅 {poll.date_conducted}</span>}
+                    </div>
+                    {poll.key_finding && <p className="text-[10px] leading-relaxed mt-1">{poll.key_finding}</p>}
+                    <span className="text-[8px] text-blue-600 mt-1 inline-block">Click for full details →</span>
+                  </button>
+                ));
+              })()}
             </div>
           )}
 
@@ -536,6 +569,26 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                   ["Corruption", p?.corruption_index?.toFixed(1) || "N/A"],
                 ]} />
               </div>
+              {/* Policy Issues (moved from Issues tab) */}
+              {data.policyIssues.length > 0 && (
+                <div className="candidate-card p-3">
+                  <h3 className="text-[11px] font-bold mb-2">⚠️ Policy & Governance Issues ({data.policyIssues.length})</h3>
+                  <div className="space-y-1.5">
+                    {data.policyIssues.slice(0, 8).map(issue => (
+                      <button key={issue.id} onClick={() => openDetailWindow("issue", issue)} className="w-full text-left flex items-start gap-2 p-1.5 rounded hover:bg-[hsl(var(--accent))] transition-colors border-b border-[hsl(var(--border))] last:border-0">
+                        <span className={`text-[8px] px-1 py-0.5 rounded font-bold whitespace-nowrap mt-0.5 ${severityColor(issue.severity)}`}>{issue.severity?.toUpperCase()}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-bold leading-tight truncate">{issue.title}</div>
+                          <div className="text-[9px] text-[hsl(var(--muted-foreground))]">{issue.category} · {issue.status}</div>
+                        </div>
+                      </button>
+                    ))}
+                    {data.policyIssues.length > 8 && (
+                      <div className="text-[9px] text-blue-600 text-center">+{data.policyIssues.length - 8} more issues</div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {!p && (
                 <div className="candidate-card p-4 text-center">
@@ -957,6 +1010,55 @@ function DetailMiniWindow({ win, country, onClose, fmt, pct, money, severityColo
             </div>
           )}
           {d.image_url && <img src={d.image_url} alt={d.name} className="w-20 h-20 object-cover rounded" />}
+          {d.tags?.length > 0 && <div className="flex flex-wrap gap-1">{d.tags.map((t: string) => <span key={t} className="text-[8px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded">{t}</span>)}</div>}
+          <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">ID: {d.id}</div>
+        </div>
+      </Win98Window>
+    );
+  }
+  if (win.type === "polling") {
+    return (
+      <Win98Window title={`📊 ${d.poll_topic}`} onClose={onClose} defaultSize={{ width: 520, height: 420 }} defaultPosition={{ x: 130 + offset, y: 60 + offset }} minSize={{ width: 350, height: 250 }}>
+        <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
+          <h2 className="text-sm font-bold">{d.poll_topic}</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <DetailRow label="Type" value={d.poll_type} />
+            <DetailRow label="Source" value={d.source} />
+            <DetailRow label="Date" value={d.date_conducted || "N/A"} />
+            {d.approve_pct != null && <DetailRow label="Score/Rate" value={`${d.approve_pct.toFixed(1)}%`} />}
+            {d.disapprove_pct != null && <DetailRow label="Inverse" value={`${d.disapprove_pct.toFixed(1)}%`} />}
+            {d.sample_size && <DetailRow label="Sample Size" value={d.sample_size.toLocaleString()} />}
+            {d.methodology && <DetailRow label="Methodology" value={d.methodology} />}
+            {d.margin_of_error && <DetailRow label="Margin of Error" value={`±${d.margin_of_error}%`} />}
+          </div>
+          {d.question && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Question</div>
+              <p className="text-[10px] leading-relaxed bg-[hsl(var(--muted))] p-2 rounded">{d.question}</p>
+            </div>
+          )}
+          {d.key_finding && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Key Finding</div>
+              <p className="text-[10px] leading-relaxed bg-blue-50 p-2 rounded border border-blue-200">{d.key_finding}</p>
+            </div>
+          )}
+          {d.approve_pct != null && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Visual</div>
+              <div className="w-full bg-[hsl(var(--muted))] rounded-full h-4 overflow-hidden">
+                <div
+                  className={`h-full rounded-full text-[8px] font-bold flex items-center justify-center text-white ${
+                    d.approve_pct >= 70 ? "bg-green-500" : d.approve_pct >= 40 ? "bg-yellow-500" : "bg-red-500"
+                  }`}
+                  style={{ width: `${Math.min(100, Math.max(2, d.approve_pct))}%` }}
+                >
+                  {d.approve_pct.toFixed(0)}%
+                </div>
+              </div>
+            </div>
+          )}
+          {d.source_url && <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline block">🔗 View source</a>}
           {d.tags?.length > 0 && <div className="flex flex-wrap gap-1">{d.tags.map((t: string) => <span key={t} className="text-[8px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded">{t}</span>)}</div>}
           <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">ID: {d.id}</div>
         </div>

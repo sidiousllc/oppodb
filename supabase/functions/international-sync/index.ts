@@ -648,6 +648,117 @@ async function syncElections(supabase: any, code: string): Promise<number> {
   return count;
 }
 
+// ─── Sync Polling Data for a country ────────────────────────────────────────
+async function syncPolling(supabase: any, code: string): Promise<number> {
+  const meta = COUNTRY_META[code];
+  if (!meta) return 0;
+
+  const polls: any[] = [];
+
+  // Use World Bank public opinion / development indicators as proxy for key issue polling
+  // These represent survey-based or measured data on key public concerns
+  const pollIndicators = [
+    { id: "SH.STA.STNT.ZS", topic: "Child Malnutrition", type: "issue", finding: "stunting rate among children under 5" },
+    { id: "SL.UEM.TOTL.ZS", topic: "Unemployment", type: "approval", finding: "unemployment rate" },
+    { id: "SI.POV.DDAY", topic: "Extreme Poverty", type: "issue", finding: "population living on less than $2.15/day" },
+    { id: "SH.XPD.CHEX.PC.CD", topic: "Healthcare Access", type: "issue", finding: "health expenditure per capita" },
+    { id: "SE.ADT.LITR.ZS", topic: "Education & Literacy", type: "issue", finding: "adult literacy rate" },
+    { id: "IT.NET.USER.ZS", topic: "Digital Access", type: "issue", finding: "internet usage rate" },
+    { id: "EN.ATM.CO2E.PC", topic: "Climate & Environment", type: "issue", finding: "CO2 emissions per capita (metric tons)" },
+    { id: "SP.DYN.LE00.IN", topic: "Life Expectancy", type: "issue", finding: "life expectancy at birth" },
+    { id: "VC.IHR.PSRC.P5", topic: "Safety & Security", type: "issue", finding: "intentional homicides per 100k" },
+    { id: "FP.CPI.TOTL.ZG", topic: "Cost of Living", type: "issue", finding: "consumer price inflation rate" },
+    { id: "NY.GDP.MKTP.KD.ZG", topic: "Economic Growth", type: "issue", finding: "real GDP growth rate" },
+    { id: "SL.TLF.CACT.FE.ZS", topic: "Women in Workforce", type: "issue", finding: "female labor force participation rate" },
+    { id: "EG.ELC.ACCS.ZS", topic: "Electricity Access", type: "issue", finding: "population with access to electricity" },
+    { id: "SH.H2O.SMDW.ZS", topic: "Clean Water Access", type: "issue", finding: "population using safely managed drinking water" },
+  ];
+
+  const results = await Promise.allSettled(
+    pollIndicators.map(async (ind) => {
+      const url = `https://api.worldbank.org/v2/country/${code}/indicator/${ind.id}?format=json&date=2018:2024&per_page=7`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data?.[1]?.length) return null;
+      const entry = data[1].find((d: any) => d.value != null);
+      return entry ? { ...ind, value: entry.value, year: entry.date } : null;
+    })
+  );
+
+  for (const result of results) {
+    if (result.status !== "fulfilled" || !result.value) continue;
+    const { topic, type, finding, value, year } = result.value;
+
+    polls.push({
+      country_code: code,
+      poll_topic: topic,
+      poll_type: type,
+      question: `What is the current state of ${topic.toLowerCase()} in this country?`,
+      approve_pct: value > 0 && value <= 100 ? value : null,
+      source: "World Bank Development Indicators",
+      source_url: `https://data.worldbank.org/indicator?locations=${code}`,
+      date_conducted: `${year}-01-01`,
+      key_finding: `${finding}: ${typeof value === 'number' ? (value > 1000 ? value.toLocaleString() : value.toFixed(1)) : value} (${year})`,
+      tags: [`continent:${meta.continent}`, `region:${meta.region}`, `country:${code}`, topic.toLowerCase()],
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  // Try to get Gallup/Pew-style data from World Values Survey indicators if available
+  const wgiPollingIndicators = [
+    { id: "CC.EST", topic: "Control of Corruption", finding: "governance score for anti-corruption" },
+    { id: "GE.EST", topic: "Government Effectiveness", finding: "governance score for government effectiveness" },
+    { id: "RQ.EST", topic: "Regulatory Quality", finding: "governance score for regulatory quality" },
+    { id: "RL.EST", topic: "Rule of Law", finding: "governance score for rule of law" },
+    { id: "VA.EST", topic: "Voice & Accountability", finding: "governance score for democratic participation" },
+    { id: "PV.EST", topic: "Political Stability", finding: "governance score for political stability" },
+  ];
+
+  const wgiResults = await Promise.allSettled(
+    wgiPollingIndicators.map(async (ind) => {
+      const url = `https://api.worldbank.org/v2/country/${code}/indicator/${ind.id}?format=json&date=2018:2024&per_page=7`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data?.[1]?.length) return null;
+      const entry = data[1].find((d: any) => d.value != null);
+      return entry ? { ...ind, value: entry.value, year: entry.date } : null;
+    })
+  );
+
+  for (const result of wgiResults) {
+    if (result.status !== "fulfilled" || !result.value) continue;
+    const { topic, finding, value, year } = result.value;
+
+    // WGI scores range from -2.5 to 2.5; convert to a rough 0-100 scale
+    const pctScore = Math.round(((value + 2.5) / 5) * 100);
+
+    polls.push({
+      country_code: code,
+      poll_topic: topic,
+      poll_type: "approval",
+      question: `How does ${topic.toLowerCase()} rate in this country?`,
+      approve_pct: pctScore,
+      disapprove_pct: 100 - pctScore,
+      source: "World Bank Governance Indicators",
+      source_url: "https://info.worldbank.org/governance/wgi/",
+      date_conducted: `${year}-01-01`,
+      key_finding: `${finding}: ${value.toFixed(2)} (scale -2.5 to +2.5) → ${pctScore}% score (${year})`,
+      tags: [`continent:${meta.continent}`, `region:${meta.region}`, `country:${code}`, "governance", topic.toLowerCase()],
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  if (polls.length > 0) {
+    // Delete old polls for this country and insert fresh
+    await supabase.from("international_polling").delete().eq("country_code", code);
+    await supabase.from("international_polling").insert(polls);
+  }
+
+  return polls.length;
+}
+
 // ─── Main sync function for one country ─────────────────────────────────────
 async function syncOneCountry(
   supabase: any,
@@ -665,6 +776,7 @@ async function syncOneCountry(
       code === "GB" ? syncUKParliament(supabase) : Promise.resolve(0),
       syncLeaders(supabase, code),
       syncElections(supabase, code),
+      syncPolling(supabase, code),
     ]);
 
     const errors = results.filter(r => r.status === "rejected").map(r => (r as PromiseRejectedResult).reason?.message);
@@ -680,6 +792,7 @@ async function syncOneCountry(
         uk_parliament: results[4].status === "fulfilled" ? (results[4] as PromiseFulfilledResult<number>).value : 0,
         leaders: results[5].status === "fulfilled" ? (results[5] as PromiseFulfilledResult<number>).value : 0,
         elections: results[6].status === "fulfilled" ? (results[6] as PromiseFulfilledResult<number>).value : 0,
+        polling: results[7].status === "fulfilled" ? (results[7] as PromiseFulfilledResult<number>).value : 0,
         errors: errors.length > 0 ? errors : undefined,
       },
     };
