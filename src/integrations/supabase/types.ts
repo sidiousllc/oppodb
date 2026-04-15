@@ -444,64 +444,94 @@ export type Database = {
       }
       congress_members: {
         Row: {
+          ballotpedia: string | null
           bioguide_id: string
           candidate_slug: string | null
           chamber: string
           congress: number | null
+          contact_form: string | null
           created_at: string
           depiction_url: string | null
           district: string | null
+          district_offices: Json | null
+          fec_ids: string[] | null
           first_name: string | null
           id: string
           last_name: string | null
           leadership: Json | null
           name: string
+          office_address: string | null
           official_url: string | null
+          opensecrets_id: string | null
           party: string | null
+          phone: string | null
           raw_data: Json | null
+          social_media: Json | null
           state: string | null
           terms: Json | null
           updated_at: string
+          votesmart_id: number | null
+          wikipedia: string | null
         }
         Insert: {
+          ballotpedia?: string | null
           bioguide_id: string
           candidate_slug?: string | null
           chamber?: string
           congress?: number | null
+          contact_form?: string | null
           created_at?: string
           depiction_url?: string | null
           district?: string | null
+          district_offices?: Json | null
+          fec_ids?: string[] | null
           first_name?: string | null
           id?: string
           last_name?: string | null
           leadership?: Json | null
           name: string
+          office_address?: string | null
           official_url?: string | null
+          opensecrets_id?: string | null
           party?: string | null
+          phone?: string | null
           raw_data?: Json | null
+          social_media?: Json | null
           state?: string | null
           terms?: Json | null
           updated_at?: string
+          votesmart_id?: number | null
+          wikipedia?: string | null
         }
         Update: {
+          ballotpedia?: string | null
           bioguide_id?: string
           candidate_slug?: string | null
           chamber?: string
           congress?: number | null
+          contact_form?: string | null
           created_at?: string
           depiction_url?: string | null
           district?: string | null
+          district_offices?: Json | null
+          fec_ids?: string[] | null
           first_name?: string | null
           id?: string
           last_name?: string | null
           leadership?: Json | null
           name?: string
+          office_address?: string | null
           official_url?: string | null
+          opensecrets_id?: string | null
           party?: string | null
+          phone?: string | null
           raw_data?: Json | null
+          social_media?: Json | null
           state?: string | null
           terms?: Json | null
           updated_at?: string
+          votesmart_id?: number | null
+          wikipedia?: string | null
         }
         Relationships: []
       }
@@ -628,6 +658,63 @@ export type Database = {
           updated_at?: string
           vote_pct?: number | null
           votes?: number | null
+        }
+        Relationships: []
+      }
+      congressional_record: {
+        Row: {
+          bioguide_id: string | null
+          category: string | null
+          chamber: string
+          congress: number | null
+          content: string | null
+          created_at: string
+          date: string
+          id: string
+          number: number | null
+          pages: string | null
+          raw_data: Json | null
+          session: number | null
+          speaker_name: string
+          title: string | null
+          updated_at: string
+          volume: number | null
+        }
+        Insert: {
+          bioguide_id?: string | null
+          category?: string | null
+          chamber: string
+          congress?: number | null
+          content?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          number?: number | null
+          pages?: string | null
+          raw_data?: Json | null
+          session?: number | null
+          speaker_name: string
+          title?: string | null
+          updated_at?: string
+          volume?: number | null
+        }
+        Update: {
+          bioguide_id?: string | null
+          category?: string | null
+          chamber?: string
+          congress?: number | null
+          content?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          number?: number | null
+          pages?: string | null
+          raw_data?: Json | null
+          session?: number | null
+          speaker_name?: string
+          title?: string | null
+          updated_at?: string
+          volume?: number | null
         }
         Relationships: []
       }
@@ -979,6 +1066,153 @@ export type Database = {
           status?: string
           termination_date?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      federal_spending: {
+        Row: {
+          award_amount: number | null
+          award_id: string | null
+          award_type: string
+          awarding_agency: string | null
+          cfda_number: string | null
+          cfda_title: string | null
+          created_at: string
+          description: string | null
+          fiscal_year: number | null
+          funding_agency: string | null
+          id: string
+          naics_code: string | null
+          naics_description: string | null
+          period_of_performance_end: string | null
+          period_of_performance_start: string | null
+          place_of_performance_district: string | null
+          place_of_performance_state: string | null
+          raw_data: Json | null
+          recipient_district: string | null
+          recipient_name: string
+          recipient_state: string | null
+          source: string | null
+          source_url: string | null
+          total_obligation: number | null
+          updated_at: string
+        }
+        Insert: {
+          award_amount?: number | null
+          award_id?: string | null
+          award_type?: string
+          awarding_agency?: string | null
+          cfda_number?: string | null
+          cfda_title?: string | null
+          created_at?: string
+          description?: string | null
+          fiscal_year?: number | null
+          funding_agency?: string | null
+          id?: string
+          naics_code?: string | null
+          naics_description?: string | null
+          period_of_performance_end?: string | null
+          period_of_performance_start?: string | null
+          place_of_performance_district?: string | null
+          place_of_performance_state?: string | null
+          raw_data?: Json | null
+          recipient_district?: string | null
+          recipient_name: string
+          recipient_state?: string | null
+          source?: string | null
+          source_url?: string | null
+          total_obligation?: number | null
+          updated_at?: string
+        }
+        Update: {
+          award_amount?: number | null
+          award_id?: string | null
+          award_type?: string
+          awarding_agency?: string | null
+          cfda_number?: string | null
+          cfda_title?: string | null
+          created_at?: string
+          description?: string | null
+          fiscal_year?: number | null
+          funding_agency?: string | null
+          id?: string
+          naics_code?: string | null
+          naics_description?: string | null
+          period_of_performance_end?: string | null
+          period_of_performance_start?: string | null
+          place_of_performance_district?: string | null
+          place_of_performance_state?: string | null
+          raw_data?: Json | null
+          recipient_district?: string | null
+          recipient_name?: string
+          recipient_state?: string | null
+          source?: string | null
+          source_url?: string | null
+          total_obligation?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ig_reports: {
+        Row: {
+          agency: string
+          agency_name: string
+          created_at: string
+          id: string
+          inspector: string
+          inspector_url: string | null
+          landing_url: string | null
+          pdf_url: string | null
+          published_on: string | null
+          raw_data: Json | null
+          report_id: string
+          summary: string | null
+          title: string
+          topic: string | null
+          type: string | null
+          updated_at: string
+          url: string | null
+          year: number | null
+        }
+        Insert: {
+          agency: string
+          agency_name: string
+          created_at?: string
+          id?: string
+          inspector: string
+          inspector_url?: string | null
+          landing_url?: string | null
+          pdf_url?: string | null
+          published_on?: string | null
+          raw_data?: Json | null
+          report_id: string
+          summary?: string | null
+          title: string
+          topic?: string | null
+          type?: string | null
+          updated_at?: string
+          url?: string | null
+          year?: number | null
+        }
+        Update: {
+          agency?: string
+          agency_name?: string
+          created_at?: string
+          id?: string
+          inspector?: string
+          inspector_url?: string | null
+          landing_url?: string | null
+          pdf_url?: string | null
+          published_on?: string | null
+          raw_data?: Json | null
+          report_id?: string
+          summary?: string | null
+          title?: string
+          topic?: string | null
+          type?: string | null
+          updated_at?: string
+          url?: string | null
+          year?: number | null
         }
         Relationships: []
       }
