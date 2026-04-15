@@ -48,7 +48,11 @@ const STATE_VIEW: Record<string, { center: [number, number]; zoom: number }> = {
   DC:{center:[-77,38.9],zoom:50},
 };
 
-// Census TIGERweb MapServer layers for state legislative districts
+// Primary: unitedstates/districts repo (gh-pages via theunitedstates.io)
+// sldl = State Legislative District Lower (House), sldu = Upper (Senate)
+const DISTRICTS_REPO_BASE = "https://theunitedstates.io/districts/states";
+
+// Fallback: Census TIGERweb MapServer
 // Layer 3 = Lower (House), Layer 2 = Upper (Senate)
 const TIGERWEB_BASE = "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024/Legislative/MapServer";
 
@@ -72,6 +76,7 @@ function StateLegBoundaryMapInner({ stateAbbr, stateName, chamber, districtNumbe
   const [districtGeo, setDistrictGeo] = useState<DistrictGeoJSON | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [source, setSource] = useState<string>("");
 
   const fips = STATE_FIPS[stateAbbr];
   const view = STATE_VIEW[stateAbbr];
@@ -84,13 +89,16 @@ function StateLegBoundaryMapInner({ stateAbbr, stateName, chamber, districtNumbe
     }
 
     const controller = new AbortController();
-    // Layer 3 = Lower (House), Layer 2 = Upper (Senate)
-    const layerId = chamber === "house" ? 3 : 2;
-    // GEOID = state FIPS (2 digits) + district number (3 digits)
-    const distNum = districtNumber.replace(/^0+/, "") || "0";
-    const geoid = `${fips}${distNum.padStart(3, "0")}`;
+    const chamberDir = chamber === "house" ? "sldl" : "sldu";
+    const distNum = districtNumber.replace(/^0+/, "") || "1";
 
-    const url = `${TIGERWEB_BASE}/${layerId}/query?` + new URLSearchParams({
+    // Primary: unitedstates/districts repo
+    const repoUrl = `${DISTRICTS_REPO_BASE}/${stateAbbr}/${chamberDir}/${distNum}/shape.geojson`;
+
+    // Fallback: TIGERweb
+    const layerId = chamber === "house" ? 3 : 2;
+    const geoid = `${fips}${distNum.padStart(3, "0")}`;
+    const tigerUrl = `${TIGERWEB_BASE}/${layerId}/query?` + new URLSearchParams({
       where: `GEOID='${geoid}'`,
       outFields: "GEOID,BASENAME",
       f: "geojson",
@@ -99,8 +107,30 @@ function StateLegBoundaryMapInner({ stateAbbr, stateName, chamber, districtNumbe
     }).toString();
 
     (async () => {
+      // Try unitedstates/districts repo first
       try {
-        const r = await fetch(url, { signal: controller.signal });
+        const r = await fetch(repoUrl, { signal: controller.signal });
+        if (r.ok) {
+          const data = await r.json();
+          // The repo returns a single Feature or FeatureCollection
+          const geo: DistrictGeoJSON = data.type === "FeatureCollection"
+            ? data
+            : { type: "FeatureCollection", features: [data] };
+          if (geo.features?.length > 0 && geo.features[0]?.geometry) {
+            setDistrictGeo(geo);
+            setSource("unitedstates/districts");
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return;
+        console.warn(`Districts repo unavailable for ${stateAbbr} ${chamberDir}/${distNum}:`, e);
+      }
+
+      // Fallback: TIGERweb
+      try {
+        const r = await fetch(tigerUrl, { signal: controller.signal });
         if (!r.ok) {
           console.warn(`TIGERweb ${r.status} for ${stateAbbr} ${chamber} ${districtNumber}`);
           setError(true);
@@ -110,6 +140,7 @@ function StateLegBoundaryMapInner({ stateAbbr, stateName, chamber, districtNumbe
         const data = await r.json();
         if (data.features && data.features.length > 0) {
           setDistrictGeo(data);
+          setSource("TIGER/Line");
         } else {
           setError(true);
         }
@@ -244,15 +275,26 @@ function StateLegBoundaryMapInner({ stateAbbr, stateName, chamber, districtNumbe
 
       <p className="text-xs text-muted-foreground mt-2">
         Source:{" "}
-        <a
-          href="https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline underline-offset-2 hover:text-primary/80"
-        >
-          U.S. Census Bureau TIGER/Line
-        </a>{" "}
-        — State Legislative Districts (TIGERweb)
+        {source === "unitedstates/districts" ? (
+          <a
+            href="https://github.com/unitedstates/districts"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            @unitedstates/districts
+          </a>
+        ) : (
+          <a
+            href="https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            U.S. Census Bureau TIGER/Line
+          </a>
+        )}{" "}
+        — State Legislative Districts
       </p>
     </div>
   );
