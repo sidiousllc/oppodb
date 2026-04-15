@@ -82,12 +82,15 @@ export function MobileSidebarDrawer({
     try {
       const syncOps = [
         supabase.functions.invoke("sync-github"),
-        supabase.functions.invoke("congress-sync", { body: { action: "sync_members" } }),
+        supabase.functions.invoke("congress-sync", { body: { action: "sync_all" } }),
         supabase.functions.invoke("polling-sync"),
         supabase.functions.invoke("forecast-sync"),
         supabase.functions.invoke("campaign-finance-sync"),
         supabase.functions.invoke("intel-briefing"),
-        supabase.functions.invoke("international-sync", { body: { batch: true, codes: ["US","CA","MX","GB","FR","DE","IT","ES","JP","KR","CN","IN","BR","AU","ZA","NG"] } }),
+        supabase.functions.invoke("international-sync", { body: { batch: true, codes: ["US","CA","MX","GB","FR","DE","IT","ES","JP","KR","CN","IN","BR","AU","ZA","NG","EG","SA","IL","TR","UA","RU","PL","SE","NL","AR","CO","TH","ID","PH","KE","NG"] } }),
+        supabase.functions.invoke("state-legislative-sync"),
+        supabase.functions.invoke("prediction-markets-sync"),
+        supabase.functions.invoke("opensecrets-sync"),
       ];
 
       const results = await Promise.allSettled(syncOps);
@@ -98,7 +101,7 @@ export function MobileSidebarDrawer({
       onSyncComplete?.();
 
       toast.success("Full sync complete", {
-        description: `${succeeded} sync tasks completed`,
+        description: `${succeeded}/${syncOps.length} sync tasks completed`,
       });
     } catch {
       toast.error("Sync failed");
