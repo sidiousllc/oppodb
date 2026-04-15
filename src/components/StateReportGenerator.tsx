@@ -453,11 +453,11 @@ export function StateReportGenerator({ onBack }: StateReportGeneratorProps) {
         acc[name] = (acc[name] || 0) + (Number(d.amount) || 0);
         return acc;
       }, {});
-      const sortedRecipients = Object.entries(byCandidate).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      const sortedRecipients = Object.entries(byCandidate).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 10);
       if (sortedRecipients.length) {
         lines.push("### Top WinRed Recipients");
         for (const [name, amount] of sortedRecipients) {
-          lines.push(`- **${name}:** ${money(amount)}`);
+          lines.push(`- **${name}:** ${money(amount as number)}`);
         }
         lines.push("");
       }
@@ -468,11 +468,11 @@ export function StateReportGenerator({ onBack }: StateReportGeneratorProps) {
         acc[city] = (acc[city] || 0) + (Number(d.amount) || 0);
         return acc;
       }, {});
-      const sortedCities = Object.entries(byCity).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      const sortedCities = Object.entries(byCity).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 10);
       if (sortedCities.length) {
         lines.push("### Top Donor Cities");
         for (const [city, amount] of sortedCities) {
-          lines.push(`- **${city}:** ${money(amount)}`);
+          lines.push(`- **${city}:** ${money(amount as number)}`);
         }
         lines.push("");
       }
@@ -522,13 +522,13 @@ export function StateReportGenerator({ onBack }: StateReportGeneratorProps) {
           const yearResults = byYear[String(year)];
           lines.push(`#### ${year}`);
           // Aggregate by candidate (skip county-level detail)
-          const byCand = yearResults.reduce((acc: Record<string, { votes: number; party: string }>, r: any) => {
-            const key = r.candidate;
-            if (!acc[key]) acc[key] = { votes: 0, party: r.party || "N/A" };
-            acc[key].votes += r.candidatevotes || 0;
-            return acc;
-          }, {});
-          const totalVotes = yearResults[0]?.totalvotes || Object.values(byCand).reduce((s, c) => s + c.votes, 0);
+          const byCand: Record<string, { votes: number; party: string }> = {};
+          for (const r of yearResults) {
+            const key = (r as any).candidate;
+            if (!byCand[key]) byCand[key] = { votes: 0, party: (r as any).party || "N/A" };
+            byCand[key].votes += (r as any).candidatevotes || 0;
+          }
+          const totalVotes = (yearResults[0] as any)?.totalvotes || Object.values(byCand).reduce((s, c) => s + c.votes, 0);
           const sorted = Object.entries(byCand).sort((a, b) => b[1].votes - a[1].votes).slice(0, 5);
           for (const [name, info] of sorted) {
             const votePct = totalVotes > 0 ? ((info.votes / totalVotes) * 100).toFixed(1) : "?";
