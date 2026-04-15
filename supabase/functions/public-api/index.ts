@@ -825,6 +825,7 @@ Deno.serve(async (req) => {
           "congress_committees", "congress_votes", "state_leg_elections",
           "forecast_history", "international_profiles",
           "international_legislation", "international_policy_issues",
+          "federal_spending", "ig_reports",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
