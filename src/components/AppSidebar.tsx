@@ -95,15 +95,18 @@ export function AppSidebar({
   async function handleManualSync() {
     setSyncing(true);
     try {
-      // Run all syncs in parallel
+      // Run all syncs in parallel - comprehensive data pull from all sources
       const syncOps = [
         supabase.functions.invoke("sync-github"),
-        supabase.functions.invoke("congress-sync", { body: { action: "sync_members" } }),
+        supabase.functions.invoke("congress-sync", { body: { action: "sync_all" } }),
         supabase.functions.invoke("polling-sync"),
         supabase.functions.invoke("forecast-sync"),
         supabase.functions.invoke("campaign-finance-sync"),
         supabase.functions.invoke("intel-briefing"),
-        supabase.functions.invoke("international-sync", { body: { batch: true, codes: ["US","CA","MX","GB","FR","DE","IT","ES","JP","KR","CN","IN","BR","AU","ZA","NG"] } }),
+        supabase.functions.invoke("international-sync", { body: { batch: true, codes: ["US","CA","MX","GB","FR","DE","IT","ES","JP","KR","CN","IN","BR","AU","ZA","NG","EG","SA","IL","TR","UA","RU","PL","SE","NL","AR","CO","TH","ID","PH","KE","NG"] } }),
+        supabase.functions.invoke("state-legislative-sync"),
+        supabase.functions.invoke("prediction-markets-sync"),
+        supabase.functions.invoke("opensecrets-sync"),
       ];
 
       const results = await Promise.allSettled(syncOps);
@@ -114,12 +117,11 @@ export function AppSidebar({
       setLastSync(t);
       onSyncComplete?.();
 
-      // Get GitHub profile count from first result
       const githubResult = results[0].status === "fulfilled" ? (results[0] as PromiseFulfilledResult<any>).value : null;
       const profileCount = githubResult?.data?.upserted ?? githubResult?.data?.count;
 
       toast.success("Full sync complete", {
-        description: `${succeeded} sync tasks completed${profileCount != null ? `, ${profileCount} profiles updated` : ""}${failed > 0 ? `, ${failed} failed` : ""}`,
+        description: `${succeeded}/${syncOps.length} sync tasks completed${profileCount != null ? `, ${profileCount} profiles updated` : ""}${failed > 0 ? `, ${failed} failed` : ""}`,
       });
     } catch (e) {
       console.error("Sync failed:", e);
