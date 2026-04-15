@@ -420,6 +420,16 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     });
   }, []);
 
+  const clearAllSaved = useCallback(() => {
+    setSavedSearches([]);
+    saveToStorage(STORAGE_KEY, []);
+  }, []);
+
+  const clearAllRecent = useCallback(() => {
+    setRecentSearches([]);
+    saveToStorage(RECENT_KEY, []);
+  }, []);
+
   const loadSearch = useCallback((s: string) => {
     setQuery(s);
   }, []);
