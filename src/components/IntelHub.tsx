@@ -266,39 +266,46 @@ export function IntelHub() {
   const exportPDF = () => {
     const doc = new jsPDF();
     const pw = doc.internal.pageSize.width;
-    let y = 18;
+    const ph = doc.internal.pageSize.height;
+    const margin = 15;
+    const maxW = pw - margin * 2;
+    const topY = 22;
+    const bottomLimit = ph - 18;
+    let y = topY;
 
     const scopeLabel = SCOPE_CONFIG[activeScope].label;
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text(`Intelligence Briefing — ${scopeLabel}`, pw / 2, y, { align: "center" });
-    y += 8;
+    y += 10;
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.text(`Generated: ${format(new Date(), "PPpp")}`, pw / 2, y, { align: "center" });
-    y += 10;
+    y += 12;
 
     for (const b of filteredBriefings) {
-      if (y > 260) { doc.addPage(); y = 18; }
+      if (y > bottomLimit - 30) { doc.addPage(); y = topY; }
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
-      const titleLines = doc.splitTextToSize(b.title, pw - 30);
-      doc.text(titleLines, 15, y);
-      y += titleLines.length * 5 + 2;
+      doc.setTextColor(0, 0, 0);
+      const titleLines = doc.splitTextToSize(b.title, maxW);
+      doc.text(titleLines, margin, y);
+      y += titleLines.length * 6 + 4;
       doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
       doc.setTextColor(100, 100, 100);
-      doc.text(`${b.source_name} • ${b.published_at ? format(new Date(b.published_at), "PPp") : "Unknown date"}`, 15, y);
-      y += 5;
+      doc.text(`${b.source_name} • ${b.published_at ? format(new Date(b.published_at), "PPp") : "Unknown date"}`, margin, y);
+      y += 7;
       doc.setTextColor(0, 0, 0);
       if (b.summary) {
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
-        const summaryLines = doc.splitTextToSize(b.summary, pw - 30);
-        doc.text(summaryLines.slice(0, 6), 15, y);
-        y += summaryLines.slice(0, 6).length * 4 + 6;
+        const summaryLines = doc.splitTextToSize(b.summary, maxW);
+        const displayLines = summaryLines.slice(0, 6);
+        doc.text(displayLines, margin, y);
+        y += displayLines.length * 5 + 8;
       } else {
-        y += 4;
+        y += 6;
       }
     }
 
@@ -549,20 +556,28 @@ function BriefingDetailWindow({ win, allBriefings, onClose }: {
   const exportSinglePDF = () => {
     const doc = new jsPDF();
     const pw = doc.internal.pageSize.width;
-    let y = 18;
+    const ph = doc.internal.pageSize.height;
+    const margin = 15;
+    const maxW = pw - margin * 2;
+    let y = 22;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    const titleLines = doc.splitTextToSize(b.title, pw - 30);
-    doc.text(titleLines, 15, y);
-    y += titleLines.length * 6 + 4;
+    const titleLines = doc.splitTextToSize(b.title, maxW);
+    doc.text(titleLines, margin, y);
+    y += titleLines.length * 7 + 6;
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
-    doc.text(`${b.source_name} • ${b.published_at ? format(new Date(b.published_at), "PPp") : ""}`, 15, y);
-    y += 8;
+    doc.text(`${b.source_name} • ${b.published_at ? format(new Date(b.published_at), "PPp") : ""}`, margin, y);
+    y += 10;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    const cLines = doc.splitTextToSize(contentText, pw - 30);
-    doc.text(cLines, 15, y);
+    const cLines = doc.splitTextToSize(contentText, maxW);
+    // Paginate content lines
+    for (const line of cLines) {
+      if (y > ph - 18) { doc.addPage(); y = 22; }
+      doc.text(line, margin, y);
+      y += 5.5;
+    }
     applyPdfBranding(doc);
     doc.save(`intel-brief-${b.id.substring(0, 8)}.pdf`);
     toast.success("PDF exported");
