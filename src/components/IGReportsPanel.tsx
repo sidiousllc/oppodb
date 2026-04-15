@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Search, ExternalLink, FileText } from "lucide-react";
+import { IGReportDetailWindow } from "./IGReportDetailWindow";
 
 interface IGReportsPanelProps {
   onBack: () => void;
@@ -18,6 +19,7 @@ export function IGReportsPanel({ onBack }: IGReportsPanelProps) {
   const [loading, setLoading] = useState(true);
   const [agencyFilter, setAgencyFilter] = useState("");
   const [searchQ, setSearchQ] = useState("");
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -77,7 +79,11 @@ export function IGReportsPanel({ onBack }: IGReportsPanelProps) {
         <div className="space-y-2 max-h-[65vh] overflow-y-auto">
           <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{data.length} reports</div>
           {data.map((r, i) => (
-            <div key={r.id || i} className="candidate-card">
+            <div
+              key={r.id || i}
+              className="candidate-card cursor-pointer hover:bg-[hsl(var(--accent))]"
+              onClick={() => setSelectedReport(r)}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] font-bold">{r.title}</div>
@@ -93,12 +99,12 @@ export function IGReportsPanel({ onBack }: IGReportsPanelProps) {
                 </div>
                 <div className="shrink-0 flex flex-col gap-1">
                   {r.pdf_url && (
-                    <a href={r.pdf_url} target="_blank" rel="noopener noreferrer" className="win98-button text-[9px] px-1.5 py-0.5 flex items-center gap-0.5">
+                    <a href={r.pdf_url} target="_blank" rel="noopener noreferrer" className="win98-button text-[9px] px-1.5 py-0.5 flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
                       <FileText className="h-2.5 w-2.5" /> PDF
                     </a>
                   )}
                   {(r.landing_url || r.url) && (
-                    <a href={r.landing_url || r.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 flex items-center gap-0.5">
+                    <a href={r.landing_url || r.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-[hsl(var(--primary))] flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
                       <ExternalLink className="h-2.5 w-2.5" /> View
                     </a>
                   )}
@@ -107,6 +113,13 @@ export function IGReportsPanel({ onBack }: IGReportsPanelProps) {
             </div>
           ))}
         </div>
+      )}
+
+      {selectedReport && (
+        <IGReportDetailWindow
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
       )}
     </div>
   );
