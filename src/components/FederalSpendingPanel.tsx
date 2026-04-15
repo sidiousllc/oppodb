@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, DollarSign, Building2, Search, ExternalLink } from "lucide-react";
+import { ArrowLeft, DollarSign, Search } from "lucide-react";
+import { FederalSpendingDetailWindow } from "@/components/FederalSpendingDetailWindow";
 
 interface FederalSpendingPanelProps {
   onBack: () => void;
@@ -12,6 +13,7 @@ export function FederalSpendingPanel({ onBack }: FederalSpendingPanelProps) {
   const [stateFilter, setStateFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "contract" | "grant">("all");
   const [searchQ, setSearchQ] = useState("");
+  const [selected, setSelected] = useState<any | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -80,7 +82,11 @@ export function FederalSpendingPanel({ onBack }: FederalSpendingPanelProps) {
         <div className="space-y-2 max-h-[65vh] overflow-y-auto">
           <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{data.length} records</div>
           {data.map((r, i) => (
-            <div key={r.id || i} className="candidate-card">
+            <div
+              key={r.id || i}
+              className="candidate-card cursor-pointer hover:bg-[hsl(var(--accent))]"
+              onClick={() => setSelected(r)}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] font-bold truncate">{r.recipient_name}</div>
@@ -96,25 +102,21 @@ export function FederalSpendingPanel({ onBack }: FederalSpendingPanelProps) {
                   {r.description && (
                     <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1 line-clamp-2">{r.description}</div>
                   )}
-                  {r.naics_description && (
-                    <div className="text-[9px] mt-0.5">NAICS: {r.naics_description}</div>
-                  )}
                 </div>
                 <div className="text-right shrink-0">
                   <div className="text-[11px] font-bold">{fmt(r.award_amount)}</div>
                   {r.total_obligation != null && r.total_obligation !== r.award_amount && (
                     <div className="text-[9px] text-[hsl(var(--muted-foreground))]">Obligated: {fmt(r.total_obligation)}</div>
                   )}
-                  {r.source_url && (
-                    <a href={r.source_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 flex items-center gap-0.5 justify-end mt-1">
-                      <ExternalLink className="h-2.5 w-2.5" /> View
-                    </a>
-                  )}
                 </div>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {selected && (
+        <FederalSpendingDetailWindow record={selected} onClose={() => setSelected(null)} />
       )}
     </div>
   );
