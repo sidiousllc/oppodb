@@ -107,6 +107,8 @@ export function AppSidebar({
         supabase.functions.invoke("state-legislative-sync"),
         supabase.functions.invoke("prediction-markets-sync"),
         supabase.functions.invoke("opensecrets-sync"),
+        supabase.functions.invoke("fara-sync", { body: {} }),
+        supabase.functions.invoke("openstates-sync", { body: {} }),
       ];
 
       const results = await Promise.allSettled(syncOps);

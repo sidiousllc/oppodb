@@ -922,6 +922,66 @@ export type Database = {
         }
         Relationships: []
       }
+      fara_registrants: {
+        Row: {
+          address: string | null
+          country: string | null
+          created_at: string
+          documents: Json
+          foreign_principals: Json
+          id: string
+          raw_data: Json | null
+          registrant_name: string
+          registration_date: string | null
+          registration_number: string
+          short_form_agents: Json
+          source: string
+          source_url: string | null
+          state: string | null
+          status: string
+          termination_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          country?: string | null
+          created_at?: string
+          documents?: Json
+          foreign_principals?: Json
+          id?: string
+          raw_data?: Json | null
+          registrant_name: string
+          registration_date?: string | null
+          registration_number: string
+          short_form_agents?: Json
+          source?: string
+          source_url?: string | null
+          state?: string | null
+          status?: string
+          termination_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          country?: string | null
+          created_at?: string
+          documents?: Json
+          foreign_principals?: Json
+          id?: string
+          raw_data?: Json | null
+          registrant_name?: string
+          registration_date?: string | null
+          registration_number?: string
+          short_form_agents?: Json
+          source?: string
+          source_url?: string | null
+          state?: string | null
+          status?: string
+          termination_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       intel_briefings: {
         Row: {
           category: string
@@ -2121,6 +2181,69 @@ export type Database = {
         }
         Relationships: []
       }
+      state_legislative_bills: {
+        Row: {
+          classification: string[]
+          created_at: string
+          first_action_date: string | null
+          id: string
+          identifier: string
+          latest_action_date: string | null
+          latest_action_description: string | null
+          openstates_id: string
+          raw_data: Json | null
+          session: string
+          source_url: string | null
+          sponsor_name: string | null
+          sponsor_party: string | null
+          state_abbr: string
+          status: string | null
+          subjects: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          classification?: string[]
+          created_at?: string
+          first_action_date?: string | null
+          id?: string
+          identifier: string
+          latest_action_date?: string | null
+          latest_action_description?: string | null
+          openstates_id: string
+          raw_data?: Json | null
+          session: string
+          source_url?: string | null
+          sponsor_name?: string | null
+          sponsor_party?: string | null
+          state_abbr: string
+          status?: string | null
+          subjects?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          classification?: string[]
+          created_at?: string
+          first_action_date?: string | null
+          id?: string
+          identifier?: string
+          latest_action_date?: string | null
+          latest_action_description?: string | null
+          openstates_id?: string
+          raw_data?: Json | null
+          session?: string
+          source_url?: string | null
+          sponsor_name?: string | null
+          sponsor_party?: string | null
+          state_abbr?: string
+          status?: string | null
+          subjects?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       state_legislative_profiles: {
         Row: {
           asian_pct: number | null
@@ -2208,6 +2331,66 @@ export type Database = {
           updated_at?: string
           veteran_pct?: number | null
           white_pct?: number | null
+        }
+        Relationships: []
+      }
+      state_legislators: {
+        Row: {
+          capitol_office: Json | null
+          chamber: string
+          committees: Json | null
+          created_at: string
+          district: string | null
+          email: string | null
+          first_name: string | null
+          id: string
+          image_url: string | null
+          last_name: string | null
+          name: string
+          openstates_id: string
+          party: string | null
+          raw_data: Json | null
+          source_url: string | null
+          state_abbr: string
+          updated_at: string
+        }
+        Insert: {
+          capitol_office?: Json | null
+          chamber?: string
+          committees?: Json | null
+          created_at?: string
+          district?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          image_url?: string | null
+          last_name?: string | null
+          name: string
+          openstates_id: string
+          party?: string | null
+          raw_data?: Json | null
+          source_url?: string | null
+          state_abbr: string
+          updated_at?: string
+        }
+        Update: {
+          capitol_office?: Json | null
+          chamber?: string
+          committees?: Json | null
+          created_at?: string
+          district?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          image_url?: string | null
+          last_name?: string | null
+          name?: string
+          openstates_id?: string
+          party?: string | null
+          raw_data?: Json | null
+          source_url?: string | null
+          state_abbr?: string
+          updated_at?: string
         }
         Relationships: []
       }
