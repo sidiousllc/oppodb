@@ -27,6 +27,20 @@ export function ResearchToolsDashboard({ onNavigateSubsection }: ResearchToolsDa
       description: "Generate comprehensive intelligence reports for any state, pulling data from all databases.",
       features: ["Districts & demographics", "Election history & forecasts", "Campaign finance", "Polling & prediction markets", "Intel briefings & oppo research"],
     },
+    {
+      id: "federal-spending",
+      emoji: "💵",
+      label: "Federal Spending",
+      description: "Browse federal contracts and grants from USASpending.gov by state and congressional district.",
+      features: ["Federal contracts by state", "Grant awards by agency", "Spending by congressional district", "Top recipients & NAICS codes"],
+    },
+    {
+      id: "ig-reports",
+      emoji: "🔍",
+      label: "IG Reports",
+      description: "Inspector General oversight reports from 65+ federal agencies via Oversight.garden.",
+      features: ["Audit & investigation reports", "Search by agency", "Waste/fraud/abuse findings", "PDF report access"],
+    },
   ];
 
   return (
