@@ -370,6 +370,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       internationalProfiles: intlProfilesRes.data || [],
       internationalLegislation: intlLegislationRes.data || [],
       internationalPolicyIssues: intlPolicyIssuesRes.data || [],
+      federalSpending: fedSpendingRes.data || [],
+      igReports: igReportsRes.data || [],
     });
     setIsSearching(false);
 
