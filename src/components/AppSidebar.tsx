@@ -109,6 +109,10 @@ export function AppSidebar({
         supabase.functions.invoke("opensecrets-sync"),
         supabase.functions.invoke("fara-sync", { body: {} }),
         supabase.functions.invoke("openstates-sync", { body: {} }),
+        supabase.functions.invoke("legislators-enrichment-sync", { body: {} }),
+        supabase.functions.invoke("ig-reports-sync", { body: {} }),
+        supabase.functions.invoke("federal-spending-sync", { body: { state: "ALL", award_type: "contracts" } }),
+        supabase.functions.invoke("federal-spending-sync", { body: { state: "ALL", award_type: "grants" } }),
       ];
 
       const results = await Promise.allSettled(syncOps);
