@@ -141,11 +141,15 @@ export function CandidateCongressPanel({ candidateSlug, candidateName }: Props) 
 
   const terms = (member.terms || []) as any[];
   const leadership = (member.leadership || []) as any[];
+  const social = member.social_media || {};
+  const offices = (member.district_offices || []) as any[];
+  const hasSocialOrContact = social.twitter || social.facebook || social.youtube || member.phone || member.contact_form || offices.length > 0;
 
   const tabs = [
     { id: "votes" as const, label: "Voting Record", count: votes.length },
     { id: "committees" as const, label: "Committees", count: committees.length },
     { id: "terms" as const, label: "Terms", count: terms.length },
+    { id: "contact" as const, label: "Contact & Social", count: offices.length },
   ];
 
   return (
@@ -189,6 +193,31 @@ export function CandidateCongressPanel({ candidateSlug, candidateName }: Props) 
             </a>
           )}
         </div>
+        {/* Social media quick links */}
+        {(social.twitter || social.facebook || social.youtube || social.instagram) && (
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {social.twitter && (
+              <a href={`https://twitter.com/${social.twitter}`} target="_blank" rel="noopener noreferrer" className="text-[9px] text-primary hover:underline flex items-center gap-0.5">
+                𝕏 @{social.twitter}
+              </a>
+            )}
+            {social.facebook && (
+              <a href={`https://facebook.com/${social.facebook}`} target="_blank" rel="noopener noreferrer" className="text-[9px] text-primary hover:underline">
+                📘 Facebook
+              </a>
+            )}
+            {social.youtube && (
+              <a href={`https://youtube.com/${social.youtube}`} target="_blank" rel="noopener noreferrer" className="text-[9px] text-primary hover:underline">
+                📺 YouTube
+              </a>
+            )}
+            {social.instagram && (
+              <a href={`https://instagram.com/${social.instagram}`} target="_blank" rel="noopener noreferrer" className="text-[9px] text-primary hover:underline">
+                📷 Instagram
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
