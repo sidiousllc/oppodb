@@ -1201,35 +1201,54 @@ export type Database = {
       international_profiles: {
         Row: {
           area_sq_km: number | null
+          building_permits: number | null
           capital: string | null
+          consumer_spending: number | null
           continent: string
+          corporate_profits: number | null
           corruption_index: number | null
           country_code: string
           country_name: string
+          cpi_rate: number | null
           created_at: string
           currency: string | null
+          current_account_balance: number | null
+          economic_indicators_json: Json | null
           election_results: Json | null
           election_type: string | null
+          fdi_inflows: number | null
           gdp: number | null
+          gdp_growth_rate: number | null
           gdp_per_capita: number | null
+          government_debt_gdp_pct: number | null
           government_type: string | null
           head_of_government: string | null
           head_of_state: string | null
           human_dev_index: number | null
           id: string
+          industrial_production_index: number | null
           inflation_rate: number | null
+          labor_cost_index: number | null
+          labor_force_participation: number | null
           last_election_date: string | null
           major_industries: string[] | null
+          manufacturer_new_orders: number | null
           median_age: number | null
           next_election_date: string | null
+          nonfarm_payrolls: number | null
           official_languages: string[] | null
           opposition_parties: Json | null
+          pce_rate: number | null
+          personal_income: number | null
           population: number | null
           poverty_rate: number | null
           press_freedom_rank: number | null
           raw_data: Json | null
+          real_gdp: number | null
           region: string | null
           ruling_party: string | null
+          stock_market_index: number | null
+          stock_market_name: string | null
           tags: string[]
           trade_partners: Json | null
           unemployment_rate: number | null
@@ -1237,35 +1256,54 @@ export type Database = {
         }
         Insert: {
           area_sq_km?: number | null
+          building_permits?: number | null
           capital?: string | null
+          consumer_spending?: number | null
           continent: string
+          corporate_profits?: number | null
           corruption_index?: number | null
           country_code: string
           country_name: string
+          cpi_rate?: number | null
           created_at?: string
           currency?: string | null
+          current_account_balance?: number | null
+          economic_indicators_json?: Json | null
           election_results?: Json | null
           election_type?: string | null
+          fdi_inflows?: number | null
           gdp?: number | null
+          gdp_growth_rate?: number | null
           gdp_per_capita?: number | null
+          government_debt_gdp_pct?: number | null
           government_type?: string | null
           head_of_government?: string | null
           head_of_state?: string | null
           human_dev_index?: number | null
           id?: string
+          industrial_production_index?: number | null
           inflation_rate?: number | null
+          labor_cost_index?: number | null
+          labor_force_participation?: number | null
           last_election_date?: string | null
           major_industries?: string[] | null
+          manufacturer_new_orders?: number | null
           median_age?: number | null
           next_election_date?: string | null
+          nonfarm_payrolls?: number | null
           official_languages?: string[] | null
           opposition_parties?: Json | null
+          pce_rate?: number | null
+          personal_income?: number | null
           population?: number | null
           poverty_rate?: number | null
           press_freedom_rank?: number | null
           raw_data?: Json | null
+          real_gdp?: number | null
           region?: string | null
           ruling_party?: string | null
+          stock_market_index?: number | null
+          stock_market_name?: string | null
           tags?: string[]
           trade_partners?: Json | null
           unemployment_rate?: number | null
@@ -1273,35 +1311,54 @@ export type Database = {
         }
         Update: {
           area_sq_km?: number | null
+          building_permits?: number | null
           capital?: string | null
+          consumer_spending?: number | null
           continent?: string
+          corporate_profits?: number | null
           corruption_index?: number | null
           country_code?: string
           country_name?: string
+          cpi_rate?: number | null
           created_at?: string
           currency?: string | null
+          current_account_balance?: number | null
+          economic_indicators_json?: Json | null
           election_results?: Json | null
           election_type?: string | null
+          fdi_inflows?: number | null
           gdp?: number | null
+          gdp_growth_rate?: number | null
           gdp_per_capita?: number | null
+          government_debt_gdp_pct?: number | null
           government_type?: string | null
           head_of_government?: string | null
           head_of_state?: string | null
           human_dev_index?: number | null
           id?: string
+          industrial_production_index?: number | null
           inflation_rate?: number | null
+          labor_cost_index?: number | null
+          labor_force_participation?: number | null
           last_election_date?: string | null
           major_industries?: string[] | null
+          manufacturer_new_orders?: number | null
           median_age?: number | null
           next_election_date?: string | null
+          nonfarm_payrolls?: number | null
           official_languages?: string[] | null
           opposition_parties?: Json | null
+          pce_rate?: number | null
+          personal_income?: number | null
           population?: number | null
           poverty_rate?: number | null
           press_freedom_rank?: number | null
           raw_data?: Json | null
+          real_gdp?: number | null
           region?: string | null
           ruling_party?: string | null
+          stock_market_index?: number | null
+          stock_market_name?: string | null
           tags?: string[]
           trade_partners?: Json | null
           unemployment_rate?: number | null
