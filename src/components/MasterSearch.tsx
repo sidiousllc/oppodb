@@ -725,6 +725,36 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    if (dbResults.internationalLegislation.length > 0) {
+      groups.push({
+        key: "international-legislation",
+        label: "⚖️ International Legislation",
+        icon: <Scale className="h-3.5 w-3.5" />,
+        section: "internationalhub",
+        results: dbResults.internationalLegislation.map((l: any) => ({
+          id: l.id,
+          title: l.title,
+          subtitle: `${l.country_code} • ${l.bill_type} • ${l.status} • ${l.source || "national"}${l.policy_area ? ` • ${l.policy_area}` : ""}`,
+          slug: l.country_code,
+        })),
+      });
+    }
+
+    if (dbResults.internationalPolicyIssues.length > 0) {
+      groups.push({
+        key: "international-policy-issues",
+        label: "⚠️ International Policy Issues",
+        icon: <AlertTriangle className="h-3.5 w-3.5" />,
+        section: "internationalhub",
+        results: dbResults.internationalPolicyIssues.map((i: any) => ({
+          id: i.id,
+          title: i.title,
+          subtitle: `${i.country_code} • ${i.category} • ${i.severity} severity • ${i.status}`,
+          slug: i.country_code,
+        })),
+      });
+    }
+
     return groups;
   }, [dbResults]);
 
