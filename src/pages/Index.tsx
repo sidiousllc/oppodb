@@ -39,6 +39,8 @@ import { VoterDataSection } from "@/components/VoterDataSection";
 import { ResearchToolsDashboard } from "@/components/ResearchToolsDashboard";
 import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { StateReportGenerator } from "@/components/StateReportGenerator";
+import { FederalSpendingPanel } from "@/components/FederalSpendingPanel";
+import { IGReportsPanel } from "@/components/IGReportsPanel";
 import { InternationalHub } from "@/components/InternationalHub";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
@@ -350,6 +352,12 @@ export default function Index() {
       }
       if (researchSubsection === "state-report") {
         return <StateReportGenerator onBack={() => setResearchSubsection(null)} />;
+      }
+      if (researchSubsection === "federal-spending") {
+        return <FederalSpendingPanel onBack={() => setResearchSubsection(null)} />;
+      }
+      if (researchSubsection === "ig-reports") {
+        return <IGReportsPanel onBack={() => setResearchSubsection(null)} />;
       }
       return (
         <ResearchToolsDashboard
