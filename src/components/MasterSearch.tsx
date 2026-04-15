@@ -795,6 +795,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           subtitle: `${r.agency_name} • ${r.type || "report"} • ${r.published_on ? new Date(r.published_on).toLocaleDateString() : ""}`,
         })),
       });
+    }
 
     return groups;
   }, [dbResults]);
