@@ -66,6 +66,26 @@ function parseRssItems(xml: string): Array<{ title: string; link: string; descri
   return items;
 }
 
+function parseHtmlReportLinks(html: string, baseUrl: string): Array<{ title: string; link: string; description: string; pubDate: string }> {
+  const items: Array<{ title: string; link: string; description: string; pubDate: string }> = [];
+  // Match links that look like report links
+  const linkRe = /<a[^>]+href="([^"]*(?:report|audit|inspection|evaluation|memorandum)[^"]*)"[^>]*>([^<]+)<\/a>/gi;
+  let match;
+  const seen = new Set<string>();
+  while ((match = linkRe.exec(html)) !== null && items.length < 50) {
+    let href = match[1];
+    const title = stripCdata(match[2]).trim();
+    if (!title || title.length < 5 || seen.has(href)) continue;
+    seen.add(href);
+    if (href.startsWith("/")) {
+      const u = new URL(baseUrl);
+      href = `${u.origin}${href}`;
+    }
+    items.push({ title, link: href, description: "", pubDate: "" });
+  }
+  return items;
+}
+
 function parseDate(s: string): string | null {
   if (!s) return null;
   try {
