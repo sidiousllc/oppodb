@@ -5,19 +5,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Working IG / oversight RSS feeds as of 2026
-const IG_FEEDS: { inspector: string; agency: string; agencyName: string; url: string; format: "rss" | "atom" }[] = [
+// Verified working IG / oversight RSS feeds as of April 2026
+interface IGFeed {
+  inspector: string;
+  agency: string;
+  agencyName: string;
+  url: string;
+  format: "rss" | "atom" | "html";
+}
+
+const IG_FEEDS: IGFeed[] = [
+  // RSS feeds confirmed working
   { inspector: "gao", agency: "gao", agencyName: "Government Accountability Office", url: "https://www.gao.gov/rss/reports.xml", format: "rss" },
   { inspector: "nasa", agency: "nasa", agencyName: "NASA", url: "https://oig.nasa.gov/feed/", format: "rss" },
-  { inspector: "treasury", agency: "treasury", agencyName: "Department of the Treasury", url: "https://oig.treasury.gov/rss.xml", format: "rss" },
-  { inspector: "energy", agency: "energy", agencyName: "Department of Energy", url: "https://oig.energy.gov/rss.xml", format: "rss" },
   { inspector: "interior", agency: "interior", agencyName: "Department of the Interior", url: "https://www.doioig.gov/rss.xml", format: "rss" },
-  { inspector: "labor", agency: "labor", agencyName: "Department of Labor", url: "https://www.oig.dol.gov/rss.xml", format: "rss" },
   { inspector: "education", agency: "education", agencyName: "Department of Education", url: "https://oig.ed.gov/rss.xml", format: "rss" },
-  { inspector: "transportation", agency: "transportation", agencyName: "Department of Transportation", url: "https://www.oig.dot.gov/rss.xml", format: "rss" },
-  { inspector: "commerce", agency: "commerce", agencyName: "Department of Commerce", url: "https://www.oig.doc.gov/Pages/rss.aspx", format: "rss" },
-  { inspector: "sba", agency: "sba", agencyName: "Small Business Administration", url: "https://www.sba.gov/oig/rss.xml", format: "rss" },
-  { inspector: "epa", agency: "epa", agencyName: "Environmental Protection Agency", url: "https://www.epa.gov/office-inspector-general/oig-reports/rss.xml", format: "rss" },
+  // HTML scrape fallbacks for agencies without working RSS
+  { inspector: "labor", agency: "labor", agencyName: "Department of Labor", url: "https://www.oig.dol.gov/auditreports.htm", format: "html" },
+  { inspector: "interior-reports", agency: "interior", agencyName: "Department of the Interior", url: "https://www.doioig.gov/reports", format: "html" },
 ];
 
 function stripCdata(s: string | null | undefined): string {
