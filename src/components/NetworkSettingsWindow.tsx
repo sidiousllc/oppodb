@@ -33,6 +33,14 @@ const SYNC_TABLE_LABELS: Record<string, string> = {
   prediction_markets: "Prediction Markets",
   district_news_cache: "District News",
   wiki_pages: "Wiki Pages",
+  section_permissions: "Section Permissions",
+  international_profiles: "International Profiles",
+  international_elections: "International Elections",
+  international_leaders: "International Leaders",
+  intel_briefings: "Intel Briefings",
+  international_legislation: "International Legislation",
+  international_policy_issues: "Policy Issues (Intl)",
+  international_polling: "International Polling",
 };
 
 interface NetworkSettingsWindowProps {
