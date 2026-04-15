@@ -18,13 +18,14 @@ interface CountryData {
   legislation: any[];
   policyIssues: any[];
   intelBriefings: any[];
+  polling: any[];
 }
 
 type TabId = "overview" | "government" | "elections" | "economy" | "legislation" | "issues" | "intel";
 
 interface DetailWindow {
   id: string;
-  type: "issue" | "election" | "economy" | "intel" | "legislation" | "leader";
+  type: "issue" | "election" | "economy" | "intel" | "legislation" | "leader" | "polling";
   data: any;
   posIndex: number;
 }
