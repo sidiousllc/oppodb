@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Download, Loader2, RefreshCw, Scale, AlertTriangle, FileText, Globe2, TrendingUp, Newspaper, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCountryByCode } from "@/data/internationalCountries";
