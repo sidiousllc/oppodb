@@ -1002,6 +1002,20 @@ mcpServer.tool("master_search", {
         .order("country_name").limit(perLimit)
         .then(r => ({ label: "International Profiles", data: r.data || [] }));
     }
+    if (activeCategories.includes("international_legislation")) {
+      queries.international_legislation = supabase.from("international_legislation")
+        .select("country_code,title,body,bill_type,status,source,policy_area,introduced_date")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},country_code.ilike.${likeQ}`)
+        .order("introduced_date", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "International Legislation", data: r.data || [] }));
+    }
+    if (activeCategories.includes("international_policy_issues")) {
+      queries.international_policy_issues = supabase.from("international_policy_issues")
+        .select("country_code,title,category,severity,status,description")
+        .or(`title.ilike.${likeQ},description.ilike.${likeQ},country_code.ilike.${likeQ}`)
+        .order("created_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "International Policy Issues", data: r.data || [] }));
+    }
 
     const settled = await Promise.all(entries.map(async ([key, promise]) => {
       const res = await promise;
