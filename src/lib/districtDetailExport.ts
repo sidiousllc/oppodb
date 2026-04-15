@@ -8,7 +8,7 @@ import { getCookHistory } from "@/data/cookHistory";
 import { getPVIHistory, formatPVI, getEffectivePVI } from "@/data/cookPVI";
 import { fetchCongressionalElectionResults, groupCongressionalByCycle } from "@/data/congressionalElections";
 import { supabase } from "@/integrations/supabase/client";
-import { applyPdfBranding } from "./pdfBranding";
+import { applyPdfBranding, PDF_BRAND_HEADER_HEIGHT, PDF_BRAND_FOOTER_HEIGHT } from "./pdfBranding";
 
 export async function exportDistrictPDF(district: DistrictProfile, cookRating?: CookRating | null) {
   const doc = new jsPDF();
@@ -16,12 +16,14 @@ export async function exportDistrictPDF(district: DistrictProfile, cookRating?: 
   const pw = doc.internal.pageSize.width;
   const ph = doc.internal.pageSize.height;
   const maxW = pw - margin * 2;
-  let y = 16;
+  const topY = PDF_BRAND_HEADER_HEIGHT + 4;
+  const bottomLimit = ph - PDF_BRAND_FOOTER_HEIGHT - 4;
+  let y = topY;
 
   const checkPage = (needed: number) => {
-    if (y + needed > ph - 20) {
+    if (y + needed > bottomLimit) {
       doc.addPage();
-      y = 16;
+      y = topY;
     }
   };
 
