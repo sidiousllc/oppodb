@@ -751,6 +751,118 @@ function DetailMiniWindow({ win, country, onClose, fmt, pct, money, severityColo
   return null;
 }
 
+function LegislationDetailWindow({ d, offset, onClose, statusColor }: { d: any; offset: number; onClose: () => void; statusColor: (s: string) => string }) {
+  const [fullText, setFullText] = useState<string | null>(null);
+  const [loadingText, setLoadingText] = useState(false);
+  const [showFullText, setShowFullText] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+  const isPdf = d.full_text_url && /\.pdf$/i.test(d.full_text_url);
+
+  const fetchFullText = useCallback(async () => {
+    if (!d.full_text_url || fullText || isPdf) return;
+    setLoadingText(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke("scrape-article", {
+        body: { url: d.full_text_url },
+      });
+      if (!error && result?.markdown) {
+        setFullText(result.markdown);
+      } else if (!error && result?.content) {
+        setFullText(result.content);
+      } else {
+        setFullText("*Could not fetch full text. Use the external link below.*");
+      }
+    } catch {
+      setFullText("*Error fetching full text.*");
+    }
+    setLoadingText(false);
+  }, [d.full_text_url, fullText, isPdf]);
+
+  const handleShowFullText = useCallback(() => {
+    if (isPdf) {
+      setPdfUrl(d.full_text_url);
+      setShowFullText(true);
+    } else {
+      setShowFullText(true);
+      fetchFullText();
+    }
+  }, [isPdf, d.full_text_url, fetchFullText]);
+
+  return (
+    <Win98Window title={`📜 ${d.title?.slice(0, 45)}`} onClose={onClose} defaultSize={{ width: 640, height: 560 }} defaultPosition={{ x: 130 + offset, y: 45 + offset }} minSize={{ width: 400, height: 300 }}>
+      <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="text-sm font-bold leading-tight">{d.title}</h2>
+          <span className={`text-[9px] px-2 py-0.5 rounded font-medium whitespace-nowrap ${statusColor(d.status)}`}>{d.status?.replace(/_/g, " ")}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <DetailRow label="Bill Number" value={d.bill_number || "N/A"} />
+          <DetailRow label="Type" value={d.bill_type} />
+          <DetailRow label="Body" value={d.body || "N/A"} />
+          <DetailRow label="Source" value={d.source} />
+          <DetailRow label="Introduced" value={d.introduced_date || "N/A"} />
+          <DetailRow label="Enacted" value={d.enacted_date || "N/A"} />
+          <DetailRow label="Sponsor" value={d.sponsor || "N/A"} />
+          <DetailRow label="Policy Area" value={d.policy_area || "N/A"} />
+        </div>
+        {d.summary && (
+          <div>
+            <div className="text-[10px] font-bold mb-1">Summary</div>
+            <p className="text-[10px] leading-relaxed whitespace-pre-wrap">{d.summary}</p>
+          </div>
+        )}
+
+        {/* Full Text Section */}
+        {d.full_text_url && !showFullText && (
+          <button onClick={handleShowFullText} className="win98-button text-[10px] flex items-center gap-1 px-3 py-1">
+            <FileText className="h-3 w-3" /> {isPdf ? "View Full Bill (PDF)" : "Load Full Bill Text"}
+          </button>
+        )}
+
+        {showFullText && isPdf && pdfUrl && (
+          <div className="border border-[hsl(var(--border))] rounded">
+            <div className="text-[10px] font-bold p-2 bg-[hsl(var(--muted))] border-b border-[hsl(var(--border))] flex items-center justify-between">
+              <span>📄 Full Bill Text (PDF)</span>
+              <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline">Open in new tab ↗</a>
+            </div>
+            <iframe src={pdfUrl} className="w-full h-[400px] border-0" title="Bill PDF" />
+          </div>
+        )}
+
+        {showFullText && !isPdf && (
+          <div className="border border-[hsl(var(--border))] rounded">
+            <div className="text-[10px] font-bold p-2 bg-[hsl(var(--muted))] border-b border-[hsl(var(--border))] flex items-center justify-between">
+              <span>📄 Full Bill Text</span>
+              {d.full_text_url && <a href={d.full_text_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline">Open source ↗</a>}
+            </div>
+            <div className="p-3 max-h-[400px] overflow-y-auto">
+              {loadingText ? (
+                <div className="flex items-center gap-2 text-[10px] text-[hsl(var(--muted-foreground))] py-4 justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Fetching full bill text…
+                </div>
+              ) : fullText ? (
+                <div className="prose-research text-[10px] max-w-none">
+                  <ReactMarkdown>{fullText}</ReactMarkdown>
+                </div>
+              ) : (
+                <p className="text-[10px] text-[hsl(var(--muted-foreground))]">No text available.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2 flex-wrap">
+          {d.full_text_url && <a href={d.full_text_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5"><FileText className="h-3 w-3" /> Full Text (External)</a>}
+          {d.source_url && <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5"><Globe2 className="h-3 w-3" /> Source</a>}
+        </div>
+        {d.tags?.length > 0 && <div className="flex flex-wrap gap-1">{d.tags.map((t: string) => <span key={t} className="text-[8px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded">{t}</span>)}</div>}
+        <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">ID: {d.id}</div>
+      </div>
+    </Win98Window>
+  );
+}
+
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between text-[10px] py-0.5 border-b border-[hsl(var(--border))]">
