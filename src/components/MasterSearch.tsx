@@ -769,6 +769,33 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    if (dbResults.federalSpending.length > 0) {
+      groups.push({
+        key: "federal-spending",
+        label: "💵 Federal Spending",
+        icon: <DollarSign className="h-3.5 w-3.5" />,
+        section: "research-tools",
+        results: dbResults.federalSpending.map((r: any) => ({
+          id: r.id,
+          title: r.recipient_name,
+          subtitle: `${r.award_type} • ${r.awarding_agency || ""} • ${r.recipient_state || ""} • $${(r.award_amount || 0).toLocaleString()} • FY${r.fiscal_year || ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.igReports.length > 0) {
+      groups.push({
+        key: "ig-reports",
+        label: "🔍 IG Reports",
+        icon: <FileText className="h-3.5 w-3.5" />,
+        section: "research-tools",
+        results: dbResults.igReports.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          subtitle: `${r.agency_name} • ${r.type || "report"} • ${r.published_on ? new Date(r.published_on).toLocaleDateString() : ""}`,
+        })),
+      });
+
     return groups;
   }, [dbResults]);
 
