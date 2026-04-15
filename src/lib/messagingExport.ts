@@ -117,10 +117,10 @@ export function exportMessagingPDF(item: MessagingExportItem) {
   };
 
   const checkPage = (needed: number) => {
-    if (y + needed > ph - 16) {
+    if (y + needed > ph - 20) {
       doc.addPage();
       drawBg();
-      y = 14;
+      y = 18;
     }
   };
 
