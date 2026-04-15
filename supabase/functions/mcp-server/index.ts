@@ -839,6 +839,7 @@ mcpServer.tool("master_search", {
       "intel_briefings", "tracked_bills", "mit_elections",
       "congress_committees", "congress_votes", "state_leg_elections",
       "forecast_history", "international_profiles",
+      "international_legislation", "international_policy_issues",
     ];
 
     const requestedCategories = args.categories as string[] | undefined;
