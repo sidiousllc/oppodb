@@ -27,36 +27,39 @@ export function exportElectionResultsPDF(
 
   const doc = new jsPDF();
   const margin = 14;
-  let y = 20;
+  const ph = doc.internal.pageSize.height;
+  const topY = 22;
+  const bottomLimit = ph - 18;
+  let y = topY;
 
   doc.setFontSize(9);
   doc.setTextColor(120);
   doc.text("ELECTION HISTORY", margin, y);
-  y += 8;
+  y += 10;
 
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(0);
   const titleLines = doc.splitTextToSize(title, doc.internal.pageSize.width - margin * 2);
   doc.text(titleLines, margin, y);
-  y += titleLines.length * 8 + 2;
+  y += titleLines.length * 9 + 4;
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100);
   doc.text(subtitle, margin, y);
-  y += 5;
+  y += 7;
 
   doc.setFontSize(8);
   doc.setTextColor(150);
   doc.text(`Generated ${new Date().toLocaleDateString()} • ${cycles.length} election cycles`, margin, y);
-  y += 8;
+  y += 10;
   doc.setTextColor(0);
 
   for (const cycle of cycles) {
-    if (y > doc.internal.pageSize.height - 50) {
+    if (y > bottomLimit - 50) {
       doc.addPage();
-      y = 20;
+      y = topY;
     }
 
     doc.setFontSize(11);
