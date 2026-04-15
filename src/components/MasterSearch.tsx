@@ -889,7 +889,13 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
               <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-b-[hsl(var(--win98-shadow))]">
                 <BookmarkCheck className="h-3.5 w-3.5" style={{ color: "hsl(45, 90%, 45%)" }} />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Saved Searches</span>
-                <span className="text-[9px] text-[hsl(var(--muted-foreground))] ml-auto">{savedSearches.length}</span>
+                <button
+                  onClick={clearAllSaved}
+                  className="ml-auto text-[9px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(0,60%,50%)] transition-colors"
+                  title="Clear all saved searches"
+                >
+                  Clear All
+                </button>
               </div>
               <div className="space-y-0.5 max-h-[160px] overflow-y-auto">
                 {savedSearches.map((s) => (
@@ -919,7 +925,13 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
               <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-b-[hsl(var(--win98-shadow))]">
                 <Clock className="h-3.5 w-3.5 text-[hsl(var(--muted-foreground))]" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Recent Searches</span>
-                <span className="text-[9px] text-[hsl(var(--muted-foreground))] ml-auto">{recentSearches.length}</span>
+                <button
+                  onClick={clearAllRecent}
+                  className="ml-auto text-[9px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(0,60%,50%)] transition-colors"
+                  title="Clear all recent searches"
+                >
+                  Clear All
+                </button>
               </div>
               <div className="space-y-0.5 max-h-[160px] overflow-y-auto">
                 {recentSearches.map((s) => (
