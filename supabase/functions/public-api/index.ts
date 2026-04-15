@@ -34,6 +34,8 @@ const VALID_ENDPOINTS = [
   "tracked-bills",
   "mit-elections",
   "state-leg-elections",
+  "international-legislation",
+  "international-policy-issues",
   "search",
 ];
 
@@ -755,6 +757,44 @@ Deno.serve(async (req) => {
         if (raceType2) q = q.eq("race_type", raceType2);
         const cycleParam = url.searchParams.get("cycle");
         q = q.eq("cycle", cycleParam ? parseInt(cycleParam) : 2026);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "international-legislation": {
+        let q = supabase
+          .from("international_legislation")
+          .select("id,country_code,title,body,bill_number,bill_type,status,introduced_date,enacted_date,sponsor,summary,source,source_url,policy_area,tags", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("introduced_date", { ascending: false });
+        const countryFilter = url.searchParams.get("country_code");
+        if (countryFilter) q = q.eq("country_code", countryFilter.toUpperCase());
+        const typeFilter = url.searchParams.get("bill_type");
+        if (typeFilter) q = q.eq("bill_type", typeFilter);
+        const sourceFilter2 = url.searchParams.get("source");
+        if (sourceFilter2) q = q.eq("source", sourceFilter2);
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,summary.ilike.%${searchQuery}%,sponsor.ilike.%${searchQuery}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "international-policy-issues": {
+        let q = supabase
+          .from("international_policy_issues")
+          .select("id,country_code,title,category,severity,status,description,sources,started_date,resolved_date,tags", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("created_at", { ascending: false });
+        const countryFilter2 = url.searchParams.get("country_code");
+        if (countryFilter2) q = q.eq("country_code", countryFilter2.toUpperCase());
+        const catFilter = url.searchParams.get("category");
+        if (catFilter) q = q.eq("category", catFilter);
+        const sevFilter = url.searchParams.get("severity");
+        if (sevFilter) q = q.eq("severity", sevFilter);
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
         const { data, error, count } = await q;
         if (error) throw error;
         result = { data, count };
