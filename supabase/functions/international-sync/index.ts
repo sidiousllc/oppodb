@@ -186,28 +186,28 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const body = await req.json().catch(() => ({}));
-    const { country_code, batch } = body;
+    const { country_code, batch, codes } = body;
 
-    // Batch mode: sync all countries
-    if (batch === true || batch === "all") {
-      console.log(`Batch syncing ${ALL_CODES.length} countries...`);
+    // Batch mode: sync a list of codes or all
+    if (batch === true || batch === "all" || (Array.isArray(codes) && codes.length > 0)) {
+      const toSync = Array.isArray(codes) ? codes.map((c: string) => c.toUpperCase()).filter((c: string) => COUNTRY_META[c]) : ALL_CODES;
+      console.log(`Batch syncing ${toSync.length} countries...`);
 
-      // Process in chunks of 10 to avoid rate limits
-      const chunkSize = 10;
+      // Process in chunks of 5 to avoid rate limits
+      const chunkSize = 5;
       const results: { code: string; ok: boolean; error?: string }[] = [];
 
-      for (let i = 0; i < ALL_CODES.length; i += chunkSize) {
-        const chunk = ALL_CODES.slice(i, i + chunkSize);
+      for (let i = 0; i < toSync.length; i += chunkSize) {
+        const chunk = toSync.slice(i, i + chunkSize);
         const chunkResults = await Promise.allSettled(
-          chunk.map((c) => syncOneCountry(supabase, c))
+          chunk.map((c: string) => syncOneCountry(supabase, c))
         );
         for (const r of chunkResults) {
           if (r.status === "fulfilled") results.push(r.value);
           else results.push({ code: "?", ok: false, error: String(r.reason) });
         }
-        // Small delay between chunks
-        if (i + chunkSize < ALL_CODES.length) {
-          await new Promise((r) => setTimeout(r, 500));
+        if (i + chunkSize < toSync.length) {
+          await new Promise((r) => setTimeout(r, 300));
         }
       }
 
@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          total: ALL_CODES.length,
+          total: toSync.length,
           succeeded,
           failed: failed.length,
           errors: failed.slice(0, 20),
