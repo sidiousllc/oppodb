@@ -117,15 +117,15 @@ export function exportPDF(selected: DistrictProfile[]) {
   // Title
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("District Comparison Report", 14, 20);
+  doc.text("District Comparison Report", 14, 24);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(120);
-  doc.text(`Generated ${new Date().toLocaleDateString()} • ${selected.length} districts`, 14, 27);
+  doc.text(`Generated ${new Date().toLocaleDateString()} • ${selected.length} districts`, 14, 33);
   doc.setTextColor(0);
 
-  let yPos = 34;
+  let yPos = 40;
 
   // Cook Ratings table
   autoTable(doc, {

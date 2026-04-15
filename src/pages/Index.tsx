@@ -14,6 +14,7 @@ import { CandidateDetail } from "@/components/CandidateDetail";
 import { GenericCard } from "@/components/GenericCard";
 import { GenericDetail } from "@/components/GenericDetail";
 import { AppSidebar, type FilterCategory, type Section } from "@/components/AppSidebar";
+import { MobileSidebarDrawer } from "@/components/MobileSidebarDrawer";
 import { MobileNav } from "@/components/MobileNav";
 import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,7 @@ import { AOLMailWindow } from "@/components/AOLMailWindow";
 import { useMail } from "@/contexts/MailContext";
 import { AlertTriangle, Globe, FileText, Plus } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { PollingSection } from "@/components/PollingSection";
 import { LegHub } from "@/components/LegHub";
 import { OppoHub } from "@/components/OppoHub";
@@ -37,6 +39,8 @@ import { VoterDataSection } from "@/components/VoterDataSection";
 import { ResearchToolsDashboard } from "@/components/ResearchToolsDashboard";
 import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { StateReportGenerator } from "@/components/StateReportGenerator";
+import { FederalSpendingPanel } from "@/components/FederalSpendingPanel";
+import { IGReportsPanel } from "@/components/IGReportsPanel";
 import { InternationalHub } from "@/components/InternationalHub";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
@@ -46,6 +50,7 @@ import { useSectionAccess } from "@/hooks/useSectionAccess";
 export default function Index() {
   const { isAdmin } = useIsAdmin();
   const { isMailOpen, closeMail } = useMail();
+  const isMobile = useIsMobile();
   const { trackPageView, trackMapView } = useActivityTracker();
   const { canAccess } = useSectionAccess();
   const [loaded, setLoaded] = useState(false);
@@ -239,7 +244,15 @@ export default function Index() {
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
   const selectedLocal = selectedSlug ? getLocalImpactBySlug(selectedSlug) : null;
   const selectedNarrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
-  
+
+  const syncCompleteHandler = useCallback(() => {
+    fetchCandidatesFromDB().then((dbCandidates) => {
+      if (dbCandidates.length > 0) {
+        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+        setDataVersion((v) => v + 1);
+      }
+    });
+  }, []);
 
   if (!loaded) return null;
 
@@ -340,6 +353,12 @@ export default function Index() {
       if (researchSubsection === "state-report") {
         return <StateReportGenerator onBack={() => setResearchSubsection(null)} />;
       }
+      if (researchSubsection === "federal-spending") {
+        return <FederalSpendingPanel onBack={() => setResearchSubsection(null)} />;
+      }
+      if (researchSubsection === "ig-reports") {
+        return <IGReportsPanel onBack={() => setResearchSubsection(null)} />;
+      }
       return (
         <ResearchToolsDashboard
           onNavigateSubsection={(sub) => setResearchSubsection(sub)}
@@ -367,21 +386,105 @@ export default function Index() {
 
   const detail = renderDetail();
 
+
+  const mainContent = (
+    <>
+      {editorMode ? (
+        <CandidateEditor
+          mode={editorMode}
+          initialData={editData}
+          onBack={() => { setEditorMode(null); setEditData(undefined); }}
+          onSaved={handleEditorSaved}
+        />
+      ) : detail ? (
+        detail
+      ) : (
+        <>
+          <div className="mb-1">
+            <h2 className="text-sm font-bold mb-2">
+              📂 {sectionLabels[section]}
+            </h2>
+          </div>
+          {section === "dashboard" && (
+            <div className="mb-3">
+              <MasterSearch onNavigate={(s, slug) => { setSection(s as Section); if (slug) setSelectedSlug(slug); }} districts={districts} />
+            </div>
+          )}
+          {renderList()}
+        </>
+      )}
+    </>
+  );
+
+  // ─── Mobile Layout ───
+  if (isMobile) {
+    return (
+      <>
+        <div className="flex flex-col h-screen bg-[hsl(var(--background))]">
+          {/* Compact mobile header */}
+          <div className="bg-[hsl(var(--win98-face))] win98-raised shrink-0">
+            {/* Title bar */}
+            <div className="win98-titlebar">
+              <span className="text-[14px] shrink-0">🌐</span>
+              <span className="flex-1 truncate text-[11px]">ORO Research Database</span>
+            </div>
+
+            {/* Compact toolbar: hamburger + address bar */}
+            <div className="flex items-center gap-1 px-1 py-1 border-t border-t-[hsl(var(--win98-highlight))]">
+              <MobileSidebarDrawer
+                activeFilter={filter}
+                onFilterChange={setFilter}
+                counts={counts}
+                activeSection={section}
+                onSectionChange={handleSectionChange}
+                sectionCounts={sectionCounts}
+                onSyncComplete={syncCompleteHandler}
+              />
+              <div className="flex-1 win98-sunken bg-white px-1 py-[1px] text-[10px] truncate">
+                <span className="text-[hsl(var(--muted-foreground))]">
+                  {selectedSlug
+                    ? `ordb://${section}/${selectedSlug}`
+                    : `ordb://${section}`}
+                </span>
+              </div>
+              {selectedSlug && (
+                <button
+                  onClick={() => setSelectedSlug(null)}
+                  className="win98-button text-[9px] px-1.5 py-0.5"
+                >
+                  ← Back
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile main content - full width, no sidebar */}
+          <main className="flex-1 overflow-y-auto bg-white">
+            <div className="px-2 py-2">
+              {mainContent}
+            </div>
+          </main>
+        </div>
+
+        {/* Mail window on mobile */}
+        {isMailOpen && <AOLMailWindow onClose={closeMail} />}
+      </>
+    );
+  }
+
+  // ─── Desktop Layout ───
   return (
     <>
-      {/* Desktop background */}
       <div className="flex flex-col h-screen bg-[hsl(var(--background))] pb-[28px]">
         {isMinimized ? (
           <Win98Desktop onOpenWindow={() => setIsMinimized(false)} />
         ) : (
-          /* Main ORO browser window */
           <Win98Window
             title="ORO - Opposition Research Database - Sidio.us Group"
             icon={<span className="text-[14px]">🌐</span>}
             maximized
             onMinimize={() => setIsMinimized(true)}
           >
-            {/* AOL Browser chrome */}
             <AOLToolbar
               onBack={selectedSlug ? () => setSelectedSlug(null) : undefined}
               onRefresh={() => window.location.reload()}
@@ -389,7 +492,6 @@ export default function Index() {
               currentSlug={selectedSlug}
             />
 
-            {/* Content area with sidebar */}
             <div className="flex flex-1 overflow-hidden bg-white">
               <AppSidebar
                 activeFilter={filter}
@@ -398,43 +500,12 @@ export default function Index() {
                 activeSection={section}
                 onSectionChange={handleSectionChange}
                 sectionCounts={sectionCounts}
-                onSyncComplete={() => {
-                  fetchCandidatesFromDB().then((dbCandidates) => {
-                    if (dbCandidates.length > 0) {
-                      initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
-                      setDataVersion((v) => v + 1);
-                    }
-                  });
-                }}
+                onSyncComplete={syncCompleteHandler}
               />
 
               <main className="flex-1 overflow-y-auto bg-white">
                 <div className="max-w-4xl mx-auto px-3 py-3">
-
-                  {editorMode ? (
-                    <CandidateEditor
-                      mode={editorMode}
-                      initialData={editData}
-                      onBack={() => { setEditorMode(null); setEditData(undefined); }}
-                      onSaved={handleEditorSaved}
-                    />
-                  ) : detail ? (
-                    detail
-                  ) : (
-                    <>
-                      <div className="mb-1">
-                        <h2 className="text-sm font-bold mb-2">
-                          📂 {sectionLabels[section]}
-                        </h2>
-                      </div>
-                      {section === "dashboard" && (
-                        <div className="mb-3">
-                          <MasterSearch onNavigate={(s, slug) => { setSection(s as Section); if (slug) setSelectedSlug(slug); }} districts={districts} />
-                        </div>
-                      )}
-                      {renderList()}
-                    </>
-                  )}
+                  {mainContent}
                 </div>
               </main>
             </div>
@@ -442,16 +513,13 @@ export default function Index() {
         )}
       </div>
 
-      {/* Win98 Taskbar */}
       <Win98Taskbar
         minimizedWindow={isMinimized ? "Opposition Research Database" : undefined}
         onRestoreWindow={() => setIsMinimized(false)}
       />
 
-      {/* AOL Buddy List */}
       <AOLBuddyList />
 
-      {/* AOL Mail Window */}
       {isMailOpen && <AOLMailWindow onClose={closeMail} />}
     </>
   );

@@ -34,6 +34,10 @@ const VALID_ENDPOINTS = [
   "tracked-bills",
   "mit-elections",
   "state-leg-elections",
+  "international-legislation",
+  "international-policy-issues",
+  "federal-spending",
+  "ig-reports",
   "search",
 ];
 
@@ -761,6 +765,79 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "international-legislation": {
+        let q = supabase
+          .from("international_legislation")
+          .select("id,country_code,title,body,bill_number,bill_type,status,introduced_date,enacted_date,sponsor,summary,source,source_url,policy_area,tags", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("introduced_date", { ascending: false });
+        const countryFilter = url.searchParams.get("country_code");
+        if (countryFilter) q = q.eq("country_code", countryFilter.toUpperCase());
+        const typeFilter = url.searchParams.get("bill_type");
+        if (typeFilter) q = q.eq("bill_type", typeFilter);
+        const sourceFilter2 = url.searchParams.get("source");
+        if (sourceFilter2) q = q.eq("source", sourceFilter2);
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,summary.ilike.%${searchQuery}%,sponsor.ilike.%${searchQuery}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "international-policy-issues": {
+        let q = supabase
+          .from("international_policy_issues")
+          .select("id,country_code,title,category,severity,status,description,sources,started_date,resolved_date,tags", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("created_at", { ascending: false });
+        const countryFilter2 = url.searchParams.get("country_code");
+        if (countryFilter2) q = q.eq("country_code", countryFilter2.toUpperCase());
+        const catFilter = url.searchParams.get("category");
+        if (catFilter) q = q.eq("category", catFilter);
+        const sevFilter = url.searchParams.get("severity");
+        if (sevFilter) q = q.eq("severity", sevFilter);
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "federal-spending": {
+        let q = supabase
+          .from("federal_spending")
+          .select("id,award_type,recipient_name,recipient_state,recipient_district,awarding_agency,funding_agency,description,award_amount,total_obligation,fiscal_year,naics_code,naics_description,cfda_number,place_of_performance_state,place_of_performance_district,source_url", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("award_amount", { ascending: false });
+        if (stateFilter) q = q.eq("recipient_state", stateFilter);
+        const awardType = url.searchParams.get("award_type");
+        if (awardType) q = q.eq("award_type", awardType);
+        if (searchQuery) q = q.or(`recipient_name.ilike.%${searchQuery}%,awarding_agency.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+        const fy = url.searchParams.get("fiscal_year");
+        if (fy) q = q.eq("fiscal_year", parseInt(fy));
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "ig-reports": {
+        let q = supabase
+          .from("ig_reports")
+          .select("id,inspector,agency,agency_name,report_id,title,url,published_on,type,summary,topic,pdf_url,landing_url,year", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("published_on", { ascending: false });
+        const inspector = url.searchParams.get("inspector");
+        if (inspector) q = q.eq("inspector", inspector);
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,summary.ilike.%${searchQuery}%,agency_name.ilike.%${searchQuery}%`);
+        const yr = url.searchParams.get("year");
+        if (yr) q = q.eq("year", parseInt(yr));
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
       case "search": {
         const q = searchQuery;
         if (!q || q.length < 2) {
@@ -782,6 +859,8 @@ Deno.serve(async (req) => {
           "intel_briefings", "tracked_bills", "mit_elections",
           "congress_committees", "congress_votes", "state_leg_elections",
           "forecast_history", "international_profiles",
+          "international_legislation", "international_policy_issues",
+          "federal_spending", "ig_reports",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
@@ -946,6 +1025,34 @@ Deno.serve(async (req) => {
             .order("country_name").limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "International Profiles" }));
         }
+        if (activeCategories.includes("international_legislation")) {
+          categoryQueries.international_legislation = supabase.from("international_legislation")
+            .select("id,country_code,title,body,bill_type,status,source,policy_area,introduced_date")
+            .or(`title.ilike.${likeQ},summary.ilike.${likeQ},sponsor.ilike.${likeQ},country_code.ilike.${likeQ}`)
+            .order("introduced_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Legislation" }));
+        }
+        if (activeCategories.includes("international_policy_issues")) {
+          categoryQueries.international_policy_issues = supabase.from("international_policy_issues")
+            .select("id,country_code,title,category,severity,status,description")
+            .or(`title.ilike.${likeQ},description.ilike.${likeQ},country_code.ilike.${likeQ}`)
+            .order("created_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Policy Issues" }));
+        }
+        if (activeCategories.includes("federal_spending")) {
+          categoryQueries.federal_spending = supabase.from("federal_spending")
+            .select("id,recipient_name,recipient_state,award_type,award_amount,awarding_agency,fiscal_year")
+            .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ},recipient_state.ilike.${likeQ}`)
+            .order("award_amount", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Federal Spending" }));
+        }
+        if (activeCategories.includes("ig_reports")) {
+          categoryQueries.ig_reports = supabase.from("ig_reports")
+            .select("id,title,inspector,agency_name,published_on,type,summary")
+            .or(`title.ilike.${likeQ},summary.ilike.${likeQ},agency_name.ilike.${likeQ}`)
+            .order("published_on", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "IG Reports" }));
+        }
 
         const entries = Object.entries(categoryQueries);
         const settled = await Promise.all(entries.map(async ([key, promise]) => {
@@ -1046,7 +1153,9 @@ function endpointDescription(endpoint: string): string {
     "congress-votes": "Congressional roll call votes with vote totals and results",
     "state-leg-elections": "State legislative election results with vote counts and winners",
     "forecast-history": "Historical changes in election forecast ratings over time",
-    search: "Unified search across all 24 databases (requires ?search= param, optional ?categories= filter)",
+    "federal-spending": "Federal contracts and grants from USASpending.gov with recipient, agency, amount, and NAICS data",
+    "ig-reports": "Inspector General oversight reports from 65+ federal agencies via Oversight.garden",
+    search: "Unified search across all 28 databases (requires ?search= param, optional ?categories= filter)",
   };
   return descs[endpoint] || "";
 }

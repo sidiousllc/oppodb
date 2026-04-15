@@ -43,6 +43,11 @@ OppoDB integrates with multiple external data sources to keep its database curre
 | `civic-api-proxy` | Proxy for CivicAPI.org (Live Elections) | No |
 | `winred-webhook` | WinRed donation webhook receiver | HMAC signature |
 | `scrape-article` | Full article text extraction via Firecrawl | Yes |
+| `fara-sync` | DOJ FARA foreign agent registrations | No |
+| `openstates-sync` | OpenStates API v3 state legislators & bills | No |
+| `legislators-enrichment-sync` | @unitedstates/congress-legislators social media, district offices, cross-refs | No |
+| `ig-reports-sync` | Inspector General reports via Oversight.garden (65+ agencies) | No |
+| `federal-spending-sync` | USASpending.gov federal contracts & grants by state | No |
 
 ---
 

@@ -44,6 +44,10 @@ const SYNC_TABLES = [
   { table: "international_profiles", select: "*", orderBy: "country_code" },
   { table: "international_elections", select: "*", orderBy: "election_year" },
   { table: "international_leaders", select: "*", orderBy: "country_code" },
+  { table: "intel_briefings", select: "id,title,summary,content,category,scope,region,source_name,source_url,published_at", orderBy: "published_at" },
+  { table: "international_legislation", select: "id,title,country_code,bill_number,bill_type,body,status,summary,sponsor,policy_area,source,source_url,introduced_date,enacted_date,tags", orderBy: "title" },
+  { table: "international_policy_issues", select: "id,title,country_code,category,severity,status,description,sources,started_date,resolved_date,affected_regions,tags", orderBy: "title" },
+  { table: "international_polling", select: "id,country_code,poll_topic,poll_type,question,source,source_url,date_conducted,sample_size,approve_pct,disapprove_pct,favor_pct,oppose_pct,margin,key_finding,tags", orderBy: "date_conducted" },
 ];
 
 export interface SyncStatus {

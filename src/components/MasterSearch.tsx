@@ -37,7 +37,7 @@ function saveToStorage(key: string, items: string[]) {
   localStorage.setItem(key, JSON.stringify(items));
 }
 
-const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [], internationalProfiles: [] };
+const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [], internationalProfiles: [], internationalLegislation: [], internationalPolicyIssues: [], federalSpending: [], igReports: [] };
 
 
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
@@ -68,6 +68,10 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     stateLegElections: any[];
     forecastHistory: any[];
     internationalProfiles: any[];
+    internationalLegislation: any[];
+    internationalPolicyIssues: any[];
+    federalSpending: any[];
+    igReports: any[];
   }>(EMPTY_DB as any);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -218,7 +222,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes, intlProfilesRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes, intlProfilesRes, intlLegislationRes, intlPolicyIssuesRes, fedSpendingRes, igReportsRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -320,6 +324,26 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ},region.ilike.${likeQ},head_of_state.ilike.${likeQ},ruling_party.ilike.${likeQ}`)
         .order("country_name")
         .limit(10),
+      supabase.from("international_legislation")
+        .select("id, country_code, title, body, bill_type, status, source, policy_area, introduced_date, sponsor")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},country_code.ilike.${likeQ},sponsor.ilike.${likeQ}`)
+        .order("introduced_date", { ascending: false })
+        .limit(10),
+      supabase.from("international_policy_issues")
+        .select("id, country_code, title, category, severity, status, description")
+        .or(`title.ilike.${likeQ},description.ilike.${likeQ},country_code.ilike.${likeQ}`)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      supabase.from("federal_spending")
+        .select("id, recipient_name, recipient_state, award_type, award_amount, awarding_agency, fiscal_year, description")
+        .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ},recipient_state.ilike.${likeQ}`)
+        .order("award_amount", { ascending: false })
+        .limit(10),
+      supabase.from("ig_reports")
+        .select("id, title, inspector, agency_name, published_on, type, summary, pdf_url, landing_url")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},agency_name.ilike.${likeQ},inspector.ilike.${likeQ}`)
+        .order("published_on", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
@@ -344,6 +368,10 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       stateLegElections: stateLegElRes.data || [],
       forecastHistory: forecastHistRes.data || [],
       internationalProfiles: intlProfilesRes.data || [],
+      internationalLegislation: intlLegislationRes.data || [],
+      internationalPolicyIssues: intlPolicyIssuesRes.data || [],
+      federalSpending: fedSpendingRes.data || [],
+      igReports: igReportsRes.data || [],
     });
     setIsSearching(false);
 
@@ -390,6 +418,16 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       saveToStorage(RECENT_KEY, updated);
       return updated;
     });
+  }, []);
+
+  const clearAllSaved = useCallback(() => {
+    setSavedSearches([]);
+    saveToStorage(STORAGE_KEY, []);
+  }, []);
+
+  const clearAllRecent = useCallback(() => {
+    setRecentSearches([]);
+    saveToStorage(RECENT_KEY, []);
   }, []);
 
   const loadSearch = useCallback((s: string) => {
@@ -711,6 +749,64 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    if (dbResults.internationalLegislation.length > 0) {
+      groups.push({
+        key: "international-legislation",
+        label: "⚖️ International Legislation",
+        icon: <Scale className="h-3.5 w-3.5" />,
+        section: "internationalhub",
+        results: dbResults.internationalLegislation.map((l: any) => ({
+          id: l.id,
+          title: l.title,
+          subtitle: `${l.country_code} • ${l.bill_type} • ${l.status} • ${l.source || "national"}${l.policy_area ? ` • ${l.policy_area}` : ""}`,
+          slug: l.country_code,
+        })),
+      });
+    }
+
+    if (dbResults.internationalPolicyIssues.length > 0) {
+      groups.push({
+        key: "international-policy-issues",
+        label: "⚠️ International Policy Issues",
+        icon: <AlertTriangle className="h-3.5 w-3.5" />,
+        section: "internationalhub",
+        results: dbResults.internationalPolicyIssues.map((i: any) => ({
+          id: i.id,
+          title: i.title,
+          subtitle: `${i.country_code} • ${i.category} • ${i.severity} severity • ${i.status}`,
+          slug: i.country_code,
+        })),
+      });
+    }
+
+    if (dbResults.federalSpending.length > 0) {
+      groups.push({
+        key: "federal-spending",
+        label: "💵 Federal Spending",
+        icon: <DollarSign className="h-3.5 w-3.5" />,
+        section: "research-tools",
+        results: dbResults.federalSpending.map((r: any) => ({
+          id: r.id,
+          title: r.recipient_name,
+          subtitle: `${r.award_type} • ${r.awarding_agency || ""} • ${r.recipient_state || ""} • $${(r.award_amount || 0).toLocaleString()} • FY${r.fiscal_year || ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.igReports.length > 0) {
+      groups.push({
+        key: "ig-reports",
+        label: "🔍 IG Reports",
+        icon: <FileText className="h-3.5 w-3.5" />,
+        section: "research-tools",
+        results: dbResults.igReports.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          subtitle: `${r.agency_name} • ${r.type || "report"} • ${r.published_on ? new Date(r.published_on).toLocaleDateString() : ""}`,
+        })),
+      });
+    }
+
     return groups;
   }, [dbResults]);
 
@@ -803,7 +899,13 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
               <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-b-[hsl(var(--win98-shadow))]">
                 <BookmarkCheck className="h-3.5 w-3.5" style={{ color: "hsl(45, 90%, 45%)" }} />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Saved Searches</span>
-                <span className="text-[9px] text-[hsl(var(--muted-foreground))] ml-auto">{savedSearches.length}</span>
+                <button
+                  onClick={clearAllSaved}
+                  className="ml-auto text-[9px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(0,60%,50%)] transition-colors"
+                  title="Clear all saved searches"
+                >
+                  Clear All
+                </button>
               </div>
               <div className="space-y-0.5 max-h-[160px] overflow-y-auto">
                 {savedSearches.map((s) => (
@@ -833,7 +935,13 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
               <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-b-[hsl(var(--win98-shadow))]">
                 <Clock className="h-3.5 w-3.5 text-[hsl(var(--muted-foreground))]" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Recent Searches</span>
-                <span className="text-[9px] text-[hsl(var(--muted-foreground))] ml-auto">{recentSearches.length}</span>
+                <button
+                  onClick={clearAllRecent}
+                  className="ml-auto text-[9px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(0,60%,50%)] transition-colors"
+                  title="Clear all recent searches"
+                >
+                  Clear All
+                </button>
               </div>
               <div className="space-y-0.5 max-h-[160px] overflow-y-auto">
                 {recentSearches.map((s) => (

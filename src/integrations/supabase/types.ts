@@ -444,64 +444,94 @@ export type Database = {
       }
       congress_members: {
         Row: {
+          ballotpedia: string | null
           bioguide_id: string
           candidate_slug: string | null
           chamber: string
           congress: number | null
+          contact_form: string | null
           created_at: string
           depiction_url: string | null
           district: string | null
+          district_offices: Json | null
+          fec_ids: string[] | null
           first_name: string | null
           id: string
           last_name: string | null
           leadership: Json | null
           name: string
+          office_address: string | null
           official_url: string | null
+          opensecrets_id: string | null
           party: string | null
+          phone: string | null
           raw_data: Json | null
+          social_media: Json | null
           state: string | null
           terms: Json | null
           updated_at: string
+          votesmart_id: number | null
+          wikipedia: string | null
         }
         Insert: {
+          ballotpedia?: string | null
           bioguide_id: string
           candidate_slug?: string | null
           chamber?: string
           congress?: number | null
+          contact_form?: string | null
           created_at?: string
           depiction_url?: string | null
           district?: string | null
+          district_offices?: Json | null
+          fec_ids?: string[] | null
           first_name?: string | null
           id?: string
           last_name?: string | null
           leadership?: Json | null
           name: string
+          office_address?: string | null
           official_url?: string | null
+          opensecrets_id?: string | null
           party?: string | null
+          phone?: string | null
           raw_data?: Json | null
+          social_media?: Json | null
           state?: string | null
           terms?: Json | null
           updated_at?: string
+          votesmart_id?: number | null
+          wikipedia?: string | null
         }
         Update: {
+          ballotpedia?: string | null
           bioguide_id?: string
           candidate_slug?: string | null
           chamber?: string
           congress?: number | null
+          contact_form?: string | null
           created_at?: string
           depiction_url?: string | null
           district?: string | null
+          district_offices?: Json | null
+          fec_ids?: string[] | null
           first_name?: string | null
           id?: string
           last_name?: string | null
           leadership?: Json | null
           name?: string
+          office_address?: string | null
           official_url?: string | null
+          opensecrets_id?: string | null
           party?: string | null
+          phone?: string | null
           raw_data?: Json | null
+          social_media?: Json | null
           state?: string | null
           terms?: Json | null
           updated_at?: string
+          votesmart_id?: number | null
+          wikipedia?: string | null
         }
         Relationships: []
       }
@@ -628,6 +658,63 @@ export type Database = {
           updated_at?: string
           vote_pct?: number | null
           votes?: number | null
+        }
+        Relationships: []
+      }
+      congressional_record: {
+        Row: {
+          bioguide_id: string | null
+          category: string | null
+          chamber: string
+          congress: number | null
+          content: string | null
+          created_at: string
+          date: string
+          id: string
+          number: number | null
+          pages: string | null
+          raw_data: Json | null
+          session: number | null
+          speaker_name: string
+          title: string | null
+          updated_at: string
+          volume: number | null
+        }
+        Insert: {
+          bioguide_id?: string | null
+          category?: string | null
+          chamber: string
+          congress?: number | null
+          content?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          number?: number | null
+          pages?: string | null
+          raw_data?: Json | null
+          session?: number | null
+          speaker_name: string
+          title?: string | null
+          updated_at?: string
+          volume?: number | null
+        }
+        Update: {
+          bioguide_id?: string | null
+          category?: string | null
+          chamber?: string
+          congress?: number | null
+          content?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          number?: number | null
+          pages?: string | null
+          raw_data?: Json | null
+          session?: number | null
+          speaker_name?: string
+          title?: string | null
+          updated_at?: string
+          volume?: number | null
         }
         Relationships: []
       }
@@ -922,6 +1009,213 @@ export type Database = {
         }
         Relationships: []
       }
+      fara_registrants: {
+        Row: {
+          address: string | null
+          country: string | null
+          created_at: string
+          documents: Json
+          foreign_principals: Json
+          id: string
+          raw_data: Json | null
+          registrant_name: string
+          registration_date: string | null
+          registration_number: string
+          short_form_agents: Json
+          source: string
+          source_url: string | null
+          state: string | null
+          status: string
+          termination_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          country?: string | null
+          created_at?: string
+          documents?: Json
+          foreign_principals?: Json
+          id?: string
+          raw_data?: Json | null
+          registrant_name: string
+          registration_date?: string | null
+          registration_number: string
+          short_form_agents?: Json
+          source?: string
+          source_url?: string | null
+          state?: string | null
+          status?: string
+          termination_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          country?: string | null
+          created_at?: string
+          documents?: Json
+          foreign_principals?: Json
+          id?: string
+          raw_data?: Json | null
+          registrant_name?: string
+          registration_date?: string | null
+          registration_number?: string
+          short_form_agents?: Json
+          source?: string
+          source_url?: string | null
+          state?: string | null
+          status?: string
+          termination_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      federal_spending: {
+        Row: {
+          award_amount: number | null
+          award_id: string | null
+          award_type: string
+          awarding_agency: string | null
+          cfda_number: string | null
+          cfda_title: string | null
+          created_at: string
+          description: string | null
+          fiscal_year: number | null
+          funding_agency: string | null
+          id: string
+          naics_code: string | null
+          naics_description: string | null
+          period_of_performance_end: string | null
+          period_of_performance_start: string | null
+          place_of_performance_district: string | null
+          place_of_performance_state: string | null
+          raw_data: Json | null
+          recipient_district: string | null
+          recipient_name: string
+          recipient_state: string | null
+          source: string | null
+          source_url: string | null
+          total_obligation: number | null
+          updated_at: string
+        }
+        Insert: {
+          award_amount?: number | null
+          award_id?: string | null
+          award_type?: string
+          awarding_agency?: string | null
+          cfda_number?: string | null
+          cfda_title?: string | null
+          created_at?: string
+          description?: string | null
+          fiscal_year?: number | null
+          funding_agency?: string | null
+          id?: string
+          naics_code?: string | null
+          naics_description?: string | null
+          period_of_performance_end?: string | null
+          period_of_performance_start?: string | null
+          place_of_performance_district?: string | null
+          place_of_performance_state?: string | null
+          raw_data?: Json | null
+          recipient_district?: string | null
+          recipient_name: string
+          recipient_state?: string | null
+          source?: string | null
+          source_url?: string | null
+          total_obligation?: number | null
+          updated_at?: string
+        }
+        Update: {
+          award_amount?: number | null
+          award_id?: string | null
+          award_type?: string
+          awarding_agency?: string | null
+          cfda_number?: string | null
+          cfda_title?: string | null
+          created_at?: string
+          description?: string | null
+          fiscal_year?: number | null
+          funding_agency?: string | null
+          id?: string
+          naics_code?: string | null
+          naics_description?: string | null
+          period_of_performance_end?: string | null
+          period_of_performance_start?: string | null
+          place_of_performance_district?: string | null
+          place_of_performance_state?: string | null
+          raw_data?: Json | null
+          recipient_district?: string | null
+          recipient_name?: string
+          recipient_state?: string | null
+          source?: string | null
+          source_url?: string | null
+          total_obligation?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ig_reports: {
+        Row: {
+          agency: string
+          agency_name: string
+          created_at: string
+          id: string
+          inspector: string
+          inspector_url: string | null
+          landing_url: string | null
+          pdf_url: string | null
+          published_on: string | null
+          raw_data: Json | null
+          report_id: string
+          summary: string | null
+          title: string
+          topic: string | null
+          type: string | null
+          updated_at: string
+          url: string | null
+          year: number | null
+        }
+        Insert: {
+          agency: string
+          agency_name: string
+          created_at?: string
+          id?: string
+          inspector: string
+          inspector_url?: string | null
+          landing_url?: string | null
+          pdf_url?: string | null
+          published_on?: string | null
+          raw_data?: Json | null
+          report_id: string
+          summary?: string | null
+          title: string
+          topic?: string | null
+          type?: string | null
+          updated_at?: string
+          url?: string | null
+          year?: number | null
+        }
+        Update: {
+          agency?: string
+          agency_name?: string
+          created_at?: string
+          id?: string
+          inspector?: string
+          inspector_url?: string | null
+          landing_url?: string | null
+          pdf_url?: string | null
+          published_on?: string | null
+          raw_data?: Json | null
+          report_id?: string
+          summary?: string | null
+          title?: string
+          topic?: string | null
+          type?: string | null
+          updated_at?: string
+          url?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
       intel_briefings: {
         Row: {
           category: string
@@ -1078,38 +1372,252 @@ export type Database = {
         }
         Relationships: []
       }
+      international_legislation: {
+        Row: {
+          bill_number: string | null
+          bill_type: string
+          body: string
+          country_code: string
+          created_at: string
+          enacted_date: string | null
+          full_text_url: string | null
+          id: string
+          introduced_date: string | null
+          policy_area: string | null
+          raw_data: Json | null
+          source: string
+          source_url: string | null
+          sponsor: string | null
+          status: string
+          summary: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bill_number?: string | null
+          bill_type?: string
+          body?: string
+          country_code: string
+          created_at?: string
+          enacted_date?: string | null
+          full_text_url?: string | null
+          id?: string
+          introduced_date?: string | null
+          policy_area?: string | null
+          raw_data?: Json | null
+          source?: string
+          source_url?: string | null
+          sponsor?: string | null
+          status?: string
+          summary?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bill_number?: string | null
+          bill_type?: string
+          body?: string
+          country_code?: string
+          created_at?: string
+          enacted_date?: string | null
+          full_text_url?: string | null
+          id?: string
+          introduced_date?: string | null
+          policy_area?: string | null
+          raw_data?: Json | null
+          source?: string
+          source_url?: string | null
+          sponsor?: string | null
+          status?: string
+          summary?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      international_policy_issues: {
+        Row: {
+          affected_regions: string[]
+          category: string
+          country_code: string
+          created_at: string
+          description: string
+          id: string
+          raw_data: Json | null
+          resolved_date: string | null
+          severity: string
+          sources: Json
+          started_date: string | null
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          affected_regions?: string[]
+          category?: string
+          country_code: string
+          created_at?: string
+          description?: string
+          id?: string
+          raw_data?: Json | null
+          resolved_date?: string | null
+          severity?: string
+          sources?: Json
+          started_date?: string | null
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          affected_regions?: string[]
+          category?: string
+          country_code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          raw_data?: Json | null
+          resolved_date?: string | null
+          severity?: string
+          sources?: Json
+          started_date?: string | null
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      international_polling: {
+        Row: {
+          approve_pct: number | null
+          country_code: string
+          created_at: string
+          date_conducted: string | null
+          disapprove_pct: number | null
+          end_date: string | null
+          favor_pct: number | null
+          id: string
+          key_finding: string | null
+          margin: number | null
+          margin_of_error: number | null
+          methodology: string | null
+          oppose_pct: number | null
+          poll_topic: string
+          poll_type: string
+          question: string | null
+          raw_data: Json | null
+          sample_size: number | null
+          source: string
+          source_url: string | null
+          tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          approve_pct?: number | null
+          country_code: string
+          created_at?: string
+          date_conducted?: string | null
+          disapprove_pct?: number | null
+          end_date?: string | null
+          favor_pct?: number | null
+          id?: string
+          key_finding?: string | null
+          margin?: number | null
+          margin_of_error?: number | null
+          methodology?: string | null
+          oppose_pct?: number | null
+          poll_topic: string
+          poll_type?: string
+          question?: string | null
+          raw_data?: Json | null
+          sample_size?: number | null
+          source?: string
+          source_url?: string | null
+          tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          approve_pct?: number | null
+          country_code?: string
+          created_at?: string
+          date_conducted?: string | null
+          disapprove_pct?: number | null
+          end_date?: string | null
+          favor_pct?: number | null
+          id?: string
+          key_finding?: string | null
+          margin?: number | null
+          margin_of_error?: number | null
+          methodology?: string | null
+          oppose_pct?: number | null
+          poll_topic?: string
+          poll_type?: string
+          question?: string | null
+          raw_data?: Json | null
+          sample_size?: number | null
+          source?: string
+          source_url?: string | null
+          tags?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       international_profiles: {
         Row: {
           area_sq_km: number | null
+          building_permits: number | null
           capital: string | null
+          consumer_spending: number | null
           continent: string
+          corporate_profits: number | null
           corruption_index: number | null
           country_code: string
           country_name: string
+          cpi_rate: number | null
           created_at: string
           currency: string | null
+          current_account_balance: number | null
+          economic_indicators_json: Json | null
           election_results: Json | null
           election_type: string | null
+          fdi_inflows: number | null
           gdp: number | null
+          gdp_growth_rate: number | null
           gdp_per_capita: number | null
+          government_debt_gdp_pct: number | null
           government_type: string | null
           head_of_government: string | null
           head_of_state: string | null
           human_dev_index: number | null
           id: string
+          industrial_production_index: number | null
           inflation_rate: number | null
+          labor_cost_index: number | null
+          labor_force_participation: number | null
           last_election_date: string | null
           major_industries: string[] | null
+          manufacturer_new_orders: number | null
           median_age: number | null
           next_election_date: string | null
+          nonfarm_payrolls: number | null
           official_languages: string[] | null
           opposition_parties: Json | null
+          pce_rate: number | null
+          personal_income: number | null
           population: number | null
           poverty_rate: number | null
           press_freedom_rank: number | null
           raw_data: Json | null
+          real_gdp: number | null
           region: string | null
           ruling_party: string | null
+          stock_market_index: number | null
+          stock_market_name: string | null
           tags: string[]
           trade_partners: Json | null
           unemployment_rate: number | null
@@ -1117,35 +1625,54 @@ export type Database = {
         }
         Insert: {
           area_sq_km?: number | null
+          building_permits?: number | null
           capital?: string | null
+          consumer_spending?: number | null
           continent: string
+          corporate_profits?: number | null
           corruption_index?: number | null
           country_code: string
           country_name: string
+          cpi_rate?: number | null
           created_at?: string
           currency?: string | null
+          current_account_balance?: number | null
+          economic_indicators_json?: Json | null
           election_results?: Json | null
           election_type?: string | null
+          fdi_inflows?: number | null
           gdp?: number | null
+          gdp_growth_rate?: number | null
           gdp_per_capita?: number | null
+          government_debt_gdp_pct?: number | null
           government_type?: string | null
           head_of_government?: string | null
           head_of_state?: string | null
           human_dev_index?: number | null
           id?: string
+          industrial_production_index?: number | null
           inflation_rate?: number | null
+          labor_cost_index?: number | null
+          labor_force_participation?: number | null
           last_election_date?: string | null
           major_industries?: string[] | null
+          manufacturer_new_orders?: number | null
           median_age?: number | null
           next_election_date?: string | null
+          nonfarm_payrolls?: number | null
           official_languages?: string[] | null
           opposition_parties?: Json | null
+          pce_rate?: number | null
+          personal_income?: number | null
           population?: number | null
           poverty_rate?: number | null
           press_freedom_rank?: number | null
           raw_data?: Json | null
+          real_gdp?: number | null
           region?: string | null
           ruling_party?: string | null
+          stock_market_index?: number | null
+          stock_market_name?: string | null
           tags?: string[]
           trade_partners?: Json | null
           unemployment_rate?: number | null
@@ -1153,35 +1680,54 @@ export type Database = {
         }
         Update: {
           area_sq_km?: number | null
+          building_permits?: number | null
           capital?: string | null
+          consumer_spending?: number | null
           continent?: string
+          corporate_profits?: number | null
           corruption_index?: number | null
           country_code?: string
           country_name?: string
+          cpi_rate?: number | null
           created_at?: string
           currency?: string | null
+          current_account_balance?: number | null
+          economic_indicators_json?: Json | null
           election_results?: Json | null
           election_type?: string | null
+          fdi_inflows?: number | null
           gdp?: number | null
+          gdp_growth_rate?: number | null
           gdp_per_capita?: number | null
+          government_debt_gdp_pct?: number | null
           government_type?: string | null
           head_of_government?: string | null
           head_of_state?: string | null
           human_dev_index?: number | null
           id?: string
+          industrial_production_index?: number | null
           inflation_rate?: number | null
+          labor_cost_index?: number | null
+          labor_force_participation?: number | null
           last_election_date?: string | null
           major_industries?: string[] | null
+          manufacturer_new_orders?: number | null
           median_age?: number | null
           next_election_date?: string | null
+          nonfarm_payrolls?: number | null
           official_languages?: string[] | null
           opposition_parties?: Json | null
+          pce_rate?: number | null
+          personal_income?: number | null
           population?: number | null
           poverty_rate?: number | null
           press_freedom_rank?: number | null
           raw_data?: Json | null
+          real_gdp?: number | null
           region?: string | null
           ruling_party?: string | null
+          stock_market_index?: number | null
+          stock_market_name?: string | null
           tags?: string[]
           trade_partners?: Json | null
           unemployment_rate?: number | null
@@ -1869,6 +2415,69 @@ export type Database = {
         }
         Relationships: []
       }
+      state_legislative_bills: {
+        Row: {
+          classification: string[]
+          created_at: string
+          first_action_date: string | null
+          id: string
+          identifier: string
+          latest_action_date: string | null
+          latest_action_description: string | null
+          openstates_id: string
+          raw_data: Json | null
+          session: string
+          source_url: string | null
+          sponsor_name: string | null
+          sponsor_party: string | null
+          state_abbr: string
+          status: string | null
+          subjects: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          classification?: string[]
+          created_at?: string
+          first_action_date?: string | null
+          id?: string
+          identifier: string
+          latest_action_date?: string | null
+          latest_action_description?: string | null
+          openstates_id: string
+          raw_data?: Json | null
+          session: string
+          source_url?: string | null
+          sponsor_name?: string | null
+          sponsor_party?: string | null
+          state_abbr: string
+          status?: string | null
+          subjects?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          classification?: string[]
+          created_at?: string
+          first_action_date?: string | null
+          id?: string
+          identifier?: string
+          latest_action_date?: string | null
+          latest_action_description?: string | null
+          openstates_id?: string
+          raw_data?: Json | null
+          session?: string
+          source_url?: string | null
+          sponsor_name?: string | null
+          sponsor_party?: string | null
+          state_abbr?: string
+          status?: string | null
+          subjects?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       state_legislative_profiles: {
         Row: {
           asian_pct: number | null
@@ -1956,6 +2565,66 @@ export type Database = {
           updated_at?: string
           veteran_pct?: number | null
           white_pct?: number | null
+        }
+        Relationships: []
+      }
+      state_legislators: {
+        Row: {
+          capitol_office: Json | null
+          chamber: string
+          committees: Json | null
+          created_at: string
+          district: string | null
+          email: string | null
+          first_name: string | null
+          id: string
+          image_url: string | null
+          last_name: string | null
+          name: string
+          openstates_id: string
+          party: string | null
+          raw_data: Json | null
+          source_url: string | null
+          state_abbr: string
+          updated_at: string
+        }
+        Insert: {
+          capitol_office?: Json | null
+          chamber?: string
+          committees?: Json | null
+          created_at?: string
+          district?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          image_url?: string | null
+          last_name?: string | null
+          name: string
+          openstates_id: string
+          party?: string | null
+          raw_data?: Json | null
+          source_url?: string | null
+          state_abbr: string
+          updated_at?: string
+        }
+        Update: {
+          capitol_office?: Json | null
+          chamber?: string
+          committees?: Json | null
+          created_at?: string
+          district?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          image_url?: string | null
+          last_name?: string | null
+          name?: string
+          openstates_id?: string
+          party?: string | null
+          raw_data?: Json | null
+          source_url?: string | null
+          state_abbr?: string
+          updated_at?: string
         }
         Relationships: []
       }
