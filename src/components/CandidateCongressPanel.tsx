@@ -303,33 +303,68 @@ export function CandidateCongressPanel({ candidateSlug, candidateName }: Props) 
         )
       )}
 
-      {/* Terms tab */}
-      {activeTab === "terms" && (
-        terms.length > 0 ? (
+      {/* Contact & Social tab */}
+      {activeTab === "contact" && (
+        <div className="space-y-3">
+          {/* DC Office */}
+          {(member.phone || member.office_address || member.contact_form) && (
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Building2 className="h-3.5 w-3.5" /> Washington DC Office
+              </h3>
+              <div className="rounded-lg bg-muted/50 p-2.5 space-y-1">
+                {member.office_address && <p className="text-xs text-foreground flex items-center gap-1"><MapPin className="h-3 w-3 text-muted-foreground" /> {member.office_address}</p>}
+                {member.phone && <p className="text-xs text-foreground flex items-center gap-1"><Phone className="h-3 w-3 text-muted-foreground" /> {member.phone}</p>}
+                {member.contact_form && (
+                  <a href={member.contact_form} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                    <Globe className="h-3 w-3" /> Contact Form
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* External Profiles */}
           <div>
             <h3 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5" /> Service Terms
+              <ExternalLink className="h-3.5 w-3.5" /> External Profiles
             </h3>
-            <div className="space-y-1.5">
-              {terms.map((t: any, i: number) => (
-                <div key={i} className="flex items-center gap-2 rounded-lg bg-muted/50 p-2.5">
-                  <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-foreground capitalize">
-                      {t.chamber || "Unknown"} — {t.state || member.state}{t.district ? ` District ${t.district}` : ""}
-                    </p>
-                    <p className="text-[9px] text-muted-foreground">
-                      {t.startYear || t.start_year || "?"} – {t.endYear || t.end_year || "Present"}
-                      {t.congress && ` • ${t.congress}th Congress`}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-wrap gap-1.5">
+              {member.wikipedia && (
+                <a href={`https://en.wikipedia.org/wiki/${member.wikipedia.replace(/ /g, "_")}`} target="_blank" rel="noopener noreferrer" className="text-[9px] bg-muted rounded px-2 py-1 hover:bg-primary/10">📖 Wikipedia</a>
+              )}
+              {member.ballotpedia && (
+                <a href={`https://ballotpedia.org/${member.ballotpedia.replace(/ /g, "_")}`} target="_blank" rel="noopener noreferrer" className="text-[9px] bg-muted rounded px-2 py-1 hover:bg-primary/10">🗳️ Ballotpedia</a>
+              )}
+              {member.opensecrets_id && (
+                <a href={`https://www.opensecrets.org/members-of-congress/summary?cid=${member.opensecrets_id}`} target="_blank" rel="noopener noreferrer" className="text-[9px] bg-muted rounded px-2 py-1 hover:bg-primary/10">💰 OpenSecrets</a>
+              )}
+              <a href={`https://bioguide.congress.gov/search/bio/${member.bioguide_id}`} target="_blank" rel="noopener noreferrer" className="text-[9px] bg-muted rounded px-2 py-1 hover:bg-primary/10">🏛️ Bioguide</a>
             </div>
           </div>
-        ) : (
-          <p className="text-xs text-muted-foreground py-4 text-center">No term data available.</p>
-        )
+
+          {/* District Offices */}
+          {offices.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5" /> District Offices ({offices.length})
+              </h3>
+              <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+                {offices.map((o: any, i: number) => (
+                  <div key={i} className="rounded-lg bg-muted/50 p-2.5">
+                    <p className="text-xs font-medium text-foreground">{o.city}, {o.state} {o.zip}</p>
+                    {o.address && <p className="text-[10px] text-muted-foreground">{o.address}{o.suite ? `, ${o.suite}` : ""}{o.building ? ` (${o.building})` : ""}</p>}
+                    {o.phone && <p className="text-[10px] text-muted-foreground flex items-center gap-1"><Phone className="h-2.5 w-2.5" /> {o.phone}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!hasSocialOrContact && (
+            <p className="text-xs text-muted-foreground py-4 text-center">No contact or social media data available. Run the legislators enrichment sync.</p>
+          )}
+        </div>
       )}
     </div>
   );
