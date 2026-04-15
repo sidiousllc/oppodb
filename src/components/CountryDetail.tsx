@@ -415,38 +415,133 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
           )}
 
           {tab === "economy" && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button onClick={() => p && openDetailWindow("economy", { ...p, section: "indicators" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
-                <InfoCard title="Economic Indicators — Click for details" items={[
-                  ["GDP", money(p?.gdp)],
-                  ["GDP Per Capita", money(p?.gdp_per_capita)],
-                  ["Unemployment", pct(p?.unemployment_rate)],
-                  ["Poverty Rate", pct(p?.poverty_rate)],
-                  ["Inflation", pct(p?.inflation_rate)],
-                ]} />
-              </button>
+            <div className="space-y-3">
+              {/* GDP & Core Metrics */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button onClick={() => p && openDetailWindow("economy", { ...p, section: "gdp" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
+                  <InfoCard title="📊 GDP & Output — Click for details" items={[
+                    ["Nominal GDP", money(p?.gdp)],
+                    ["Real GDP", money(p?.real_gdp)],
+                    ["GDP Per Capita", money(p?.gdp_per_capita)],
+                    ["GDP Growth Rate", p?.gdp_growth_rate != null ? `${p.gdp_growth_rate.toFixed(1)}%` : "N/A"],
+                    ["Industrial Production", p?.industrial_production_index != null ? p.industrial_production_index.toFixed(1) : "N/A"],
+                  ]} />
+                </button>
+                <button onClick={() => p && openDetailWindow("economy", { ...p, section: "inflation" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
+                  <InfoCard title="📈 Inflation & Prices — Click for details" items={[
+                    ["Inflation Rate", pct(p?.inflation_rate)],
+                    ["CPI Rate", p?.cpi_rate != null ? `${p.cpi_rate.toFixed(1)}%` : "N/A"],
+                    ["PCE Rate", p?.pce_rate != null ? `${p.pce_rate.toFixed(1)}%` : "N/A"],
+                    ["Currency", p?.currency || "N/A"],
+                  ]} />
+                </button>
+              </div>
+
+              {/* Employment */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button onClick={() => p && openDetailWindow("economy", { ...p, section: "employment" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
+                  <InfoCard title="👷 Employment & Labor — Click for details" items={[
+                    ["Unemployment Rate", pct(p?.unemployment_rate)],
+                    ["Nonfarm Payrolls", p?.nonfarm_payrolls != null ? fmt(p.nonfarm_payrolls) : "N/A"],
+                    ["Labor Force Participation", p?.labor_force_participation != null ? `${p.labor_force_participation.toFixed(1)}%` : "N/A"],
+                    ["Labor Cost Index", p?.labor_cost_index != null ? p.labor_cost_index.toFixed(1) : "N/A"],
+                    ["Poverty Rate", pct(p?.poverty_rate)],
+                  ]} />
+                </button>
+                <button onClick={() => p && openDetailWindow("economy", { ...p, section: "consumer" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
+                  <InfoCard title="🛒 Consumer & Spending — Click for details" items={[
+                    ["Consumer Spending", money(p?.consumer_spending)],
+                    ["Personal Income", money(p?.personal_income)],
+                    ["Population", fmt(p?.population)],
+                    ["Median Age", p?.median_age?.toFixed(1) || "N/A"],
+                  ]} />
+                </button>
+              </div>
+
+              {/* Leading / Coincident / Lagging Indicators */}
+              <div className="candidate-card p-3">
+                <h3 className="text-[11px] font-bold mb-2">📊 Indicator Categories</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  <button onClick={() => p && openDetailWindow("economy", { ...p, section: "leading" })} className="text-left p-2 rounded border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] transition-colors">
+                    <div className="text-[10px] font-bold text-green-700 mb-1">🟢 Leading</div>
+                    <div className="text-[9px] text-[hsl(var(--muted-foreground))]">Predict future activity</div>
+                    <div className="text-[9px] mt-1">
+                      <div>• Stock Market: {p?.stock_market_name || "—"} {p?.stock_market_index != null ? fmt(p.stock_market_index) : ""}</div>
+                      <div>• Building Permits: {p?.building_permits != null ? fmt(p.building_permits) : "N/A"}</div>
+                      <div>• New Orders: {p?.manufacturer_new_orders != null ? money(p.manufacturer_new_orders) : "N/A"}</div>
+                    </div>
+                  </button>
+                  <button onClick={() => p && openDetailWindow("economy", { ...p, section: "coincident" })} className="text-left p-2 rounded border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] transition-colors">
+                    <div className="text-[10px] font-bold text-blue-700 mb-1">🔵 Coincident</div>
+                    <div className="text-[9px] text-[hsl(var(--muted-foreground))]">Current state of economy</div>
+                    <div className="text-[9px] mt-1">
+                      <div>• GDP: {money(p?.gdp)}</div>
+                      <div>• Industrial Prod: {p?.industrial_production_index != null ? p.industrial_production_index.toFixed(1) : "N/A"}</div>
+                      <div>• Personal Income: {money(p?.personal_income)}</div>
+                    </div>
+                  </button>
+                  <button onClick={() => p && openDetailWindow("economy", { ...p, section: "lagging" })} className="text-left p-2 rounded border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] transition-colors">
+                    <div className="text-[10px] font-bold text-orange-700 mb-1">🟠 Lagging</div>
+                    <div className="text-[9px] text-[hsl(var(--muted-foreground))]">Confirm past trends</div>
+                    <div className="text-[9px] mt-1">
+                      <div>• Unemployment: {pct(p?.unemployment_rate)}</div>
+                      <div>• Corp. Profits: {money(p?.corporate_profits)}</div>
+                      <div>• Labor Costs: {p?.labor_cost_index != null ? p.labor_cost_index.toFixed(1) : "N/A"}</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Trade & Fiscal */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button onClick={() => p && openDetailWindow("economy", { ...p, section: "fiscal" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
+                  <InfoCard title="🏦 Fiscal & Debt — Click for details" items={[
+                    ["Gov. Debt/GDP", p?.government_debt_gdp_pct != null ? `${p.government_debt_gdp_pct.toFixed(1)}%` : "N/A"],
+                    ["Current Account", money(p?.current_account_balance)],
+                    ["FDI Inflows", money(p?.fdi_inflows)],
+                    ["Corruption Index", p?.corruption_index?.toFixed(1) || "N/A"],
+                  ]} />
+                </button>
+                {p?.trade_partners && (Array.isArray(p.trade_partners) ? p.trade_partners : []).length > 0 && (
+                  <button onClick={() => openDetailWindow("economy", { ...p, section: "trade" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
+                    <div className="candidate-card p-3">
+                      <h3 className="text-[11px] font-bold mb-2">🤝 Trade Partners — Click for details</h3>
+                      {(p.trade_partners as any[]).slice(0, 5).map((tp: any, i: number) => (
+                        <div key={i} className="text-[10px] mb-0.5">• {typeof tp === "string" ? tp : tp.name || tp.country || JSON.stringify(tp)}</div>
+                      ))}
+                    </div>
+                  </button>
+                )}
+              </div>
+
               {p?.major_industries?.length > 0 && (
-                <button onClick={() => openDetailWindow("economy", { ...p, section: "industries" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
+                <button onClick={() => openDetailWindow("economy", { ...p, section: "industries" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded w-full">
                   <div className="candidate-card p-3">
-                    <h3 className="text-[11px] font-bold mb-2">Major Industries — Click for details</h3>
-                    {p.major_industries.slice(0, 6).map((ind: string, i: number) => (
-                      <div key={i} className="text-[10px] flex items-center gap-1 mb-0.5">
-                        <span className="text-[hsl(var(--muted-foreground))]">•</span> {ind}
-                      </div>
-                    ))}
-                    {p.major_industries.length > 6 && <div className="text-[9px] text-blue-600 mt-1">+{p.major_industries.length - 6} more…</div>}
+                    <h3 className="text-[11px] font-bold mb-2">🏭 Major Industries — Click for details</h3>
+                    <div className="grid grid-cols-3 gap-1">
+                      {p.major_industries.slice(0, 9).map((ind: string, i: number) => (
+                        <div key={i} className="text-[10px] bg-[hsl(var(--muted))] px-2 py-1 rounded">{ind}</div>
+                      ))}
+                    </div>
+                    {p.major_industries.length > 9 && <div className="text-[9px] text-blue-600 mt-1">+{p.major_industries.length - 9} more…</div>}
                   </div>
                 </button>
               )}
-              {p?.trade_partners && (Array.isArray(p.trade_partners) ? p.trade_partners : []).length > 0 && (
-                <button onClick={() => openDetailWindow("economy", { ...p, section: "trade" })} className="text-left hover:bg-[hsl(var(--accent))] transition-colors rounded">
-                  <div className="candidate-card p-3">
-                    <h3 className="text-[11px] font-bold mb-2">Trade Partners — Click for details</h3>
-                    {(p.trade_partners as any[]).slice(0, 5).map((tp: any, i: number) => (
-                      <div key={i} className="text-[10px] mb-0.5">• {typeof tp === "string" ? tp : tp.name || tp.country || JSON.stringify(tp)}</div>
-                    ))}
-                  </div>
-                </button>
+
+              {/* Governance */}
+              <div className="grid gap-3 sm:grid-cols-3">
+                <InfoCard title="📊 Governance Indices" items={[
+                  ["HDI", p?.human_dev_index?.toFixed(3) || "N/A"],
+                  ["Press Freedom", p?.press_freedom_rank ? `#${p.press_freedom_rank}` : "N/A"],
+                  ["Corruption", p?.corruption_index?.toFixed(1) || "N/A"],
+                ]} />
+              </div>
+
+              {!p && (
+                <div className="candidate-card p-4 text-center">
+                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">No economic data loaded for {country.name}.</p>
+                  <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1"><RefreshCw className="h-3 w-3 inline mr-1" /> Sync Data</button>
+                </div>
               )}
             </div>
           )}
