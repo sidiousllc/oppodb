@@ -266,19 +266,20 @@ export function exportMessagingPDF(item: MessagingExportItem) {
 
     // H1
     if (trimmed.startsWith("# ")) {
-      checkPage(14);
+      checkPage(16);
+      y += 3;
       doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...c.text);
       const wrapped = doc.splitTextToSize(trimmed.slice(2), maxW);
       doc.text(wrapped, margin, y);
-      y += wrapped.length * 7 + 4;
+      y += wrapped.length * 8 + 6;
       continue;
     }
     // H2
     if (trimmed.startsWith("## ")) {
-      checkPage(12);
-      y += 2;
+      checkPage(14);
+      y += 3;
       doc.setFillColor(...c.primary);
       doc.rect(margin, y - 4, 2, 8, "F");
       doc.setFontSize(12);
@@ -286,18 +287,19 @@ export function exportMessagingPDF(item: MessagingExportItem) {
       doc.setTextColor(...c.text);
       const wrapped = doc.splitTextToSize(trimmed.slice(3), maxW - 6);
       doc.text(wrapped, margin + 5, y + 2);
-      y += wrapped.length * 6 + 5;
+      y += wrapped.length * 7 + 6;
       continue;
     }
     // H3
     if (trimmed.startsWith("### ")) {
-      checkPage(10);
+      checkPage(12);
+      y += 2;
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...c.text);
       const wrapped = doc.splitTextToSize(trimmed.slice(4), maxW);
       doc.text(wrapped, margin, y);
-      y += wrapped.length * 5 + 3;
+      y += wrapped.length * 6 + 4;
       continue;
     }
 
