@@ -363,37 +363,67 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
 
           {tab === "issues" && (
             <div className="space-y-3">
+              {/* Polling-derived key issues */}
               <div className="flex items-center gap-2 flex-wrap">
                 <select value={issueFilter} onChange={e => setIssueFilter(e.target.value)} className="win98-sunken text-[10px] px-2 py-1 bg-white">
-                  <option value="all">All Categories</option>
-                  {issueCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                  <optgroup label="Severity">
-                    {["critical", "high", "medium", "low"].map(s => <option key={s} value={s}>{s}</option>)}
-                  </optgroup>
+                  <option value="all">All Topics</option>
+                  {[...new Set(data.polling.map((p: any) => p.poll_topic))].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
-                <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{filteredIssues.length} issues</span>
+                <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{(issueFilter === "all" ? data.polling : data.polling.filter((p: any) => p.poll_topic === issueFilter)).length} polls</span>
               </div>
-              {filteredIssues.length === 0 ? (
-                <div className="candidate-card p-4 text-center">
-                  <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-[hsl(var(--muted-foreground))]" />
-                  <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">No policy issues tracked for {country.name}.</p>
-                  <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1"><RefreshCw className="h-3 w-3 inline mr-1" /> Sync</button>
+
+              {/* Key Issues Summary from Polling */}
+              {data.polling.length > 0 && (
+                <div className="candidate-card p-3">
+                  <h3 className="text-[11px] font-bold mb-2">📊 Key Issues from Polling & Survey Data</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {data.polling
+                      .filter((p: any) => p.approve_pct != null)
+                      .slice(0, 8)
+                      .map((p: any) => {
+                        const score = p.approve_pct;
+                        const color = score >= 70 ? "text-green-700 bg-green-50" : score >= 40 ? "text-yellow-700 bg-yellow-50" : "text-red-700 bg-red-50";
+                        return (
+                          <button key={p.id} onClick={() => openDetailWindow("polling", p)} className={`text-left p-2 rounded border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] transition-colors`}>
+                            <div className="text-[10px] font-bold">{p.poll_topic}</div>
+                            <div className={`text-[9px] font-bold px-1 rounded inline-block ${color}`}>{score.toFixed(0)}%</div>
+                            {p.key_finding && <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-0.5 leading-tight">{p.key_finding.slice(0, 80)}</div>}
+                          </button>
+                        );
+                      })}
+                  </div>
                 </div>
-              ) : filteredIssues.map(issue => (
-                <button key={issue.id} onClick={() => openDetailWindow("issue", issue)} className="candidate-card p-3 w-full text-left hover:bg-[hsl(var(--accent))] transition-colors">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <div className="text-[11px] font-bold leading-tight flex-1">{issue.title}</div>
-                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${severityColor(issue.severity)}`}>{issue.severity.toUpperCase()}</span>
+              )}
+
+              {/* Detailed polling list */}
+              {(() => {
+                const filtered = issueFilter === "all" ? data.polling : data.polling.filter((p: any) => p.poll_topic === issueFilter);
+                return filtered.length === 0 ? (
+                  <div className="candidate-card p-4 text-center">
+                    <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-[hsl(var(--muted-foreground))]" />
+                    <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">No polling data available for {country.name}.</p>
+                    <button onClick={handleSync} className="win98-button text-[10px] px-3 py-1"><RefreshCw className="h-3 w-3 inline mr-1" /> Sync Data</button>
                   </div>
-                  <div className="flex items-center gap-2 text-[9px] text-[hsl(var(--muted-foreground))] mb-1 flex-wrap">
-                    <span className="bg-[hsl(var(--muted))] px-1 rounded">{issue.category}</span>
-                    <span className={`px-1 rounded ${issue.status === "escalating" ? "bg-red-100 text-red-700" : issue.status === "resolved" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>{issue.status}</span>
-                    {issue.started_date && <span>📅 Since {issue.started_date}</span>}
-                  </div>
-                  {issue.description && <p className="text-[10px] leading-relaxed mt-1">{issue.description.slice(0, 200)}…</p>}
-                  <span className="text-[8px] text-blue-600 mt-1 inline-block">Click for full details →</span>
-                </button>
-              ))}
+                ) : filtered.map((poll: any) => (
+                  <button key={poll.id} onClick={() => openDetailWindow("polling", poll)} className="candidate-card p-3 w-full text-left hover:bg-[hsl(var(--accent))] transition-colors">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="text-[11px] font-bold leading-tight flex-1">{poll.poll_topic}</div>
+                      {poll.approve_pct != null && (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
+                          poll.approve_pct >= 70 ? "bg-green-100 text-green-700" : poll.approve_pct >= 40 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
+                        }`}>{poll.approve_pct.toFixed(0)}%</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-[9px] text-[hsl(var(--muted-foreground))] mb-1 flex-wrap">
+                      <span className="bg-[hsl(var(--muted))] px-1 rounded">{poll.poll_type}</span>
+                      <span>{poll.source}</span>
+                      {poll.date_conducted && <span>📅 {poll.date_conducted}</span>}
+                    </div>
+                    {poll.key_finding && <p className="text-[10px] leading-relaxed mt-1">{poll.key_finding}</p>}
+                    <span className="text-[8px] text-blue-600 mt-1 inline-block">Click for full details →</span>
+                  </button>
+                ));
+              })()}
             </div>
           )}
 
