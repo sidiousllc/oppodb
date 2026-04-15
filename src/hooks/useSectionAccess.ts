@@ -15,7 +15,12 @@ export interface SectionPermission {
 
 /** All sections and their subsections for the app */
 export const APP_SECTIONS: Record<string, { label: string; emoji: string; subsections?: Record<string, string> }> = {
-  dashboard: { label: "Dashboard", emoji: "🏠" },
+  dashboard: {
+    label: "Dashboard", emoji: "🏠",
+    subsections: {
+      "master-search": "Master Search",
+    },
+  },
   oppohub: {
     label: "OppoHub", emoji: "🎯",
     subsections: {
