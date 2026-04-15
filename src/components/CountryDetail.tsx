@@ -814,7 +814,7 @@ function LegislationDetailWindow({ d, offset, onClose, statusColor }: { d: any; 
         )}
 
         {/* Full Text Section */}
-        {d.full_text_url && !showFullText && (
+        {!showFullText && (
           <button onClick={handleShowFullText} className="win98-button text-[10px] flex items-center gap-1 px-3 py-1">
             <FileText className="h-3 w-3" /> {isPdf ? "View Full Bill (PDF)" : "Load Full Bill Text"}
           </button>
