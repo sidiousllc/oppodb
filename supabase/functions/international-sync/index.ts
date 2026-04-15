@@ -128,9 +128,20 @@ async function syncProfile(supabase: any, code: string): Promise<void> {
     { id: "SP.POP.65UP.TO.ZS", field: "median_age" },
     { id: "NY.GDP.MKTP.CD", field: "gdp" },
     { id: "NY.GDP.PCAP.CD", field: "gdp_per_capita" },
+    { id: "NY.GDP.MKTP.KD", field: "real_gdp" },
+    { id: "NY.GDP.MKTP.KD.ZG", field: "gdp_growth_rate" },
     { id: "SL.UEM.TOTL.ZS", field: "unemployment_rate" },
     { id: "SI.POV.NAHC", field: "poverty_rate" },
     { id: "FP.CPI.TOTL.ZG", field: "inflation_rate" },
+    { id: "SL.TLF.CACT.ZS", field: "labor_force_participation" },
+    { id: "NE.CON.TOTL.CD", field: "consumer_spending" },
+    { id: "NY.ADJ.NNTY.CD", field: "personal_income" },
+    { id: "NV.IND.TOTL.ZS", field: "industrial_production_index" },
+    { id: "GC.DOD.TOTL.GD.ZS", field: "government_debt_gdp_pct" },
+    { id: "BN.CAB.XOKA.CD", field: "current_account_balance" },
+    { id: "BX.KLT.DINV.CD.WD", field: "fdi_inflows" },
+    { id: "NE.GDI.FTOT.CD", field: "manufacturer_new_orders" },
+    { id: "NV.IND.MANF.CD", field: "corporate_profits" },
   ];
 
   const wbResults = await Promise.allSettled(
