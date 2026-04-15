@@ -242,7 +242,15 @@ export default function Index() {
   const selectedMaga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
   const selectedLocal = selectedSlug ? getLocalImpactBySlug(selectedSlug) : null;
   const selectedNarrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
-  
+
+  const syncCompleteHandler = useCallback(() => {
+    fetchCandidatesFromDB().then((dbCandidates) => {
+      if (dbCandidates.length > 0) {
+        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+        setDataVersion((v) => v + 1);
+      }
+    });
+  }, []);
 
   if (!loaded) return null;
 
