@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Search, ExternalLink, FileText } from "lucide-react";
+import { IGReportDetailWindow } from "./IGReportDetailWindow";
 
 interface IGReportsPanelProps {
   onBack: () => void;
