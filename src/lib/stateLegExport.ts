@@ -6,30 +6,32 @@ import { applyPdfBranding } from "./pdfBranding";
 export function exportStateLegPDF(district: StateLegislativeProfile) {
   const doc = new jsPDF();
   const margin = 14;
-  let y = 20;
+  const ph = doc.internal.pageSize.height;
+  const topY = 22;
+  let y = topY;
   const label = district.chamber === "house" ? "House" : "Senate";
 
   doc.setFontSize(9);
   doc.setTextColor(120);
   doc.text("STATE LEGISLATIVE DISTRICT", margin, y);
-  y += 8;
+  y += 10;
 
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(0);
   doc.text(`${district.state_abbr} ${label} District ${district.district_number}`, margin, y);
-  y += 7;
+  y += 9;
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100);
   doc.text(`${district.state} • ${label} Chamber`, margin, y);
-  y += 5;
+  y += 7;
 
   doc.setFontSize(8);
   doc.setTextColor(150);
   doc.text(`Generated ${new Date().toLocaleDateString()}`, margin, y);
-  y += 8;
+  y += 10;
   doc.setTextColor(0);
 
   const fmt = (n: number | null | undefined) => n != null ? n.toLocaleString() : "—";
