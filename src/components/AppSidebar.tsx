@@ -146,7 +146,7 @@ export function AppSidebar({
                 >
                   <span className="mr-[2px]">{activeSection === s.id ? "📂" : "📁"}</span>
                   <span className="flex-1">{s.label}</span>
-                  <span className="text-[9px] opacity-60">{sectionCounts[s.id]}</span>
+                  
                 </button>
 
                 {/* Sub-tree for race type filters */}
@@ -164,7 +164,7 @@ export function AppSidebar({
                       >
                         <span>{f.emoji}</span>
                         <span className="flex-1">{f.label}</span>
-                        <span className="text-[9px] opacity-60">{counts[f.id]}</span>
+                        
                       </button>
                     ))}
                   </div>
