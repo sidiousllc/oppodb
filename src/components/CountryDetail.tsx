@@ -99,44 +99,249 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
     const p = data.profile;
     const lines: string[] = [];
     lines.push(`# ${country?.flag || ""} ${country?.name || countryCode} — Country Intelligence Report`);
-    lines.push(`Generated ${new Date().toLocaleDateString()}`);
+    lines.push(`Generated ${new Date().toLocaleDateString()} | Confidential Research Document`);
     lines.push("");
+
+    // Executive Summary
+    lines.push("## Executive Summary");
+    lines.push(`This report provides comprehensive intelligence on **${country?.name || countryCode}** across ${[
+      data.leaders.length && "government leaders",
+      data.elections.length && "election history",
+      data.legislation.length && "legislation",
+      data.policyIssues.length && "policy issues",
+      data.intelBriefings.length && "intel briefings",
+      data.polling.length && "polling data",
+    ].filter(Boolean).length} data categories.`);
     if (p) {
-      lines.push("## Overview");
+      lines.push(`- **Population:** ${fmt(p.population)} | **GDP:** ${money(p.gdp)} | **GDP Per Capita:** ${money(p.gdp_per_capita)}`);
+    }
+    lines.push(`- **Leaders:** ${data.leaders.length} | **Elections:** ${data.elections.length} | **Legislation:** ${data.legislation.length}`);
+    lines.push(`- **Policy Issues:** ${data.policyIssues.length} | **Intel Briefings:** ${data.intelBriefings.length} | **Polling:** ${data.polling.length}`);
+    lines.push("");
+
+    // Overview
+    if (p) {
+      lines.push("## Country Overview");
       lines.push(`- **Capital:** ${p.capital || "N/A"}`);
       lines.push(`- **Population:** ${fmt(p.population)}`);
       lines.push(`- **Area:** ${fmt(p.area_sq_km)} sq km`);
       lines.push(`- **Languages:** ${p.official_languages?.join(", ") || "N/A"}`);
       lines.push(`- **Currency:** ${p.currency || "N/A"}`);
-      lines.push(`- **Government:** ${p.government_type || "N/A"}`);
+      lines.push(`- **Government Type:** ${p.government_type || "N/A"}`);
+      lines.push(`- **Region:** ${p.region || "N/A"} · ${p.continent || "N/A"}`);
       lines.push("");
+
+      // Key Indicators
+      lines.push("### Key Indicators");
+      lines.push(`- **HDI:** ${p.human_dev_index?.toFixed(3) || "N/A"}`);
+      lines.push(`- **Corruption Index:** ${p.corruption_index?.toFixed(1) || "N/A"}`);
+      lines.push(`- **Press Freedom Rank:** ${p.press_freedom_rank ? `#${p.press_freedom_rank}` : "N/A"}`);
+      lines.push(`- **Median Age:** ${p.median_age?.toFixed(1) || "N/A"}`);
+      lines.push("");
+
+      // Economy
       lines.push("## Economy");
       lines.push(`- **GDP:** ${money(p.gdp)}`);
       lines.push(`- **GDP Per Capita:** ${money(p.gdp_per_capita)}`);
+      lines.push(`- **GDP Growth Rate:** ${pct(p.gdp_growth_rate)}`);
+      lines.push(`- **Real GDP:** ${money(p.real_gdp)}`);
       lines.push(`- **Unemployment:** ${pct(p.unemployment_rate)}`);
       lines.push(`- **Poverty Rate:** ${pct(p.poverty_rate)}`);
-      lines.push(`- **Inflation:** ${pct(p.inflation_rate)}`);
+      lines.push(`- **Inflation (CPI):** ${pct(p.cpi_rate)}`);
+      lines.push(`- **PCE Rate:** ${pct(p.pce_rate)}`);
+      lines.push(`- **Consumer Spending:** ${money(p.consumer_spending)}`);
+      lines.push(`- **Government Debt/GDP:** ${pct(p.government_debt_gdp_pct)}`);
+      lines.push(`- **Current Account Balance:** ${money(p.current_account_balance)}`);
+      lines.push(`- **FDI Inflows:** ${money(p.fdi_inflows)}`);
+      lines.push(`- **Labor Force Participation:** ${pct(p.labor_force_participation)}`);
+      lines.push(`- **Nonfarm Payrolls:** ${fmt(p.nonfarm_payrolls)}`);
+      if (p.stock_market_name) lines.push(`- **Stock Market:** ${p.stock_market_name} — ${fmt(p.stock_market_index)}`);
+      if (p.major_industries?.length) lines.push(`- **Major Industries:** ${p.major_industries.join(", ")}`);
+      if (p.trade_partners?.length) {
+        lines.push("### Trade Partners");
+        for (const tp of p.trade_partners) {
+          if (typeof tp === "string") lines.push(`- ${tp}`);
+          else lines.push(`- ${tp.name || tp.country || JSON.stringify(tp)}`);
+        }
+      }
+      lines.push("");
+
+      // Government
+      lines.push("## Government");
+      lines.push(`- **Head of State:** ${p.head_of_state || "N/A"}`);
+      lines.push(`- **Head of Government:** ${p.head_of_government || "N/A"}`);
+      lines.push(`- **Ruling Party:** ${p.ruling_party || "N/A"}`);
+      lines.push(`- **Last Election:** ${p.last_election_date || "N/A"}`);
+      lines.push(`- **Next Election:** ${p.next_election_date || "N/A"}`);
+      if (p.opposition_parties?.length) {
+        lines.push("### Opposition Parties");
+        for (const op of p.opposition_parties) {
+          if (typeof op === "string") lines.push(`- ${op}`);
+          else lines.push(`- ${op.name || JSON.stringify(op)}`);
+        }
+      }
       lines.push("");
     }
+
+    // Leaders
     if (data.leaders.length > 0) {
       lines.push("## Current Leaders");
       for (const l of data.leaders) {
         lines.push(`### ${l.name} — ${l.title}`);
         if (l.party) lines.push(`- **Party:** ${l.party}`);
         if (l.in_office_since) lines.push(`- **In Office Since:** ${l.in_office_since}`);
+        if (l.term_ends) lines.push(`- **Term Ends:** ${l.term_ends}`);
         if (l.bio) lines.push(l.bio);
+        if (l.previous_positions?.length) {
+          lines.push("#### Previous Positions");
+          for (const pp of l.previous_positions) {
+            lines.push(`- ${typeof pp === "string" ? pp : pp.title || JSON.stringify(pp)}`);
+          }
+        }
+        if (l.controversies?.length) {
+          lines.push("#### Controversies");
+          for (const c of l.controversies) {
+            lines.push(`- ${typeof c === "string" ? c : c.title || c.description || JSON.stringify(c)}`);
+          }
+        }
         lines.push("");
       }
     }
+
+    // Elections
     if (data.elections.length > 0) {
       lines.push("## Election History");
       for (const e of data.elections) {
         lines.push(`### ${e.election_year} — ${e.election_type}`);
+        if (e.election_date) lines.push(`- **Date:** ${e.election_date}`);
         if (e.winner_name) lines.push(`- **Winner:** ${e.winner_name} (${e.winner_party || "N/A"})`);
         if (e.turnout_pct) lines.push(`- **Turnout:** ${pct(e.turnout_pct)}`);
+        if (e.source) lines.push(`- **Source:** ${e.source}`);
+        if (e.candidates?.length) {
+          lines.push("#### Candidates");
+          for (const c of e.candidates) {
+            if (typeof c === "string") lines.push(`- ${c}`);
+            else lines.push(`- ${c.name || "Unknown"} (${c.party || "N/A"})${c.votes ? ` — ${fmt(c.votes)} votes` : ""}`);
+          }
+        }
+        if (e.results && Object.keys(e.results).length > 0) {
+          lines.push("#### Results");
+          for (const [key, val] of Object.entries(e.results)) {
+            lines.push(`- ${key}: ${JSON.stringify(val)}`);
+          }
+        }
         lines.push("");
       }
     }
+
+    // Legislation
+    if (data.legislation.length > 0) {
+      lines.push("## Legislation");
+      lines.push(`${data.legislation.length} bills/laws tracked.`);
+      lines.push("");
+      const byStatus = new Map<string, typeof data.legislation>();
+      for (const l of data.legislation) {
+        const s = l.status || "unknown";
+        if (!byStatus.has(s)) byStatus.set(s, []);
+        byStatus.get(s)!.push(l);
+      }
+      for (const [status, items] of byStatus.entries()) {
+        lines.push(`### ${status.replace(/_/g, " ").toUpperCase()} (${items.length})`);
+        for (const l of items) {
+          lines.push(`#### ${l.title}`);
+          if (l.bill_number) lines.push(`- **Bill Number:** ${l.bill_number}`);
+          lines.push(`- **Type:** ${l.bill_type} | **Body:** ${l.body}`);
+          if (l.sponsor) lines.push(`- **Sponsor:** ${l.sponsor}`);
+          if (l.introduced_date) lines.push(`- **Introduced:** ${l.introduced_date}`);
+          if (l.enacted_date) lines.push(`- **Enacted:** ${l.enacted_date}`);
+          if (l.policy_area) lines.push(`- **Policy Area:** ${l.policy_area}`);
+          if (l.source) lines.push(`- **Source:** ${l.source}`);
+          if (l.summary) lines.push(`\n${l.summary}`);
+          lines.push("");
+        }
+      }
+    }
+
+    // Policy Issues
+    if (data.policyIssues.length > 0) {
+      lines.push("## Policy Issues");
+      lines.push(`${data.policyIssues.length} active and historical issues tracked.`);
+      lines.push("");
+      const bySeverity = new Map<string, typeof data.policyIssues>();
+      for (const i of data.policyIssues) {
+        const s = i.severity || "medium";
+        if (!bySeverity.has(s)) bySeverity.set(s, []);
+        bySeverity.get(s)!.push(i);
+      }
+      for (const severity of ["critical", "high", "medium", "low"]) {
+        const items = bySeverity.get(severity);
+        if (!items?.length) continue;
+        lines.push(`### ${severity.toUpperCase()} Severity (${items.length})`);
+        for (const i of items) {
+          lines.push(`#### ${i.title}`);
+          lines.push(`- **Category:** ${i.category} | **Status:** ${i.status}`);
+          if (i.started_date) lines.push(`- **Started:** ${i.started_date}`);
+          if (i.resolved_date) lines.push(`- **Resolved:** ${i.resolved_date}`);
+          if (i.affected_regions?.length) lines.push(`- **Affected Regions:** ${i.affected_regions.join(", ")}`);
+          if (i.description) lines.push(`\n${i.description}`);
+          if (i.sources?.length) {
+            lines.push("##### Sources");
+            for (const s of i.sources) {
+              if (typeof s === "string") lines.push(`- ${s}`);
+              else lines.push(`- ${s.name || s.url || JSON.stringify(s)}`);
+            }
+          }
+          lines.push("");
+        }
+      }
+    }
+
+    // Intel Briefings
+    if (data.intelBriefings.length > 0) {
+      lines.push("## Intelligence Briefings");
+      lines.push(`${data.intelBriefings.length} briefings on record.`);
+      lines.push("");
+      for (const b of data.intelBriefings) {
+        lines.push(`### ${b.title}`);
+        lines.push(`- **Category:** ${b.category} | **Scope:** ${b.scope}`);
+        if (b.source_name) lines.push(`- **Source:** ${b.source_name}`);
+        if (b.published_at) lines.push(`- **Published:** ${new Date(b.published_at).toLocaleDateString()}`);
+        if (b.summary) lines.push(`\n**Summary:** ${b.summary}`);
+        if (b.content) lines.push(`\n${b.content}`);
+        lines.push("");
+      }
+    }
+
+    // Polling
+    if (data.polling.length > 0) {
+      lines.push("## Polling Data");
+      lines.push(`${data.polling.length} polls tracked.`);
+      lines.push("");
+      const byType = new Map<string, typeof data.polling>();
+      for (const p of data.polling) {
+        const t = p.poll_type || "general";
+        if (!byType.has(t)) byType.set(t, []);
+        byType.get(t)!.push(p);
+      }
+      for (const [type, polls] of byType.entries()) {
+        lines.push(`### ${type.replace(/_/g, " ").toUpperCase()} (${polls.length})`);
+        for (const p of polls) {
+          lines.push(`#### ${p.poll_topic}`);
+          if (p.question) lines.push(`- **Question:** ${p.question}`);
+          if (p.source) lines.push(`- **Source:** ${p.source}`);
+          if (p.date_conducted) lines.push(`- **Date:** ${p.date_conducted}`);
+          if (p.sample_size) lines.push(`- **Sample Size:** ${fmt(p.sample_size)}`);
+          if (p.methodology) lines.push(`- **Methodology:** ${p.methodology}`);
+          if (p.approve_pct != null) lines.push(`- **Approve:** ${pct(p.approve_pct)} | **Disapprove:** ${pct(p.disapprove_pct)}`);
+          if (p.favor_pct != null) lines.push(`- **Favor:** ${pct(p.favor_pct)} | **Oppose:** ${pct(p.oppose_pct)}`);
+          if (p.margin != null) lines.push(`- **Margin:** ${p.margin > 0 ? "+" : ""}${p.margin.toFixed(1)}`);
+          if (p.margin_of_error != null) lines.push(`- **MoE:** ±${p.margin_of_error.toFixed(1)}`);
+          if (p.key_finding) lines.push(`- **Key Finding:** ${p.key_finding}`);
+          lines.push("");
+        }
+      }
+    }
+
     return lines.join("\n");
   }, [data, country, countryCode]);
 
