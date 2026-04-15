@@ -1016,6 +1016,55 @@ function DetailMiniWindow({ win, country, onClose, fmt, pct, money, severityColo
       </Win98Window>
     );
   }
+  if (win.type === "polling") {
+    return (
+      <Win98Window title={`📊 ${d.poll_topic}`} onClose={onClose} defaultSize={{ width: 520, height: 420 }} defaultPosition={{ x: 130 + offset, y: 60 + offset }} minSize={{ width: 350, height: 250 }}>
+        <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
+          <h2 className="text-sm font-bold">{d.poll_topic}</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <DetailRow label="Type" value={d.poll_type} />
+            <DetailRow label="Source" value={d.source} />
+            <DetailRow label="Date" value={d.date_conducted || "N/A"} />
+            {d.approve_pct != null && <DetailRow label="Score/Rate" value={`${d.approve_pct.toFixed(1)}%`} />}
+            {d.disapprove_pct != null && <DetailRow label="Inverse" value={`${d.disapprove_pct.toFixed(1)}%`} />}
+            {d.sample_size && <DetailRow label="Sample Size" value={d.sample_size.toLocaleString()} />}
+            {d.methodology && <DetailRow label="Methodology" value={d.methodology} />}
+            {d.margin_of_error && <DetailRow label="Margin of Error" value={`±${d.margin_of_error}%`} />}
+          </div>
+          {d.question && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Question</div>
+              <p className="text-[10px] leading-relaxed bg-[hsl(var(--muted))] p-2 rounded">{d.question}</p>
+            </div>
+          )}
+          {d.key_finding && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Key Finding</div>
+              <p className="text-[10px] leading-relaxed bg-blue-50 p-2 rounded border border-blue-200">{d.key_finding}</p>
+            </div>
+          )}
+          {d.approve_pct != null && (
+            <div>
+              <div className="text-[10px] font-bold mb-1">Visual</div>
+              <div className="w-full bg-[hsl(var(--muted))] rounded-full h-4 overflow-hidden">
+                <div
+                  className={`h-full rounded-full text-[8px] font-bold flex items-center justify-center text-white ${
+                    d.approve_pct >= 70 ? "bg-green-500" : d.approve_pct >= 40 ? "bg-yellow-500" : "bg-red-500"
+                  }`}
+                  style={{ width: `${Math.min(100, Math.max(2, d.approve_pct))}%` }}
+                >
+                  {d.approve_pct.toFixed(0)}%
+                </div>
+              </div>
+            </div>
+          )}
+          {d.source_url && <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline block">🔗 View source</a>}
+          {d.tags?.length > 0 && <div className="flex flex-wrap gap-1">{d.tags.map((t: string) => <span key={t} className="text-[8px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded">{t}</span>)}</div>}
+          <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">ID: {d.id}</div>
+        </div>
+      </Win98Window>
+    );
+  }
 
   return null;
 }
