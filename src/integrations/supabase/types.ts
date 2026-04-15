@@ -1078,6 +1078,126 @@ export type Database = {
         }
         Relationships: []
       }
+      international_legislation: {
+        Row: {
+          bill_number: string | null
+          bill_type: string
+          body: string
+          country_code: string
+          created_at: string
+          enacted_date: string | null
+          full_text_url: string | null
+          id: string
+          introduced_date: string | null
+          policy_area: string | null
+          raw_data: Json | null
+          source: string
+          source_url: string | null
+          sponsor: string | null
+          status: string
+          summary: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bill_number?: string | null
+          bill_type?: string
+          body?: string
+          country_code: string
+          created_at?: string
+          enacted_date?: string | null
+          full_text_url?: string | null
+          id?: string
+          introduced_date?: string | null
+          policy_area?: string | null
+          raw_data?: Json | null
+          source?: string
+          source_url?: string | null
+          sponsor?: string | null
+          status?: string
+          summary?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bill_number?: string | null
+          bill_type?: string
+          body?: string
+          country_code?: string
+          created_at?: string
+          enacted_date?: string | null
+          full_text_url?: string | null
+          id?: string
+          introduced_date?: string | null
+          policy_area?: string | null
+          raw_data?: Json | null
+          source?: string
+          source_url?: string | null
+          sponsor?: string | null
+          status?: string
+          summary?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      international_policy_issues: {
+        Row: {
+          affected_regions: string[]
+          category: string
+          country_code: string
+          created_at: string
+          description: string
+          id: string
+          raw_data: Json | null
+          resolved_date: string | null
+          severity: string
+          sources: Json
+          started_date: string | null
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          affected_regions?: string[]
+          category?: string
+          country_code: string
+          created_at?: string
+          description?: string
+          id?: string
+          raw_data?: Json | null
+          resolved_date?: string | null
+          severity?: string
+          sources?: Json
+          started_date?: string | null
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          affected_regions?: string[]
+          category?: string
+          country_code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          raw_data?: Json | null
+          resolved_date?: string | null
+          severity?: string
+          sources?: Json
+          started_date?: string | null
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       international_profiles: {
         Row: {
           area_sq_km: number | null
