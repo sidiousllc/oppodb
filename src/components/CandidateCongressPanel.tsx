@@ -303,6 +303,35 @@ export function CandidateCongressPanel({ candidateSlug, candidateName }: Props) 
         )
       )}
 
+      {/* Terms tab */}
+      {activeTab === "terms" && (
+        terms.length > 0 ? (
+          <div>
+            <h3 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5" /> Service Terms
+            </h3>
+            <div className="space-y-1.5">
+              {terms.map((t: any, i: number) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg bg-muted/50 p-2.5">
+                  <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-foreground capitalize">
+                      {t.chamber || "Unknown"} — {t.state || member.state}{t.district ? ` District ${t.district}` : ""}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground">
+                      {t.startYear || t.start_year || "?"} – {t.endYear || t.end_year || "Present"}
+                      {t.congress && ` • ${t.congress}th Congress`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground py-4 text-center">No term data available.</p>
+        )
+      )}
+
       {/* Contact & Social tab */}
       {activeTab === "contact" && (
         <div className="space-y-3">
