@@ -760,24 +760,34 @@ function LegislationDetailWindow({ d, offset, onClose, statusColor }: { d: any; 
   const isPdf = d.full_text_url && /\.pdf$/i.test(d.full_text_url);
 
   const fetchFullText = useCallback(async () => {
-    if (!d.full_text_url || fullText || isPdf) return;
+    if (fullText || isPdf) return;
+    if (!d.full_text_url && !d.source_url) {
+      // No URL to scrape — render body/summary as markdown
+      const fallback = d.body && d.body.length > 10 ? d.body : d.summary || "*No full text available for this bill.*";
+      setFullText(fallback);
+      return;
+    }
     setLoadingText(true);
+    const scrapeUrl = d.full_text_url || d.source_url;
     try {
       const { data: result, error } = await supabase.functions.invoke("scrape-article", {
-        body: { url: d.full_text_url },
+        body: { url: scrapeUrl },
       });
-      if (!error && result?.markdown) {
+      if (!error && result?.markdown && result.markdown.length > 30) {
         setFullText(result.markdown);
       } else if (!error && result?.content) {
         setFullText(result.content);
       } else {
-        setFullText("*Could not fetch full text. Use the external link below.*");
+        // Fallback to body field
+        const fallback = d.body && d.body.length > 10 ? d.body : d.summary || "*Could not fetch full text.*";
+        setFullText(fallback);
       }
     } catch {
-      setFullText("*Error fetching full text.*");
+      const fallback = d.body && d.body.length > 10 ? d.body : "*Error fetching full text.*";
+      setFullText(fallback);
     }
     setLoadingText(false);
-  }, [d.full_text_url, fullText, isPdf]);
+  }, [d.full_text_url, d.source_url, d.body, d.summary, fullText, isPdf]);
 
   const handleShowFullText = useCallback(() => {
     if (isPdf) {
