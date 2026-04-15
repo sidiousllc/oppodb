@@ -19,6 +19,7 @@ export function IGReportsPanel({ onBack }: IGReportsPanelProps) {
   const [loading, setLoading] = useState(true);
   const [agencyFilter, setAgencyFilter] = useState("");
   const [searchQ, setSearchQ] = useState("");
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
 
   useEffect(() => {
     async function load() {
