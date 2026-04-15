@@ -703,38 +703,7 @@ function DetailMiniWindow({ win, country, onClose, fmt, pct, money, severityColo
   }
 
   if (win.type === "legislation") {
-    return (
-      <Win98Window title={`📜 ${d.title?.slice(0, 45)}`} onClose={onClose} defaultSize={{ width: 580, height: 480 }} defaultPosition={{ x: 130 + offset, y: 45 + offset }} minSize={{ width: 350, height: 250 }}>
-        <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="text-sm font-bold leading-tight">{d.title}</h2>
-            <span className={`text-[9px] px-2 py-0.5 rounded font-medium whitespace-nowrap ${statusColor(d.status)}`}>{d.status?.replace(/_/g, " ")}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <DetailRow label="Bill Number" value={d.bill_number || "N/A"} />
-            <DetailRow label="Type" value={d.bill_type} />
-            <DetailRow label="Body" value={d.body || "N/A"} />
-            <DetailRow label="Source" value={d.source} />
-            <DetailRow label="Introduced" value={d.introduced_date || "N/A"} />
-            <DetailRow label="Enacted" value={d.enacted_date || "N/A"} />
-            <DetailRow label="Sponsor" value={d.sponsor || "N/A"} />
-            <DetailRow label="Policy Area" value={d.policy_area || "N/A"} />
-          </div>
-          {d.summary && (
-            <div>
-              <div className="text-[10px] font-bold mb-1">Summary</div>
-              <p className="text-[10px] leading-relaxed whitespace-pre-wrap">{d.summary}</p>
-            </div>
-          )}
-          <div className="flex gap-2 flex-wrap">
-            {d.full_text_url && <a href={d.full_text_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5"><FileText className="h-3 w-3" /> Full Text</a>}
-            {d.source_url && <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5"><Globe2 className="h-3 w-3" /> Source</a>}
-          </div>
-          {d.tags?.length > 0 && <div className="flex flex-wrap gap-1">{d.tags.map((t: string) => <span key={t} className="text-[8px] bg-[hsl(var(--muted))] px-1.5 py-0.5 rounded">{t}</span>)}</div>}
-          <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">ID: {d.id}</div>
-        </div>
-      </Win98Window>
-    );
+    return <LegislationDetailWindow d={d} offset={offset} onClose={onClose} statusColor={statusColor} />;
   }
 
   if (win.type === "leader") {
