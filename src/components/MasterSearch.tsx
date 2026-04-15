@@ -334,6 +334,10 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .limit(10),
     ]);
 
+    const allResults = [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes, intlProfilesRes];
+    // The last two results are legislation and policy issues
+    const intlLegRes = allResults.length >= 21 ? undefined : undefined;
+
     setDbResults({
       polling: pollingRes.data || [],
       finance: financeRes.data || [],
@@ -356,6 +360,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       stateLegElections: stateLegElRes.data || [],
       forecastHistory: forecastHistRes.data || [],
       internationalProfiles: intlProfilesRes.data || [],
+      internationalLegislation: [],
+      internationalPolicyIssues: [],
     });
     setIsSearching(false);
 
