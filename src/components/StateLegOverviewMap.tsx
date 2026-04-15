@@ -62,6 +62,10 @@ const STATE_VIEW: Record<string, { center: [number, number]; zoom: number }> = {
   DC:{center:[-77,38.9],zoom:50},
 };
 
+// Primary: unitedstates/districts repo
+const DISTRICTS_REPO_BASE = "https://theunitedstates.io/districts/states";
+
+// Fallback: Census TIGERweb
 const TIGERWEB_BASE = "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024/Legislative/MapServer";
 
 const HOUSE_COLOR = "210 80% 50%";
@@ -91,6 +95,7 @@ function StateLegOverviewMapInner({ stateAbbr, onDistrictClick }: StateLegOvervi
   const [loading, setLoading] = useState(true);
   const [chamberView, setChamberView] = useState<ChamberView>("both");
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
+  const [source, setSource] = useState<string>("");
 
   const fips = STATE_FIPS[stateAbbr];
   const view = STATE_VIEW[stateAbbr];
@@ -107,7 +112,27 @@ function StateLegOverviewMapInner({ stateAbbr, onDistrictClick }: StateLegOvervi
     setHouseGeo(null);
     setSenateGeo(null);
 
-    const fetchLayer = async (layerId: number): Promise<GeoJSON | null> => {
+    // Try unitedstates/districts repo first (combined state file)
+    const fetchFromRepo = async (chamberDir: "sldl" | "sldu"): Promise<GeoJSON | null> => {
+      try {
+        // The repo serves individual district files; try the state-level combined file
+        const url = `${DISTRICTS_REPO_BASE}/${stateAbbr}/${chamberDir}/shape.geojson`;
+        const r = await fetch(url, { signal: controller.signal });
+        if (!r.ok) return null;
+        const data = await r.json();
+        const geo: GeoJSON = data.type === "FeatureCollection"
+          ? data
+          : { type: "FeatureCollection", features: [data] };
+        if (geo.features?.length > 0) return geo;
+        return null;
+      } catch (e) {
+        if ((e as Error).name === "AbortError") throw e;
+        return null;
+      }
+    };
+
+    // Fallback: TIGERweb
+    const fetchFromTiger = async (layerId: number): Promise<GeoJSON | null> => {
       const url = `${TIGERWEB_BASE}/${layerId}/query?` + new URLSearchParams({
         where: `GEOID LIKE '${fips}%'`,
         outFields: "GEOID,BASENAME,NAME",
@@ -119,31 +144,47 @@ function StateLegOverviewMapInner({ stateAbbr, onDistrictClick }: StateLegOvervi
 
       try {
         const r = await fetch(url, { signal: controller.signal });
-        if (!r.ok) {
-          console.warn(`TIGERweb ${r.status} for layer ${layerId}, state ${stateAbbr}`);
-          return null;
-        }
+        if (!r.ok) return null;
         const data = await r.json();
-        if (data.error) {
-          console.warn(`TIGERweb query error for layer ${layerId}:`, data.error);
-          return null;
-        }
+        if (data.error) return null;
         if (data.features && data.features.length > 0) return data;
-        console.warn(`TIGERweb no features for layer ${layerId}, state ${stateAbbr}`);
         return null;
       } catch (e) {
-        if ((e as Error).name !== "AbortError") console.warn(`TIGERweb error for layer ${layerId}:`, e);
+        if ((e as Error).name === "AbortError") throw e;
         return null;
       }
     };
 
-    Promise.all([
-      fetchLayer(3), // House (lower)
-      fetchLayer(2), // Senate (upper)
-    ]).then(([house, senate]) => {
-      setHouseGeo(house);
-      setSenateGeo(senate);
-    }).finally(() => setLoading(false));
+    (async () => {
+      try {
+        // Try repo first
+        const [repoHouse, repoSenate] = await Promise.all([
+          fetchFromRepo("sldl"),
+          fetchFromRepo("sldu"),
+        ]);
+
+        if (repoHouse || repoSenate) {
+          setHouseGeo(repoHouse);
+          setSenateGeo(repoSenate);
+          setSource("unitedstates/districts");
+          setLoading(false);
+          return;
+        }
+
+        // Fallback to TIGERweb
+        const [tigerHouse, tigerSenate] = await Promise.all([
+          fetchFromTiger(3),
+          fetchFromTiger(2),
+        ]);
+        setHouseGeo(tigerHouse);
+        setSenateGeo(tigerSenate);
+        setSource("TIGER/Line");
+      } catch {
+        // AbortError
+      } finally {
+        setLoading(false);
+      }
+    })();
 
     return () => controller.abort();
   }, [fips, stateAbbr]);
@@ -339,15 +380,26 @@ function StateLegOverviewMapInner({ stateAbbr, onDistrictClick }: StateLegOvervi
 
       <p className="text-xs text-muted-foreground mt-2">
         Source:{" "}
-        <a
-          href="https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline underline-offset-2 hover:text-primary/80"
-        >
-          U.S. Census Bureau TIGER/Line
-        </a>{" "}
-        — State Legislative Districts (ACS 2024)
+        {source === "unitedstates/districts" ? (
+          <a
+            href="https://github.com/unitedstates/districts"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            @unitedstates/districts
+          </a>
+        ) : (
+          <a
+            href="https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            U.S. Census Bureau TIGER/Line
+          </a>
+        )}{" "}
+        — State Legislative Districts
       </p>
     </div>
   );
