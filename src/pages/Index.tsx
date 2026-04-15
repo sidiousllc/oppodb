@@ -48,6 +48,7 @@ import { useSectionAccess } from "@/hooks/useSectionAccess";
 export default function Index() {
   const { isAdmin } = useIsAdmin();
   const { isMailOpen, closeMail } = useMail();
+  const isMobile = useIsMobile();
   const { trackPageView, trackMapView } = useActivityTracker();
   const { canAccess } = useSectionAccess();
   const [loaded, setLoaded] = useState(false);
