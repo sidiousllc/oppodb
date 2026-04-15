@@ -479,6 +479,164 @@ async function syncNationalLegislation(supabase: any, code: string): Promise<num
   return records.length;
 }
 
+// ─── Sync Leaders from REST Countries + Wikidata ────────────────────────────
+async function syncLeaders(supabase: any, code: string): Promise<number> {
+  const meta = COUNTRY_META[code];
+  if (!meta) return 0;
+  let count = 0;
+
+  try {
+    // Use Wikidata SPARQL for current heads of state/government
+    const sparql = encodeURIComponent(`
+      SELECT ?person ?personLabel ?positionLabel ?startDate ?partyLabel ?image WHERE {
+        ?person wdt:P39 ?position .
+        ?position wdt:P17 ?country .
+        ?country wdt:P297 "${code}" .
+        { ?position wdt:P279* wd:Q48352 } UNION { ?position wdt:P279* wd:Q2285706 } .
+        OPTIONAL { ?person wdt:P580 ?startDate }
+        OPTIONAL { ?person wdt:P102 ?party }
+        OPTIONAL { ?person wdt:P18 ?image }
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+      } LIMIT 10
+    `);
+    const wdRes = await fetch(
+      `https://query.wikidata.org/sparql?query=${sparql}&format=json`,
+      { headers: { "User-Agent": "OppoDB/1.0" }, signal: AbortSignal.timeout(15000) }
+    );
+    if (wdRes.ok) {
+      const wdData = await wdRes.json();
+      const bindings = wdData?.results?.bindings || [];
+      const leaders = bindings.map((b: any) => ({
+        country_code: code,
+        name: b.personLabel?.value || "Unknown",
+        title: b.positionLabel?.value || "Head of State",
+        party: b.partyLabel?.value || null,
+        in_office_since: b.startDate?.value?.slice(0, 10) || null,
+        image_url: b.image?.value || null,
+        tags: [`continent:${meta.continent}`, `region:${meta.region}`, `country:${code}`],
+        updated_at: new Date().toISOString(),
+      }));
+      if (leaders.length > 0) {
+        await supabase.from("international_leaders").upsert(leaders, { onConflict: "id" });
+        count = leaders.length;
+      }
+    }
+  } catch (e) {
+    console.error(`Leaders sync error for ${code}:`, e);
+  }
+
+  // Fallback: use profile data if Wikidata returned nothing
+  if (count === 0) {
+    try {
+      const { data: profile } = await supabase
+        .from("international_profiles")
+        .select("head_of_state, head_of_government, ruling_party, country_name")
+        .eq("country_code", code)
+        .maybeSingle();
+
+      if (profile) {
+        const leaders: any[] = [];
+        if (profile.head_of_state) {
+          leaders.push({
+            country_code: code,
+            name: profile.head_of_state,
+            title: "Head of State",
+            party: profile.ruling_party || null,
+            tags: [`continent:${meta.continent}`, `region:${meta.region}`, `country:${code}`],
+            updated_at: new Date().toISOString(),
+          });
+        }
+        if (profile.head_of_government && profile.head_of_government !== profile.head_of_state) {
+          leaders.push({
+            country_code: code,
+            name: profile.head_of_government,
+            title: "Head of Government",
+            party: profile.ruling_party || null,
+            tags: [`continent:${meta.continent}`, `region:${meta.region}`, `country:${code}`],
+            updated_at: new Date().toISOString(),
+          });
+        }
+        if (leaders.length > 0) {
+          await supabase.from("international_leaders").upsert(leaders, { onConflict: "id" });
+          count = leaders.length;
+        }
+      }
+    } catch (e) {
+      console.error(`Leaders fallback error for ${code}:`, e);
+    }
+  }
+
+  return count;
+}
+
+// ─── Sync Elections from Wikidata ───────────────────────────────────────────
+async function syncElections(supabase: any, code: string): Promise<number> {
+  const meta = COUNTRY_META[code];
+  if (!meta) return 0;
+  let count = 0;
+
+  try {
+    // Wikidata query for recent elections
+    const sparql = encodeURIComponent(`
+      SELECT ?election ?electionLabel ?date ?winnerLabel ?winnerPartyLabel ?typeLabel WHERE {
+        ?election wdt:P31/wdt:P279* wd:Q40231 .
+        ?election wdt:P17 ?country .
+        ?country wdt:P297 "${code}" .
+        OPTIONAL { ?election wdt:P585 ?date }
+        OPTIONAL { ?election wdt:P991 ?winner . OPTIONAL { ?winner wdt:P102 ?winnerParty } }
+        OPTIONAL { ?election wdt:P31 ?type }
+        FILTER(!BOUND(?date) || ?date > "2010-01-01T00:00:00Z"^^xsd:dateTime)
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+      } ORDER BY DESC(?date) LIMIT 15
+    `);
+    const wdRes = await fetch(
+      `https://query.wikidata.org/sparql?query=${sparql}&format=json`,
+      { headers: { "User-Agent": "OppoDB/1.0" }, signal: AbortSignal.timeout(15000) }
+    );
+    if (wdRes.ok) {
+      const wdData = await wdRes.json();
+      const bindings = wdData?.results?.bindings || [];
+      const seen = new Set<string>();
+      const elections: any[] = [];
+
+      for (const b of bindings) {
+        const label = b.electionLabel?.value || "";
+        if (!label || seen.has(label)) continue;
+        seen.add(label);
+        const dateStr = b.date?.value?.slice(0, 10) || null;
+        const year = dateStr ? parseInt(dateStr.slice(0, 4)) : 2024;
+        const typeLabel = (b.typeLabel?.value || "").toLowerCase();
+        const elType = typeLabel.includes("presidential") ? "presidential" :
+          typeLabel.includes("parliamentary") || typeLabel.includes("legislative") ? "parliamentary" :
+          typeLabel.includes("referendum") ? "referendum" :
+          typeLabel.includes("local") || typeLabel.includes("municipal") ? "local" : "general";
+
+        elections.push({
+          country_code: code,
+          election_year: year,
+          election_type: elType,
+          election_date: dateStr,
+          winner_name: b.winnerLabel?.value || null,
+          winner_party: b.winnerPartyLabel?.value || null,
+          source: "Wikidata",
+          source_url: b.election?.value || null,
+          tags: [`continent:${meta.continent}`, `region:${meta.region}`, `country:${code}`, elType],
+          updated_at: new Date().toISOString(),
+        });
+      }
+
+      if (elections.length > 0) {
+        await supabase.from("international_elections").upsert(elections, { onConflict: "id" });
+        count = elections.length;
+      }
+    }
+  } catch (e) {
+    console.error(`Elections sync error for ${code}:`, e);
+  }
+
+  return count;
+}
+
 // ─── Main sync function for one country ─────────────────────────────────────
 async function syncOneCountry(
   supabase: any,
@@ -494,6 +652,8 @@ async function syncOneCountry(
       syncEULegislation(supabase, code),
       syncPolicyIssues(supabase, code),
       code === "GB" ? syncUKParliament(supabase) : Promise.resolve(0),
+      syncLeaders(supabase, code),
+      syncElections(supabase, code),
     ]);
 
     const errors = results.filter(r => r.status === "rejected").map(r => (r as PromiseRejectedResult).reason?.message);
@@ -507,6 +667,8 @@ async function syncOneCountry(
         eu_legislation: results[2].status === "fulfilled" ? (results[2] as PromiseFulfilledResult<number>).value : 0,
         policy_issues: results[3].status === "fulfilled" ? (results[3] as PromiseFulfilledResult<number>).value : 0,
         uk_parliament: results[4].status === "fulfilled" ? (results[4] as PromiseFulfilledResult<number>).value : 0,
+        leaders: results[5].status === "fulfilled" ? (results[5] as PromiseFulfilledResult<number>).value : 0,
+        elections: results[6].status === "fulfilled" ? (results[6] as PromiseFulfilledResult<number>).value : 0,
         errors: errors.length > 0 ? errors : undefined,
       },
     };
