@@ -987,8 +987,22 @@ Deno.serve(async (req) => {
             .order("country_name").limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "International Profiles" }));
         }
+        if (activeCategories.includes("international_legislation")) {
+          categoryQueries.international_legislation = supabase.from("international_legislation")
+            .select("id,country_code,title,body,bill_type,status,source,policy_area,introduced_date")
+            .or(`title.ilike.${likeQ},summary.ilike.${likeQ},sponsor.ilike.${likeQ},country_code.ilike.${likeQ}`)
+            .order("introduced_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Legislation" }));
+        }
+        if (activeCategories.includes("international_policy_issues")) {
+          categoryQueries.international_policy_issues = supabase.from("international_policy_issues")
+            .select("id,country_code,title,category,severity,status,description")
+            .or(`title.ilike.${likeQ},description.ilike.${likeQ},country_code.ilike.${likeQ}`)
+            .order("created_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Policy Issues" }));
+        }
 
-        const entries = Object.entries(categoryQueries);
+
         const settled = await Promise.all(entries.map(async ([key, promise]) => {
           const res = await promise;
           return { key, label: res.label, count: res.data.length, results: res.data };
