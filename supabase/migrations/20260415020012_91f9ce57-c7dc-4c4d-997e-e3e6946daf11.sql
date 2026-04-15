@@ -1,0 +1,21 @@
+
+ALTER TABLE public.international_profiles
+ADD COLUMN IF NOT EXISTS consumer_spending numeric,
+ADD COLUMN IF NOT EXISTS nonfarm_payrolls numeric,
+ADD COLUMN IF NOT EXISTS cpi_rate numeric,
+ADD COLUMN IF NOT EXISTS pce_rate numeric,
+ADD COLUMN IF NOT EXISTS real_gdp numeric,
+ADD COLUMN IF NOT EXISTS gdp_growth_rate numeric,
+ADD COLUMN IF NOT EXISTS labor_force_participation numeric,
+ADD COLUMN IF NOT EXISTS labor_cost_index numeric,
+ADD COLUMN IF NOT EXISTS industrial_production_index numeric,
+ADD COLUMN IF NOT EXISTS building_permits numeric,
+ADD COLUMN IF NOT EXISTS stock_market_index numeric,
+ADD COLUMN IF NOT EXISTS stock_market_name text,
+ADD COLUMN IF NOT EXISTS corporate_profits numeric,
+ADD COLUMN IF NOT EXISTS personal_income numeric,
+ADD COLUMN IF NOT EXISTS manufacturer_new_orders numeric,
+ADD COLUMN IF NOT EXISTS government_debt_gdp_pct numeric,
+ADD COLUMN IF NOT EXISTS current_account_balance numeric,
+ADD COLUMN IF NOT EXISTS fdi_inflows numeric,
+ADD COLUMN IF NOT EXISTS economic_indicators_json jsonb DEFAULT '{}'::jsonb;
