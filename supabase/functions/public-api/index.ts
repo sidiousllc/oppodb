@@ -803,6 +803,41 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "federal-spending": {
+        let q = supabase
+          .from("federal_spending")
+          .select("id,award_type,recipient_name,recipient_state,recipient_district,awarding_agency,funding_agency,description,award_amount,total_obligation,fiscal_year,naics_code,naics_description,cfda_number,place_of_performance_state,place_of_performance_district,source_url", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("award_amount", { ascending: false });
+        if (stateFilter) q = q.eq("recipient_state", stateFilter);
+        const awardType = url.searchParams.get("award_type");
+        if (awardType) q = q.eq("award_type", awardType);
+        if (searchQuery) q = q.or(`recipient_name.ilike.%${searchQuery}%,awarding_agency.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+        const fy = url.searchParams.get("fiscal_year");
+        if (fy) q = q.eq("fiscal_year", parseInt(fy));
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "ig-reports": {
+        let q = supabase
+          .from("ig_reports")
+          .select("id,inspector,agency,agency_name,report_id,title,url,published_on,type,summary,topic,pdf_url,landing_url,year", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("published_on", { ascending: false });
+        const inspector = url.searchParams.get("inspector");
+        if (inspector) q = q.eq("inspector", inspector);
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,summary.ilike.%${searchQuery}%,agency_name.ilike.%${searchQuery}%`);
+        const yr = url.searchParams.get("year");
+        if (yr) q = q.eq("year", parseInt(yr));
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
       case "search": {
         const q = searchQuery;
         if (!q || q.length < 2) {
