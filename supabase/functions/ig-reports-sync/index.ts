@@ -26,7 +26,7 @@ const IG_FEEDS: IGFeed[] = [
   { inspector: "treasury", agency: "treasury", agencyName: "Department of the Treasury", url: "https://oig.treasury.gov/reports", method: "firecrawl" },
   { inspector: "energy", agency: "energy", agencyName: "Department of Energy", url: "https://www.energy.gov/ig/calendar-year-reports", method: "firecrawl" },
   { inspector: "transportation", agency: "transportation", agencyName: "Department of Transportation", url: "https://www.oig.dot.gov/library-item/audits", method: "firecrawl" },
-  { inspector: "commerce", agency: "commerce", agencyName: "Department of Commerce", url: "https://oig.commerce.gov/reports", method: "firecrawl" },
+  { inspector: "commerce", agency: "commerce", agencyName: "Department of Commerce", url: "https://www.oig.doc.gov/Pages/Audit-Reports.aspx", method: "firecrawl" },
   { inspector: "sba", agency: "sba", agencyName: "Small Business Administration", url: "https://www.sba.gov/about-sba/oversight-advocacy/office-inspector-general/reports", method: "firecrawl" },
   { inspector: "epa", agency: "epa", agencyName: "Environmental Protection Agency", url: "https://www.epa.gov/office-inspector-general", method: "firecrawl" },
   { inspector: "homeland", agency: "homeland", agencyName: "Department of Homeland Security", url: "https://www.oig.dhs.gov/reports/audits-inspections-and-evaluations", method: "firecrawl" },
