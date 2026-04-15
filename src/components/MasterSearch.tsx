@@ -334,6 +334,16 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`title.ilike.${likeQ},description.ilike.${likeQ},country_code.ilike.${likeQ}`)
         .order("created_at", { ascending: false })
         .limit(10),
+      supabase.from("federal_spending")
+        .select("id, recipient_name, recipient_state, award_type, award_amount, awarding_agency, fiscal_year, description")
+        .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ},recipient_state.ilike.${likeQ}`)
+        .order("award_amount", { ascending: false })
+        .limit(10),
+      supabase.from("ig_reports")
+        .select("id, title, inspector, agency_name, published_on, type, summary, pdf_url, landing_url")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},agency_name.ilike.${likeQ},inspector.ilike.${likeQ}`)
+        .order("published_on", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
