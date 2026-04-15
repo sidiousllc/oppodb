@@ -33,7 +33,7 @@ interface DetailWindow {
 export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
   const country = getCountryByCode(countryCode);
   const [tab, setTab] = useState<TabId>("overview");
-  const [data, setData] = useState<CountryData>({ profile: null, elections: [], leaders: [], legislation: [], policyIssues: [], intelBriefings: [] });
+  const [data, setData] = useState<CountryData>({ profile: null, elections: [], leaders: [], legislation: [], policyIssues: [], intelBriefings: [], polling: [] });
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [reportWindow, setReportWindow] = useState(false);
