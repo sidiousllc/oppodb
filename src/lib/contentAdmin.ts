@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-type ContentTable = "candidate_profiles" | "maga_files" | "local_impacts" | "narrative_reports" | "messaging_guidance" | "wiki_pages" | "international_profiles" | "international_elections" | "international_leaders";
+type ContentTable = "candidate_profiles" | "maga_files" | "local_impacts" | "narrative_reports" | "messaging_guidance" | "wiki_pages" | "international_profiles" | "international_elections" | "international_leaders" | "international_legislation" | "international_policy_issues" | "international_polling";
 
 async function callContentAdmin(payload: {
   action: "insert" | "update" | "delete";
