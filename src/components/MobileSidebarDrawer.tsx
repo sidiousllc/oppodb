@@ -80,17 +80,25 @@ export function MobileSidebarDrawer({
   async function handleManualSync() {
     setSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("sync-github");
-      if (error) {
-        toast.error("Sync failed", { description: error.message });
-        return;
-      }
+      const syncOps = [
+        supabase.functions.invoke("sync-github"),
+        supabase.functions.invoke("congress-sync", { body: { action: "sync_members" } }),
+        supabase.functions.invoke("polling-sync"),
+        supabase.functions.invoke("forecast-sync"),
+        supabase.functions.invoke("campaign-finance-sync"),
+        supabase.functions.invoke("intel-briefing"),
+        supabase.functions.invoke("international-sync", { body: { batch: true, codes: ["US","CA","MX","GB","FR","DE","IT","ES","JP","KR","CN","IN","BR","AU","ZA","NG"] } }),
+      ];
+
+      const results = await Promise.allSettled(syncOps);
+      const succeeded = results.filter(r => r.status === "fulfilled").length;
+
       const t = await getLastSyncTime();
       setLastSync(t);
       onSyncComplete?.();
-      const count = data?.upserted ?? data?.count;
-      toast.success("Sync complete", {
-        description: count != null ? `${count} profiles updated` : "Up to date",
+
+      toast.success("Full sync complete", {
+        description: `${succeeded} sync tasks completed`,
       });
     } catch {
       toast.error("Sync failed");

@@ -759,6 +759,140 @@ async function syncPolling(supabase: any, code: string): Promise<number> {
   return polls.length;
 }
 
+// ─── Sync Intel Briefings for a country ─────────────────────────────────────
+async function syncIntelBriefings(supabase: any, code: string): Promise<number> {
+  const meta = COUNTRY_META[code];
+  if (!meta) return 0;
+
+  // Get country name from profile
+  const { data: profile } = await supabase
+    .from("international_profiles")
+    .select("country_name")
+    .eq("country_code", code)
+    .maybeSingle();
+
+  const countryName = profile?.country_name || code;
+  const briefings: any[] = [];
+
+  // Fetch news/intel from GDELT API for the country
+  try {
+    const gdeltUrl = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(countryName)}%20sourcelang:english&mode=artlist&maxrecords=15&format=json&sort=DateDesc`;
+    const gdeltRes = await fetch(gdeltUrl, { signal: AbortSignal.timeout(15000) });
+    if (gdeltRes.ok) {
+      const gdeltData = await gdeltRes.json();
+      const articles = gdeltData?.articles || [];
+      for (const art of articles.slice(0, 15)) {
+        briefings.push({
+          title: (art.title || "News Briefing").slice(0, 500),
+          summary: art.seendate ? `Published ${art.seendate.slice(0, 10)}. Source: ${art.domain || "Unknown"}.` : "",
+          content: art.title || "",
+          source_name: art.domain || "GDELT",
+          source_url: art.url || null,
+          category: "general",
+          scope: "international",
+          region: code,
+          published_at: art.seendate ? new Date(
+            art.seendate.slice(0, 4) + "-" + art.seendate.slice(4, 6) + "-" + art.seendate.slice(6, 8)
+          ).toISOString() : new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+    }
+  } catch (e) {
+    console.error(`GDELT fetch error for ${code}:`, e);
+  }
+
+  // Fetch from Wikipedia current events as fallback
+  if (briefings.length < 5) {
+    try {
+      const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(countryName)}`;
+      const wikiRes = await fetch(wikiUrl, { signal: AbortSignal.timeout(10000) });
+      if (wikiRes.ok) {
+        const wikiData = await wikiRes.json();
+        if (wikiData?.extract) {
+          briefings.push({
+            title: `${countryName} — Country Overview`,
+            summary: wikiData.extract.slice(0, 300),
+            content: wikiData.extract,
+            source_name: "Wikipedia",
+            source_url: wikiData.content_urls?.desktop?.page || null,
+            category: "overview",
+            scope: "international",
+            region: code,
+            published_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
+      }
+    } catch (e) {
+      console.error(`Wikipedia fetch error for ${code}:`, e);
+    }
+  }
+
+  // Fetch from World Bank country news
+  try {
+    const wbNewsUrl = `https://search.worldbank.org/api/v2/news?format=json&qterm=${encodeURIComponent(countryName)}&rows=10&os=0`;
+    const wbRes = await fetch(wbNewsUrl, { signal: AbortSignal.timeout(10000) });
+    if (wbRes.ok) {
+      const wbData = await wbRes.json();
+      const docs = wbData?.documents || {};
+      for (const key of Object.keys(docs).slice(0, 10)) {
+        const doc = docs[key];
+        if (!doc?.display_title) continue;
+        briefings.push({
+          title: doc.display_title.slice(0, 500),
+          summary: (doc.descr?.cdata || doc.display_title).slice(0, 500),
+          content: doc.descr?.cdata || doc.display_title,
+          source_name: "World Bank",
+          source_url: doc.url?.cdata || null,
+          category: "economy",
+          scope: "international",
+          region: code,
+          published_at: doc.lnchdt?.cdata ? new Date(doc.lnchdt.cdata).toISOString() : new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+    }
+  } catch (e) {
+    console.error(`World Bank news error for ${code}:`, e);
+  }
+
+  // Fetch from ReliefWeb (OCHA) for humanitarian/political intel
+  try {
+    const rwUrl = `https://api.reliefweb.int/v1/reports?appname=oppodb&filter[field]=country.iso3&filter[value]=${code}&limit=10&sort[]=date:desc&fields[include][]=title&fields[include][]=url_alias&fields[include][]=source.name&fields[include][]=date.original&fields[include][]=body`;
+    const rwRes = await fetch(rwUrl, { signal: AbortSignal.timeout(10000) });
+    if (rwRes.ok) {
+      const rwData = await rwRes.json();
+      for (const item of (rwData?.data || []).slice(0, 10)) {
+        const fields = item.fields || {};
+        briefings.push({
+          title: (fields.title || "ReliefWeb Report").slice(0, 500),
+          summary: (fields.body || "").slice(0, 500),
+          content: (fields.body || "").slice(0, 2000),
+          source_name: fields.source?.[0]?.name || "ReliefWeb",
+          source_url: fields.url_alias ? `https://reliefweb.int${fields.url_alias}` : null,
+          category: "humanitarian",
+          scope: "international",
+          region: code,
+          published_at: fields.date?.original ? new Date(fields.date.original).toISOString() : new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+    }
+  } catch (e) {
+    console.error(`ReliefWeb error for ${code}:`, e);
+  }
+
+  if (briefings.length > 0) {
+    // Clear old intel for this country and insert fresh
+    await supabase.from("intel_briefings").delete().eq("region", code).eq("scope", "international");
+    const { error } = await supabase.from("intel_briefings").insert(briefings);
+    if (error) console.error(`Intel insert error for ${code}:`, error);
+  }
+
+  return briefings.length;
+}
+
 // ─── Main sync function for one country ─────────────────────────────────────
 async function syncOneCountry(
   supabase: any,
@@ -777,6 +911,7 @@ async function syncOneCountry(
       syncLeaders(supabase, code),
       syncElections(supabase, code),
       syncPolling(supabase, code),
+      syncIntelBriefings(supabase, code),
     ]);
 
     const errors = results.filter(r => r.status === "rejected").map(r => (r as PromiseRejectedResult).reason?.message);
@@ -793,6 +928,7 @@ async function syncOneCountry(
         leaders: results[5].status === "fulfilled" ? (results[5] as PromiseFulfilledResult<number>).value : 0,
         elections: results[6].status === "fulfilled" ? (results[6] as PromiseFulfilledResult<number>).value : 0,
         polling: results[7].status === "fulfilled" ? (results[7] as PromiseFulfilledResult<number>).value : 0,
+        intel_briefings: results[8].status === "fulfilled" ? (results[8] as PromiseFulfilledResult<number>).value : 0,
         errors: errors.length > 0 ? errors : undefined,
       },
     };
