@@ -158,7 +158,7 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
     { id: "overview", label: "Overview" },
     { id: "government", label: "Government" },
     { id: "legislation", label: "Legislation", icon: <Scale className="h-3 w-3" />, count: data.legislation.length },
-    { id: "issues", label: "Issues", icon: <AlertTriangle className="h-3 w-3" />, count: data.policyIssues.length },
+    { id: "issues", label: "Issues & Polling", icon: <AlertTriangle className="h-3 w-3" />, count: data.polling.length },
     { id: "elections", label: "Elections", count: data.elections.length },
     { id: "economy", label: "Economy" },
     { id: "intel", label: "Intel", icon: <Newspaper className="h-3 w-3" />, count: data.intelBriefings.length },
