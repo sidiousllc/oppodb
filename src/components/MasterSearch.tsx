@@ -37,7 +37,7 @@ function saveToStorage(key: string, items: string[]) {
   localStorage.setItem(key, JSON.stringify(items));
 }
 
-const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [], internationalProfiles: [] };
+const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [], internationalProfiles: [], internationalLegislation: [], internationalPolicyIssues: [] };
 
 
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
@@ -68,6 +68,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     stateLegElections: any[];
     forecastHistory: any[];
     internationalProfiles: any[];
+    internationalLegislation: any[];
+    internationalPolicyIssues: any[];
   }>(EMPTY_DB as any);
   const [hasSearched, setHasSearched] = useState(false);
 
