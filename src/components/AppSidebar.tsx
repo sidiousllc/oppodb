@@ -95,19 +95,31 @@ export function AppSidebar({
   async function handleManualSync() {
     setSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("sync-github");
-      if (error) {
-        console.error("Sync error:", error);
-        toast.error("Sync failed", { description: error.message || "Could not sync from GitHub" });
-        return;
-      }
-      console.log("Sync result:", data);
+      // Run all syncs in parallel
+      const syncOps = [
+        supabase.functions.invoke("sync-github"),
+        supabase.functions.invoke("congress-sync", { body: { action: "sync_members" } }),
+        supabase.functions.invoke("polling-sync"),
+        supabase.functions.invoke("forecast-sync"),
+        supabase.functions.invoke("campaign-finance-sync"),
+        supabase.functions.invoke("intel-briefing"),
+        supabase.functions.invoke("international-sync", { body: { batch: true, codes: ["US","CA","MX","GB","FR","DE","IT","ES","JP","KR","CN","IN","BR","AU","ZA","NG"] } }),
+      ];
+
+      const results = await Promise.allSettled(syncOps);
+      const succeeded = results.filter(r => r.status === "fulfilled").length;
+      const failed = results.filter(r => r.status === "rejected").length;
+
       const t = await getLastSyncTime();
       setLastSync(t);
       onSyncComplete?.();
-      const count = data?.upserted ?? data?.count;
-      toast.success("GitHub sync complete", {
-        description: count != null ? `${count} profiles updated` : "All profiles are up to date",
+
+      // Get GitHub profile count from first result
+      const githubResult = results[0].status === "fulfilled" ? (results[0] as PromiseFulfilledResult<any>).value : null;
+      const profileCount = githubResult?.data?.upserted ?? githubResult?.data?.count;
+
+      toast.success("Full sync complete", {
+        description: `${succeeded} sync tasks completed${profileCount != null ? `, ${profileCount} profiles updated` : ""}${failed > 0 ? `, ${failed} failed` : ""}`,
       });
     } catch (e) {
       console.error("Sync failed:", e);
@@ -185,10 +197,10 @@ export function AppSidebar({
             onClick={handleManualSync}
             disabled={syncing}
             className="win98-button text-[9px] px-1 py-0 h-[16px] flex items-center gap-1"
-            title="Sync from GitHub"
+            title="Sync all data sources (GitHub, Congress, Polling, Finance, Intel, International)"
           >
             <RefreshCw className={`h-2.5 w-2.5 ${syncing ? "animate-spin" : ""}`} />
-            Sync
+            {syncing ? "Syncing…" : "Sync All"}
           </button>
         </div>
         <div className="text-[9px] text-center text-[hsl(var(--muted-foreground))]">// FOR INTERNAL USE ONLY //</div>
