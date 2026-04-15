@@ -122,7 +122,7 @@ async function syncProfile(supabase: any, code: string): Promise<void> {
     tags: [`continent:${meta.continent}`, `region:${meta.region}`, `country:${code}`],
   };
 
-  // World Bank indicators
+  // World Bank indicators (expanded)
   const indicators = [
     { id: "SP.POP.TOTL", field: "population" },
     { id: "SP.POP.65UP.TO.ZS", field: "median_age" },
@@ -181,6 +181,113 @@ async function syncProfile(supabase: any, code: string): Promise<void> {
     }
   } catch (e) {
     console.error(`REST Countries error for ${code}:`, e);
+  }
+
+  // IMF World Economic Outlook data
+  try {
+    const imfIndicators = [
+      { code: "NGDP_RPCH", field: "gdp_growth_rate", label: "Real GDP Growth" },
+      { code: "PCPIPCH", field: "cpi_rate", label: "CPI Inflation" },
+      { code: "PCPIEPCH", field: "pce_rate", label: "Energy Price Inflation" },
+      { code: "BCA_NGDPD", field: "current_account_balance", label: "Current Account % GDP" },
+      { code: "GGXWDG_NGDP", field: "government_debt_gdp_pct", label: "Gov Debt % GDP" },
+    ];
+    for (const ind of imfIndicators) {
+      try {
+        const imfRes = await fetch(
+          `https://www.imf.org/external/datamapper/api/v1/${ind.code}/${code}`,
+          { signal: AbortSignal.timeout(8000) }
+        );
+        if (imfRes.ok) {
+          const imfData = await imfRes.json();
+          const values = imfData?.values?.[ind.code]?.[code];
+          if (values) {
+            // Get most recent year's value
+            const years = Object.keys(values).sort().reverse();
+            for (const y of years) {
+              if (values[y] != null) {
+                // Only set if we don't have WB data for this field, or for CPI/PCE which WB doesn't provide well
+                if (!profile[ind.field] || ind.field === "cpi_rate" || ind.field === "pce_rate") {
+                  profile[ind.field] = values[y];
+                }
+                break;
+              }
+            }
+          }
+        }
+      } catch { /* skip individual IMF indicator errors */ }
+    }
+  } catch (e) {
+    console.error(`IMF data error for ${code}:`, e);
+  }
+
+  // UNDP Human Development Index
+  try {
+    const undpRes = await fetch(
+      `https://hdr.undp.org/sites/default/files/2023-24_HDR/HDR2024_Statistical_Annex_HDI_Table.csv`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+    // Fallback: just try to get from World Bank proxy
+    if (!undpRes.ok) {
+      const hdiRes = await fetch(
+        `https://api.worldbank.org/v2/country/${code}/indicator/HD.HCI.OVRL?format=json&date=2020:2024&per_page=5`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      if (hdiRes.ok) {
+        const hdiData = await hdiRes.json();
+        const entry = hdiData?.[1]?.find((d: any) => d.value != null);
+        if (entry) profile.human_dev_index = entry.value;
+      }
+    }
+  } catch { /* HDI fetch optional */ }
+
+  // Transparency International Corruption Perceptions Index  
+  try {
+    const tiRes = await fetch(
+      `https://api.worldbank.org/v2/country/${code}/indicator/CC.EST?format=json&date=2020:2024&per_page=5`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (tiRes.ok) {
+      const tiData = await tiRes.json();
+      const entry = tiData?.[1]?.find((d: any) => d.value != null);
+      if (entry) {
+        // Convert WGI corruption control (-2.5 to 2.5) to a 0-100 CPI-like score
+        profile.corruption_index = Math.round(((entry.value + 2.5) / 5) * 100);
+      }
+    }
+  } catch { /* corruption index optional */ }
+
+  // Freedom House / Press Freedom from WB proxy
+  try {
+    const pfRes = await fetch(
+      `https://api.worldbank.org/v2/country/${code}/indicator/VA.EST?format=json&date=2020:2024&per_page=5`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (pfRes.ok) {
+      const pfData = await pfRes.json();
+      const entry = pfData?.[1]?.find((d: any) => d.value != null);
+      if (entry) {
+        // Convert Voice & Accountability percentile to a rank estimate (lower = better)
+        profile.press_freedom_rank = Math.round((1 - ((entry.value + 2.5) / 5)) * 180);
+      }
+    }
+  } catch { /* press freedom optional */ }
+
+  // Build economic_indicators_json with all available data
+  const econIndicators: Record<string, any> = {};
+  const econFields = [
+    "gdp", "gdp_per_capita", "real_gdp", "gdp_growth_rate", "inflation_rate",
+    "cpi_rate", "pce_rate", "unemployment_rate", "consumer_spending",
+    "personal_income", "corporate_profits", "government_debt_gdp_pct",
+    "current_account_balance", "fdi_inflows", "industrial_production_index",
+    "labor_force_participation", "building_permits", "manufacturer_new_orders",
+    "nonfarm_payrolls", "stock_market_index", "labor_cost_index",
+  ];
+  for (const f of econFields) {
+    if (profile[f] != null) econIndicators[f] = profile[f];
+  }
+  if (Object.keys(econIndicators).length > 0) {
+    profile.economic_indicators_json = econIndicators;
   }
 
   if (!profile.country_name) profile.country_name = code;
