@@ -1153,7 +1153,9 @@ function endpointDescription(endpoint: string): string {
     "congress-votes": "Congressional roll call votes with vote totals and results",
     "state-leg-elections": "State legislative election results with vote counts and winners",
     "forecast-history": "Historical changes in election forecast ratings over time",
-    search: "Unified search across all 24 databases (requires ?search= param, optional ?categories= filter)",
+    "federal-spending": "Federal contracts and grants from USASpending.gov with recipient, agency, amount, and NAICS data",
+    "ig-reports": "Inspector General oversight reports from 65+ federal agencies via Oversight.garden",
+    search: "Unified search across all 28 databases (requires ?search= param, optional ?categories= filter)",
   };
   return descs[endpoint] || "";
 }
