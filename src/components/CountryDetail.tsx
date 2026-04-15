@@ -725,23 +725,142 @@ function DetailMiniWindow({ win, country, onClose, fmt, pct, money, severityColo
   }
 
   if (win.type === "economy") {
+    const section = d.section || "indicators";
+    const titleMap: Record<string, string> = {
+      gdp: "GDP & Output", inflation: "Inflation & Prices", employment: "Employment & Labor",
+      consumer: "Consumer & Spending", leading: "Leading Indicators", coincident: "Coincident Indicators",
+      lagging: "Lagging Indicators", fiscal: "Fiscal & Debt", trade: "Trade Partners",
+      industries: "Major Industries", indicators: "Economic Overview",
+    };
     return (
-      <Win98Window title={`📊 ${country.flag} ${country.name} — Economy`} onClose={onClose} defaultSize={{ width: 520, height: 480 }} defaultPosition={{ x: 100 + offset, y: 70 + offset }} minSize={{ width: 350, height: 250 }}>
+      <Win98Window title={`📊 ${country.flag} ${country.name} — ${titleMap[section] || "Economy"}`} onClose={onClose} defaultSize={{ width: 580, height: 540 }} defaultPosition={{ x: 100 + offset, y: 70 + offset }} minSize={{ width: 380, height: 280 }}>
         <div className="overflow-y-auto h-full p-3 bg-white text-[hsl(var(--foreground))] space-y-3">
-          <h2 className="text-sm font-bold">{country.flag} Economic Profile</h2>
-          <div className="grid grid-cols-2 gap-2">
-            <DetailRow label="GDP" value={money(d.gdp)} />
-            <DetailRow label="GDP Per Capita" value={money(d.gdp_per_capita)} />
-            <DetailRow label="Unemployment" value={pct(d.unemployment_rate)} />
-            <DetailRow label="Poverty Rate" value={pct(d.poverty_rate)} />
-            <DetailRow label="Inflation" value={pct(d.inflation_rate)} />
-            <DetailRow label="Population" value={fmt(d.population)} />
-            <DetailRow label="Currency" value={d.currency || "N/A"} />
-            <DetailRow label="HDI" value={d.human_dev_index?.toFixed(3) || "N/A"} />
-            <DetailRow label="Corruption Index" value={d.corruption_index?.toFixed(1) || "N/A"} />
-            <DetailRow label="Press Freedom" value={d.press_freedom_rank ? `#${d.press_freedom_rank}` : "N/A"} />
-          </div>
-          {d.major_industries?.length > 0 && (
+          <h2 className="text-sm font-bold">{country.flag} {titleMap[section] || "Economic Profile"}</h2>
+
+          {(section === "gdp" || section === "indicators") && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold border-b border-[hsl(var(--border))] pb-1">Gross Domestic Product (GDP)</div>
+              <p className="text-[9px] text-[hsl(var(--muted-foreground))] leading-relaxed">GDP measures the total value of all goods and services produced within a country, indicating overall economic growth. Real GDP adjusts for inflation for a more accurate picture.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <DetailRow label="Nominal GDP" value={money(d.gdp)} />
+                <DetailRow label="Real GDP" value={money(d.real_gdp)} />
+                <DetailRow label="GDP Per Capita" value={money(d.gdp_per_capita)} />
+                <DetailRow label="GDP Growth Rate" value={d.gdp_growth_rate != null ? `${d.gdp_growth_rate.toFixed(2)}%` : "N/A"} />
+                <DetailRow label="Industrial Production Index" value={d.industrial_production_index?.toFixed(1) || "N/A"} />
+                <DetailRow label="Population" value={fmt(d.population)} />
+              </div>
+            </div>
+          )}
+
+          {(section === "inflation" || section === "indicators") && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold border-b border-[hsl(var(--border))] pb-1">Inflation Rates (CPI & PCE)</div>
+              <p className="text-[9px] text-[hsl(var(--muted-foreground))] leading-relaxed">CPI tracks changes in a basket of consumer goods prices. PCE is the Federal Reserve's preferred measure, covering a broader range of expenditures and adjusting for substitution effects.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <DetailRow label="Headline Inflation" value={pct(d.inflation_rate)} />
+                <DetailRow label="CPI Rate" value={d.cpi_rate != null ? `${d.cpi_rate.toFixed(2)}%` : "N/A"} />
+                <DetailRow label="PCE Rate" value={d.pce_rate != null ? `${d.pce_rate.toFixed(2)}%` : "N/A"} />
+                <DetailRow label="Currency" value={d.currency || "N/A"} />
+              </div>
+            </div>
+          )}
+
+          {(section === "employment" || section === "indicators") && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold border-b border-[hsl(var(--border))] pb-1">Employment & Labor Market</div>
+              <p className="text-[9px] text-[hsl(var(--muted-foreground))] leading-relaxed">The unemployment rate shows the percentage of the labor force without jobs. Nonfarm payrolls measure monthly changes in employed workers, indicating job market strength.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <DetailRow label="Unemployment Rate" value={pct(d.unemployment_rate)} />
+                <DetailRow label="Nonfarm Payrolls" value={d.nonfarm_payrolls != null ? fmt(d.nonfarm_payrolls) : "N/A"} />
+                <DetailRow label="Labor Force Participation" value={d.labor_force_participation != null ? `${d.labor_force_participation.toFixed(1)}%` : "N/A"} />
+                <DetailRow label="Labor Cost Index" value={d.labor_cost_index?.toFixed(1) || "N/A"} />
+                <DetailRow label="Poverty Rate" value={pct(d.poverty_rate)} />
+              </div>
+            </div>
+          )}
+
+          {(section === "consumer" || section === "indicators") && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold border-b border-[hsl(var(--border))] pb-1">Consumer Spending</div>
+              <p className="text-[9px] text-[hsl(var(--muted-foreground))] leading-relaxed">Consumer spending represents household expenditure on goods and services, monitored through retail sales and personal consumption expenditures — making up roughly two-thirds of economic activity.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <DetailRow label="Consumer Spending" value={money(d.consumer_spending)} />
+                <DetailRow label="Personal Income" value={money(d.personal_income)} />
+                <DetailRow label="Median Age" value={d.median_age?.toFixed(1) || "N/A"} />
+                <DetailRow label="Population" value={fmt(d.population)} />
+              </div>
+            </div>
+          )}
+
+          {section === "leading" && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold border-b border-[hsl(var(--border))] pb-1">🟢 Leading Indicators</div>
+              <p className="text-[9px] text-[hsl(var(--muted-foreground))] leading-relaxed">Leading indicators predict future economic activity. They tend to change before the overall economy shifts, making them valuable for forecasting recessions and expansions.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <DetailRow label="Stock Market Index" value={d.stock_market_index != null ? fmt(d.stock_market_index) : "N/A"} />
+                <DetailRow label="Index Name" value={d.stock_market_name || "N/A"} />
+                <DetailRow label="Building Permits" value={d.building_permits != null ? fmt(d.building_permits) : "N/A"} />
+                <DetailRow label="Manufacturer New Orders" value={money(d.manufacturer_new_orders)} />
+                <DetailRow label="Consumer Spending" value={money(d.consumer_spending)} />
+              </div>
+              <div className="text-[9px] bg-green-50 p-2 rounded border border-green-200">
+                <div className="font-bold text-green-800 mb-1">Examples of Leading Indicators:</div>
+                <div>• Stock market returns • Building permits • Manufacturing new orders • Consumer confidence • Yield curve • Weekly jobless claims • Money supply</div>
+              </div>
+            </div>
+          )}
+
+          {section === "coincident" && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold border-b border-[hsl(var(--border))] pb-1">🔵 Coincident Indicators</div>
+              <p className="text-[9px] text-[hsl(var(--muted-foreground))] leading-relaxed">Coincident indicators move in tandem with the overall economy and reflect its current state. They confirm whether the economy is in expansion or contraction in real-time.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <DetailRow label="GDP" value={money(d.gdp)} />
+                <DetailRow label="Real GDP" value={money(d.real_gdp)} />
+                <DetailRow label="Industrial Production" value={d.industrial_production_index?.toFixed(1) || "N/A"} />
+                <DetailRow label="Personal Income" value={money(d.personal_income)} />
+                <DetailRow label="Nonfarm Payrolls" value={d.nonfarm_payrolls != null ? fmt(d.nonfarm_payrolls) : "N/A"} />
+              </div>
+              <div className="text-[9px] bg-blue-50 p-2 rounded border border-blue-200">
+                <div className="font-bold text-blue-800 mb-1">Examples of Coincident Indicators:</div>
+                <div>• GDP • Industrial production • Personal income • Employment • Retail sales • Manufacturing & trade sales</div>
+              </div>
+            </div>
+          )}
+
+          {section === "lagging" && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold border-b border-[hsl(var(--border))] pb-1">🟠 Lagging Indicators</div>
+              <p className="text-[9px] text-[hsl(var(--muted-foreground))] leading-relaxed">Lagging indicators confirm trends after they have already occurred. They help validate whether a trend is genuine and sustainable, providing retrospective confirmation.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <DetailRow label="Unemployment Rate" value={pct(d.unemployment_rate)} />
+                <DetailRow label="Corporate Profits" value={money(d.corporate_profits)} />
+                <DetailRow label="Labor Cost Index" value={d.labor_cost_index?.toFixed(1) || "N/A"} />
+                <DetailRow label="CPI Rate" value={d.cpi_rate != null ? `${d.cpi_rate.toFixed(2)}%` : "N/A"} />
+                <DetailRow label="Gov. Debt/GDP" value={d.government_debt_gdp_pct != null ? `${d.government_debt_gdp_pct.toFixed(1)}%` : "N/A"} />
+              </div>
+              <div className="text-[9px] bg-orange-50 p-2 rounded border border-orange-200">
+                <div className="font-bold text-orange-800 mb-1">Examples of Lagging Indicators:</div>
+                <div>• Unemployment rate • Corporate profits • Labor cost per unit • CPI • Commercial lending • Avg. prime rate • Inventory-to-sales ratio</div>
+              </div>
+            </div>
+          )}
+
+          {section === "fiscal" && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold border-b border-[hsl(var(--border))] pb-1">Fiscal & External</div>
+              <div className="grid grid-cols-2 gap-2">
+                <DetailRow label="Gov. Debt/GDP" value={d.government_debt_gdp_pct != null ? `${d.government_debt_gdp_pct.toFixed(1)}%` : "N/A"} />
+                <DetailRow label="Current Account Balance" value={money(d.current_account_balance)} />
+                <DetailRow label="FDI Inflows" value={money(d.fdi_inflows)} />
+                <DetailRow label="Corruption Index" value={d.corruption_index?.toFixed(1) || "N/A"} />
+                <DetailRow label="Press Freedom Rank" value={d.press_freedom_rank ? `#${d.press_freedom_rank}` : "N/A"} />
+                <DetailRow label="HDI" value={d.human_dev_index?.toFixed(3) || "N/A"} />
+              </div>
+            </div>
+          )}
+
+          {(section === "industries") && d.major_industries?.length > 0 && (
             <div>
               <div className="text-[10px] font-bold mb-1">Major Industries ({d.major_industries.length})</div>
               <div className="grid grid-cols-2 gap-1">
@@ -751,7 +870,8 @@ function DetailMiniWindow({ win, country, onClose, fmt, pct, money, severityColo
               </div>
             </div>
           )}
-          {d.trade_partners && (Array.isArray(d.trade_partners) ? d.trade_partners : []).length > 0 && (
+
+          {(section === "trade") && d.trade_partners && (Array.isArray(d.trade_partners) ? d.trade_partners : []).length > 0 && (
             <div>
               <div className="text-[10px] font-bold mb-1">Trade Partners</div>
               {(d.trade_partners as any[]).map((tp: any, i: number) => (
@@ -759,6 +879,7 @@ function DetailMiniWindow({ win, country, onClose, fmt, pct, money, severityColo
               ))}
             </div>
           )}
+
           <div className="text-[8px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-1">
             Last updated: {d.updated_at ? new Date(d.updated_at).toLocaleString() : "N/A"}
           </div>
