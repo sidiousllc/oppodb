@@ -862,8 +862,60 @@ mcpServer.tool("search_international_policy_issues", {
   },
 });
 
+mcpServer.tool("search_federal_spending", {
+  description: "Search federal contracts and grants from USASpending.gov. Filter by state, award type, agency, fiscal year.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      state: { type: "string" as const, description: "State abbreviation (e.g. 'MN')" },
+      award_type: { type: "string" as const, description: "'contract' or 'grant'" },
+      search: { type: "string" as const, description: "Search recipient name, agency, or description" },
+      fiscal_year: { type: "number" as const, description: "Fiscal year (e.g. 2025)" },
+      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const limit = Math.min((args.limit as number) || 20, 100);
+    const offset = (args.offset as number) || 0;
+    let q = supabase.from("federal_spending").select("*", { count: "exact" }).range(offset, offset + limit - 1).order("award_amount", { ascending: false });
+    if (args.state) q = q.eq("recipient_state", (args.state as string).toUpperCase());
+    if (args.award_type) q = q.eq("award_type", args.award_type as string);
+    if (args.fiscal_year) q = q.eq("fiscal_year", args.fiscal_year as number);
+    if (args.search) q = q.or(`recipient_name.ilike.%${args.search}%,awarding_agency.ilike.%${args.search}%,description.ilike.%${args.search}%`);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("search_ig_reports", {
+  description: "Search Inspector General oversight reports from 65+ federal agencies. Filter by agency/inspector, year, and keyword.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      inspector: { type: "string" as const, description: "Inspector/agency code (e.g. 'defense', 'hhs', 'justice')" },
+      search: { type: "string" as const, description: "Search title, summary, or agency name" },
+      year: { type: "number" as const, description: "Report year" },
+      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const limit = Math.min((args.limit as number) || 20, 100);
+    const offset = (args.offset as number) || 0;
+    let q = supabase.from("ig_reports").select("*", { count: "exact" }).range(offset, offset + limit - 1).order("published_on", { ascending: false });
+    if (args.inspector) q = q.eq("inspector", args.inspector as string);
+    if (args.year) q = q.eq("year", args.year as number);
+    if (args.search) q = q.or(`title.ilike.%${args.search}%,summary.ilike.%${args.search}%,agency_name.ilike.%${args.search}%`);
+    const { data, error, count } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
+  },
+});
+
 mcpServer.tool("master_search", {
-  description: "Unified search across ALL 26 OppoDB databases simultaneously: candidates, congress members, bills, polling, campaign finance, election results, forecasts, MAGA files, narrative reports, local impacts, voter stats, prediction markets, messaging guidance, intel briefings, tracked bills, MIT elections, committees, votes, state leg elections, forecast history, international legislation, and international policy issues. Returns results grouped by category.",
+  description: "Unified search across ALL 28 OppoDB databases simultaneously: candidates, congress members, bills, polling, campaign finance, election results, forecasts, MAGA files, narrative reports, local impacts, voter stats, prediction markets, messaging guidance, intel briefings, tracked bills, MIT elections, committees, votes, state leg elections, forecast history, international profiles/legislation/policy, federal spending, and IG reports. Returns results grouped by category.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -871,7 +923,7 @@ mcpServer.tool("master_search", {
       categories: {
         type: "array" as const,
         items: { type: "string" as const },
-        description: "Optional list of categories to search. Available: candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats, mn_finance, prediction_markets, messaging_guidance, intel_briefings, tracked_bills, mit_elections, congress_committees, congress_votes, state_leg_elections, forecast_history, international_profiles, international_legislation, international_policy_issues. Defaults to all.",
+        description: "Optional list of categories to search. Available: candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats, mn_finance, prediction_markets, messaging_guidance, intel_briefings, tracked_bills, mit_elections, congress_committees, congress_votes, state_leg_elections, forecast_history, international_profiles, international_legislation, international_policy_issues, federal_spending, ig_reports. Defaults to all.",
       },
       limit: { type: "number" as const, description: "Max results per category (default 10, max 20)" },
     },
@@ -896,6 +948,7 @@ mcpServer.tool("master_search", {
       "congress_committees", "congress_votes", "state_leg_elections",
       "forecast_history", "international_profiles",
       "international_legislation", "international_policy_issues",
+      "federal_spending", "ig_reports",
     ];
 
     const requestedCategories = args.categories as string[] | undefined;
@@ -1072,7 +1125,22 @@ mcpServer.tool("master_search", {
         .order("created_at", { ascending: false }).limit(perLimit)
         .then(r => ({ label: "International Policy Issues", data: r.data || [] }));
     }
+    if (activeCategories.includes("federal_spending")) {
+      queries.federal_spending = supabase.from("federal_spending")
+        .select("recipient_name,recipient_state,award_type,award_amount,awarding_agency,fiscal_year")
+        .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ}`)
+        .order("award_amount", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Federal Spending", data: r.data || [] }));
+    }
+    if (activeCategories.includes("ig_reports")) {
+      queries.ig_reports = supabase.from("ig_reports")
+        .select("title,inspector,agency_name,published_on,type,summary")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},agency_name.ilike.${likeQ}`)
+        .order("published_on", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "IG Reports", data: r.data || [] }));
+    }
 
+    const entries = Object.entries(queries);
     const settled = await Promise.all(entries.map(async ([key, promise]) => {
       const res = await promise;
       return { key, label: res.label, count: res.data.length, results: res.data };

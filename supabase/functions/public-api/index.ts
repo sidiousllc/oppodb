@@ -36,6 +36,8 @@ const VALID_ENDPOINTS = [
   "state-leg-elections",
   "international-legislation",
   "international-policy-issues",
+  "federal-spending",
+  "ig-reports",
   "search",
 ];
 
@@ -801,6 +803,41 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "federal-spending": {
+        let q = supabase
+          .from("federal_spending")
+          .select("id,award_type,recipient_name,recipient_state,recipient_district,awarding_agency,funding_agency,description,award_amount,total_obligation,fiscal_year,naics_code,naics_description,cfda_number,place_of_performance_state,place_of_performance_district,source_url", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("award_amount", { ascending: false });
+        if (stateFilter) q = q.eq("recipient_state", stateFilter);
+        const awardType = url.searchParams.get("award_type");
+        if (awardType) q = q.eq("award_type", awardType);
+        if (searchQuery) q = q.or(`recipient_name.ilike.%${searchQuery}%,awarding_agency.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+        const fy = url.searchParams.get("fiscal_year");
+        if (fy) q = q.eq("fiscal_year", parseInt(fy));
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "ig-reports": {
+        let q = supabase
+          .from("ig_reports")
+          .select("id,inspector,agency,agency_name,report_id,title,url,published_on,type,summary,topic,pdf_url,landing_url,year", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("published_on", { ascending: false });
+        const inspector = url.searchParams.get("inspector");
+        if (inspector) q = q.eq("inspector", inspector);
+        if (searchQuery) q = q.or(`title.ilike.%${searchQuery}%,summary.ilike.%${searchQuery}%,agency_name.ilike.%${searchQuery}%`);
+        const yr = url.searchParams.get("year");
+        if (yr) q = q.eq("year", parseInt(yr));
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
       case "search": {
         const q = searchQuery;
         if (!q || q.length < 2) {
@@ -823,6 +860,7 @@ Deno.serve(async (req) => {
           "congress_committees", "congress_votes", "state_leg_elections",
           "forecast_history", "international_profiles",
           "international_legislation", "international_policy_issues",
+          "federal_spending", "ig_reports",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
@@ -1001,8 +1039,22 @@ Deno.serve(async (req) => {
             .order("created_at", { ascending: false }).limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "International Policy Issues" }));
         }
+        if (activeCategories.includes("federal_spending")) {
+          categoryQueries.federal_spending = supabase.from("federal_spending")
+            .select("id,recipient_name,recipient_state,award_type,award_amount,awarding_agency,fiscal_year")
+            .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ},recipient_state.ilike.${likeQ}`)
+            .order("award_amount", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Federal Spending" }));
+        }
+        if (activeCategories.includes("ig_reports")) {
+          categoryQueries.ig_reports = supabase.from("ig_reports")
+            .select("id,title,inspector,agency_name,published_on,type,summary")
+            .or(`title.ilike.${likeQ},summary.ilike.${likeQ},agency_name.ilike.${likeQ}`)
+            .order("published_on", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "IG Reports" }));
+        }
 
-
+        const entries = Object.entries(categoryQueries);
         const settled = await Promise.all(entries.map(async ([key, promise]) => {
           const res = await promise;
           return { key, label: res.label, count: res.data.length, results: res.data };
@@ -1101,7 +1153,9 @@ function endpointDescription(endpoint: string): string {
     "congress-votes": "Congressional roll call votes with vote totals and results",
     "state-leg-elections": "State legislative election results with vote counts and winners",
     "forecast-history": "Historical changes in election forecast ratings over time",
-    search: "Unified search across all 24 databases (requires ?search= param, optional ?categories= filter)",
+    "federal-spending": "Federal contracts and grants from USASpending.gov with recipient, agency, amount, and NAICS data",
+    "ig-reports": "Inspector General oversight reports from 65+ federal agencies via Oversight.garden",
+    search: "Unified search across all 28 databases (requires ?search= param, optional ?categories= filter)",
   };
   return descs[endpoint] || "";
 }

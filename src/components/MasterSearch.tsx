@@ -37,7 +37,7 @@ function saveToStorage(key: string, items: string[]) {
   localStorage.setItem(key, JSON.stringify(items));
 }
 
-const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [], internationalProfiles: [], internationalLegislation: [], internationalPolicyIssues: [] };
+const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [], internationalProfiles: [], internationalLegislation: [], internationalPolicyIssues: [], federalSpending: [], igReports: [] };
 
 
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
@@ -70,6 +70,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
     internationalProfiles: any[];
     internationalLegislation: any[];
     internationalPolicyIssues: any[];
+    federalSpending: any[];
+    igReports: any[];
   }>(EMPTY_DB as any);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -220,7 +222,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes, intlProfilesRes, intlLegislationRes, intlPolicyIssuesRes] = await Promise.all([
+    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes, intlProfilesRes, intlLegislationRes, intlPolicyIssuesRes, fedSpendingRes, igReportsRes] = await Promise.all([
       supabase.from("polling_data")
         .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
         .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
@@ -332,6 +334,16 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
         .or(`title.ilike.${likeQ},description.ilike.${likeQ},country_code.ilike.${likeQ}`)
         .order("created_at", { ascending: false })
         .limit(10),
+      supabase.from("federal_spending")
+        .select("id, recipient_name, recipient_state, award_type, award_amount, awarding_agency, fiscal_year, description")
+        .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ},recipient_state.ilike.${likeQ}`)
+        .order("award_amount", { ascending: false })
+        .limit(10),
+      supabase.from("ig_reports")
+        .select("id, title, inspector, agency_name, published_on, type, summary, pdf_url, landing_url")
+        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},agency_name.ilike.${likeQ},inspector.ilike.${likeQ}`)
+        .order("published_on", { ascending: false })
+        .limit(10),
     ]);
 
     setDbResults({
@@ -358,6 +370,8 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       internationalProfiles: intlProfilesRes.data || [],
       internationalLegislation: intlLegislationRes.data || [],
       internationalPolicyIssues: intlPolicyIssuesRes.data || [],
+      federalSpending: fedSpendingRes.data || [],
+      igReports: igReportsRes.data || [],
     });
     setIsSearching(false);
 
@@ -751,6 +765,34 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           title: i.title,
           subtitle: `${i.country_code} • ${i.category} • ${i.severity} severity • ${i.status}`,
           slug: i.country_code,
+        })),
+      });
+    }
+
+    if (dbResults.federalSpending.length > 0) {
+      groups.push({
+        key: "federal-spending",
+        label: "💵 Federal Spending",
+        icon: <DollarSign className="h-3.5 w-3.5" />,
+        section: "research-tools",
+        results: dbResults.federalSpending.map((r: any) => ({
+          id: r.id,
+          title: r.recipient_name,
+          subtitle: `${r.award_type} • ${r.awarding_agency || ""} • ${r.recipient_state || ""} • $${(r.award_amount || 0).toLocaleString()} • FY${r.fiscal_year || ""}`,
+        })),
+      });
+    }
+
+    if (dbResults.igReports.length > 0) {
+      groups.push({
+        key: "ig-reports",
+        label: "🔍 IG Reports",
+        icon: <FileText className="h-3.5 w-3.5" />,
+        section: "research-tools",
+        results: dbResults.igReports.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          subtitle: `${r.agency_name} • ${r.type || "report"} • ${r.published_on ? new Date(r.published_on).toLocaleDateString() : ""}`,
         })),
       });
     }
