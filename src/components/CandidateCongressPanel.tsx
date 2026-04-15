@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Building2, ExternalLink, Vote, Users, Briefcase, Calendar } from "lucide-react";
+import { Building2, ExternalLink, Vote, Users, Briefcase, Calendar, MapPin, Phone, Globe, Twitter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface CongressMember {
@@ -15,6 +15,14 @@ interface CongressMember {
   candidate_slug: string | null;
   terms: any[] | null;
   leadership: any[] | null;
+  social_media: any | null;
+  district_offices: any[] | null;
+  phone: string | null;
+  contact_form: string | null;
+  office_address: string | null;
+  wikipedia: string | null;
+  ballotpedia: string | null;
+  opensecrets_id: string | null;
 }
 
 interface CongressVoteRecord {
@@ -55,13 +63,13 @@ export function CandidateCongressPanel({ candidateSlug, candidateName }: Props) 
   const [votes, setVotes] = useState<CongressVoteRecord[]>([]);
   const [committees, setCommittees] = useState<CommitteeAssignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"votes" | "committees" | "terms">("votes");
+  const [activeTab, setActiveTab] = useState<"votes" | "committees" | "terms" | "contact">("votes");
 
   useEffect(() => {
     setLoading(true);
     supabase
       .from("congress_members")
-      .select("id,bioguide_id,name,party,state,district,chamber,depiction_url,official_url,candidate_slug,terms,leadership")
+      .select("id,bioguide_id,name,party,state,district,chamber,depiction_url,official_url,candidate_slug,terms,leadership,social_media,district_offices,phone,contact_form,office_address,wikipedia,ballotpedia,opensecrets_id")
       .eq("candidate_slug", candidateSlug)
       .maybeSingle()
       .then(async ({ data }) => {
