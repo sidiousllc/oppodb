@@ -32,15 +32,16 @@ export async function exportDistrictPDF(district: DistrictProfile, cookRating?: 
   const dollar = (n: number | null | undefined) => n != null ? `$${n.toLocaleString()}` : "—";
 
   const sectionTitle = (title: string) => {
-    checkPage(14);
+    checkPage(18);
+    y += 4; // space before section
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30);
     doc.text(title, margin, y);
-    y += 2;
+    y += 3;
     doc.setDrawColor(180);
     doc.line(margin, y, pw - margin, y);
-    y += 6;
+    y += 8;
   };
 
   const renderTable = (title: string, rows: string[][]) => {
