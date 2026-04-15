@@ -156,7 +156,7 @@ export function exportMessagingPDF(item: MessagingExportItem) {
   doc.setTextColor(...c.text);
   const titleLines = doc.splitTextToSize(item.title, maxW);
   doc.text(titleLines, margin, y);
-  y += titleLines.length * 8 + 4;
+  y += titleLines.length * 9 + 6;
 
   // Meta line
   doc.setFontSize(9);
