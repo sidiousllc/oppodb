@@ -17,6 +17,9 @@ const ALLOWED_TABLES = new Set([
   "international_profiles",
   "international_elections",
   "international_leaders",
+  "international_legislation",
+  "international_policy_issues",
+  "international_polling",
 ]);
 
 serve(async (req) => {
