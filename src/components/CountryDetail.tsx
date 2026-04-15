@@ -57,13 +57,14 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [profileRes, electionsRes, leadersRes, legRes, issuesRes, intelRes] = await Promise.all([
+    const [profileRes, electionsRes, leadersRes, legRes, issuesRes, intelRes, pollingRes] = await Promise.all([
       supabase.from("international_profiles").select("*").eq("country_code", countryCode).maybeSingle(),
       supabase.from("international_elections").select("*").eq("country_code", countryCode).order("election_year", { ascending: false }).limit(20),
       supabase.from("international_leaders").select("*").eq("country_code", countryCode),
       supabase.from("international_legislation").select("*").eq("country_code", countryCode).order("introduced_date", { ascending: false }).limit(100),
       supabase.from("international_policy_issues").select("*").eq("country_code", countryCode).order("created_at", { ascending: false }).limit(100),
       supabase.from("intel_briefings").select("*").eq("region", countryCode).order("published_at", { ascending: false }).limit(50),
+      supabase.from("international_polling").select("*").eq("country_code", countryCode).order("date_conducted", { ascending: false }).limit(100),
     ]);
     setData({
       profile: profileRes.data,
@@ -72,6 +73,7 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
       legislation: legRes.data || [],
       policyIssues: issuesRes.data || [],
       intelBriefings: intelRes.data || [],
+      polling: pollingRes.data || [],
     });
     setLoading(false);
   }, [countryCode]);
