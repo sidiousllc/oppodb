@@ -99,6 +99,20 @@ Deno.serve(async (req) => {
 
     const results: Record<string, unknown> = {};
 
+    // Helper: log a sync run to sync_run_log so users can see status in their Profile → Sync tab.
+    const logRun = async (source: string, status: "success" | "error" | "partial" | "skipped", rows = 0, errMsg?: string, startMs = Date.now()) => {
+      try {
+        await supabase.from("sync_run_log").insert({
+          source,
+          status,
+          rows_synced: rows,
+          error_message: errMsg ?? null,
+          duration_ms: Date.now() - startMs,
+          finished_at: new Date().toISOString(),
+        });
+      } catch (e) { console.error(`logRun(${source}) failed:`, e); }
+    };
+
     // 1. Sync GitHub research content — pass service_role key for internal call
     try {
       const ghRes = await fetch(`${supabaseUrl}/functions/v1/sync-github`, {
@@ -454,6 +468,119 @@ Deno.serve(async (req) => {
       results.candidate_scraper = { error: e instanceof Error ? e.message : "failed" };
       console.error("Candidate scraper error:", e);
     }
+
+    // 9. Polling sync (RealClearPolitics, 538, etc.)
+    {
+      const start = Date.now();
+      try {
+        const r = await fetch(`${supabaseUrl}/functions/v1/polling-sync`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseKey}` }, body: "{}",
+        });
+        const d = await r.json().catch(() => ({}));
+        results.polling = { status: r.ok ? "ok" : "error", upserted: d?.upserted ?? 0 };
+        await logRun("polling", r.ok ? "success" : "error", d?.upserted ?? 0, r.ok ? undefined : `HTTP ${r.status}`, start);
+      } catch (e) {
+        results.polling = { error: e instanceof Error ? e.message : "failed" };
+        await logRun("polling", "error", 0, e instanceof Error ? e.message : "failed", start);
+      }
+    }
+
+    // 10. Forecast sync (Cook, Sabato, Inside Elections)
+    {
+      const start = Date.now();
+      try {
+        const r = await fetch(`${supabaseUrl}/functions/v1/forecast-sync`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseKey}` }, body: "{}",
+        });
+        const d = await r.json().catch(() => ({}));
+        results.forecasts = { status: r.ok ? "ok" : "error", upserted: d?.upserted ?? 0 };
+        await logRun("forecasts", r.ok ? "success" : "error", d?.upserted ?? 0, undefined, start);
+      } catch (e) {
+        results.forecasts = { error: e instanceof Error ? e.message : "failed" };
+        await logRun("forecasts", "error", 0, e instanceof Error ? e.message : "failed", start);
+      }
+    }
+
+    // 11. Congress sync (members, bills, votes)
+    {
+      const start = Date.now();
+      try {
+        const r = await fetch(`${supabaseUrl}/functions/v1/congress-sync`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseKey}` }, body: "{}",
+        });
+        const d = await r.json().catch(() => ({}));
+        results.congress = { status: r.ok ? "ok" : "error", ...d };
+        await logRun("congress", r.ok ? "success" : "error", d?.upserted ?? 0, undefined, start);
+      } catch (e) {
+        results.congress = { error: e instanceof Error ? e.message : "failed" };
+        await logRun("congress", "error", 0, e instanceof Error ? e.message : "failed", start);
+      }
+    }
+
+    // 12. Geopolitics — refresh top-tier country briefs (rotate to keep AI cost down)
+    {
+      const start = Date.now();
+      try {
+        // Rotate through ~10 codes per run; full set covered every ~8 hours at 15-min cadence
+        const ROTATION = [
+          ["US","CN","RU","UA","IL"], ["IR","KP","TW","IN","PK"],
+          ["GB","FR","DE","JP","KR"], ["BR","MX","CA","AU","ZA"],
+          ["SA","AE","TR","EG","NG"], ["VE","CU","SY","YE","AF"],
+        ];
+        const idx = Math.floor(Date.now() / (15 * 60 * 1000)) % ROTATION.length;
+        const batch = ROTATION[idx];
+        let ok = 0;
+        for (const code of batch) {
+          try {
+            const r = await fetch(`${supabaseUrl}/functions/v1/geopolitics-brief`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseKey}` },
+              body: JSON.stringify({ country_code: code, force: false }),
+            });
+            if (r.ok) ok++;
+            await new Promise((r) => setTimeout(r, 1500));
+          } catch { /* continue */ }
+        }
+        results.geopolitics = { rotation_index: idx, batch, refreshed: ok };
+        await logRun("geopolitics", ok > 0 ? "success" : "partial", ok, undefined, start);
+      } catch (e) {
+        results.geopolitics = { error: e instanceof Error ? e.message : "failed" };
+        await logRun("geopolitics", "error", 0, e instanceof Error ? e.message : "failed", start);
+      }
+    }
+
+    // 13. Intel briefings (news clusters)
+    {
+      const start = Date.now();
+      try {
+        const r = await fetch(`${supabaseUrl}/functions/v1/intel-briefing`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseKey}` }, body: "{}",
+        });
+        results.intel = { status: r.ok ? "ok" : "error" };
+        await logRun("intel", r.ok ? "success" : "error", 0, undefined, start);
+      } catch (e) {
+        results.intel = { error: e instanceof Error ? e.message : "failed" };
+        await logRun("intel", "error", 0, e instanceof Error ? e.message : "failed", start);
+      }
+    }
+
+    // 14. Lobbying & contracts
+    for (const fn of ["lobbying-sync", "contracts-sync", "court-cases-sync"]) {
+      const start = Date.now();
+      try {
+        const r = await fetch(`${supabaseUrl}/functions/v1/${fn}`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseKey}` }, body: "{}",
+        });
+        results[fn] = { status: r.ok ? "ok" : "error" };
+        await logRun(fn, r.ok ? "success" : "error", 0, undefined, start);
+      } catch (e) {
+        results[fn] = { error: e instanceof Error ? e.message : "failed" };
+        await logRun(fn, "error", 0, e instanceof Error ? e.message : "failed", start);
+      }
+    }
+
+    // Master log entry
+    await logRun("all", "success", Object.keys(results).length);
 
     console.log(`[SECURITY] Sync completed. Results: ${JSON.stringify(Object.keys(results))}`);
 

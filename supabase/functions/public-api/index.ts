@@ -62,6 +62,15 @@ const VALID_ENDPOINTS = [
   // Admin-only operations
   "admin-dispatch-alerts",
   "admin-regenerate-ai",
+  // Phase 6 — Geopolitics, War Rooms, Sync, International extras
+  "geopolitics",                  // GET ?country_code=XX  (cached brief), POST { country_code, force? } → regenerate
+  "war-rooms",                    // GET (caller's rooms) | GET ?id= | POST | PATCH ?id= | DELETE ?id=
+  "war-room-members",             // GET ?room_id=
+  "war-room-messages",            // GET ?room_id=&limit= | POST { room_id, body }
+  "sync-status",                  // GET (latest run per source from sync_run_log)
+  "sync-preferences",             // GET (caller prefs) | PUT { source, interval_minutes, enabled }
+  "international-elections",      // GET ?country_code=
+  "international-leaders",        // GET ?country_code=
 ];
 
 async function hashKey(key: string): Promise<string> {
