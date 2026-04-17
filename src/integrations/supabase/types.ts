@@ -47,6 +47,106 @@ export type Database = {
         }
         Relationships: []
       }
+      alert_dispatch_log: {
+        Row: {
+          alert_rule_id: string | null
+          channel: string
+          created_at: string
+          error: string | null
+          id: string
+          payload: Json
+          status: string
+          user_id: string
+        }
+        Insert: {
+          alert_rule_id?: string | null
+          channel: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          status?: string
+          user_id: string
+        }
+        Update: {
+          alert_rule_id?: string | null
+          channel?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_dispatch_log_alert_rule_id_fkey"
+            columns: ["alert_rule_id"]
+            isOneToOne: false
+            referencedRelation: "alert_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alert_rules: {
+        Row: {
+          channels: string[]
+          created_at: string
+          enabled: boolean
+          entity_id: string | null
+          entity_type: string | null
+          event_types: string[]
+          id: string
+          keywords: string[]
+          last_triggered_at: string | null
+          name: string
+          trigger_count: number
+          updated_at: string
+          user_id: string
+          webhook_endpoint_id: string | null
+        }
+        Insert: {
+          channels?: string[]
+          created_at?: string
+          enabled?: boolean
+          entity_id?: string | null
+          entity_type?: string | null
+          event_types?: string[]
+          id?: string
+          keywords?: string[]
+          last_triggered_at?: string | null
+          name: string
+          trigger_count?: number
+          updated_at?: string
+          user_id: string
+          webhook_endpoint_id?: string | null
+        }
+        Update: {
+          channels?: string[]
+          created_at?: string
+          enabled?: boolean
+          entity_id?: string | null
+          entity_type?: string | null
+          event_types?: string[]
+          id?: string
+          keywords?: string[]
+          last_triggered_at?: string | null
+          name?: string
+          trigger_count?: number
+          updated_at?: string
+          user_id?: string
+          webhook_endpoint_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_rules_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -117,6 +217,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bill_impact_analyses: {
+        Row: {
+          affected_groups: Json
+          bill_id: string
+          fiscal_impact: string | null
+          generated_at: string
+          id: string
+          losers: Json
+          model: string
+          political_impact: string | null
+          scope: string
+          scope_ref: string | null
+          summary: string
+          updated_at: string
+          winners: Json
+        }
+        Insert: {
+          affected_groups?: Json
+          bill_id: string
+          fiscal_impact?: string | null
+          generated_at?: string
+          id?: string
+          losers?: Json
+          model?: string
+          political_impact?: string | null
+          scope?: string
+          scope_ref?: string | null
+          summary?: string
+          updated_at?: string
+          winners?: Json
+        }
+        Update: {
+          affected_groups?: Json
+          bill_id?: string
+          fiscal_impact?: string | null
+          generated_at?: string
+          id?: string
+          losers?: Json
+          model?: string
+          political_impact?: string | null
+          scope?: string
+          scope_ref?: string | null
+          summary?: string
+          updated_at?: string
+          winners?: Json
+        }
+        Relationships: []
       }
       campaign_finance: {
         Row: {
@@ -1098,6 +1246,78 @@ export type Database = {
           id?: string
           token?: string
           used_at?: string | null
+        }
+        Relationships: []
+      }
+      entity_activity: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          details: Json
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id: string
+          summary: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id?: string
+          summary: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string
+          entity_type?: string
+          event_type?: string
+          id?: string
+          summary?: string
+        }
+        Relationships: []
+      }
+      entity_notes: {
+        Row: {
+          attachments: Json
+          body: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          is_shared: boolean
+          mentions: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachments?: Json
+          body?: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          is_shared?: boolean
+          mentions?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachments?: Json
+          body?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          is_shared?: boolean
+          mentions?: string[]
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2100,6 +2320,146 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          id: string
+          link: string | null
+          metadata: Json
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      oppo_tracker_items: {
+        Row: {
+          assignee_id: string | null
+          attachments: Json
+          body: string
+          column_name: string
+          created_at: string
+          created_by: string
+          due_date: string | null
+          id: string
+          position: number
+          priority: string
+          source_urls: string[]
+          status: string
+          tags: string[]
+          title: string
+          tracker_id: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          attachments?: Json
+          body?: string
+          column_name?: string
+          created_at?: string
+          created_by: string
+          due_date?: string | null
+          id?: string
+          position?: number
+          priority?: string
+          source_urls?: string[]
+          status?: string
+          tags?: string[]
+          title: string
+          tracker_id: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          attachments?: Json
+          body?: string
+          column_name?: string
+          created_at?: string
+          created_by?: string
+          due_date?: string | null
+          id?: string
+          position?: number
+          priority?: string
+          source_urls?: string[]
+          status?: string
+          tags?: string[]
+          title?: string
+          tracker_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oppo_tracker_items_tracker_id_fkey"
+            columns: ["tracker_id"]
+            isOneToOne: false
+            referencedRelation: "oppo_trackers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oppo_trackers: {
+        Row: {
+          columns: Json
+          created_at: string
+          description: string
+          id: string
+          is_shared: boolean
+          name: string
+          owner_id: string
+          scope: string
+          scope_ref: string | null
+          updated_at: string
+        }
+        Insert: {
+          columns?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          is_shared?: boolean
+          name: string
+          owner_id: string
+          scope?: string
+          scope_ref?: string | null
+          updated_at?: string
+        }
+        Update: {
+          columns?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          is_shared?: boolean
+          name?: string
+          owner_id?: string
+          scope?: string
+          scope_ref?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       polling_alert_subscriptions: {
         Row: {
           cadence: string
@@ -2487,6 +2847,45 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_searches: {
+        Row: {
+          alert_enabled: boolean
+          created_at: string
+          filters: Json
+          id: string
+          last_run_at: string | null
+          name: string
+          query: string
+          scope: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_enabled?: boolean
+          created_at?: string
+          filters?: Json
+          id?: string
+          last_run_at?: string | null
+          name: string
+          query?: string
+          scope?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_enabled?: boolean
+          created_at?: string
+          filters?: Json
+          id?: string
+          last_run_at?: string | null
+          name?: string
+          query?: string
+          scope?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       section_permissions: {
         Row: {
           allowed: boolean
@@ -2519,6 +2918,116 @@ export type Database = {
           id?: string
           section_id?: string
           subsection_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stakeholder_interactions: {
+        Row: {
+          body: string
+          created_at: string
+          follow_up_at: string | null
+          id: string
+          interaction_type: string
+          occurred_at: string
+          outcome: string | null
+          stakeholder_id: string
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          follow_up_at?: string | null
+          id?: string
+          interaction_type?: string
+          occurred_at?: string
+          outcome?: string | null
+          stakeholder_id: string
+          subject?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          follow_up_at?: string | null
+          id?: string
+          interaction_type?: string
+          occurred_at?: string
+          outcome?: string | null
+          stakeholder_id?: string
+          subject?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stakeholder_interactions_stakeholder_id_fkey"
+            columns: ["stakeholder_id"]
+            isOneToOne: false
+            referencedRelation: "stakeholders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stakeholders: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          influence_score: number | null
+          metadata: Json
+          name: string
+          notes: string
+          organization: string | null
+          owner_id: string
+          party: string | null
+          phone: string | null
+          social_handles: Json
+          state_abbr: string | null
+          tags: string[]
+          title: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          influence_score?: number | null
+          metadata?: Json
+          name: string
+          notes?: string
+          organization?: string | null
+          owner_id: string
+          party?: string | null
+          phone?: string | null
+          social_handles?: Json
+          state_abbr?: string | null
+          tags?: string[]
+          title?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          influence_score?: number | null
+          metadata?: Json
+          name?: string
+          notes?: string
+          organization?: string | null
+          owner_id?: string
+          party?: string | null
+          phone?: string | null
+          social_handles?: Json
+          state_abbr?: string | null
+          tags?: string[]
+          title?: string | null
+          type?: string
           updated_at?: string
         }
         Relationships: []
@@ -2964,6 +3473,48 @@ export type Database = {
         }
         Relationships: []
       }
+      talking_points: {
+        Row: {
+          angle: string
+          audience: string
+          created_at: string
+          evidence: Json
+          generated_by: string | null
+          id: string
+          model: string
+          points: Json
+          subject_ref: string
+          subject_type: string
+          updated_at: string
+        }
+        Insert: {
+          angle?: string
+          audience?: string
+          created_at?: string
+          evidence?: Json
+          generated_by?: string | null
+          id?: string
+          model?: string
+          points?: Json
+          subject_ref: string
+          subject_type: string
+          updated_at?: string
+        }
+        Update: {
+          angle?: string
+          audience?: string
+          created_at?: string
+          evidence?: Json
+          generated_by?: string | null
+          id?: string
+          model?: string
+          points?: Json
+          subject_ref?: string
+          subject_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tracked_bills: {
         Row: {
           bill_id: number
@@ -3330,6 +3881,208 @@ export type Database = {
         }
         Relationships: []
       }
+      vulnerability_scores: {
+        Row: {
+          candidate_slug: string
+          category_scores: Json
+          generated_at: string
+          id: string
+          model: string
+          overall_score: number | null
+          summary: string
+          top_vulnerabilities: Json
+          updated_at: string
+        }
+        Insert: {
+          candidate_slug: string
+          category_scores?: Json
+          generated_at?: string
+          id?: string
+          model?: string
+          overall_score?: number | null
+          summary?: string
+          top_vulnerabilities?: Json
+          updated_at?: string
+        }
+        Update: {
+          candidate_slug?: string
+          category_scores?: Json
+          generated_at?: string
+          id?: string
+          model?: string
+          overall_score?: number | null
+          summary?: string
+          top_vulnerabilities?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      war_room_members: {
+        Row: {
+          added_at: string
+          id: string
+          role: string
+          user_id: string
+          war_room_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          role?: string
+          user_id: string
+          war_room_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+          war_room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "war_room_members_war_room_id_fkey"
+            columns: ["war_room_id"]
+            isOneToOne: false
+            referencedRelation: "war_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      war_room_messages: {
+        Row: {
+          attachments: Json
+          body: string
+          created_at: string
+          id: string
+          user_id: string
+          war_room_id: string
+        }
+        Insert: {
+          attachments?: Json
+          body: string
+          created_at?: string
+          id?: string
+          user_id: string
+          war_room_id: string
+        }
+        Update: {
+          attachments?: Json
+          body?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          war_room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "war_room_messages_war_room_id_fkey"
+            columns: ["war_room_id"]
+            isOneToOne: false
+            referencedRelation: "war_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      war_rooms: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+          owner_id: string
+          pinned_entities: Json
+          race_scope: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          owner_id: string
+          pinned_entities?: Json
+          race_scope?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          pinned_entities?: Json
+          race_scope?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      watchlist_items: {
+        Row: {
+          alert_on_change: boolean
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          label: string | null
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_on_change?: boolean
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          label?: string | null
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_on_change?: boolean
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          label?: string | null
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_endpoints: {
+        Row: {
+          channel: string
+          created_at: string
+          enabled: boolean
+          id: string
+          name: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wiki_changelog: {
         Row: {
           change_type: string
@@ -3505,6 +4258,10 @@ export type Database = {
         Args: { p_key_id: string }
         Returns: undefined
       }
+      is_war_room_member: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
       log_api_request: {
         Args: {
           p_endpoint: string
@@ -3541,6 +4298,10 @@ export type Database = {
           key_id: string
           user_id: string
         }[]
+      }
+      war_room_role: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: string
       }
     }
     Enums: {
