@@ -41,6 +41,7 @@ import { StateReportGenerator } from "@/components/StateReportGenerator";
 import { InternationalHub } from "@/components/InternationalHub";
 import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
+import { ReportsHub } from "@/components/ReportsHub";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
 import { useSectionAccess } from "@/hooks/useSectionAccess";
 
@@ -287,6 +288,7 @@ export default function Index() {
     "research-tools": 0,
     internationalhub: 0,
     "live-elections": 0,
+    reports: 0,
     documentation: 20,
   }), [dataVersion, districts, stateLegDistricts, pollingCount]);
 
@@ -317,6 +319,7 @@ export default function Index() {
     "research-tools": "Research Tools",
     internationalhub: "InternationalHub",
     "live-elections": "Live Elections",
+    reports: "Reports",
     documentation: "Documentation",
   };
 
@@ -421,6 +424,10 @@ export default function Index() {
 
     if (section === "intelhub") {
       return <IntelHub />;
+    }
+
+    if (section === "reports") {
+      return <ReportsHub />;
     }
 
     if (section === "documentation") {
