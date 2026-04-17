@@ -16,9 +16,16 @@ export function ResearchToolsDashboard({ onNavigateSubsection }: ResearchToolsDa
     {
       id: "court-records",
       emoji: "⚖️",
-      label: "Court Records",
-      description: "Search millions of U.S. court case records via JudyRecords — covers federal, state, and local courts.",
+      label: "Court Records (JudyRecords)",
+      description: "External search of millions of U.S. state and local court records via JudyRecords.",
       features: ["Federal & state court cases", "Name-based search", "Case number lookup", "Party & attorney search", "Direct links to case details"],
+    },
+    {
+      id: "investigations",
+      emoji: "🔍",
+      label: "Investigations",
+      description: "Public records intelligence: lobbying, federal contracts, courts, FARA, IG reports, and federal spending.",
+      features: ["Senate LDA lobbying filings", "USAspending federal contracts", "CourtListener federal cases", "DOJ FARA registrants", "Inspector General reports", "Federal grants & spending"],
     },
     {
       id: "state-report",
