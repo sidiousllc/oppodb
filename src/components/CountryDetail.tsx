@@ -462,7 +462,18 @@ function InfoCard({
 }) {
   return (
     <div className="candidate-card p-3">
-      <h3 className="text-[11px] font-bold mb-2">{title}</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-[11px] font-bold">{title}</h3>
+        {onView && (
+          <button
+            onClick={onView}
+            className="win98-button text-[9px] px-2 py-[1px]"
+            title="View full details"
+          >
+            Details
+          </button>
+        )}
+      </div>
       {items.map(([label, val]) => (
         <div key={label} className="flex justify-between text-[10px] py-0.5 border-b border-[hsl(var(--border))] last:border-0">
           <span className="text-[hsl(var(--muted-foreground))]">{label}</span>
