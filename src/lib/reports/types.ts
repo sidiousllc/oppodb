@@ -23,7 +23,10 @@ export type ReportBlockType =
   | "admin_activity" // admin only — activity logs table
   | "admin_locations" // admin only — locations w/ map
   | "api_data"       // raw call to public-api endpoint
-  | "mcp_data";      // raw call to mcp-server tool
+  | "mcp_data"       // raw call to mcp-server tool
+  | "chart"          // bar/line/pie chart from custom data
+  | "table"          // arbitrary tabular data
+  | "map";           // generic geo points / district highlight map
 
 export interface BaseBlock {
   id: string;
@@ -89,6 +92,7 @@ export interface AdminActivityBlock extends BaseBlock {
     date_from?: string | null;
     date_to?: string | null;
   };
+  snapshot?: Record<string, unknown>;
 }
 
 export interface AdminLocationsBlock extends BaseBlock {
@@ -100,6 +104,7 @@ export interface AdminLocationsBlock extends BaseBlock {
   };
   /** Show map vs raw table. */
   showMap?: boolean;
+  snapshot?: Record<string, unknown>;
 }
 
 export interface ApiDataBlock extends BaseBlock {
@@ -116,6 +121,32 @@ export interface McpDataBlock extends BaseBlock {
   snapshot?: unknown;
 }
 
+export interface ChartBlock extends BaseBlock {
+  type: "chart";
+  chartType: "bar" | "line" | "pie";
+  /** Rows like [{label:"Q1", value:12, value2:8}, ...] — value/value2/value3 are numeric series. */
+  data: Array<Record<string, string | number>>;
+  /** Series keys, in order. Default ["value"]. */
+  series?: string[];
+  caption?: string;
+}
+
+export interface TableBlock extends BaseBlock {
+  type: "table";
+  columns: string[];
+  rows: Array<Array<string | number>>;
+  caption?: string;
+}
+
+export interface MapBlock extends BaseBlock {
+  type: "map";
+  /** Either highlight congressional districts ["MN-05", "TX-22"] or plot points. */
+  mode: "districts" | "points";
+  districts?: string[];
+  points?: Array<{ lat: number; lng: number; label?: string }>;
+  caption?: string;
+}
+
 export type ReportBlock =
   | HeadingBlock
   | TextBlock
@@ -127,7 +158,10 @@ export type ReportBlock =
   | AdminActivityBlock
   | AdminLocationsBlock
   | ApiDataBlock
-  | McpDataBlock;
+  | McpDataBlock
+  | ChartBlock
+  | TableBlock
+  | MapBlock;
 
 export interface Report {
   id: string;
@@ -145,7 +179,7 @@ export const BLOCK_PALETTE: Array<{
   label: string;
   emoji: string;
   adminOnly?: boolean;
-  group: "Content" | "Data" | "Admin" | "API";
+  group: "Content" | "Data" | "Visuals" | "Admin" | "API";
 }> = [
   { type: "heading", label: "Heading", emoji: "🅷", group: "Content" },
   { type: "subheading", label: "Subheading", emoji: "🅢", group: "Content" },
@@ -154,6 +188,10 @@ export const BLOCK_PALETTE: Array<{
   { type: "divider", label: "Divider", emoji: "—", group: "Content" },
   { type: "page_break", label: "Page Break", emoji: "📄", group: "Content" },
   { type: "tabs", label: "Tabs Container", emoji: "📑", group: "Content" },
+
+  { type: "chart", label: "Chart", emoji: "📈", group: "Visuals" },
+  { type: "table", label: "Table", emoji: "🧮", group: "Visuals" },
+  { type: "map", label: "Map", emoji: "🗺️", group: "Visuals" },
 
   { type: "candidate", label: "Candidate Snapshot", emoji: "👤", group: "Data" },
   { type: "research", label: "Candidate Research", emoji: "🔍", group: "Data" },
