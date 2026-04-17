@@ -13,6 +13,7 @@ import { DistrictPollingPanel } from "@/components/DistrictPollingPanel";
 import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 import { DistrictCongressPanel } from "@/components/DistrictCongressPanel";
 import { DistrictNewsTab } from "@/components/DistrictNewsTab";
+import { BillImpactPanel } from "@/components/BillImpactPanel";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
 import { supabase } from "@/integrations/supabase/client";
 import { stateAbbrToName } from "@/lib/stateAbbreviations";
@@ -815,6 +816,8 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
 
         {/* Issues & Impact Tab */}
         <TabsContent value="issues" className="mt-4">
+          {/* AI Bill Impact Analysis */}
+          <BillImpactPanel districtId={district.district_id} stateAbbr={stateAbbr} />
           {/* Top Issues */}
           {effectiveTopIssues.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6 mb-6">

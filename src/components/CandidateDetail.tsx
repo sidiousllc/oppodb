@@ -13,6 +13,8 @@ import { CandidatePollingPanel } from "@/components/CandidatePollingPanel";
 import { CandidateVotingRecord } from "@/components/CandidateVotingRecord";
 import { CandidateCongressPanel } from "@/components/CandidateCongressPanel";
 import { FollowTheMoneyPanel } from "@/components/FollowTheMoneyPanel";
+import { VulnerabilityScorePanel } from "@/components/VulnerabilityScorePanel";
+import { TalkingPointsPanel } from "@/components/TalkingPointsPanel";
 
 interface CandidateDetailProps {
   candidate: Candidate;
@@ -271,6 +273,12 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
           </div>
         </div>
       ) : null}
+
+      {/* AI Vulnerability Analysis */}
+      <VulnerabilityScorePanel candidateSlug={candidate.slug} />
+
+      {/* AI Talking Points */}
+      <TalkingPointsPanel subjectType="candidate" subjectRef={candidate.slug} />
 
       {/* Candidate Polling */}
       <CandidatePollingPanel candidateName={candidate.name} candidateSlug={candidate.slug} />
