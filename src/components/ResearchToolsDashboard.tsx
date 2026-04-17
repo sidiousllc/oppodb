@@ -1,4 +1,4 @@
-import { Users, Scale, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 interface ResearchToolsDashboardProps {
   onNavigateSubsection: (subsection: string) => void;
@@ -34,6 +34,34 @@ export function ResearchToolsDashboard({ onNavigateSubsection }: ResearchToolsDa
       description: "Generate comprehensive intelligence reports for any state, pulling data from all databases.",
       features: ["Districts & demographics", "Election history & forecasts", "Campaign finance", "Polling & prediction markets", "Intel briefings & oppo research"],
     },
+    {
+      id: "war-rooms",
+      emoji: "⚔️",
+      label: "War Rooms",
+      description: "Private collaboration spaces for teams: shared notes, real-time chat, and pinned intel on a candidate or race.",
+      features: ["Private team rooms", "Real-time chat", "Member invites by email", "Race scope tagging", "Owner / editor / viewer roles"],
+    },
+    {
+      id: "stakeholders",
+      emoji: "🤝",
+      label: "Stakeholders (CRM)",
+      description: "Track donors, volunteers, vendors, allies, and adversaries across campaigns and accounts.",
+      features: ["Contact records & tags", "Activity timeline", "Org / individual relationships", "Notes & follow-ups", "CSV export"],
+    },
+    {
+      id: "forecast-lab",
+      emoji: "🎲",
+      label: "Forecast Lab",
+      description: "Monte Carlo scenario simulator powered by DataHub forecasts, polling aggregates, and prediction markets.",
+      features: ["Monte Carlo simulation", "National swing modeling", "Seed from Cook/538/Sabato", "Pull from polling aggregates", "Prediction market priors", "Save & compare scenarios"],
+    },
+    {
+      id: "entity-graph",
+      emoji: "🕸️",
+      label: "Entity Graph",
+      description: "Visualize relationships between candidates, donors, PACs, lobbyists, contractors, and bills.",
+      features: ["Money flow visualization", "Co-sponsorship networks", "Lobbying client graphs", "Contractor relationships", "Interactive exploration"],
+    },
   ];
 
   return (
@@ -42,7 +70,7 @@ export function ResearchToolsDashboard({ onNavigateSubsection }: ResearchToolsDa
         <div className="flex items-center gap-2 text-[11px]">
           <Search className="h-4 w-4" />
           <span className="font-bold">Research Tools</span>
-          <span className="text-[hsl(var(--muted-foreground))]">— Integrated search across public records and data sources</span>
+          <span className="text-[hsl(var(--muted-foreground))]">— Integrated search, collaboration, and modeling across public records and platform data</span>
         </div>
       </div>
 
