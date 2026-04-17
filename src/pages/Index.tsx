@@ -34,7 +34,6 @@ import { MessagingHub } from "@/components/MessagingHub";
 import { IntelHub } from "@/components/IntelHub";
 import { WarRoomHub } from "@/components/WarRoomHub";
 import { CRMHub } from "@/components/CRMHub";
-import { useMail } from "@/contexts/MailContext";
 import { ForecastHub } from "@/components/ForecastHub";
 import { InvestigationsPanel } from "@/components/InvestigationsPanel";
 import { GraphHub } from "@/components/GraphHub";
@@ -496,7 +495,7 @@ export default function Index() {
 
     if (section === "alerts") {
       // Alerts & Watchlist now live inside the Mail window.
-      return <AlertsRedirectToMail />;
+      return <AlertsRedirectToMail onDone={() => setSection("dashboard")} />;
     }
 
     if (section === "forecast") {
