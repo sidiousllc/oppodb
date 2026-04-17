@@ -31,7 +31,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
-  return <>{children}</>;
+  return <><LocationTrackerInit />{children}</>;
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
