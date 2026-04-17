@@ -19,6 +19,7 @@ import { CandidateEditor } from "@/components/CandidateEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { Win98Window } from "@/components/Win98Window";
 import { Win98Taskbar } from "@/components/Win98Taskbar";
+import { NewsTicker } from "@/components/NewsTicker";
 import { AOLToolbar } from "@/components/AOLToolbar";
 import { Win98Desktop } from "@/components/Win98Desktop";
 import { AOLBuddyList } from "@/components/AOLBuddyList";
@@ -433,7 +434,7 @@ export default function Index() {
   return (
     <>
       {/* Desktop background */}
-      <div className="flex flex-col h-screen bg-[hsl(var(--background))] pb-[28px]">
+      <div className="flex flex-col h-screen bg-[hsl(var(--background))] pb-[50px]">
         {isMinimized ? (
           <Win98Desktop onOpenWindow={() => setIsMinimized(false)} />
         ) : (
@@ -504,6 +505,9 @@ export default function Index() {
           </Win98Window>
         )}
       </div>
+
+      {/* News Ticker */}
+      <NewsTicker />
 
       {/* Win98 Taskbar */}
       <Win98Taskbar
