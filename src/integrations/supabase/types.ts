@@ -218,6 +218,48 @@ export type Database = {
           },
         ]
       }
+      app_serial_keys: {
+        Row: {
+          created_at: string
+          device_bound_at: string | null
+          device_id: string | null
+          id: string
+          last_validated_at: string | null
+          notes: string | null
+          revoked_at: string | null
+          serial: string
+          updated_at: string
+          user_id: string
+          validation_count: number
+        }
+        Insert: {
+          created_at?: string
+          device_bound_at?: string | null
+          device_id?: string | null
+          id?: string
+          last_validated_at?: string | null
+          notes?: string | null
+          revoked_at?: string | null
+          serial: string
+          updated_at?: string
+          user_id: string
+          validation_count?: number
+        }
+        Update: {
+          created_at?: string
+          device_bound_at?: string | null
+          device_id?: string | null
+          id?: string
+          last_validated_at?: string | null
+          notes?: string | null
+          revoked_at?: string | null
+          serial?: string
+          updated_at?: string
+          user_id?: string
+          validation_count?: number
+        }
+        Relationships: []
+      }
       bill_impact_analyses: {
         Row: {
           affected_groups: Json
@@ -4862,6 +4904,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      unbind_serial_device: { Args: { p_key_id: string }; Returns: undefined }
       user_has_report_access: {
         Args: { _need_edit?: boolean; _report_id: string; _user_id: string }
         Returns: boolean
@@ -4871,6 +4914,15 @@ export type Database = {
         Returns: {
           key_id: string
           user_id: string
+        }[]
+      }
+      validate_app_serial: {
+        Args: { p_device_id: string; p_serial: string }
+        Returns: {
+          key_id: string
+          reason: string
+          user_id: string
+          valid: boolean
         }[]
       }
       war_room_role: {
