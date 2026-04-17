@@ -210,20 +210,46 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
         <div className="space-y-3">
           {tab === "overview" && (
             <div className="grid gap-3 sm:grid-cols-2">
-              <InfoCard title="General" items={[
-                ["Capital", p?.capital],
-                ["Population", fmt(p?.population)],
-                ["Area", p?.area_sq_km ? `${fmt(p.area_sq_km)} sq km` : "N/A"],
-                ["Languages", p?.official_languages?.join(", ")],
-                ["Currency", p?.currency],
-                ["Government", p?.government_type],
-              ]} />
-              <InfoCard title="Key Indicators" items={[
-                ["HDI", p?.human_dev_index?.toFixed(3)],
-                ["Press Freedom Rank", p?.press_freedom_rank ? `#${p.press_freedom_rank}` : undefined],
-                ["Corruption Index", p?.corruption_index?.toFixed(1)],
-                ["Median Age", p?.median_age?.toFixed(1)],
-              ]} />
+              <InfoCard
+                title="General"
+                onView={p ? () => openRecord(`${country.name} — General`, {
+                  capital: p.capital,
+                  population: p.population,
+                  area_sq_km: p.area_sq_km,
+                  official_languages: p.official_languages,
+                  currency: p.currency,
+                  government_type: p.government_type,
+                  continent: p.continent,
+                  region: p.region,
+                }) : undefined}
+                items={[
+                  ["Capital", p?.capital],
+                  ["Population", fmt(p?.population)],
+                  ["Area", p?.area_sq_km ? `${fmt(p.area_sq_km)} sq km` : "N/A"],
+                  ["Languages", p?.official_languages?.join(", ")],
+                  ["Currency", p?.currency],
+                  ["Government", p?.government_type],
+                ]}
+              />
+              <InfoCard
+                title="Key Indicators"
+                onView={p ? () => openRecord(`${country.name} — Indicators`, {
+                  human_dev_index: p.human_dev_index,
+                  press_freedom_rank: p.press_freedom_rank,
+                  corruption_index: p.corruption_index,
+                  median_age: p.median_age,
+                  poverty_rate: p.poverty_rate,
+                  unemployment_rate: p.unemployment_rate,
+                  inflation_rate: p.inflation_rate,
+                  gdp_growth_rate: p.gdp_growth_rate,
+                }) : undefined}
+                items={[
+                  ["HDI", p?.human_dev_index?.toFixed(3)],
+                  ["Press Freedom Rank", p?.press_freedom_rank ? `#${p.press_freedom_rank}` : undefined],
+                  ["Corruption Index", p?.corruption_index?.toFixed(1)],
+                  ["Median Age", p?.median_age?.toFixed(1)],
+                ]}
+              />
               {!p && (
                 <div className="col-span-full candidate-card p-4 text-center">
                   <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">No data loaded yet for {country.name}.</p>
