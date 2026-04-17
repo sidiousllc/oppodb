@@ -38,6 +38,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNavigateSection, candidateCount, districtCount, districts = [] }: DashboardProps) {
+  const { canAccess } = useSectionAccess();
   const [polls, setPolls] = useState<PollEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
