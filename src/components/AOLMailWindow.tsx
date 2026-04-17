@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Win98Window } from "./Win98Window";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Inbox, Send, Trash2, PenLine, ArrowLeft, RefreshCw } from "lucide-react";
+import { Inbox, Send, Trash2, PenLine, ArrowLeft, RefreshCw, Bell } from "lucide-react";
 import { toast } from "sonner";
+import { AlertsHub } from "./AlertsHub";
+import { useMail } from "@/contexts/MailContext";
 
 interface MailMessage {
   id: string;
@@ -22,16 +24,29 @@ interface OnlineUser {
   display_name: string;
 }
 
-type Folder = "inbox" | "sent" | "compose";
+type Folder = "inbox" | "sent" | "compose" | "alerts";
 
 export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
-  const [folder, setFolder] = useState<Folder>("inbox");
+  const { initialTab, consumeInitialTab, unreadAlertsCount, refreshAlerts } = useMail();
+  const [folder, setFolder] = useState<Folder>(() => (initialTab as Folder) ?? "inbox");
   const [messages, setMessages] = useState<MailMessage[]>([]);
   const [selectedMsg, setSelectedMsg] = useState<MailMessage | null>(null);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Honor a requested initial tab when the window opens, then clear it.
+  useEffect(() => {
+    if (initialTab) {
+      setFolder(initialTab as Folder);
+      consumeInitialTab();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep alerts badge in sync whenever the user opens the alerts tab
+  useEffect(() => { if (folder === "alerts") refreshAlerts(); }, [folder, refreshAlerts]);
 
   // Compose state
   const [recipientMode, setRecipientMode] = useState<"user" | "external">("user");
