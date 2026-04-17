@@ -495,7 +495,8 @@ export default function Index() {
     }
 
     if (section === "alerts") {
-      return <AlertsHub />;
+      // Alerts & Watchlist now live inside the Mail window.
+      return <AlertsRedirectToMail />;
     }
 
     if (section === "forecast") {
