@@ -344,7 +344,11 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
 
             {/* Content */}
             <div className="flex-1 overflow-hidden flex flex-col">
-              {folder === "compose" ? (
+              {folder === "alerts" ? (
+                <div className="flex-1 overflow-y-auto p-2">
+                  <AlertsHub />
+                </div>
+              ) : folder === "compose" ? (
                 /* Compose view */
                 <div className="flex-1 flex flex-col p-2 gap-1">
                   {/* Recipient mode toggle */}
