@@ -994,6 +994,9 @@
   --palm-brand-color: hsl(0 0% 75%);
   --palm-screen-bezel: hsl(80 80% 8%);
   --palm-silkscreen: hsl(0 0% 18%);
+  --palm-graffiti-bg: hsl(80 25% 55%);
+  --palm-titlestrip-bg: hsl(80 80% 15%);
+  --palm-titlestrip-fg: hsl(80 30% 80%);
   --palm-btn: hsl(0 0% 32%);
   --palm-btn-center: hsl(0 0% 38%);
   --background: 80 30% 55%;
