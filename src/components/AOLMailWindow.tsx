@@ -288,6 +288,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
             <span className="text-[9px]">
               {folder === "inbox" ? `${messages.length} messages, ${unreadCount} unread` :
                folder === "sent" ? `${messages.length} sent messages` :
+               folder === "alerts" ? `${unreadAlertsCount} unread alert${unreadAlertsCount === 1 ? "" : "s"}` :
                "Compose new message"}
             </span>
           }
@@ -314,6 +315,16 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
                 className={`win98-button text-[9px] flex items-center gap-1 ${folder === "sent" ? "font-bold" : ""}`}
               >
                 <Send className="h-3 w-3" /> Sent
+              </button>
+              <button
+                onClick={() => { setFolder("alerts"); setSelectedMsg(null); refreshAlerts(); }}
+                className={`win98-button text-[9px] flex items-center gap-1 relative ${folder === "alerts" ? "font-bold" : ""}`}
+                title="Alerts & Watchlist"
+              >
+                <Bell className="h-3 w-3" /> Alerts
+                {unreadAlertsCount > 0 && (
+                  <span className="text-[8px] font-bold text-[hsl(var(--destructive))]">({unreadAlertsCount})</span>
+                )}
               </button>
               <div className="w-[1px] h-4 bg-[hsl(var(--win98-shadow))]" />
               <button onClick={() => loadMessages()} className="win98-button text-[9px] flex items-center gap-1">
