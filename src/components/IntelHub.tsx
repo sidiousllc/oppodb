@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Win98Window } from "@/components/Win98Window";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
-import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, ExternalLink, Clock, Loader2, Search, Filter, X } from "lucide-react";
+import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, Clock, Search, Filter, X, Layers, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import { applyPdfBranding } from "@/lib/pdfBranding";
+import { GroundNewsDetailWindow } from "@/components/GroundNewsDetailWindow";
+import { clusterArticles, classifyBias, BIAS_META, biasBarSegments, type StoryCluster, type ClusterableArticle } from "@/lib/newsBias";
 
 type Scope = "local" | "state" | "national" | "international";
 
