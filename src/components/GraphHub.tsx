@@ -70,8 +70,8 @@ export function GraphHub() {
     if (!u.user) { toast.error("Sign in"); return; }
     const { error } = await supabase.from("graph_snapshots").insert({
       user_id: u.user.id, name, root_entity_type: entityType, root_entity_id: entityId,
-      graph_data: { nodes, edges }, filters: { depth },
-    });
+      graph_data: { nodes, edges } as any, filters: { depth } as any,
+    } as any);
     if (error) toast.error(error.message);
     else { toast.success("Saved"); loadSnapshots(); }
   }
