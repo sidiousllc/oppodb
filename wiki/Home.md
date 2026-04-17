@@ -24,6 +24,11 @@ Welcome to the OppoDB documentation wiki.
 - [Prediction Market Trading](Prediction-Market-Trading) — Trading integration, API key management, portfolio & orders
 - [Android App](Android-App) — Download APKs, build instructions, and version history
 - [OppoDB Search](OppoDB-Search) — Unified master search across 15+ data categories
+- [MCP Server](MCP-Server) — 42+ agent tools for Claude/GPT/Cursor over the full database
+- [Documentation System](Documentation-System) — How the in-app wiki itself works
+- [Sync Pipeline](Sync-Pipeline) — 15-min global cron + per-user preferences
+- [War Rooms](War-Rooms) — Collaborative spaces with shared notes, alerts, and chat
+- [Geopolitics Intelligence](Geopolitics-Intelligence) — AI-cached country briefs from 15+ sources
 
 ## About
 
