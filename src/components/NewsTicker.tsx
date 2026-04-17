@@ -86,7 +86,8 @@ export function NewsTicker() {
                     pubDate: item.published_at,
                     summary: item.summary ?? undefined,
                   }],
-                  sourceCount: 1,
+                  bias: { L: 0, C: 0, R: 0, U: 1 },
+                  blindspot: null,
                 });
               }}
               className="inline-flex items-center gap-1.5 hover:underline focus:outline-none"
