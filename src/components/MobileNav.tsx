@@ -21,8 +21,9 @@ export const MobileNav = forwardRef<HTMLDivElement, MobileNavProps>(
     const { canManageContent, canAccessApi } = useUserRole();
     const { signOut } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [accountOpen, setAccountOpen] = useState(false);
 
-    const go = (path: string) => { navigate(path); setSidebarOpen(false); };
+    const go = (path: string) => { navigate(path); setSidebarOpen(false); setAccountOpen(false); };
 
     return (
       <div ref={ref} className="lg:hidden space-y-1">
@@ -61,23 +62,34 @@ export const MobileNav = forwardRef<HTMLDivElement, MobileNavProps>(
                 />
               </div>
               <div className="border-t-2 border-t-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))] p-2 space-y-1">
-                <div className="text-[10px] font-bold opacity-70 px-1">Account</div>
-                <button className="win98-button w-full text-left text-[11px]" onClick={() => go("/profile")}>
-                  👤 Profile & Theme
+                <button
+                  className="win98-button w-full text-left text-[11px] flex items-center justify-between"
+                  onClick={() => setAccountOpen((v) => !v)}
+                  aria-expanded={accountOpen}
+                >
+                  <span>☰ Account Menu</span>
+                  <span className="text-[9px]">{accountOpen ? "▲" : "▼"}</span>
                 </button>
-                {canAccessApi && (
-                  <button className="win98-button w-full text-left text-[11px]" onClick={() => go("/api")}>
-                    🔑 API Access
-                  </button>
+                {accountOpen && (
+                  <div className="ml-2 pl-2 border-l-2 border-l-[hsl(var(--win98-shadow))] space-y-1">
+                    <button className="win98-button w-full text-left text-[11px]" onClick={() => go("/profile")}>
+                      👤 Profile & Theme
+                    </button>
+                    {canAccessApi && (
+                      <button className="win98-button w-full text-left text-[11px]" onClick={() => go("/api")}>
+                        🔑 API Access
+                      </button>
+                    )}
+                    {canManageContent && (
+                      <button className="win98-button w-full text-left text-[11px]" onClick={() => go("/admin")}>
+                        🛡️ Admin Panel
+                      </button>
+                    )}
+                    <button className="win98-button w-full text-left text-[11px]" onClick={() => { signOut(); setSidebarOpen(false); setAccountOpen(false); }}>
+                      🔌 Sign Out
+                    </button>
+                  </div>
                 )}
-                {canManageContent && (
-                  <button className="win98-button w-full text-left text-[11px]" onClick={() => go("/admin")}>
-                    🛡️ Admin Panel
-                  </button>
-                )}
-                <button className="win98-button w-full text-left text-[11px]" onClick={() => { signOut(); setSidebarOpen(false); }}>
-                  🔌 Sign Out
-                </button>
               </div>
             </div>
           </SheetContent>
