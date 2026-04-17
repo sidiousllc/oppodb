@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-api-key, content-type",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
 };
 
 const VALID_ENDPOINTS = [
@@ -49,6 +49,19 @@ const VALID_ENDPOINTS = [
   "report-schedules",
   "polling-alerts",
   "email-preferences",
+  // Phase 1-5 features (read + CRUD)
+  "alert-rules",
+  "alert-dispatch-log",
+  "webhook-endpoints",
+  "entity-activity",
+  "entity-notes",
+  "entity-relationships",
+  "vulnerability-scores",
+  "talking-points",
+  "bill-impact",
+  // Admin-only operations
+  "admin-dispatch-alerts",
+  "admin-regenerate-ai",
 ];
 
 async function hashKey(key: string): Promise<string> {
@@ -65,9 +78,9 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== "GET") {
+  if (!["GET", "POST", "PATCH", "DELETE"].includes(req.method)) {
     return new Response(
-      JSON.stringify({ error: "Only GET requests are supported" }),
+      JSON.stringify({ error: "Method not allowed" }),
       { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
