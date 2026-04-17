@@ -295,7 +295,16 @@ export default function Index() {
   const selectedNarrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
   
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[hsl(var(--background))]">
+        <div className="win98-raised bg-[hsl(var(--win98-face))] px-4 py-3 text-center">
+          <div className="mb-2 text-[11px] font-bold">Loading ORO…</div>
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
 
   const sectionLabels: Record<Section, string> = {
     dashboard: "Dashboard",
