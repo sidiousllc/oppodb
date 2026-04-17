@@ -476,6 +476,7 @@ export function ActivityLogsTab() {
                   ))}
                 </tbody>
               </table>
+              {showRaw && <RawBlock data={fChat} />}
             </LogSection>
           )}
 
