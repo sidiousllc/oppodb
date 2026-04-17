@@ -115,7 +115,7 @@ export function InvestigationsPanel({ onBack }: InvestigationsPanelProps) {
         .order(c.orderBy, { ascending: false, nullsFirst: false })
         .limit(200);
       if (error) throw error;
-      setData((d) => ({ ...d, [key]: (rows ?? []) as Row[] }));
+      setData((d) => ({ ...d, [key]: (rows ?? []) as unknown as Row[] }));
     } catch (e: any) {
       console.error(`Load ${key} failed`, e);
     } finally {
