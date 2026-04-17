@@ -98,7 +98,7 @@ export default function Index() {
 
     fetchCandidatesFromDB().then((dbCandidates) => {
       if (cancelled || dbCandidates.length === 0) return;
-      initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+      initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content, github_path: c.github_path })));
       setDataVersion((v) => v + 1);
     });
 
@@ -201,7 +201,7 @@ export default function Index() {
   const refreshCandidates = useCallback(() => {
     fetchCandidatesFromDB().then((dbCandidates) => {
       if (dbCandidates.length > 0) {
-        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content, github_path: c.github_path })));
         setDataVersion((v) => v + 1);
       }
     });
@@ -282,6 +282,7 @@ export default function Index() {
     senate: getCandidatesByCategory("senate").length,
     governor: getCandidatesByCategory("governor").length,
     state: getCandidatesByCategory("state").length,
+    uncategorized: getCandidatesByCategory("uncategorized").length,
   }), [dataVersion]);
 
   const sectionCounts = useMemo(() => ({
@@ -516,7 +517,7 @@ export default function Index() {
                   onSyncComplete={() => {
                     fetchCandidatesFromDB().then((dbCandidates) => {
                       if (dbCandidates.length > 0) {
-                        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+                        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content, github_path: c.github_path })));
                         setDataVersion((v) => v + 1);
                       }
                     });
@@ -539,7 +540,7 @@ export default function Index() {
                       onSyncComplete={() => {
                         fetchCandidatesFromDB().then((dbCandidates) => {
                           if (dbCandidates.length > 0) {
-                            initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+                            initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content, github_path: c.github_path })));
                             setDataVersion((v) => v + 1);
                           }
                         });
