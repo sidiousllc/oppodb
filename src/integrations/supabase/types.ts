@@ -4485,7 +4485,7 @@ export type Database = {
           description?: string
           id?: string
           name: string
-          owner_id: string
+          owner_id?: string
           pinned_entities?: Json
           race_scope?: string | null
           updated_at?: string
