@@ -1511,6 +1511,17 @@ function endpointDescription(endpoint: string): string {
     devices: "[ADMIN] Registered user devices with platform/browser/tags. Filters: ?user_id, ?platform, ?tag, ?search",
     "device-locations": "[ADMIN] Raw device location pings (lat/lng/accuracy). Filters: ?device_id, ?user_id, ?since, ?until (ISO timestamps)",
     "user-locations": "[ADMIN] Latest known position per device, grouped by user. Filter: ?user_id",
+    "alert-rules": "[USER+CRUD] Your alert rules. GET/POST/PATCH/DELETE. Admins see all.",
+    "alert-dispatch-log": "[USER] Alert dispatch history (read-only for users; admins see all).",
+    "webhook-endpoints": "[USER+CRUD] Slack/Discord/generic webhook endpoints.",
+    "entity-activity": "[READ] Activity feed across entities. POST/PATCH/DELETE admin-only.",
+    "entity-notes": "[USER+CRUD] Your notes + shared notes. Admins see all.",
+    "entity-relationships": "[READ] Graph edges. POST/PATCH/DELETE admin-only.",
+    "vulnerability-scores": "[READ] AI candidate vulnerability scores. Filter: ?candidate_slug",
+    "talking-points": "[READ] AI-generated talking points cache.",
+    "bill-impact": "[READ] AI bill-impact analyses. Filter: ?bill_id, ?scope",
+    "admin-dispatch-alerts": "[ADMIN POST] Force-run the dispatch-alerts cron job.",
+    "admin-regenerate-ai": "[ADMIN POST] Regenerate AI cache. Body: {type:'vulnerability|talking_points|bill_impact', payload:{...}}",
   };
   return descs[endpoint] || "";
 }
