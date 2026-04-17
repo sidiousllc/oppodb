@@ -248,11 +248,15 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                 <div className="candidate-card p-3">
                   <h3 className="text-[11px] font-bold mb-2">Current Leaders</h3>
                   {data.leaders.map(l => (
-                    <div key={l.id} className="mb-2 pb-2 border-b border-[hsl(var(--border))] last:border-0">
+                    <button
+                      key={l.id}
+                      onClick={() => openRecord(l.name, l, { subtitle: `${l.title}${l.party ? ` · ${l.party}` : ""}` })}
+                      className="w-full text-left mb-2 pb-2 border-b border-[hsl(var(--border))] last:border-0 hover:bg-[hsl(var(--win98-light))] px-1 -mx-1 rounded transition-colors"
+                    >
                       <div className="text-[11px] font-bold">{l.name}</div>
                       <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{l.title} · {l.party || "Independent"}</div>
-                      {l.bio && <p className="text-[9px] mt-1">{l.bio.slice(0, 200)}…</p>}
-                    </div>
+                      {l.bio && <p className="text-[9px] mt-1 line-clamp-2">{l.bio.slice(0, 200)}…</p>}
+                    </button>
                   ))}
                 </div>
               )}
@@ -275,7 +279,11 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                   No election data available. Sync to fetch.
                 </div>
               ) : data.elections.map(e => (
-                <div key={e.id} className="candidate-card p-3">
+                <button
+                  key={e.id}
+                  onClick={() => openRecord(`${e.election_year} — ${e.election_type}`, e, { subtitle: e.winner_name ? `Winner: ${e.winner_name}` : undefined, sourceUrl: e.source_url })}
+                  className="candidate-card p-3 w-full text-left hover:bg-[hsl(var(--win98-light))] transition-colors"
+                >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[11px] font-bold">{e.election_year} — {e.election_type}</span>
                     {e.election_date && <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{e.election_date}</span>}
@@ -287,7 +295,7 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                   )}
                   {e.turnout_pct != null && <div className="text-[10px]"><strong>Turnout:</strong> {pct(e.turnout_pct)}</div>}
                   {e.source && <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">Source: {e.source}</div>}
-                </div>
+                </button>
               ))}
             </div>
           )}
