@@ -814,3 +814,236 @@
   background: hsl(var(--input));
   color: hsl(var(--foreground));
 }
+
+
+/* =============================================
+   Palm Pilot Themes (mobile-friendly)
+   ============================================= */
+
+/* -------- Palm Classic (monochrome green LCD) -------- */
+.theme-palm-classic {
+  --background: 80 30% 55%;
+  --foreground: 80 80% 10%;
+  --card: 80 35% 70%;
+  --card-foreground: 80 80% 10%;
+  --popover: 80 35% 70%;
+  --popover-foreground: 80 80% 10%;
+  --primary: 80 80% 15%;
+  --primary-foreground: 80 30% 80%;
+  --secondary: 80 25% 60%;
+  --secondary-foreground: 80 80% 10%;
+  --muted: 80 20% 60%;
+  --muted-foreground: 80 50% 20%;
+  --accent: 80 30% 65%;
+  --accent-foreground: 80 80% 10%;
+  --destructive: 0 70% 30%;
+  --destructive-foreground: 80 30% 80%;
+  --border: 80 60% 20%;
+  --input: 80 35% 75%;
+  --ring: 80 80% 15%;
+  --radius: 2px;
+
+  --win98-highlight: 80 40% 75%;
+  --win98-light: 80 35% 68%;
+  --win98-face: 80 30% 62%;
+  --win98-shadow: 80 60% 25%;
+  --win98-dark-shadow: 80 80% 10%;
+  --win98-titlebar: 80 80% 15%;
+  --win98-titlebar-inactive: 80 30% 40%;
+
+  --font-body: 'VT323', 'Courier New', monospace;
+  --font-display: 'VT323', 'Courier New', monospace;
+}
+
+.theme-palm-classic body {
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+.theme-palm-classic .win98-raised,
+.theme-palm-classic .win98-button,
+.theme-palm-classic .candidate-card {
+  border-radius: 2px;
+  border: 1px solid hsl(80 80% 10%);
+  box-shadow: 1px 1px 0 hsl(80 80% 10%);
+}
+
+.theme-palm-classic .win98-titlebar {
+  background: hsl(80 80% 15%);
+  color: hsl(80 30% 80%);
+  border-radius: 0;
+  padding: 3px 6px;
+  font-family: var(--font-body);
+}
+
+.theme-palm-classic .win98-button {
+  background: hsl(80 30% 62%);
+  font-family: var(--font-body);
+}
+
+.theme-palm-classic .win98-button:active {
+  background: hsl(80 80% 15%);
+  color: hsl(80 30% 80%);
+}
+
+.theme-palm-classic ::-webkit-scrollbar { width: 8px; }
+.theme-palm-classic ::-webkit-scrollbar-track { background: hsl(80 25% 50%); border: 1px solid hsl(80 80% 10%); }
+.theme-palm-classic ::-webkit-scrollbar-thumb { background: hsl(80 80% 15%); border: none; }
+
+
+/* -------- Palm V (silver/gray sleek) -------- */
+.theme-palm-v {
+  --background: 220 5% 70%;
+  --foreground: 220 10% 10%;
+  --card: 220 5% 88%;
+  --card-foreground: 220 10% 10%;
+  --popover: 220 5% 92%;
+  --popover-foreground: 220 10% 10%;
+  --primary: 220 15% 25%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 5% 80%;
+  --secondary-foreground: 220 10% 10%;
+  --muted: 220 5% 82%;
+  --muted-foreground: 220 5% 35%;
+  --accent: 220 10% 78%;
+  --accent-foreground: 220 10% 10%;
+  --destructive: 0 70% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 5% 55%;
+  --input: 0 0% 98%;
+  --ring: 220 15% 25%;
+  --radius: 4px;
+
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 220 5% 90%;
+  --win98-face: 220 5% 85%;
+  --win98-shadow: 220 5% 55%;
+  --win98-dark-shadow: 220 10% 25%;
+  --win98-titlebar: 220 15% 30%;
+  --win98-titlebar-inactive: 220 5% 60%;
+
+  --font-body: 'Helvetica Neue', 'Arial', sans-serif;
+  --font-display: 'Helvetica Neue', 'Arial', sans-serif;
+}
+
+.theme-palm-v .win98-raised,
+.theme-palm-v .win98-button,
+.theme-palm-v .candidate-card {
+  border-radius: 4px;
+  border: 1px solid hsl(220 5% 60%);
+  box-shadow: 0 1px 2px hsl(0 0% 0% / 0.15);
+}
+
+.theme-palm-v .win98-titlebar {
+  background: linear-gradient(180deg, hsl(220 15% 35%), hsl(220 15% 22%));
+  border-radius: 4px 4px 0 0;
+  padding: 5px 8px;
+}
+
+.theme-palm-v .win98-button {
+  background: linear-gradient(180deg, hsl(0 0% 98%), hsl(220 5% 82%));
+}
+
+
+/* -------- Palm m505 (color, beige/orange) -------- */
+.theme-palm-m505 {
+  --background: 30 35% 75%;
+  --foreground: 25 50% 12%;
+  --card: 35 50% 92%;
+  --card-foreground: 25 50% 12%;
+  --popover: 35 50% 92%;
+  --popover-foreground: 25 50% 12%;
+  --primary: 25 80% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 30 30% 80%;
+  --secondary-foreground: 25 50% 12%;
+  --muted: 30 25% 82%;
+  --muted-foreground: 25 30% 30%;
+  --accent: 35 60% 85%;
+  --accent-foreground: 25 50% 12%;
+  --destructive: 0 75% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 25 30% 50%;
+  --input: 35 50% 95%;
+  --ring: 25 80% 45%;
+  --radius: 3px;
+
+  --win98-highlight: 35 50% 95%;
+  --win98-light: 35 40% 88%;
+  --win98-face: 35 35% 82%;
+  --win98-shadow: 25 30% 50%;
+  --win98-dark-shadow: 25 50% 20%;
+  --win98-titlebar: 25 80% 45%;
+  --win98-titlebar-inactive: 30 15% 55%;
+
+  --font-body: 'Trebuchet MS', 'Tahoma', sans-serif;
+  --font-display: 'Trebuchet MS', 'Tahoma', sans-serif;
+}
+
+.theme-palm-m505 .win98-raised,
+.theme-palm-m505 .win98-button,
+.theme-palm-m505 .candidate-card {
+  border-radius: 3px;
+  border: 1px solid hsl(25 30% 50%);
+  box-shadow: 1px 1px 0 hsl(25 50% 20% / 0.3);
+}
+
+.theme-palm-m505 .win98-titlebar {
+  background: linear-gradient(180deg, hsl(25 85% 50%), hsl(25 80% 38%));
+  border-radius: 3px 3px 0 0;
+}
+
+
+/* -------- Palm Treo (smartphone-era, dark blue) -------- */
+.theme-palm-treo {
+  --background: 215 50% 18%;
+  --foreground: 0 0% 95%;
+  --card: 215 30% 92%;
+  --card-foreground: 215 50% 12%;
+  --popover: 215 30% 95%;
+  --popover-foreground: 215 50% 12%;
+  --primary: 215 70% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 215 20% 80%;
+  --secondary-foreground: 215 50% 12%;
+  --muted: 215 15% 82%;
+  --muted-foreground: 215 20% 35%;
+  --accent: 215 40% 88%;
+  --accent-foreground: 215 50% 12%;
+  --destructive: 0 75% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 215 20% 50%;
+  --input: 0 0% 100%;
+  --ring: 215 70% 45%;
+  --radius: 6px;
+
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 215 20% 90%;
+  --win98-face: 215 20% 86%;
+  --win98-shadow: 215 20% 50%;
+  --win98-dark-shadow: 215 50% 18%;
+  --win98-titlebar: 215 70% 35%;
+  --win98-titlebar-inactive: 215 10% 55%;
+
+  --font-body: 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --font-display: 'Helvetica Neue', 'Segoe UI', sans-serif;
+}
+
+.theme-palm-treo .win98-raised,
+.theme-palm-treo .win98-button,
+.theme-palm-treo .candidate-card {
+  border-radius: 6px;
+  border: 1px solid hsl(215 20% 60%);
+  box-shadow: 0 2px 4px hsl(215 50% 18% / 0.2);
+}
+
+.theme-palm-treo .win98-titlebar {
+  background: linear-gradient(180deg, hsl(215 70% 45%), hsl(215 70% 30%));
+  border-radius: 6px 6px 0 0;
+  padding: 6px 10px;
+}
+
+.theme-palm-treo .win98-button {
+  background: linear-gradient(180deg, hsl(0 0% 100%), hsl(215 20% 88%));
+  border-radius: 6px;
+}
