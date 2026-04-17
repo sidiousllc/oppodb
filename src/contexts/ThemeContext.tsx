@@ -2,7 +2,9 @@ import { createContext, useContext, useEffect, useState, useRef, type ReactNode 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export type WindowsTheme = "win98" | "winxp" | "vista" | "win7" | "win8" | "win10" | "win11";
+export type WindowsTheme =
+  | "win98" | "winxp" | "vista" | "win7" | "win8" | "win10" | "win11"
+  | "palm-classic" | "palm-v" | "palm-m505" | "palm-treo";
 
 export const THEME_LABELS: Record<WindowsTheme, string> = {
   win98: "Windows 98",
@@ -12,6 +14,10 @@ export const THEME_LABELS: Record<WindowsTheme, string> = {
   win8: "Windows 8",
   win10: "Windows 10",
   win11: "Windows 11",
+  "palm-classic": "Palm Classic (LCD)",
+  "palm-v": "Palm V (Silver)",
+  "palm-m505": "Palm m505 (Color)",
+  "palm-treo": "Palm Treo",
 };
 
 interface ThemeContextType {
