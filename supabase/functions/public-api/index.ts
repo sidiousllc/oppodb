@@ -169,6 +169,142 @@ Deno.serve(async (req) => {
 
     let result: { data: unknown; count: number | null };
 
+    // ─── CRUD + admin handling for Phase 1-5 endpoints ───────────────────
+    const PHASE5_ENDPOINTS = new Set([
+      "alert-rules", "alert-dispatch-log", "webhook-endpoints",
+      "entity-activity", "entity-notes", "entity-relationships",
+      "vulnerability-scores", "talking-points", "bill-impact",
+      "admin-dispatch-alerts", "admin-regenerate-ai",
+    ]);
+
+    if (PHASE5_ENDPOINTS.has(endpoint)) {
+      const { data: rolesData } = await supabase
+        .from("user_roles").select("role").eq("user_id", userId);
+      const isAdmin = (rolesData || []).some((r: { role: string }) => r.role === "admin");
+
+      const adminOnlyOps = endpoint === "admin-dispatch-alerts" || endpoint === "admin-regenerate-ai" ||
+        (req.method !== "GET" && (endpoint === "entity-activity" || endpoint === "entity-relationships"));
+      if (adminOnlyOps && !isAdmin) {
+        return new Response(JSON.stringify({ error: "Admin role required" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      if (endpoint === "admin-dispatch-alerts") {
+        const { data, error } = await supabase.functions.invoke("dispatch-alerts");
+        if (error) throw error;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify({ data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (endpoint === "admin-regenerate-ai") {
+        const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+        const { type, payload } = body as { type?: string; payload?: Record<string, unknown> };
+        const fnMap: Record<string, string> = {
+          vulnerability: "vulnerability-score",
+          talking_points: "talking-points",
+          bill_impact: "bill-impact",
+        };
+        const fn = type ? fnMap[type] : null;
+        if (!fn) return new Response(JSON.stringify({ error: "type must be vulnerability|talking_points|bill_impact" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data, error } = await supabase.functions.invoke(fn, { body: { ...payload, force: true } });
+        if (error) throw error;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify({ data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const TABLE: Record<string, string> = {
+        "alert-rules": "alert_rules",
+        "alert-dispatch-log": "alert_dispatch_log",
+        "webhook-endpoints": "webhook_endpoints",
+        "entity-activity": "entity_activity",
+        "entity-notes": "entity_notes",
+        "entity-relationships": "entity_relationships",
+        "vulnerability-scores": "vulnerability_scores",
+        "talking-points": "talking_points",
+        "bill-impact": "bill_impact_analyses",
+      };
+      const table = TABLE[endpoint];
+      const userScoped = ["alert_rules", "alert_dispatch_log", "webhook_endpoints", "entity_notes"].includes(table);
+
+      if (req.method === "GET") {
+        const idParam = url.searchParams.get("id");
+        let q;
+        if (endpoint === "entity-notes" && !isAdmin) {
+          q = supabase.from("entity_notes").select("*", { count: "exact" })
+            .or(`user_id.eq.${userId},is_shared.eq.true`)
+            .range(offset, offset + limit - 1).order("created_at", { ascending: false });
+        } else {
+          q = supabase.from(table as "alert_rules").select("*", { count: "exact" })
+            .range(offset, offset + limit - 1).order("created_at", { ascending: false });
+          if (userScoped && !isAdmin) q = q.eq("user_id", userId);
+        }
+        if (idParam) q = q.eq("id", idParam);
+        const entType = url.searchParams.get("entity_type");
+        const entId = url.searchParams.get("entity_id");
+        if (entType && ["entity_activity", "entity_notes"].includes(table)) q = q.eq("entity_type", entType);
+        if (entId && ["entity_activity", "entity_notes"].includes(table)) q = q.eq("entity_id", entId);
+        if (endpoint === "vulnerability-scores") {
+          const slug = url.searchParams.get("candidate_slug");
+          if (slug) q = q.eq("candidate_slug", slug);
+        }
+        if (endpoint === "bill-impact") {
+          const billId = url.searchParams.get("bill_id");
+          const scope = url.searchParams.get("scope");
+          if (billId) q = q.eq("bill_id", billId);
+          if (scope) q = q.eq("scope", scope);
+        }
+        const { data, error, count } = await q;
+        if (error) throw error;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify({ data, meta: { total: count, limit, offset, endpoint } }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } else if (req.method === "POST") {
+        const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+        if (userScoped && (!body.user_id || !isAdmin)) body.user_id = userId;
+        const { data, error } = await supabase.from(table as "alert_rules").insert(body as never).select();
+        if (error) throw error;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 201 }).then(() => {});
+        return new Response(JSON.stringify({ data }), { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } else if (req.method === "PATCH") {
+        const idParam = url.searchParams.get("id");
+        if (!idParam) return new Response(JSON.stringify({ error: "?id= required for PATCH" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+        if (userScoped && !isAdmin) {
+          const { data: own } = await supabase.from(table as "alert_rules").select("user_id").eq("id", idParam).maybeSingle();
+          if (!own || (own as { user_id: string }).user_id !== userId) {
+            return new Response(JSON.stringify({ error: "Not found or forbidden" }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        }
+        const { data, error } = await supabase.from(table as "alert_rules").update(body as never).eq("id", idParam).select();
+        if (error) throw error;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify({ data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } else if (req.method === "DELETE") {
+        const idParam = url.searchParams.get("id");
+        if (!idParam) return new Response(JSON.stringify({ error: "?id= required for DELETE" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (userScoped && !isAdmin) {
+          const { data: own } = await supabase.from(table as "alert_rules").select("user_id").eq("id", idParam).maybeSingle();
+          if (!own || (own as { user_id: string }).user_id !== userId) {
+            return new Response(JSON.stringify({ error: "Not found or forbidden" }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        }
+        const { error } = await supabase.from(table as "alert_rules").delete().eq("id", idParam);
+        if (error) throw error;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 204 }).then(() => {});
+        return new Response(null, { status: 204, headers: corsHeaders });
+      }
+    }
+
+    // ─── Original GET-only switch for legacy endpoints ───────────────────
+    if (req.method !== "GET") {
+      return new Response(JSON.stringify({ error: "This endpoint only supports GET" }),
+        { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     switch (endpoint) {
       case "candidates": {
         let q = supabase
