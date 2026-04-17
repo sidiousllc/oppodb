@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Win98PageLayout } from "./Win98PageLayout";
-import { Win98Window } from "./Win98Window";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -68,7 +66,6 @@ export function InvestigationsHub() {
   }
 
   return (
-    <Win98PageLayout title="Investigations">
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="lobbying" className="text-[11px]">Lobbying ({lobbying.length})</TabsTrigger>
@@ -85,7 +82,8 @@ export function InvestigationsHub() {
         </div>
 
         <TabsContent value="lobbying">
-          <Win98Window title="Senate LDA filings">
+          <div className="win98-raised bg-[hsl(var(--win98-face))]">
+            <div className="px-2 py-1 text-[11px] font-bold border-b border-b-[hsl(var(--win98-shadow))]">Senate LDA filings</div>
             <div className="p-2 overflow-x-auto">
               <table className="w-full text-[11px]">
                 <thead className="bg-[hsl(var(--win98-face))]"><tr><th className="text-left p-1">Registrant</th><th className="text-left p-1">Client</th><th className="text-left p-1">Year</th><th className="text-left p-1">Amount</th><th className="text-left p-1">Issues</th><th className="p-1"></th></tr></thead>
@@ -104,11 +102,12 @@ export function InvestigationsHub() {
                 </tbody>
               </table>
             </div>
-          </Win98Window>
+          </div>
         </TabsContent>
 
         <TabsContent value="contracts">
-          <Win98Window title="USAspending federal contracts">
+          <div className="win98-raised bg-[hsl(var(--win98-face))]">
+            <div className="px-2 py-1 text-[11px] font-bold border-b border-b-[hsl(var(--win98-shadow))]">USAspending federal contracts</div>
             <div className="p-2 overflow-x-auto">
               <table className="w-full text-[11px]">
                 <thead className="bg-[hsl(var(--win98-face))]"><tr><th className="text-left p-1">Recipient</th><th className="text-left p-1">Agency</th><th className="text-left p-1">Amount</th><th className="text-left p-1">FY</th><th className="text-left p-1">Description</th><th className="p-1"></th></tr></thead>
@@ -127,11 +126,12 @@ export function InvestigationsHub() {
                 </tbody>
               </table>
             </div>
-          </Win98Window>
+          </div>
         </TabsContent>
 
         <TabsContent value="court">
-          <Win98Window title="CourtListener federal cases">
+          <div className="win98-raised bg-[hsl(var(--win98-face))]">
+            <div className="px-2 py-1 text-[11px] font-bold border-b border-b-[hsl(var(--win98-shadow))]">CourtListener federal cases</div>
             <div className="p-2 overflow-x-auto">
               <table className="w-full text-[11px]">
                 <thead className="bg-[hsl(var(--win98-face))]"><tr><th className="text-left p-1">Case</th><th className="text-left p-1">Court</th><th className="text-left p-1">Number</th><th className="text-left p-1">Filed</th><th className="text-left p-1">Nature</th><th className="p-1"></th></tr></thead>
@@ -150,9 +150,8 @@ export function InvestigationsHub() {
                 </tbody>
               </table>
             </div>
-          </Win98Window>
+          </div>
         </TabsContent>
       </Tabs>
-    </Win98PageLayout>
   );
 }
