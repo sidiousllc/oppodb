@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { exportMessagingPDF } from "@/lib/messagingExport";
 import { Win98Window } from "@/components/Win98Window";
+import { MessagingAIPanel } from "@/components/MessagingAIPanel";
 
 interface MessagingGuidance {
   id: string;
@@ -140,7 +141,18 @@ export function MessagingHub() {
             </div>
             <div className="flex flex-col gap-1 shrink-0">
               <button
-                onClick={() => exportMessagingPDF(selectedItem)}
+                onClick={async () => {
+                  const [tpRes, audRes, impRes] = await Promise.all([
+                    supabase.from("talking_points").select("*").eq("subject_type", "messaging").eq("subject_ref", selectedItem.slug).order("created_at", { ascending: false }).limit(5),
+                    supabase.from("messaging_audience_analyses").select("*").eq("messaging_slug", selectedItem.slug).maybeSingle(),
+                    supabase.from("messaging_impact_analyses").select("*").eq("messaging_slug", selectedItem.slug).order("generated_at", { ascending: false }).limit(5),
+                  ]);
+                  exportMessagingPDF(selectedItem, {
+                    talking_points: (tpRes.data as any[]) || [],
+                    audience_analysis: audRes.data,
+                    impact_analyses: (impRes.data as any[]) || [],
+                  });
+                }}
                 className="win98-button text-[10px] flex items-center gap-1"
               >
                 <FileDown className="h-3 w-3" />
@@ -174,6 +186,11 @@ export function MessagingHub() {
               </p>
             )}
           </div>
+          <MessagingAIPanel
+            messagingSlug={selectedItem.slug}
+            messagingTitle={selectedItem.title}
+            issueAreas={selectedItem.issue_areas || []}
+          />
         </div>
       </Win98Window>
     );

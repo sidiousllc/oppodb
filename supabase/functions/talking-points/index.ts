@@ -37,6 +37,7 @@ serve(async (req) => {
       length = "medium",
       count = 5,
       include_evidence = true,
+      include_sections = ["polling", "intel", "legislation", "finance", "forecasts"],
       custom_instructions = "",
       model = "google/gemini-2.5-pro",
     } = body;
@@ -54,12 +55,44 @@ serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     let context = "";
+    let tagsForContext: string[] = [];
     if (subject_type === "candidate") {
-      const { data } = await admin.from("candidate_profiles").select("name, content").eq("slug", subject_ref).eq("is_subpage", false).maybeSingle();
-      if (data) context = `Candidate: ${data.name}\n\n${(data.content || "").slice(0, 20000)}`;
+      const { data } = await admin.from("candidate_profiles").select("name, content, tags").eq("slug", subject_ref).eq("is_subpage", false).maybeSingle();
+      if (data) { context = `Candidate: ${data.name}\n\n${(data.content || "").slice(0, 18000)}`; tagsForContext = (data.tags as string[]) || []; }
     } else if (subject_type === "bill") {
       const { data } = await admin.from("congress_bills").select("title, short_title, latest_action_text, policy_area").eq("bill_id", subject_ref).maybeSingle();
-      if (data) context = `Bill: ${data.title}\nLatest: ${data.latest_action_text}\nPolicy: ${data.policy_area}`;
+      if (data) { context = `Bill: ${data.title}\nLatest: ${data.latest_action_text}\nPolicy: ${data.policy_area}`; tagsForContext = data.policy_area ? [data.policy_area] : []; }
+    }
+
+    // Optional cross-section context enrichment
+    const VALID_SECTIONS = new Set(["polling", "intel", "legislation", "finance", "forecasts", "international"]);
+    const selected = (Array.isArray(include_sections) ? include_sections : []).filter((s: string) => VALID_SECTIONS.has(s));
+    if (selected.length) {
+      const ctxParts: string[] = [];
+      const tags = tagsForContext.filter((t) => !["Democrat","Republican","Independent"].includes(t));
+      if (selected.includes("polling")) {
+        let q = admin.from("polling_data").select("question, support_pct, pollster, end_date").order("end_date", { ascending: false }).limit(6);
+        if (tags.length) q = q.or(tags.map((t) => `question.ilike.%${t}%`).join(","));
+        const { data } = await q;
+        if (data?.length) ctxParts.push(`POLLING:\n${data.map((p: any) => `- ${p.pollster} (${p.end_date}): ${p.question} → ${p.support_pct}%`).join("\n")}`);
+      }
+      if (selected.includes("intel") && tags.length) {
+        const { data } = await admin.from("intel_briefings").select("title, source_name").or(tags.map((t) => `title.ilike.%${t}%`).join(",")).limit(5);
+        if (data?.length) ctxParts.push(`INTEL:\n${data.map((b: any) => `- [${b.source_name}] ${b.title}`).join("\n")}`);
+      }
+      if (selected.includes("legislation") && tags.length) {
+        const { data } = await admin.from("congress_bills").select("bill_id, title").or(tags.map((t) => `title.ilike.%${t}%`).join(",")).limit(5);
+        if (data?.length) ctxParts.push(`LEGISLATION:\n${data.map((b: any) => `- ${b.bill_id}: ${b.title}`).join("\n")}`);
+      }
+      if (selected.includes("finance") && subject_type === "candidate") {
+        const { data } = await admin.from("campaign_finance").select("total_raised, top_industries, cycle").eq("candidate_slug", subject_ref).order("cycle", { ascending: false }).limit(1).maybeSingle();
+        if (data) ctxParts.push(`FINANCE: cycle ${data.cycle} raised $${data.total_raised}; top industries: ${JSON.stringify(data.top_industries || []).slice(0, 200)}`);
+      }
+      if (selected.includes("forecasts")) {
+        const { data } = await admin.from("election_forecasts").select("source, state_abbr, district, rating").order("last_updated", { ascending: false }).limit(5);
+        if (data?.length) ctxParts.push(`FORECASTS:\n${data.map((f: any) => `- [${f.source}] ${f.state_abbr}-${f.district || ""}: ${f.rating}`).join("\n")}`);
+      }
+      if (ctxParts.length) context += `\n\nCROSS-SECTION CONTEXT:\n${ctxParts.join("\n\n")}`;
     }
 
     const systemPrompt = [
