@@ -60,32 +60,22 @@ function parseHSL(val: string): [number, number, number] {
 }
 
 function getThemeColors(): ThemeColors {
-  const isDark = document.documentElement.classList.contains("dark");
-
-  const bg = parseHSL(getCSSVar("--background"));
-  const card = parseHSL(getCSSVar("--card"));
-  const text = parseHSL(getCSSVar("--foreground"));
-  const textMuted = parseHSL(getCSSVar("--muted-foreground"));
-  const primary = parseHSL(getCSSVar("--primary"));
-  const border = parseHSL(getCSSVar("--border"));
-  const titlebar = parseHSL(getCSSVar("--win98-titlebar"));
-
-  // Slightly offset card for alternating sections
-  const cardAlt: [number, number, number] = isDark
-    ? [Math.min(card[0] + 8, 255), Math.min(card[1] + 8, 255), Math.min(card[2] + 8, 255)]
-    : [Math.max(card[0] - 8, 0), Math.max(card[1] - 8, 0), Math.max(card[2] - 8, 0)];
-
+  // Force a fixed light, high-contrast palette for ALL PDF exports regardless
+  // of the active app theme. This guarantees a white background with
+  // dark, readable text in every exported document.
+  const primary = parseHSL(getCSSVar("--primary")) || [40, 80, 160];
+  const titlebar = parseHSL(getCSSVar("--win98-titlebar")) || [0, 0, 128];
   return {
-    bg,
-    card,
-    cardAlt,
-    text,
-    textMuted,
+    bg: [255, 255, 255],
+    card: [255, 255, 255],
+    cardAlt: [243, 244, 246],
+    text: [20, 20, 20],
+    textMuted: [90, 90, 90],
     primary,
-    border,
+    border: [200, 200, 200],
     titlebar,
     titlebarText: [255, 255, 255],
-    accent: parseHSL(getCSSVar("--accent") || "180 50% 50%"),
+    accent: parseHSL(getCSSVar("--accent")) || [60, 140, 180],
     dem: [60, 120, 210],
     rep: [210, 60, 60],
     ind: [140, 80, 200],
