@@ -1181,6 +1181,169 @@ mcpServer.tool({
   },
 });
 
+// ─── User-scoped helpers (resolve API-key owner) ────────────────────────────
+async function resolveUserId(req: Request): Promise<string | null> {
+  const apiKey = req.headers.get("X-API-Key") || req.headers.get("Authorization")?.replace("Bearer ", "");
+  if (!apiKey) return null;
+  const keyHash = await hashKey(apiKey);
+  const { data } = await supabase.rpc("validate_api_key", { p_key_hash: keyHash });
+  return data?.[0]?.user_id || null;
+}
+
+mcpServer.tool({
+  name: "list_reports",
+  description: "List the calling user's reports plus reports shared with them plus public reports. Use include_blocks=true to fetch full block JSON.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      id: { type: "string" as const, description: "Single report UUID" },
+      search: { type: "string" as const, description: "Filter by title" },
+      include_blocks: { type: "boolean" as const, description: "Include full blocks JSON (default false)" },
+      public_only: { type: "boolean" as const, description: "Only public reports" },
+      limit: { type: "number" as const, description: "Max results (default 30)" },
+    },
+  },
+  handler: async (args: Record<string, unknown>, ctx: { request: Request }) => {
+    const userId = await resolveUserId(ctx.request);
+    if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
+    const includeBlocks = !!args.include_blocks;
+    const cols = includeBlocks
+      ? "id,owner_id,title,description,blocks,is_public,created_at,updated_at"
+      : "id,owner_id,title,description,is_public,created_at,updated_at";
+    if (args.id) {
+      const { data, error } = await supabase.from("reports").select(cols).eq("id", String(args.id)).maybeSingle();
+      if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+    }
+    const limit = Math.min((args.limit as number) || 30, 100);
+    let q = supabase.from("reports").select(cols).order("updated_at", { ascending: false }).limit(limit);
+    if (args.public_only) {
+      q = q.eq("is_public", true);
+    } else {
+      const { data: shares } = await supabase.from("report_shares").select("report_id").eq("shared_with_user_id", userId);
+      const sharedIds = ((shares || []) as Array<{ report_id: string }>).map((s) => s.report_id);
+      if (sharedIds.length > 0) {
+        q = q.or(`owner_id.eq.${userId},is_public.eq.true,id.in.(${sharedIds.join(",")})`);
+      } else {
+        q = q.or(`owner_id.eq.${userId},is_public.eq.true`);
+      }
+    }
+    if (args.search) q = q.ilike("title", `%${String(args.search)}%`);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length || 0, reports: data || [] }, null, 2) }] };
+  },
+});
+
+mcpServer.tool({
+  name: "list_report_schedules",
+  description: "List the calling user's scheduled report email deliveries (cadence, recipients, next run time).",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async (_args, ctx: { request: Request }) => {
+    const userId = await resolveUserId(ctx.request);
+    if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
+    const { data, error } = await supabase.from("report_schedules").select("*").eq("owner_id", userId).order("next_run_at");
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length || 0, schedules: data || [] }, null, 2) }] };
+  },
+});
+
+mcpServer.tool({
+  name: "list_polling_alerts",
+  description: "List the calling user's polling-data email alert subscriptions (scope, thresholds, cadence, last sent).",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async (_args, ctx: { request: Request }) => {
+    const userId = await resolveUserId(ctx.request);
+    if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
+    const { data, error } = await supabase.from("polling_alert_subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length || 0, alerts: data || [] }, null, 2) }] };
+  },
+});
+
+mcpServer.tool({
+  name: "get_email_preferences",
+  description: "Get the calling user's global email notification preferences (digest frequency, quiet hours, per-category toggles).",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async (_args, ctx: { request: Request }) => {
+    const userId = await resolveUserId(ctx.request);
+    if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
+    const { data, error } = await supabase.from("email_notification_preferences").select("*").eq("user_id", userId).maybeSingle();
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data || { note: "No preferences set; defaults apply." }, null, 2) }] };
+  },
+});
+
+mcpServer.tool({
+  name: "get_intel_clusters",
+  description: "Cluster recent IntelHub briefings by title similarity to surface coverage bias and source diversity. Each cluster lists the lead article, total article count, and unique source count.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      scope: { type: "string" as const, description: "Filter by scope: local, state, national, international" },
+      limit: { type: "number" as const, description: "How many recent briefings to consider (default 60, max 200)" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const limit = Math.min((args.limit as number) || 60, 200);
+    let q = supabase.from("intel_briefings")
+      .select("id,title,summary,source_name,source_url,scope,category,published_at")
+      .order("published_at", { ascending: false, nullsFirst: false }).limit(limit);
+    if (args.scope) q = q.eq("scope", String(args.scope));
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+
+    const STOP = new Set(["the","a","an","of","in","on","for","to","and","or","but","with","at","by","from","is","are","was","were","be","been","as","this","that","it","its","into","over","after","before","new","amid","up","down","out"]);
+    const tokenize = (s: string) => new Set((s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(t => t.length > 2 && !STOP.has(t)));
+    const arts = (data || []).map((a: any) => ({ ...a, _tok: tokenize(a.title) }));
+    const clusters: any[] = [];
+    for (const art of arts) {
+      let best: any = null; let bestScore = 0;
+      for (const c of clusters) {
+        const inter = [...art._tok].filter((t: string) => c.tokens.has(t)).length;
+        const union = new Set([...art._tok, ...c.tokens]).size || 1;
+        const score = inter / union;
+        if (score > bestScore) { bestScore = score; best = c; }
+      }
+      if (best && bestScore >= 0.34) { best.articles.push(art); for (const t of art._tok) best.tokens.add(t); }
+      else clusters.push({ id: art.id, lead: art, articles: [art], tokens: new Set(art._tok) });
+    }
+    const out = clusters.map((c: any) => ({
+      id: c.id,
+      lead_title: c.lead.title,
+      lead_source: c.lead.source_name,
+      article_count: c.articles.length,
+      unique_sources: new Set(c.articles.map((a: any) => a.source_name)).size,
+      sources: [...new Set(c.articles.map((a: any) => a.source_name))],
+    })).sort((a: any, b: any) => b.article_count - a.article_count);
+    return { content: [{ type: "text" as const, text: JSON.stringify({ cluster_count: out.length, clusters: out }, null, 2) }] };
+  },
+});
+
+mcpServer.tool({
+  name: "get_international_profile",
+  description: "Get full country profile for one of 140+ nations (government, economy, demographics, leadership).",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      country_code: { type: "string" as const, description: "ISO country code, e.g. 'FR'" },
+      search: { type: "string" as const, description: "Search by country name" },
+      continent: { type: "string" as const, description: "Filter by continent" },
+      limit: { type: "number" as const, description: "Max results (default 20)" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const limit = Math.min((args.limit as number) || 20, 100);
+    let q = supabase.from("international_profiles").select("*").limit(limit).order("country_name");
+    if (args.country_code) q = q.eq("country_code", String(args.country_code).toUpperCase());
+    if (args.continent) q = q.ilike("continent", `%${String(args.continent)}%`);
+    if (args.search) q = q.ilike("country_name", `%${String(args.search)}%`);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length || 0, results: data || [] }, null, 2) }] };
+  },
+});
+
 // ─── HTTP Transport ─────────────────────────────────────────────────────────
 
 const transport = new StreamableHttpTransport();

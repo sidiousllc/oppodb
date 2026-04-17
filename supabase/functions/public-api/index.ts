@@ -31,14 +31,24 @@ const VALID_ENDPOINTS = [
   "state-finance",
   "mn-finance",
   "intel-briefings",
+  "intel-clusters",
   "news-ticker",
   "tracked-bills",
   "mit-elections",
   "state-leg-elections",
+  "international-profiles",
+  "international-elections",
+  "international-leaders",
+  "international-polling",
   "search",
   "devices",
   "device-locations",
   "user-locations",
+  // User-scoped (require API key's owning user)
+  "reports",
+  "report-schedules",
+  "polling-alerts",
+  "email-preferences",
 ];
 
 async function hashKey(key: string): Promise<string> {
@@ -784,6 +794,190 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "intel-clusters": {
+        // Cluster recent intel briefings by title similarity to surface coverage bias.
+        const clusterLimit = Math.min(parseInt(url.searchParams.get("limit") || "60"), 200);
+        const scopeParam = url.searchParams.get("scope");
+        let q = supabase
+          .from("intel_briefings")
+          .select("id,title,summary,source_name,source_url,scope,category,published_at")
+          .order("published_at", { ascending: false, nullsFirst: false })
+          .limit(clusterLimit);
+        if (scopeParam) q = q.eq("scope", scopeParam);
+        const { data, error } = await q;
+        if (error) throw error;
+
+        const STOP = new Set(["the","a","an","of","in","on","for","to","and","or","but","with","at","by","from","is","are","was","were","be","been","as","this","that","it","its","into","over","after","before","new","amid","up","down","out"]);
+        const tokenize = (s: string) => new Set(
+          (s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(t => t.length > 2 && !STOP.has(t))
+        );
+        const arts = (data || []).map((a: any) => ({ ...a, _tok: tokenize(a.title) }));
+        const clusters: any[] = [];
+        for (const art of arts) {
+          let best: any = null; let bestScore = 0;
+          for (const c of clusters) {
+            const inter = [...art._tok].filter((t: string) => c.tokens.has(t)).length;
+            const union = new Set([...art._tok, ...c.tokens]).size || 1;
+            const score = inter / union;
+            if (score > bestScore) { bestScore = score; best = c; }
+          }
+          if (best && bestScore >= 0.34) {
+            best.articles.push(art);
+            for (const t of art._tok) best.tokens.add(t);
+          } else {
+            clusters.push({ id: art.id, lead: art, articles: [art], tokens: new Set(art._tok) });
+          }
+        }
+        const out = clusters
+          .map((c: any) => ({
+            id: c.id,
+            lead: { title: c.lead.title, source: c.lead.source_name, link: c.lead.source_url, published_at: c.lead.published_at, scope: c.lead.scope, category: c.lead.category },
+            article_count: c.articles.length,
+            unique_sources: new Set(c.articles.map((a: any) => a.source_name)).size,
+            articles: c.articles.map((a: any) => ({
+              id: a.id, title: a.title, source: a.source_name, link: a.source_url,
+              published_at: a.published_at, summary: a.summary,
+            })),
+          }))
+          .sort((a: any, b: any) => b.article_count - a.article_count);
+
+        result = { data: out, count: out.length };
+        break;
+      }
+
+      case "international-profiles": {
+        let q = supabase
+          .from("international_profiles")
+          .select("*", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("country_name");
+        const continent = url.searchParams.get("continent");
+        if (continent) q = q.ilike("continent", `%${continent}%`);
+        const country = url.searchParams.get("country_code");
+        if (country) q = q.eq("country_code", country.toUpperCase());
+        if (searchQuery) q = q.or(`country_name.ilike.%${searchQuery}%,country_code.ilike.%${searchQuery}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "international-elections": {
+        let q = supabase
+          .from("international_elections")
+          .select("*", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("election_date", { ascending: false, nullsFirst: false });
+        const country = url.searchParams.get("country_code");
+        if (country) q = q.eq("country_code", country.toUpperCase());
+        const year = url.searchParams.get("year");
+        if (year) q = q.eq("election_year", parseInt(year));
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "international-leaders": {
+        let q = supabase
+          .from("international_leaders")
+          .select("*", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("country_code");
+        const country = url.searchParams.get("country_code");
+        if (country) q = q.eq("country_code", country.toUpperCase());
+        if (searchQuery) q = q.or(`name.ilike.%${searchQuery}%,title.ilike.%${searchQuery}%,party.ilike.%${searchQuery}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "international-polling": {
+        let q = supabase
+          .from("international_polling")
+          .select("*", { count: "exact" })
+          .range(offset, offset + limit - 1)
+          .order("date_conducted", { ascending: false, nullsFirst: false });
+        const country = url.searchParams.get("country_code");
+        if (country) q = q.eq("country_code", country.toUpperCase());
+        if (searchQuery) q = q.ilike("poll_topic", `%${searchQuery}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      // ─── User-scoped (filtered to API key owner) ─────────────────────
+      case "reports": {
+        const idParam = url.searchParams.get("id");
+        const includeBlocks = url.searchParams.get("include_blocks") === "true";
+        const publicOnly = url.searchParams.get("public_only") === "true";
+        const cols = includeBlocks
+          ? "id,owner_id,title,description,blocks,is_public,created_at,updated_at"
+          : "id,owner_id,title,description,is_public,created_at,updated_at";
+        if (idParam) {
+          const { data, error } = await supabase.from("reports").select(cols).eq("id", idParam).maybeSingle();
+          if (error) throw error;
+          result = { data, count: data ? 1 : 0 };
+          break;
+        }
+        let q = supabase.from("reports").select(cols, { count: "exact" })
+          .range(offset, offset + limit - 1).order("updated_at", { ascending: false });
+        if (publicOnly) {
+          q = q.eq("is_public", true);
+        } else {
+          const { data: shares } = await supabase.from("report_shares")
+            .select("report_id").eq("shared_with_user_id", userId);
+          const sharedIds = ((shares || []) as Array<{ report_id: string }>).map((s) => s.report_id);
+          if (sharedIds.length > 0) {
+            q = q.or(`owner_id.eq.${userId},is_public.eq.true,id.in.(${sharedIds.join(",")})`);
+          } else {
+            q = q.or(`owner_id.eq.${userId},is_public.eq.true`);
+          }
+        }
+        if (searchQuery) q = q.ilike("title", `%${searchQuery}%`);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "report-schedules": {
+        const { data, error, count } = await supabase
+          .from("report_schedules")
+          .select("*", { count: "exact" })
+          .eq("owner_id", userId)
+          .range(offset, offset + limit - 1)
+          .order("next_run_at", { ascending: true });
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "polling-alerts": {
+        const { data, error, count } = await supabase
+          .from("polling_alert_subscriptions")
+          .select("*", { count: "exact" })
+          .eq("user_id", userId)
+          .range(offset, offset + limit - 1)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        result = { data, count };
+        break;
+      }
+
+      case "email-preferences": {
+        const { data, error } = await supabase
+          .from("email_notification_preferences")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (error) throw error;
+        result = { data: data || null, count: data ? 1 : 0 };
+        break;
+      }
+
       case "search": {
         const q = searchQuery;
         if (!q || q.length < 2) {
@@ -1146,11 +1340,22 @@ function endpointDescription(endpoint: string): string {
     "state-finance": "State-level campaign finance data across all states",
     "mn-finance": "Minnesota Campaign Finance Board candidate data",
     "intel-briefings": "Intelligence briefings from 150+ news sources categorized by scope and topic",
+    "intel-clusters": "Recent intel briefings clustered by topic to surface coverage bias and source diversity",
     "news-ticker": "Latest cross-scope news headlines optimized for tickers/marquees (params: scope, category, limit 1-100)",
     "tracked-bills": "LegiScan tracked state legislation with status and actions",
     "mit-elections": "MIT Election Lab historical election results (1976-2024) with county-level data",
     "congress-committees": "Congressional committees with members and subcommittees",
     "congress-votes": "Congressional roll call votes with vote totals and results",
+    "state-leg-elections": "State legislative election results with vote counts and winners",
+    "forecast-history": "Historical changes in election forecast ratings over time",
+    "international-profiles": "Country profiles for 140+ nations (government, economy, demographics)",
+    "international-elections": "International election results filterable by country and year",
+    "international-leaders": "Heads of state/government and key political figures by country",
+    "international-polling": "International public opinion polling by country and topic",
+    reports: "[USER] Your reports + reports shared with you + public reports. Params: ?id, ?include_blocks=true, ?public_only=true",
+    "report-schedules": "[USER] Email delivery schedules for your reports (cadence, recipients, next_run_at)",
+    "polling-alerts": "[USER] Your polling-data email alert subscriptions (scope, thresholds, cadence)",
+    "email-preferences": "[USER] Your global email notification preferences (digest frequency, quiet hours, per-category toggles)",
     "state-leg-elections": "State legislative election results with vote counts and winners",
     "forecast-history": "Historical changes in election forecast ratings over time",
     search: "Unified search across all 24 databases (requires ?search= param, optional ?categories= filter)",
