@@ -38,11 +38,6 @@ export function MarketCredentialsManager() {
 
   const fetchCredentials = async () => {
     if (!user) return;
-    const { data } = await supabase.functions.invoke("market-trading", {
-      body: null,
-      headers: { "Content-Type": "application/json" },
-    });
-    // Use query param approach
     const resp = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/market-trading?action=list-credentials`,
       {
