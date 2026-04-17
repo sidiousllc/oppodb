@@ -460,27 +460,41 @@ export default function Index() {
               currentSlug={selectedSlug}
             />
 
-            {/* Content area with sidebar */}
+            {/* Content area with sidebar (desktop) / mobile nav */}
             <div className="flex flex-1 overflow-hidden bg-white">
-              <AppSidebar
-                activeFilter={filter}
-                onFilterChange={setFilter}
-                counts={counts}
-                activeSection={section}
-                onSectionChange={handleSectionChange}
-                sectionCounts={sectionCounts}
-                onSyncComplete={() => {
-                  fetchCandidatesFromDB().then((dbCandidates) => {
-                    if (dbCandidates.length > 0) {
-                      initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
-                      setDataVersion((v) => v + 1);
-                    }
-                  });
-                }}
-              />
+              {/* Desktop / tablet sidebar — hidden below md */}
+              <div className="hidden md:flex">
+                <AppSidebar
+                  activeFilter={filter}
+                  onFilterChange={setFilter}
+                  counts={counts}
+                  activeSection={section}
+                  onSectionChange={handleSectionChange}
+                  sectionCounts={sectionCounts}
+                  onSyncComplete={() => {
+                    fetchCandidatesFromDB().then((dbCandidates) => {
+                      if (dbCandidates.length > 0) {
+                        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+                        setDataVersion((v) => v + 1);
+                      }
+                    });
+                  }}
+                />
+              </div>
 
               <main className="flex-1 overflow-y-auto bg-white">
                 <div className="max-w-4xl mx-auto px-3 py-3">
+
+                  {/* Mobile nav — visible below md */}
+                  <div className="md:hidden mb-2">
+                    <MobileNav
+                      activeFilter={filter}
+                      onFilterChange={setFilter}
+                      counts={counts}
+                      activeSection={section}
+                      onSectionChange={handleSectionChange}
+                    />
+                  </div>
 
                   {editorMode ? (
                     <CandidateEditor
