@@ -1146,6 +1146,41 @@ mcpServer.tool({
   },
 });
 
+mcpServer.tool({
+  name: "get_news_ticker",
+  description: "Get the latest news headlines from IntelHub (150+ multi-partisan sources) optimized for tickers/marquees. Returns title, source, scope, link, and publish date. Optional filters: scope (local|state|national|international), category, limit (1-100, default 30).",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      scope: { type: "string" as const, description: "Filter by scope: local, state, national, international" },
+      category: { type: "string" as const, description: "Filter by category (e.g., economy, elections, legal, health)" },
+      limit: { type: "number" as const, description: "Number of headlines (1-100, default 30)" },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const limit = Math.min(Math.max((args.limit as number) || 30, 1), 100);
+    let q = supabase
+      .from("intel_briefings")
+      .select("id,title,scope,category,source_name,source_url,published_at")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(limit);
+    if (args.scope) q = q.eq("scope", String(args.scope));
+    if (args.category) q = q.eq("category", String(args.category));
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          count: data?.length || 0,
+          generated_at: new Date().toISOString(),
+          headlines: data || [],
+        }, null, 2),
+      }],
+    };
+  },
+});
+
 // ─── HTTP Transport ─────────────────────────────────────────────────────────
 
 const transport = new StreamableHttpTransport();
