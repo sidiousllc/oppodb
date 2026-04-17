@@ -394,6 +394,7 @@ export function ActivityLogsTab() {
                   ))}
                 </tbody>
               </table>
+              {showRaw && <RawBlock data={fActivity} />}
             </LogSection>
           )}
 
