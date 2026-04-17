@@ -972,6 +972,48 @@ export type Database = {
         }
         Relationships: []
       }
+      email_notification_preferences: {
+        Row: {
+          created_at: string
+          digest_frequency: string
+          forecast_changes: boolean
+          intel_briefings: boolean
+          polling_alerts: boolean
+          quiet_hours_end: number | null
+          quiet_hours_start: number | null
+          scheduled_reports: boolean
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          digest_frequency?: string
+          forecast_changes?: boolean
+          intel_briefings?: boolean
+          polling_alerts?: boolean
+          quiet_hours_end?: number | null
+          quiet_hours_start?: number | null
+          scheduled_reports?: boolean
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          digest_frequency?: string
+          forecast_changes?: boolean
+          intel_briefings?: boolean
+          polling_alerts?: boolean
+          quiet_hours_end?: number | null
+          quiet_hours_start?: number | null
+          scheduled_reports?: boolean
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -2055,6 +2097,54 @@ export type Database = {
           slug?: string
           tags?: string[]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      polling_alert_subscriptions: {
+        Row: {
+          cadence: string
+          created_at: string
+          email: string
+          enabled: boolean
+          id: string
+          last_sent_at: string | null
+          min_margin_change: number | null
+          next_run_at: string
+          poll_types: string[]
+          scope: string
+          scope_value: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cadence?: string
+          created_at?: string
+          email: string
+          enabled?: boolean
+          id?: string
+          last_sent_at?: string | null
+          min_margin_change?: number | null
+          next_run_at?: string
+          poll_types?: string[]
+          scope?: string
+          scope_value?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cadence?: string
+          created_at?: string
+          email?: string
+          enabled?: boolean
+          id?: string
+          last_sent_at?: string | null
+          min_margin_change?: number | null
+          next_run_at?: string
+          poll_types?: string[]
+          scope?: string
+          scope_value?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
