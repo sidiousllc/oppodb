@@ -27,15 +27,23 @@ interface OppoHubProps {
 type OppoTab = "candidates" | "local-impact" | "narratives";
 
 const categoryLabels: Record<string, string> = {
-  house: "House", senate: "Senate", governor: "Governor", state: "State",
+  "us-house": "U.S. House",
+  "us-senate": "U.S. Senate",
+  governor: "Governor",
+  statewide: "Statewide",
+  "state-leg": "State Leg",
+  local: "Local",
+  uncategorized: "Other",
 };
 
 const filters: Array<{ id: FilterCategory; label: string }> = [
   { id: "all", label: "All" },
-  { id: "house", label: "House" },
-  { id: "senate", label: "Senate" },
+  { id: "us-house", label: "House" },
+  { id: "us-senate", label: "Senate" },
   { id: "governor", label: "Gov" },
-  { id: "state", label: "State" },
+  { id: "statewide", label: "Statewide" },
+  { id: "state-leg", label: "State Leg" },
+  { id: "local", label: "Local" },
   { id: "uncategorized", label: "Other" },
 ];
 

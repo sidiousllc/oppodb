@@ -19,7 +19,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSectionAccess } from "@/hooks/useSectionAccess";
 
-export type FilterCategory = "all" | "house" | "senate" | "governor" | "state" | "uncategorized";
+export type FilterCategory =
+  | "all"
+  | "us-house"
+  | "us-senate"
+  | "governor"
+  | "statewide"
+  | "state-leg"
+  | "local"
+  | "uncategorized";
 export type Section =
   | "dashboard"
   | "oppohub"
@@ -51,10 +59,12 @@ interface AppSidebarProps {
 
 const filters: Array<{ id: FilterCategory; label: string; emoji: string }> = [
   { id: "all", label: "All Profiles", emoji: "📋" },
-  { id: "house", label: "House Races", emoji: "🏛️" },
-  { id: "senate", label: "Senate Races", emoji: "🏛️" },
-  { id: "governor", label: "Governor Races", emoji: "👔" },
-  { id: "state", label: "State Races", emoji: "📍" },
+  { id: "us-house", label: "U.S. House", emoji: "🏛️" },
+  { id: "us-senate", label: "U.S. Senate", emoji: "🏛️" },
+  { id: "governor", label: "Governor", emoji: "👔" },
+  { id: "statewide", label: "Statewide Office", emoji: "🗳️" },
+  { id: "state-leg", label: "State Legislature", emoji: "🏢" },
+  { id: "local", label: "Local Office", emoji: "📍" },
   { id: "uncategorized", label: "Uncategorized", emoji: "❓" },
 ];
 

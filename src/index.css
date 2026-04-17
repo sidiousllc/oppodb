@@ -47,6 +47,9 @@
     --tag-senate: 280 60% 40%;
     --tag-governor: 120 50% 30%;
     --tag-state: 30 70% 40%;
+    --tag-statewide: 200 70% 40%;
+    --tag-local: 340 60% 45%;
+    --tag-uncategorized: 0 0% 45%;
 
     /* Win98 3D border colors */
     --win98-highlight: 0 0% 100%;
@@ -237,10 +240,40 @@
     border-color: hsl(var(--tag-governor) / 0.4);
   }
 
-  .tag-state {
+  .tag-state, .tag-state-leg {
     background: hsl(var(--tag-state) / 0.15);
     color: hsl(var(--tag-state));
     border-color: hsl(var(--tag-state) / 0.4);
+  }
+
+  .tag-us-house {
+    background: hsl(var(--tag-house) / 0.15);
+    color: hsl(var(--tag-house));
+    border-color: hsl(var(--tag-house) / 0.4);
+  }
+
+  .tag-us-senate {
+    background: hsl(var(--tag-senate) / 0.15);
+    color: hsl(var(--tag-senate));
+    border-color: hsl(var(--tag-senate) / 0.4);
+  }
+
+  .tag-statewide {
+    background: hsl(var(--tag-statewide) / 0.15);
+    color: hsl(var(--tag-statewide));
+    border-color: hsl(var(--tag-statewide) / 0.4);
+  }
+
+  .tag-local {
+    background: hsl(var(--tag-local) / 0.15);
+    color: hsl(var(--tag-local));
+    border-color: hsl(var(--tag-local) / 0.4);
+  }
+
+  .tag-uncategorized {
+    background: hsl(var(--tag-uncategorized) / 0.15);
+    color: hsl(var(--tag-uncategorized));
+    border-color: hsl(var(--tag-uncategorized) / 0.4);
   }
 
   .prose-research {
