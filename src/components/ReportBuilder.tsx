@@ -206,7 +206,7 @@ export function ReportBuilder({ reportId, onBack }: Props) {
     e.dataTransfer.setData("blockId", id);
   };
 
-  const groups = ["Content", "Visuals", "Data", "Admin", "API"] as const;
+  const groups = ["Content", "Visuals", "Data", "Intelligence", "Admin", "API"] as const;
 
   return (
     <div className="flex flex-col h-full bg-[hsl(var(--background))]">
