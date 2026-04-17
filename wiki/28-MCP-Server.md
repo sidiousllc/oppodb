@@ -74,3 +74,24 @@ The **Model Context Protocol (MCP) server** exposes OppoDB data and operations t
 ```
 
 See also [API Access](API-Access) for the parallel REST surface.
+
+---
+
+## Phase 6 Tools (added)
+
+### Geopolitics
+- `get_country_geopolitics({ country_code })` — Cached brief (alliances, military, trade, stock markets, sources).
+- `refresh_country_geopolitics({ country_code })` — Force-regenerate. Burns AI credits. Admin-only.
+
+### International extras
+- `list_international_elections({ country_code?, limit? })` — Election history per country.
+- `list_international_leaders({ country_code?, limit? })` — Heads of state / PMs with terms.
+
+### War Rooms
+- `list_war_rooms()` — Returns rooms the caller owns or belongs to (deduped). Resolves caller via API key → user_id.
+- `get_war_room_messages({ room_id, limit? })` — Member-gated message feed. Returns "Not a member of this war room" for non-members.
+
+### Sync observability
+- `get_sync_status({ source? })` — Latest 200 rows from `sync_run_log`. Surfaces the global 15-min cron's per-worker results so agents can detect stale data and decide whether to call `refresh_*` tools.
+
+Total tool count: **42+** across all groups.

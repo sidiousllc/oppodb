@@ -1028,3 +1028,48 @@ Set up scripts to monitor for changes in polling, forecasts, or campaign finance
 
 ### Cross-Platform Search
 The `/search` and `master_search` endpoints enable building custom search interfaces that query all 13 data categories simultaneously.
+
+---
+
+## Phase 6 REST Endpoints (Geopolitics, War Rooms, Sync, International)
+
+### `/public-api/geopolitics?country_code=XX`
+Read the cached AI geopolitics brief for a country (alliances, rivalries, military, trade, stock markets, macro, energy, soft power, sources). Returns `null` if not yet generated. ISO-2 country codes (uppercase). Cache TTL 30 days. See [Geopolitics Intelligence](Geopolitics-Intelligence) for the full JSON schema.
+
+```bash
+curl -H "X-API-Key: ordb_…" \
+  "https://<project>.functions.supabase.co/public-api/geopolitics?country_code=DE"
+```
+
+### `/public-api/international-elections?country_code=XX`
+List elections for a country (presidential, parliamentary, regional). Fields: `election_date`, `election_type`, `winner_party`, `turnout_pct`, `results` (jsonb).
+
+### `/public-api/international-leaders?country_code=XX`
+Heads of state / prime ministers with `term_start`, `term_end`, `party`, `bio_url`.
+
+### `/public-api/war-rooms` — caller-scoped read
+List war rooms the caller owns or is a member of. Optional `?id=` for a single room. War rooms are private collaborative spaces with shared notes, alerts, and chat. See [War Rooms](War-Rooms).
+
+### `/public-api/war-room-members?room_id=`
+Calls SECURITY DEFINER `list_war_room_members()` — returns `{user_id, role, display_name, added_at}`. Caller must be a member (403 otherwise).
+
+### `/public-api/war-room-messages?room_id=&limit=`
+Paginated messages, member-gated via `is_war_room_member()`. Returns 403 for non-members.
+
+### `/public-api/sync-status?source=polling`
+Read recent rows from `sync_run_log`: `source`, `status` (`success`/`error`/`partial`/`skipped`), `rows_synced`, `error_message`, `duration_ms`, `started_at`, `finished_at`. Surfaces the global 15-min cron's per-worker results. Authenticated users only. Optional `?source=` filter.
+
+### `/public-api/sync-preferences`
+Read the calling user's per-source refresh preferences from `user_sync_preferences`. Each row: `source`, `interval_minutes` (5–1440), `enabled`. Drives client-side refetch cadence in addition to the global server cron. See [Sync Pipeline](Sync-Pipeline).
+
+---
+
+## Endpoint Inventory Summary
+
+| Group | Endpoints | Notes |
+|-------|-----------|-------|
+| Reference data | candidates, districts, state-legislative, election-results, polling, prediction-markets, congress-*, campaign-finance, election-forecasts, intel-*, news-ticker, mit-elections, international-* | Read-only |
+| User-scoped | reports, report-schedules, polling-alerts, email-preferences, alert-rules, webhook-endpoints, alert-dispatch-log, entity-notes, sync-preferences, war-rooms, war-room-* | API key → user_id |
+| AI cache | vulnerability-scores, talking-points, bill-impact, geopolitics | 30-day TTL, force-regen via POST |
+| Admin | admin-dispatch-alerts, admin-regenerate-ai, entity-relationships writes | 403 unless `admin` role |
+

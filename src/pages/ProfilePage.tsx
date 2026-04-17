@@ -12,6 +12,7 @@ import { PollingAlertsManager } from "@/components/PollingAlertsManager";
 import { AlertWebhooksManager } from "@/components/AlertWebhooksManager";
 import { NetworkSettingsPanel } from "@/components/NetworkSettingsPanel";
 import { NewsTickerSettings } from "@/components/NewsTickerSettings";
+import { SyncPreferencesPanel } from "@/components/SyncPreferencesPanel";
 import { useLocationConsent } from "@/hooks/useLocationTracker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -37,7 +38,7 @@ const THEME_THUMBNAILS: Record<WindowsTheme, string> = {
   "palm-treo": themeWin98,
 };
 
-const VALID_TABS = ["account", "appearance", "notifications", "integrations", "network"] as const;
+const VALID_TABS = ["account", "appearance", "notifications", "integrations", "sync", "network"] as const;
 type ProfileTab = (typeof VALID_TABS)[number];
 
 export default function ProfilePage() {
@@ -129,12 +130,13 @@ export default function ProfilePage() {
   return (
     <Win98PageLayout title="Profile Settings" icon="👤" addressUrl="aol://ordb.research/profile">
       <Tabs value={tab} onValueChange={(v) => setTab(v as ProfileTab)} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full h-auto bg-[hsl(var(--win98-face))] mb-3">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto bg-[hsl(var(--win98-face))] mb-3">
           <TabsTrigger value="account" className="text-[11px] py-1.5">👤 Account</TabsTrigger>
           <TabsTrigger value="appearance" className="text-[11px] py-1.5">🎨 Appearance</TabsTrigger>
           <TabsTrigger value="notifications" className="text-[11px] py-1.5">🔔 Notifications</TabsTrigger>
           <TabsTrigger value="integrations" className="text-[11px] py-1.5">🔌 Integrations</TabsTrigger>
-          <TabsTrigger value="network" className="text-[11px] py-1.5">📡 Privacy &amp; Network</TabsTrigger>
+          <TabsTrigger value="sync" className="text-[11px] py-1.5">🔄 Sync</TabsTrigger>
+          <TabsTrigger value="network" className="text-[11px] py-1.5">📡 Privacy</TabsTrigger>
         </TabsList>
 
         {/* ============== ACCOUNT ============== */}
@@ -318,6 +320,14 @@ export default function ProfilePage() {
           <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
             <p className="text-[11px] font-bold mb-2 flex items-center gap-1">🗳️ Voter Data Integrations</p>
             <IntegrationSettings />
+          </div>
+        </TabsContent>
+
+        {/* ============== SYNC ============== */}
+        <TabsContent value="sync" className="space-y-3 mt-0">
+          <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
+            <p className="text-[11px] font-bold mb-2 flex items-center gap-1">🔄 Auto-Sync Preferences</p>
+            <SyncPreferencesPanel />
           </div>
         </TabsContent>
 

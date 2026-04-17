@@ -1622,6 +1622,142 @@ mcpServer.tool("admin_regenerate_ai", {
   },
 });
 
+// ─── Phase 6: Geopolitics, War Rooms, Sync ────────────────────────────────
+
+mcpServer.tool("get_country_geopolitics", {
+  description: "Get the cached geopolitical intelligence brief for a country (alliances, rivalries, military, trade, stock markets, sources). Returns null if not yet generated.",
+  inputSchema: {
+    type: "object" as const,
+    properties: { country_code: { type: "string" as const, description: "ISO-2 country code, e.g. 'DE'" } },
+    required: ["country_code"],
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const code = String(args.country_code || "").toUpperCase();
+    const { data, error } = await supabase
+      .from("international_profiles")
+      .select("country_code,country_name,geopolitics,geopolitics_generated_at,geopolitics_model")
+      .eq("country_code", code).maybeSingle();
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("refresh_country_geopolitics", {
+  description: "Force-regenerate the AI geopolitics brief for a country. Burns AI credits — use sparingly. Admin role required.",
+  inputSchema: {
+    type: "object" as const,
+    properties: { country_code: { type: "string" as const } },
+    required: ["country_code"],
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("geopolitics-brief", {
+      body: { country_code: String(args.country_code || "").toUpperCase(), force: true },
+    });
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("list_international_elections", {
+  description: "List elections for a country (presidential, parliamentary, etc.) with dates, results, turnout.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      country_code: { type: "string" as const },
+      limit: { type: "number" as const },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const code = args.country_code ? String(args.country_code).toUpperCase() : undefined;
+    const limit = Math.min((args.limit as number) || 50, 200);
+    let q = supabase.from("international_elections").select("*").limit(limit).order("election_date", { ascending: false });
+    if (code) q = q.eq("country_code", code);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("list_international_leaders", {
+  description: "List political leaders (heads of state, prime ministers) for a country with terms and parties.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      country_code: { type: "string" as const },
+      limit: { type: "number" as const },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const code = args.country_code ? String(args.country_code).toUpperCase() : undefined;
+    const limit = Math.min((args.limit as number) || 50, 200);
+    let q = supabase.from("international_leaders").select("*").limit(limit).order("term_start", { ascending: false });
+    if (code) q = q.eq("country_code", code);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("list_war_rooms", {
+  description: "List war rooms the calling user owns or is a member of. War rooms are private collaborative spaces with shared notes, alerts, and chat.",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async (_args: Record<string, unknown>, ctx: Record<string, unknown>) => {
+    const userId = (ctx as { userId?: string })?.userId;
+    if (!userId) return { content: [{ type: "text" as const, text: "Caller user_id unavailable" }] };
+    const [{ data: owned }, { data: memberRows }] = await Promise.all([
+      supabase.from("war_rooms").select("*").eq("owner_id", userId),
+      supabase.from("war_room_members").select("war_room_id").eq("user_id", userId),
+    ]);
+    const memberIds = (memberRows || []).map((m: { war_room_id: string }) => m.war_room_id);
+    let rooms = (owned || []) as Array<Record<string, unknown>>;
+    if (memberIds.length) {
+      const { data: memberRooms } = await supabase.from("war_rooms").select("*").in("id", memberIds);
+      rooms = [...rooms, ...(memberRooms || [])];
+    }
+    const seen = new Set<string>();
+    rooms = rooms.filter((r) => { const id = String(r.id); if (seen.has(id)) return false; seen.add(id); return true; });
+    return { content: [{ type: "text" as const, text: JSON.stringify(rooms, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_war_room_messages", {
+  description: "Read recent messages from a war room. Caller must be a member.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      room_id: { type: "string" as const },
+      limit: { type: "number" as const },
+    },
+    required: ["room_id"],
+  },
+  handler: async (args: Record<string, unknown>, ctx: Record<string, unknown>) => {
+    const userId = (ctx as { userId?: string })?.userId;
+    const roomId = String(args.room_id);
+    const limit = Math.min((args.limit as number) || 50, 500);
+    const { data: isMember } = await supabase.rpc("is_war_room_member", { _room_id: roomId, _user_id: userId });
+    if (!isMember) return { content: [{ type: "text" as const, text: "Not a member of this war room" }] };
+    const { data, error } = await supabase.from("war_room_messages").select("*")
+      .eq("war_room_id", roomId).order("created_at", { ascending: false }).limit(limit);
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_sync_status", {
+  description: "Get the latest run status for each scheduled-sync source (success/error/partial, rows synced, last run time).",
+  inputSchema: {
+    type: "object" as const,
+    properties: { source: { type: "string" as const, description: "Optional filter, e.g. 'polling'" } },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    let q = supabase.from("sync_run_log").select("*").order("started_at", { ascending: false }).limit(200);
+    if (args.source) q = q.eq("source", String(args.source));
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
 // ─── HTTP Transport ─────────────────────────────────────────────────────────
 
 const transport = new StreamableHttpTransport();
