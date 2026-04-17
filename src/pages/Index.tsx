@@ -460,6 +460,18 @@ export default function Index() {
       return <AlertsHub />;
     }
 
+    if (section === "forecast") {
+      return <ForecastHub />;
+    }
+
+    if (section === "investigations") {
+      return <InvestigationsHub />;
+    }
+
+    if (section === "graph") {
+      return <GraphHub />;
+    }
+
     if (section === "documentation") {
       return <DocumentationSection />;
     }
