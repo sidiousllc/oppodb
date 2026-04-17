@@ -107,9 +107,29 @@ export function ForecastHub() {
 
   useEffect(() => { load(); }, []);
 
+  function parseRegional(): Record<string, number> {
+    const out: Record<string, number> = {};
+    regionalText.split(",").map(s => s.trim()).filter(Boolean).forEach(pair => {
+      const [k, v] = pair.split(":").map(s => s.trim());
+      const n = parseFloat(v);
+      if (k && !isNaN(n)) out[k.toUpperCase()] = n;
+    });
+    return out;
+  }
+
+  function parseManualOverrides(): Record<string, string> {
+    const out: Record<string, string> = {};
+    overridesText.split(",").map(s => s.trim()).filter(Boolean).forEach(pair => {
+      const [k, v] = pair.split(":").map(s => s.trim());
+      if (k && v) out[k.toUpperCase()] = v;
+    });
+    return out;
+  }
+
   async function runSimulation(scenarioId?: string, overrides?: Record<string, string>) {
     setRunning(true);
     try {
+      const merged = { ...(overrides || {}), ...parseManualOverrides() };
       const { data, error } = await supabase.functions.invoke("scenario-simulator", {
         body: {
           scenario_id: scenarioId,
@@ -117,7 +137,14 @@ export function ForecastHub() {
           iterations,
           race_type: raceType,
           cycle: 2026,
-          rating_overrides: overrides || undefined,
+          rating_overrides: Object.keys(merged).length ? merged : undefined,
+          forecast_source: simSource,
+          turnout_shift: turnoutShift,
+          incumbency_boost: incumbencyBoost,
+          uncertainty_sd: uncertaintySd,
+          correlation,
+          regional_swings: parseRegional(),
+          majority_threshold: thresholdOverride ? parseInt(thresholdOverride) : undefined,
         },
       });
       if (error) throw error;
