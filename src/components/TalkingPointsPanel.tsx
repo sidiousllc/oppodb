@@ -100,7 +100,20 @@ export function TalkingPointsPanel({ subjectType, subjectRef }: { subjectType: s
       </div>
       {tp && (
         <div className="space-y-2">
-          <div className="text-[10px] font-bold">Points</div>
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] font-bold">Points</div>
+            {subjectType === "candidate" && (
+              <button
+                onClick={saveToProfile}
+                disabled={saving}
+                className="win98-button text-[10px] px-2 py-0.5 flex items-center gap-1"
+                title="Append these talking points to the candidate profile"
+              >
+                {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                Save to profile
+              </button>
+            )}
+          </div>
           {tp.points.map((p, i) => (
             <div key={i} className="bg-white border border-[hsl(var(--win98-shadow))] p-1.5 text-[10px]">
               <div className="font-bold">{p.message}</div>
