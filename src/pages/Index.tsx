@@ -32,6 +32,9 @@ import { LegHub } from "@/components/LegHub";
 import { OppoHub } from "@/components/OppoHub";
 import { MessagingHub } from "@/components/MessagingHub";
 import { IntelHub } from "@/components/IntelHub";
+import { WarRoomHub } from "@/components/WarRoomHub";
+import { CRMHub } from "@/components/CRMHub";
+import { AlertsHub } from "@/components/AlertsHub";
 
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
@@ -290,6 +293,9 @@ export default function Index() {
     "live-elections": 0,
     reports: 0,
     documentation: 20,
+    warroom: 0,
+    crm: 0,
+    alerts: 0,
   }), [dataVersion, districts, stateLegDistricts, pollingCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
@@ -321,6 +327,9 @@ export default function Index() {
     "live-elections": "Live Elections",
     reports: "ReportHub",
     documentation: "Documentation",
+    warroom: "War Rooms",
+    crm: "Stakeholders",
+    alerts: "Alerts & Watch",
   };
 
   function renderDetail() {
@@ -428,6 +437,18 @@ export default function Index() {
 
     if (section === "reports") {
       return <ReportsHub />;
+    }
+
+    if (section === "warroom") {
+      return <WarRoomHub />;
+    }
+
+    if (section === "crm") {
+      return <CRMHub />;
+    }
+
+    if (section === "alerts") {
+      return <AlertsHub />;
     }
 
     if (section === "documentation") {
