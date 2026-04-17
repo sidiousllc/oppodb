@@ -7,6 +7,27 @@ import { candidates } from "@/data/candidates";
 import { magaFiles } from "@/data/magaFiles";
 import { BarChart3, TrendingDown, TrendingUp, Minus, MapPin, Users, AlertTriangle, FileText, Compass, Scale } from "lucide-react";
 import type { DistrictProfile } from "@/data/districtIntel";
+import { useSectionAccess } from "@/hooks/useSectionAccess";
+
+// Mirrors the order/labels of AppSidebar so Quick Navigation stays in sync.
+const QUICK_NAV_SECTIONS: Array<{ id: string; label: string; emoji: string }> = [
+  { id: "dashboard", label: "Dashboard", emoji: "🏠" },
+  { id: "oppohub", label: "OppoHub", emoji: "🎯" },
+  { id: "leghub", label: "LegHub", emoji: "⚖️" },
+  { id: "polling", label: "DataHub", emoji: "📊" },
+  { id: "intelhub", label: "IntelHub", emoji: "🕵️" },
+  { id: "messaging", label: "MessagingHub", emoji: "📢" },
+  { id: "research-tools", label: "Research Tools", emoji: "🔬" },
+  { id: "internationalhub", label: "InternationalHub", emoji: "🌐" },
+  { id: "live-elections", label: "Live Elections", emoji: "🏛️" },
+  { id: "reports", label: "ReportHub", emoji: "📝" },
+  { id: "warroom", label: "War Rooms", emoji: "⚔️" },
+  { id: "crm", label: "Stakeholders", emoji: "🤝" },
+  { id: "alerts", label: "Alerts & Watch", emoji: "🔔" },
+  { id: "forecast", label: "Forecast Lab", emoji: "🎲" },
+  { id: "graph", label: "Entity Graph", emoji: "🕸️" },
+  { id: "documentation", label: "Documentation", emoji: "📖" },
+];
 
 
 interface DashboardProps {
@@ -17,6 +38,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNavigateSection, candidateCount, districtCount, districts = [] }: DashboardProps) {
+  const { canAccess } = useSectionAccess();
   const [polls, setPolls] = useState<PollEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -379,22 +401,10 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
       <div>
         <h2 className="text-sm font-bold mb-2">📂 Quick Navigation</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {[
-            { label: "Dashboard", emoji: "🏠", section: "dashboard" },
-            { label: "OppoHub", emoji: "🎯", section: "oppohub" },
-            { label: "LegHub", emoji: "⚖️", section: "leghub" },
-            { label: "DataHub", emoji: "📊", section: "polling" },
-            { label: "IntelHub", emoji: "🕵️", section: "intelhub" },
-            { label: "MessagingHub", emoji: "📢", section: "messaging" },
-            { label: "InternationalHub", emoji: "🌐", section: "internationalhub" },
-            { label: "Research Tools", emoji: "🔬", section: "research-tools" },
-            { label: "Live Elections", emoji: "🏛️", section: "live-elections" },
-            { label: "ReportHub", emoji: "📝", section: "reports" },
-            { label: "Documentation", emoji: "📖", section: "documentation" },
-          ].map((item) => (
+          {QUICK_NAV_SECTIONS.filter((item) => canAccess(item.id as any)).map((item) => (
             <button
-              key={item.section}
-              onClick={() => onNavigateSection(item.section)}
+              key={item.id}
+              onClick={() => onNavigateSection(item.id)}
               className="candidate-card flex items-center gap-2 hover:bg-[hsl(var(--win98-light))]"
             >
               <span className="text-lg">{item.emoji}</span>
