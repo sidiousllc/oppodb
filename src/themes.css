@@ -1007,6 +1007,14 @@
 
 /* -------- Palm V (silver/gray sleek) -------- */
 .theme-palm-v {
+  --palm-case: hsl(220 8% 78%);
+  --palm-case-edge: hsl(220 5% 55%);
+  --palm-brand: "Palm V";
+  --palm-brand-color: hsl(220 15% 25%);
+  --palm-screen-bezel: hsl(220 20% 20%);
+  --palm-silkscreen: hsl(220 8% 70%);
+  --palm-btn: hsl(220 10% 55%);
+  --palm-btn-center: hsl(220 15% 50%);
   --background: 220 5% 70%;
   --foreground: 220 10% 10%;
   --card: 220 5% 88%;
