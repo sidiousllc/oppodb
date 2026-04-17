@@ -493,6 +493,15 @@ export default function Index() {
                       counts={counts}
                       activeSection={section}
                       onSectionChange={handleSectionChange}
+                      sectionCounts={sectionCounts}
+                      onSyncComplete={() => {
+                        fetchCandidatesFromDB().then((dbCandidates) => {
+                          if (dbCandidates.length > 0) {
+                            initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+                            setDataVersion((v) => v + 1);
+                          }
+                        });
+                      }}
                     />
                   </div>
 
