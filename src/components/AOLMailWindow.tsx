@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Win98Window } from "./Win98Window";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Inbox, Send, Trash2, PenLine, ArrowLeft, RefreshCw } from "lucide-react";
+import { Inbox, Send, Trash2, PenLine, ArrowLeft, RefreshCw, Bell } from "lucide-react";
 import { toast } from "sonner";
+import { AlertsHub } from "./AlertsHub";
+import { useMail } from "@/contexts/MailContext";
 
 interface MailMessage {
   id: string;
@@ -22,16 +24,29 @@ interface OnlineUser {
   display_name: string;
 }
 
-type Folder = "inbox" | "sent" | "compose";
+type Folder = "inbox" | "sent" | "compose" | "alerts";
 
 export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
-  const [folder, setFolder] = useState<Folder>("inbox");
+  const { initialTab, consumeInitialTab, unreadAlertsCount, refreshAlerts } = useMail();
+  const [folder, setFolder] = useState<Folder>(() => (initialTab as Folder) ?? "inbox");
   const [messages, setMessages] = useState<MailMessage[]>([]);
   const [selectedMsg, setSelectedMsg] = useState<MailMessage | null>(null);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Honor a requested initial tab when the window opens, then clear it.
+  useEffect(() => {
+    if (initialTab) {
+      setFolder(initialTab as Folder);
+      consumeInitialTab();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep alerts badge in sync whenever the user opens the alerts tab
+  useEffect(() => { if (folder === "alerts") refreshAlerts(); }, [folder, refreshAlerts]);
 
   // Compose state
   const [recipientMode, setRecipientMode] = useState<"user" | "external">("user");
@@ -263,7 +278,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[998] bg-black/30 pointer-events-none">
       <div className="pointer-events-auto">
         <Win98Window
-          title={`ORDB Mail — ${screenName} ${unreadCount > 0 ? `(${unreadCount} new)` : ""}`}
+          title={`ORDB Mail — ${screenName} ${(unreadCount + unreadAlertsCount) > 0 ? `(${unreadCount + unreadAlertsCount} new)` : ""}`}
           icon={<span className="text-[10px]">✉️</span>}
           onClose={onClose}
           defaultPosition={{ x: Math.round(window.innerWidth / 2 - 350), y: Math.round(window.innerHeight / 2 - 250) }}
@@ -273,6 +288,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
             <span className="text-[9px]">
               {folder === "inbox" ? `${messages.length} messages, ${unreadCount} unread` :
                folder === "sent" ? `${messages.length} sent messages` :
+               folder === "alerts" ? `${unreadAlertsCount} unread alert${unreadAlertsCount === 1 ? "" : "s"}` :
                "Compose new message"}
             </span>
           }
@@ -300,6 +316,16 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
               >
                 <Send className="h-3 w-3" /> Sent
               </button>
+              <button
+                onClick={() => { setFolder("alerts"); setSelectedMsg(null); refreshAlerts(); }}
+                className={`win98-button text-[9px] flex items-center gap-1 relative ${folder === "alerts" ? "font-bold" : ""}`}
+                title="Alerts & Watchlist"
+              >
+                <Bell className="h-3 w-3" /> Alerts
+                {unreadAlertsCount > 0 && (
+                  <span className="text-[8px] font-bold text-[hsl(var(--destructive))]">({unreadAlertsCount})</span>
+                )}
+              </button>
               <div className="w-[1px] h-4 bg-[hsl(var(--win98-shadow))]" />
               <button onClick={() => loadMessages()} className="win98-button text-[9px] flex items-center gap-1">
                 <RefreshCw className="h-3 w-3" /> Check Mail
@@ -318,7 +344,11 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
 
             {/* Content */}
             <div className="flex-1 overflow-hidden flex flex-col">
-              {folder === "compose" ? (
+              {folder === "alerts" ? (
+                <div className="flex-1 overflow-y-auto p-2">
+                  <AlertsHub />
+                </div>
+              ) : folder === "compose" ? (
                 /* Compose view */
                 <div className="flex-1 flex flex-col p-2 gap-1">
                   {/* Recipient mode toggle */}

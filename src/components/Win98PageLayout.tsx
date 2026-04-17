@@ -64,8 +64,8 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
                 <Mail className="h-4 w-4" />
                 <span>Mail</span>
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] text-[7px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center animate-pulse">
-                    {unreadCount}
+                  <span className="absolute -top-1 -right-1 bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] text-[8px] font-bold rounded-full min-w-[14px] h-[14px] px-1 flex items-center justify-center animate-pulse" title={`${unreadCount} unread (mail + alerts)`}>
+                    {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
               </button>
