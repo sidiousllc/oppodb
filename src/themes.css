@@ -822,75 +822,87 @@
 
 /* =============================================
    Shared Palm OS device chrome
-   Wraps the whole app in a Palm Pilot device
-   with silkscreen / hard buttons at the bottom.
+   Wraps the whole app in a Palm Pilot device with:
+   - Top brand bezel
+   - LCD screen frame
+   - Bottom Graffiti pad + 4 hard app buttons + scroll rocker
    ============================================= */
 [class*="theme-palm-"] body {
-  background: radial-gradient(circle at 30% 20%, hsl(0 0% 25%), hsl(0 0% 8%)) fixed;
+  background: radial-gradient(circle at 30% 20%, hsl(0 0% 25%), hsl(0 0% 6%)) fixed;
   min-height: 100vh;
-  padding: 16px 8px;
+  padding: 14px 6px;
+  overflow-x: hidden;
 }
 
 [class*="theme-palm-"] #root {
-  max-width: 760px;
+  max-width: 420px;
   margin: 0 auto;
   background: var(--palm-case, hsl(0 0% 18%));
-  border-radius: 28px 28px 36px 36px;
-  padding: 22px 18px 90px 18px;
+  border-radius: 32px 32px 40px 40px;
+  padding: 44px 14px 150px 14px;
   box-shadow:
     0 0 0 2px hsl(0 0% 10%),
     0 0 0 4px var(--palm-case-edge, hsl(0 0% 30%)),
-    0 20px 50px hsl(0 0% 0% / 0.6),
-    inset 0 2px 4px hsl(0 0% 100% / 0.08);
+    0 30px 60px hsl(0 0% 0% / 0.7),
+    inset 0 2px 4px hsl(0 0% 100% / 0.08),
+    inset 0 -8px 20px hsl(0 0% 0% / 0.3);
   position: relative;
-  min-height: calc(100vh - 32px);
+  min-height: calc(100vh - 28px);
+  display: flex;
+  flex-direction: column;
 }
 
-/* Brand label above screen */
+/* Brand label at the top of the case */
 [class*="theme-palm-"] #root::before {
   content: var(--palm-brand, "Palm");
   position: absolute;
-  top: 6px;
+  top: 14px;
   left: 50%;
   transform: translateX(-50%);
   font-family: 'Helvetica Neue', Arial, sans-serif;
-  font-size: 10px;
-  letter-spacing: 3px;
+  font-size: 11px;
+  letter-spacing: 4px;
   font-weight: 700;
   color: var(--palm-brand-color, hsl(0 0% 70%));
   text-transform: uppercase;
+  text-shadow: 0 1px 0 hsl(0 0% 0% / 0.5);
 }
 
-/* Silkscreen / hard button area at the bottom */
+/* Bottom area: Graffiti pad + 4 silkscreen buttons + scroll rocker */
 [class*="theme-palm-"] #root::after {
   content: "";
   position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 60px);
-  height: 56px;
+  bottom: 18px;
+  left: 14px;
+  right: 14px;
+  height: 124px;
   background:
-    radial-gradient(circle at 12% 50%, var(--palm-btn, hsl(0 0% 35%)) 14px, transparent 15px),
-    radial-gradient(circle at 30% 50%, var(--palm-btn, hsl(0 0% 35%)) 12px, transparent 13px),
-    radial-gradient(circle at 50% 50%, var(--palm-btn-center, hsl(0 0% 40%)) 18px, transparent 19px),
-    radial-gradient(circle at 70% 50%, var(--palm-btn, hsl(0 0% 35%)) 12px, transparent 13px),
-    radial-gradient(circle at 88% 50%, var(--palm-btn, hsl(0 0% 35%)) 14px, transparent 15px),
-    var(--palm-silkscreen, hsl(0 0% 22%));
-  border-radius: 8px;
-  box-shadow: inset 0 2px 4px hsl(0 0% 0% / 0.5), 0 1px 0 hsl(0 0% 100% / 0.05);
+    radial-gradient(circle at 12% 88%, var(--palm-btn, hsl(0 0% 35%)) 16px, transparent 17px),
+    radial-gradient(circle at 34% 88%, var(--palm-btn, hsl(0 0% 35%)) 14px, transparent 15px),
+    radial-gradient(ellipse 38px 18px at 50% 88%, var(--palm-btn-center, hsl(0 0% 40%)) 99%, transparent 100%),
+    radial-gradient(circle at 66% 88%, var(--palm-btn, hsl(0 0% 35%)) 14px, transparent 15px),
+    radial-gradient(circle at 88% 88%, var(--palm-btn, hsl(0 0% 35%)) 16px, transparent 17px),
+    linear-gradient(180deg, var(--palm-graffiti-bg, hsl(0 0% 75%)) 0 64px, var(--palm-silkscreen, hsl(0 0% 22%)) 64px 100%);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 2px 6px hsl(0 0% 0% / 0.6),
+    inset 0 0 0 1px var(--palm-screen-bezel, hsl(0 0% 10%));
   pointer-events: none;
 }
 
-/* The "screen" area — wraps the desktop content */
+/* The Palm OS "screen" — wraps the desktop content with a recessed LCD frame */
 [class*="theme-palm-"] .win98-desktop,
 [class*="theme-palm-"] [data-palm-screen] {
-  border-radius: 4px;
+  flex: 1;
+  border-radius: 2px;
+  background: hsl(var(--background));
   box-shadow:
-    inset 0 0 0 2px var(--palm-screen-bezel, hsl(0 0% 10%)),
-    inset 0 0 12px hsl(0 0% 0% / 0.4);
-  padding: 8px;
-  min-height: 70vh;
+    inset 0 0 0 3px var(--palm-screen-bezel, hsl(0 0% 10%)),
+    inset 0 0 0 5px hsl(0 0% 0% / 0.4),
+    inset 0 0 18px hsl(0 0% 0% / 0.5);
+  padding: 0;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Hide the Win98 taskbar in Palm themes — replaced by hard buttons */
@@ -898,31 +910,79 @@
   display: none !important;
 }
 
-/* Tighten window chrome to feel more like Palm app cards */
-[class*="theme-palm-"] .win98-titlebar-btn {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  font-size: 0;
+/* Remove root padding offset from taskbar */
+[class*="theme-palm-"] .pb-\[28px\] {
+  padding-bottom: 0 !important;
 }
 
-/* Palm-style menu bar look */
+/* Palm-style window chrome — app cards with white title bars */
+[class*="theme-palm-"] .win98-titlebar {
+  background: var(--palm-titlestrip-bg, hsl(0 0% 100%)) !important;
+  color: var(--palm-titlestrip-fg, hsl(0 0% 0%)) !important;
+  border-bottom: 1px solid var(--palm-screen-bezel, hsl(0 0% 30%));
+  padding: 3px 6px !important;
+  border-radius: 0 !important;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+[class*="theme-palm-"] .win98-titlebar-btn {
+  width: 16px;
+  height: 14px;
+  border-radius: 2px;
+  font-size: 10px;
+  background: var(--palm-titlestrip-bg, hsl(0 0% 100%));
+  color: var(--palm-titlestrip-fg, hsl(0 0% 0%));
+  border: 1px solid var(--palm-screen-bezel, hsl(0 0% 30%));
+}
+
+/* Palm-style menu bar */
 [class*="theme-palm-"] .win98-menubar {
   border-bottom: 1px solid var(--palm-screen-bezel, hsl(0 0% 30%));
   background: hsl(var(--card));
+  font-family: var(--font-body);
 }
 
-/* Mobile: shrink case padding */
+/* Palm-style buttons — rounded, simple */
+[class*="theme-palm-"] .win98-button {
+  border-radius: 8px !important;
+  border: 1px solid var(--palm-screen-bezel, hsl(0 0% 30%)) !important;
+  font-family: var(--font-body);
+  padding: 3px 10px;
+}
+
+/* Palm OS is single-column always */
+[class*="theme-palm-"] .grid-cols-2,
+[class*="theme-palm-"] .grid-cols-3,
+[class*="theme-palm-"] .grid-cols-4,
+[class*="theme-palm-"] .md\:grid-cols-2,
+[class*="theme-palm-"] .md\:grid-cols-3,
+[class*="theme-palm-"] .md\:grid-cols-4,
+[class*="theme-palm-"] .lg\:grid-cols-2,
+[class*="theme-palm-"] .lg\:grid-cols-3,
+[class*="theme-palm-"] .lg\:grid-cols-4 {
+  grid-template-columns: 1fr !important;
+}
+
+/* Tablet+ — slightly wider but still palm-shaped */
+@media (min-width: 768px) {
+  [class*="theme-palm-"] #root { max-width: 460px; }
+}
+
+/* Mobile: tighter case padding */
 @media (max-width: 480px) {
-  [class*="theme-palm-"] body { padding: 6px 2px; }
+  [class*="theme-palm-"] body { padding: 4px 2px; }
   [class*="theme-palm-"] #root {
-    border-radius: 18px 18px 24px 24px;
-    padding: 18px 8px 76px 8px;
+    border-radius: 22px 22px 30px 30px;
+    padding: 38px 8px 124px 8px;
+    max-width: 100%;
   }
   [class*="theme-palm-"] #root::after {
-    height: 44px;
-    width: calc(100% - 24px);
-    bottom: 10px;
+    height: 100px;
+    bottom: 12px;
+    left: 8px;
+    right: 8px;
   }
 }
 
