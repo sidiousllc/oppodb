@@ -4743,9 +4743,26 @@ export type Database = {
         Args: { p_key_id: string }
         Returns: undefined
       }
+      invite_war_room_member_by_email: {
+        Args: { _email: string; _role?: string; _room_id: string }
+        Returns: {
+          role: string
+          status: string
+          user_id: string
+        }[]
+      }
       is_war_room_member: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
+      }
+      list_war_room_members: {
+        Args: { _room_id: string }
+        Returns: {
+          added_at: string
+          display_name: string
+          role: string
+          user_id: string
+        }[]
       }
       log_api_request: {
         Args: {
