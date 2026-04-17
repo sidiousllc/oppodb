@@ -35,6 +35,9 @@ import { IntelHub } from "@/components/IntelHub";
 import { WarRoomHub } from "@/components/WarRoomHub";
 import { CRMHub } from "@/components/CRMHub";
 import { AlertsHub } from "@/components/AlertsHub";
+import { ForecastHub } from "@/components/ForecastHub";
+import { InvestigationsHub } from "@/components/InvestigationsHub";
+import { GraphHub } from "@/components/GraphHub";
 
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
