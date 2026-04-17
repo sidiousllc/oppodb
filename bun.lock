@@ -40,6 +40,7 @@
         "@radix-ui/react-tooltip": "^1.2.7",
         "@supabase/supabase-js": "^2.99.1",
         "@tanstack/react-query": "^5.83.0",
+        "@types/leaflet": "1.9.12",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
@@ -49,6 +50,7 @@
         "input-otp": "^1.4.2",
         "jspdf": "^4.2.0",
         "jspdf-autotable": "^5.0.7",
+        "leaflet": "1.9.4",
         "lucide-react": "^0.462.0",
         "next-themes": "^0.3.0",
         "pdfjs-dist": "4.9.155",
@@ -56,6 +58,7 @@
         "react-day-picker": "^8.10.1",
         "react-dom": "^18.3.1",
         "react-hook-form": "^7.61.1",
+        "react-leaflet": "4.2.1",
         "react-markdown": "^10.1.0",
         "react-resizable-panels": "^2.1.9",
         "react-router-dom": "^6.30.1",
@@ -560,6 +563,8 @@
 
     "@radix-ui/rect": ["@radix-ui/rect@1.1.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@radix-ui/rect/-/rect-1.1.1.tgz", {}, ""],
 
+    "@react-leaflet/core": ["@react-leaflet/core@2.1.0", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@react-leaflet/core/-/core-2.1.0.tgz", { "peerDependencies": { "leaflet": "^1.9.0", "react": "^18.0.0", "react-dom": "^18.0.0" } }, "sha512-Qk7Pfu8BSarKGqILj4x7bCSZ1pjuAPZ+qmRwH5S7mDS91VSbVVsJSrW4qA+GPrro8t69gFYVMWb1Zc4yFmPiVg=="],
+
     "@remix-run/router": ["@remix-run/router@1.23.2", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@remix-run/router/-/router-1.23.2.tgz", {}, ""],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-beta.27", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@rolldown/pluginutils/-/pluginutils-1.0.0-beta.27.tgz", {}, ""],
@@ -650,9 +655,13 @@
 
     "@types/fs-extra": ["@types/fs-extra@8.1.5", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@types/fs-extra/-/fs-extra-8.1.5.tgz", { "dependencies": { "@types/node": "*" } }, ""],
 
+    "@types/geojson": ["@types/geojson@7946.0.16", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@types/geojson/-/geojson-7946.0.16.tgz", {}, "sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg=="],
+
     "@types/hast": ["@types/hast@3.0.4", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@types/hast/-/hast-3.0.4.tgz", { "dependencies": { "@types/unist": "*" } }, ""],
 
     "@types/json-schema": ["@types/json-schema@7.0.15", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@types/json-schema/-/json-schema-7.0.15.tgz", {}, ""],
+
+    "@types/leaflet": ["@types/leaflet@1.9.12", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@types/leaflet/-/leaflet-1.9.12.tgz", { "dependencies": { "@types/geojson": "*" } }, "sha512-BK7XS+NyRI291HIo0HCfE18Lp8oA30H1gpi1tf0mF3TgiCEzanQjOqNZ4x126SXzzi2oNSZhZ5axJp1k0iM6jg=="],
 
     "@types/mdast": ["@types/mdast@4.0.4", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@types/mdast/-/mdast-4.0.4.tgz", { "dependencies": { "@types/unist": "*" } }, ""],
 
@@ -1296,6 +1305,8 @@
 
     "kleur": ["kleur@4.1.5", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/kleur/-/kleur-4.1.5.tgz", {}, ""],
 
+    "leaflet": ["leaflet@1.9.4", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/leaflet/-/leaflet-1.9.4.tgz", {}, "sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA=="],
+
     "leven": ["leven@3.1.0", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/leven/-/leven-3.1.0.tgz", {}, ""],
 
     "levn": ["levn@0.4.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/levn/-/levn-0.4.1.tgz", { "dependencies": { "prelude-ls": "^1.2.1", "type-check": "~0.4.0" } }, ""],
@@ -1543,6 +1554,8 @@
     "react-hook-form": ["react-hook-form@7.61.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/react-hook-form/-/react-hook-form-7.61.1.tgz", { "peerDependencies": { "react": "^16.8.0 || ^17 || ^18 || ^19" } }, ""],
 
     "react-is": ["react-is@18.3.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/react-is/-/react-is-18.3.1.tgz", {}, ""],
+
+    "react-leaflet": ["react-leaflet@4.2.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/react-leaflet/-/react-leaflet-4.2.1.tgz", { "dependencies": { "@react-leaflet/core": "^2.1.0" }, "peerDependencies": { "leaflet": "^1.9.0", "react": "^18.0.0", "react-dom": "^18.0.0" } }, "sha512-p9chkvhcKrWn/H/1FFeVSqLdReGwn2qmiobOQGO3BifX+/vV/39qhY8dGqbdcPh1e6jxh/QHriLXr7a4eLFK4Q=="],
 
     "react-markdown": ["react-markdown@10.1.0", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/react-markdown/-/react-markdown-10.1.0.tgz", { "dependencies": { "@types/hast": "^3.0.0", "@types/mdast": "^4.0.0", "devlop": "^1.0.0", "hast-util-to-jsx-runtime": "^2.0.0", "html-url-attributes": "^3.0.0", "mdast-util-to-hast": "^13.0.0", "remark-parse": "^11.0.0", "remark-rehype": "^11.0.0", "unified": "^11.0.0", "unist-util-visit": "^5.0.0", "vfile": "^6.0.0" }, "peerDependencies": { "@types/react": ">=18", "react": ">=18" } }, ""],
 
