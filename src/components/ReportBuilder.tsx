@@ -5,12 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { toast } from "sonner";
-import { ArrowLeft, FileText, Save, Download, Trash2, GripVertical, Plus, Share2, RefreshCw, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Save, Download, Trash2, GripVertical, Plus, Share2, RefreshCw, Loader2, Calendar } from "lucide-react";
 import {
   BLOCK_PALETTE, type Report, type ReportBlock, type ReportBlockType,
 } from "@/lib/reports/types";
 import { fetchSnapshot, refreshAllSnapshots } from "@/lib/reports/snapshots";
 import { exportReportPdf, exportReportCsv } from "@/lib/reports/exporters";
+import { ChartBlockView, TableBlockView, MapBlockView } from "@/components/reports/BlockViews";
+import { ReportSchedules } from "@/components/reports/ReportSchedules";
 
 interface Props {
   reportId: string;
@@ -31,6 +33,9 @@ function newBlock(type: ReportBlockType): ReportBlock {
     case "admin_locations": return { id, type, filters: {}, showMap: true };
     case "api_data": return { id, type, endpoint: "/v1/candidates" };
     case "mcp_data": return { id, type, toolName: "search_all", args: { query: "" } };
+    case "chart": return { id, type, chartType: "bar", data: [{ label: "A", value: 10 }, { label: "B", value: 20 }, { label: "C", value: 15 }], series: ["value"] };
+    case "table": return { id, type, columns: ["Column 1", "Column 2"], rows: [["Row 1", "Value"], ["Row 2", "Value"]] };
+    case "map": return { id, type, mode: "districts", districts: [] };
     default: return { id, type, refId: "", snapshot: undefined } as ReportBlock;
   }
 }
@@ -200,7 +205,8 @@ export function ReportBuilder({ reportId, onBack }: Props) {
     e.dataTransfer.setData("blockId", id);
   };
 
-  const groups = ["Content", "Data", "Admin", "API"] as const;
+  const groups = ["Content", "Visuals", "Data", "Admin", "API"] as const;
+  const [showSchedules, setShowSchedules] = useState(false);
 
   return (
     <div className="flex flex-col h-full bg-[hsl(var(--background))]">
@@ -234,6 +240,11 @@ export function ReportBuilder({ reportId, onBack }: Props) {
         {isOwner && (
           <button onClick={() => setShowShare((s) => !s)} className="text-xs flex items-center gap-1 px-2 py-1 border border-border rounded hover:bg-accent">
             <Share2 size={12} /> Share ({shares.length})
+          </button>
+        )}
+        {isOwner && (
+          <button onClick={() => setShowSchedules((s) => !s)} className="text-xs flex items-center gap-1 px-2 py-1 border border-border rounded hover:bg-accent">
+            <Calendar size={12} /> Schedule
           </button>
         )}
       </div>
