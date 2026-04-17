@@ -400,9 +400,18 @@ export function ForecastHub() {
                   <div>Rep majority odds: <span className="font-bold">{latestResult.rep_win_pct?.toFixed(1)}%</span></div>
                   <div>Median Dem seats: <span className="font-bold">{latestResult.median_dem_seats}</span></div>
                   <div>Median Rep seats: <span className="font-bold">{latestResult.median_rep_seats}</span></div>
+                  <div>Mean Dem seats: {latestResult.mean_dem_seats?.toFixed(1)}</div>
+                  <div>Total seats simulated: {latestResult.total_seats}</div>
+                  <div>5th pctile (Dem): {latestResult.p05_dem_seats}</div>
+                  <div>95th pctile (Dem): {latestResult.p95_dem_seats}</div>
                   <div>10th pctile (Dem): {latestResult.p10_dem_seats}</div>
                   <div>90th pctile (Dem): {latestResult.p90_dem_seats}</div>
                 </div>
+                {latestResult.tuning && (
+                  <div className="mt-2 pt-2 border-t border-[hsl(var(--win98-shadow))] text-[10px] text-muted-foreground">
+                    Tuning: swing {latestResult.tuning.national_swing}, turnout {latestResult.tuning.turnout_shift}, incumbency +{latestResult.tuning.incumbency_boost}, σ={latestResult.tuning.uncertainty_sd}, ρ={latestResult.tuning.correlation}, source={latestResult.tuning.forecast_source}
+                  </div>
+                )}
               </div>
             )}
           </div>
