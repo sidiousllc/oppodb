@@ -34,7 +34,10 @@ export type Section =
   | "documentation"
   | "warroom"
   | "crm"
-  | "alerts";
+  | "alerts"
+  | "forecast"
+  | "investigations"
+  | "graph";
 
 interface AppSidebarProps {
   activeFilter: FilterCategory;
