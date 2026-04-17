@@ -330,6 +330,9 @@ export default function Index() {
     warroom: "War Rooms",
     crm: "Stakeholders",
     alerts: "Alerts & Watch",
+    forecast: "Forecast Lab",
+    investigations: "Investigations",
+    graph: "Entity Graph",
   };
 
   function renderDetail() {
