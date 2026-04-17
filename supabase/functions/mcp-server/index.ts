@@ -1518,6 +1518,110 @@ mcpServer.tool("admin_dispatch_alerts", {
   },
 });
 
+// ─── Admin Mutation Tools ───────────────────────────────────────────────────
+
+mcpServer.tool("admin_delete_entity_note", {
+  description: "[ADMIN] Delete any user's entity note. Use for moderation of inappropriate content.",
+  inputSchema: { type: "object" as const, properties: { note_id: { type: "string" as const } }, required: ["note_id"] },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    if (!caller?.isAdmin) return { content: [{ type: "text" as const, text: "Admin role required" }] };
+    const { error } = await supabase.from("entity_notes").delete().eq("id", String(args.note_id));
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ ok: true, deleted: args.note_id }) }] };
+  },
+});
+
+mcpServer.tool("admin_update_entity_note", {
+  description: "[ADMIN] Update any user's entity note (e.g. redact body, toggle is_shared).",
+  inputSchema: { type: "object" as const, properties: {
+    note_id: { type: "string" as const }, body: { type: "string" as const }, is_shared: { type: "boolean" as const },
+  }, required: ["note_id"] },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    if (!caller?.isAdmin) return { content: [{ type: "text" as const, text: "Admin role required" }] };
+    const update: Record<string, unknown> = {};
+    if (args.body !== undefined) update.body = args.body;
+    if (args.is_shared !== undefined) update.is_shared = args.is_shared;
+    const { data, error } = await supabase.from("entity_notes").update(update as never).eq("id", String(args.note_id)).select();
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("admin_create_graph_edge", {
+  description: "[ADMIN] Create a relationship edge in the entity graph (donations, votes, lobbying, etc).",
+  inputSchema: { type: "object" as const, properties: {
+    source_type: { type: "string" as const }, source_id: { type: "string" as const }, source_label: { type: "string" as const },
+    target_type: { type: "string" as const }, target_id: { type: "string" as const }, target_label: { type: "string" as const },
+    relationship_type: { type: "string" as const }, amount: { type: "number" as const },
+    weight: { type: "number" as const }, source: { type: "string" as const }, observed_at: { type: "string" as const },
+    metadata: { type: "object" as const },
+  }, required: ["source_type", "source_id", "source_label", "target_type", "target_id", "target_label", "relationship_type"] },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    if (!caller?.isAdmin) return { content: [{ type: "text" as const, text: "Admin role required" }] };
+    const { data, error } = await supabase.from("entity_relationships").insert(args as never).select();
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("admin_update_graph_edge", {
+  description: "[ADMIN] Update an existing entity_relationships edge (amount, weight, metadata, etc).",
+  inputSchema: { type: "object" as const, properties: {
+    edge_id: { type: "string" as const }, amount: { type: "number" as const }, weight: { type: "number" as const },
+    relationship_type: { type: "string" as const }, source: { type: "string" as const },
+    observed_at: { type: "string" as const }, metadata: { type: "object" as const },
+  }, required: ["edge_id"] },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    if (!caller?.isAdmin) return { content: [{ type: "text" as const, text: "Admin role required" }] };
+    const { edge_id, ...update } = args;
+    const { data, error } = await supabase.from("entity_relationships").update(update as never).eq("id", String(edge_id)).select();
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("admin_delete_graph_edge", {
+  description: "[ADMIN] Delete a relationship edge from the entity graph.",
+  inputSchema: { type: "object" as const, properties: { edge_id: { type: "string" as const } }, required: ["edge_id"] },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    if (!caller?.isAdmin) return { content: [{ type: "text" as const, text: "Admin role required" }] };
+    const { error } = await supabase.from("entity_relationships").delete().eq("id", String(args.edge_id));
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ ok: true, deleted: args.edge_id }) }] };
+  },
+});
+
+mcpServer.tool("admin_regenerate_ai", {
+  description: "[ADMIN] Regenerate cached AI analysis. type=vulnerability_score|talking_points|bill_impact. Provide ref (slug/bill_id).",
+  inputSchema: { type: "object" as const, properties: {
+    type: { type: "string" as const }, ref: { type: "string" as const },
+    scope: { type: "string" as const }, scope_ref: { type: "string" as const },
+  }, required: ["type", "ref"] },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    if (!caller?.isAdmin) return { content: [{ type: "text" as const, text: "Admin role required" }] };
+    const fnMap: Record<string, string> = {
+      vulnerability_score: "vulnerability-score",
+      talking_points: "talking-points",
+      bill_impact: "bill-impact",
+    };
+    const fn = fnMap[String(args.type)];
+    if (!fn) return { content: [{ type: "text" as const, text: "Unknown type. Use vulnerability_score|talking_points|bill_impact" }] };
+    const body: Record<string, unknown> = { force: true };
+    if (args.type === "vulnerability_score") body.candidate_slug = args.ref;
+    else if (args.type === "bill_impact") { body.bill_id = args.ref; if (args.scope) body.scope = args.scope; if (args.scope_ref) body.scope_ref = args.scope_ref; }
+    else { body.subject_type = "candidate"; body.subject_ref = args.ref; }
+    const { data, error } = await supabase.functions.invoke(fn, { body });
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
 // ─── HTTP Transport ─────────────────────────────────────────────────────────
 
 const transport = new StreamableHttpTransport();
