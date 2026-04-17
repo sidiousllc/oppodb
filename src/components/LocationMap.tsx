@@ -53,12 +53,21 @@ export function LocationMap({ points, height = 320, showPath = false }: Location
     ro.observe(containerRef.current);
 
     // Force size recalculation after mount (fixes blank map in tabs/modals)
-    const t1 = setTimeout(() => map.invalidateSize(), 100);
-    const t2 = setTimeout(() => map.invalidateSize(), 500);
+    const timers = [50, 150, 400, 1000, 2000].map(ms =>
+      setTimeout(() => {
+        try { map.invalidateSize(); } catch {}
+      }, ms)
+    );
+
+    // Also invalidate when window resizes or visibility changes
+    const onVis = () => { try { map.invalidateSize(); } catch {} };
+    window.addEventListener("resize", onVis);
+    document.addEventListener("visibilitychange", onVis);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
+      timers.forEach(clearTimeout);
+      window.removeEventListener("resize", onVis);
+      document.removeEventListener("visibilitychange", onVis);
       ro.disconnect();
       map.remove();
       mapRef.current = null;
@@ -108,11 +117,12 @@ export function LocationMap({ points, height = 320, showPath = false }: Location
     }
   }, [points, showPath]);
 
+  const heightStyle = typeof height === "number" ? `${height}px` : height;
   return (
     <div
       ref={containerRef}
-      style={{ height, width: "100%" }}
-      className="win98-sunken bg-[hsl(var(--win98-light))]"
+      style={{ height: heightStyle, minHeight: heightStyle, width: "100%", position: "relative" }}
+      className="win98-sunken bg-[hsl(var(--win98-light))] leaflet-host"
     />
   );
 }
