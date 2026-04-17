@@ -206,7 +206,7 @@ export function ReportBuilder({ reportId, onBack }: Props) {
     e.dataTransfer.setData("blockId", id);
   };
 
-  const groups = ["Content", "Visuals", "Data", "Admin", "API"] as const;
+  const groups = ["Content", "Visuals", "Data", "Intelligence", "Admin", "API"] as const;
 
   return (
     <div className="flex flex-col h-full bg-[hsl(var(--background))]">
@@ -231,7 +231,7 @@ export function ReportBuilder({ reportId, onBack }: Props) {
             </button>
           </>
         )}
-        <button onClick={() => exportReportPdf(report)} className="text-xs flex items-center gap-1 px-2 py-1 border border-border rounded hover:bg-accent">
+        <button onClick={() => { void exportReportPdf(report); }} className="text-xs flex items-center gap-1 px-2 py-1 border border-border rounded hover:bg-accent">
           <Download size={12} /> PDF
         </button>
         <button onClick={() => exportReportCsv(report)} className="text-xs flex items-center gap-1 px-2 py-1 border border-border rounded hover:bg-accent">
@@ -344,6 +344,7 @@ export function ReportBuilder({ reportId, onBack }: Props) {
           {report.blocks.map((b, idx) => (
             <div
               key={b.id}
+              data-report-block-id={b.id}
               draggable={canEdit}
               onDragStart={(e) => onBlockDragStart(e, b.id)}
               onClick={() => setSelectedBlockId(b.id)}
@@ -657,6 +658,14 @@ function BlockEditor({ block, onChange }: { block: ReportBlock; onChange: (patch
           block.type === "international" ? "USA" :
           block.type === "election" ? "MN-05" :
           block.type === "legislation" ? "hr1234-119" :
+          block.type === "talking_points" ? "candidate-slug or bill_id" :
+          block.type === "vulnerability" ? "candidate-slug" :
+          block.type === "bill_impact" ? "hr1234-119" :
+          block.type === "forecast" ? "MN-05 or MN" :
+          block.type === "prediction_market" ? "market id or slug" :
+          block.type === "investigations" ? "MN or person/org name" :
+          block.type === "war_room" ? "war room UUID" :
+          block.type === "entity_graph" ? "candidate:tina-smith" :
           "reference id"
         }
         className="w-full text-xs border border-border bg-background rounded px-2 py-1"
