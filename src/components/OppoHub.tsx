@@ -8,6 +8,7 @@ import { type MagaFile, searchMagaFiles, magaFiles } from "@/data/magaFiles";
 import { localImpactReports, searchLocalImpact, getLocalImpactBySlug, type LocalImpactReport } from "@/data/localImpact";
 import { narrativeReports, searchNarrativeReports, type NarrativeReport } from "@/data/narrativeReports";
 import { Plus, Edit3 } from "lucide-react";
+import { BiasBreakdown } from "@/components/reports/BiasOverlay";
 import { type FilterCategory } from "@/components/AppSidebar";
 
 interface OppoHubProps {
@@ -256,8 +257,12 @@ export function OppoHub({
       {/* Narratives tab */}
       {tab === "narratives" && (
         <>
-          <div className="mt-2 mb-1">
+          <div className="mt-2 mb-1 flex items-center justify-between gap-2">
             <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{filteredNarratives.length} narrative reports</p>
+            <BiasBreakdown
+              sources={filteredNarratives.map((n) => (n.content.match(/source[s]?:\s*([^\n]+)/i)?.[1] ?? "").split(/[,;]/).map((s) => s.trim()).filter(Boolean)).flat()}
+              className="w-32"
+            />
           </div>
           <div className="grid gap-2">
             {filteredNarratives.map(n => (

@@ -2223,6 +2223,56 @@ export type Database = {
         }
         Relationships: []
       }
+      report_schedules: {
+        Row: {
+          cadence: string
+          created_at: string
+          enabled: boolean
+          id: string
+          last_sent_at: string | null
+          next_run_at: string
+          owner_id: string
+          recipients: string[]
+          report_id: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          cadence?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_sent_at?: string | null
+          next_run_at?: string
+          owner_id: string
+          recipients?: string[]
+          report_id: string
+          subject?: string
+          updated_at?: string
+        }
+        Update: {
+          cadence?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_sent_at?: string | null
+          next_run_at?: string
+          owner_id?: string
+          recipients?: string[]
+          report_id?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_schedules_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_shares: {
         Row: {
           can_edit: boolean

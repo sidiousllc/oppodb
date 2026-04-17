@@ -5,12 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { toast } from "sonner";
-import { ArrowLeft, FileText, Save, Download, Trash2, GripVertical, Plus, Share2, RefreshCw, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Save, Download, Trash2, GripVertical, Plus, Share2, RefreshCw, Loader2, Calendar } from "lucide-react";
 import {
   BLOCK_PALETTE, type Report, type ReportBlock, type ReportBlockType,
 } from "@/lib/reports/types";
 import { fetchSnapshot, refreshAllSnapshots } from "@/lib/reports/snapshots";
 import { exportReportPdf, exportReportCsv } from "@/lib/reports/exporters";
+import { ChartBlockView, TableBlockView, MapBlockView } from "@/components/reports/BlockViews";
+import { ReportSchedules } from "@/components/reports/ReportSchedules";
 
 interface Props {
   reportId: string;
@@ -31,6 +33,9 @@ function newBlock(type: ReportBlockType): ReportBlock {
     case "admin_locations": return { id, type, filters: {}, showMap: true };
     case "api_data": return { id, type, endpoint: "/v1/candidates" };
     case "mcp_data": return { id, type, toolName: "search_all", args: { query: "" } };
+    case "chart": return { id, type, chartType: "bar", data: [{ label: "A", value: 10 }, { label: "B", value: 20 }, { label: "C", value: 15 }], series: ["value"] };
+    case "table": return { id, type, columns: ["Column 1", "Column 2"], rows: [["Row 1", "Value"], ["Row 2", "Value"]] };
+    case "map": return { id, type, mode: "districts", districts: [] };
     default: return { id, type, refId: "", snapshot: undefined } as ReportBlock;
   }
 }
@@ -45,6 +50,7 @@ export function ReportBuilder({ reportId, onBack }: Props) {
   const [shareEmail, setShareEmail] = useState("");
   const [shares, setShares] = useState<Array<{ id: string; shared_with_user_id: string; can_edit: boolean; profile?: { display_name: string | null } }>>([]);
   const [showShare, setShowShare] = useState(false);
+  const [showSchedules, setShowSchedules] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -200,7 +206,7 @@ export function ReportBuilder({ reportId, onBack }: Props) {
     e.dataTransfer.setData("blockId", id);
   };
 
-  const groups = ["Content", "Data", "Admin", "API"] as const;
+  const groups = ["Content", "Visuals", "Data", "Admin", "API"] as const;
 
   return (
     <div className="flex flex-col h-full bg-[hsl(var(--background))]">
@@ -236,6 +242,11 @@ export function ReportBuilder({ reportId, onBack }: Props) {
             <Share2 size={12} /> Share ({shares.length})
           </button>
         )}
+        {isOwner && (
+          <button onClick={() => setShowSchedules((s) => !s)} className="text-xs flex items-center gap-1 px-2 py-1 border border-border rounded hover:bg-accent">
+            <Calendar size={12} /> Schedule
+          </button>
+        )}
       </div>
 
       {/* Share panel */}
@@ -264,6 +275,18 @@ export function ReportBuilder({ reportId, onBack }: Props) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Schedule panel */}
+      {showSchedules && isOwner && (
+        <div className="border-b border-border bg-muted px-3 py-2">
+          {report.is_public ? null : (
+            <div className="text-[10px] text-muted-foreground mb-2 italic">
+              Tip: enable "Public" in Share to give recipients a viewable link.
+            </div>
+          )}
+          <ReportSchedules reportId={report.id} reportTitle={report.title} />
         </div>
       )}
 
@@ -379,6 +402,9 @@ function BlockPreview({ block }: { block: ReportBlock }) {
     }
     case "api_data": return <div className="text-xs text-muted-foreground">🔌 API: {(block as any).endpoint}</div>;
     case "mcp_data": return <div className="text-xs text-muted-foreground">🤖 MCP: {(block as any).toolName}</div>;
+    case "chart": return <ChartBlockView block={block} />;
+    case "table": return <TableBlockView block={block} />;
+    case "map":   return <MapBlockView block={block} />;
     default: {
       const ref = (block as any).refId;
       const snap = (block as any).snapshot;
@@ -520,7 +546,104 @@ function BlockEditor({ block, onChange }: { block: ReportBlock; onChange: (patch
     );
   }
 
-  // Generic data block — just refId + title
+  if (block.type === "chart") {
+    return (
+      <div className="space-y-2">
+        <select
+          value={block.chartType}
+          onChange={(e) => setField("chartType", e.target.value)}
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        >
+          <option value="bar">Bar</option>
+          <option value="line">Line</option>
+          <option value="pie">Pie</option>
+        </select>
+        <label className="block text-[10px] font-bold">Data (JSON array of {`{label, value, ...}`})</label>
+        <textarea
+          value={JSON.stringify(block.data, null, 2)}
+          onChange={(e) => { try { setField("data", JSON.parse(e.target.value)); } catch { /* ignore */ } }}
+          rows={6}
+          className="w-full text-xs border border-border bg-background rounded p-2 font-mono"
+        />
+        <input
+          value={(block.series ?? ["value"]).join(",")}
+          onChange={(e) => setField("series", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+          placeholder="series keys (comma-separated)"
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        />
+        <input
+          value={block.caption ?? ""}
+          onChange={(e) => setField("caption", e.target.value)}
+          placeholder="Caption"
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        />
+      </div>
+    );
+  }
+
+  if (block.type === "table") {
+    return (
+      <div className="space-y-2">
+        <input
+          value={block.columns.join(",")}
+          onChange={(e) => setField("columns", e.target.value.split(",").map((s) => s.trim()))}
+          placeholder="Columns (comma-separated)"
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        />
+        <label className="block text-[10px] font-bold">Rows (JSON array of arrays)</label>
+        <textarea
+          value={JSON.stringify(block.rows, null, 2)}
+          onChange={(e) => { try { setField("rows", JSON.parse(e.target.value)); } catch { /* ignore */ } }}
+          rows={6}
+          className="w-full text-xs border border-border bg-background rounded p-2 font-mono"
+        />
+        <input
+          value={block.caption ?? ""}
+          onChange={(e) => setField("caption", e.target.value)}
+          placeholder="Caption"
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        />
+      </div>
+    );
+  }
+
+  if (block.type === "map") {
+    return (
+      <div className="space-y-2">
+        <select
+          value={block.mode}
+          onChange={(e) => setField("mode", e.target.value)}
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        >
+          <option value="districts">District highlights</option>
+          <option value="points">GPS points</option>
+        </select>
+        {block.mode === "districts" ? (
+          <input
+            value={(block.districts ?? []).join(",")}
+            onChange={(e) => setField("districts", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+            placeholder="MN-05, TX-22, CA-12"
+            className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+          />
+        ) : (
+          <textarea
+            value={JSON.stringify(block.points ?? [], null, 2)}
+            onChange={(e) => { try { setField("points", JSON.parse(e.target.value)); } catch { /* ignore */ } }}
+            rows={5}
+            placeholder='[{"lat":44.97,"lng":-93.26,"label":"Mpls"}]'
+            className="w-full text-xs border border-border bg-background rounded p-2 font-mono"
+          />
+        )}
+        <input
+          value={block.caption ?? ""}
+          onChange={(e) => setField("caption", e.target.value)}
+          placeholder="Caption"
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <label className="block text-[10px] font-bold">Reference ID</label>
