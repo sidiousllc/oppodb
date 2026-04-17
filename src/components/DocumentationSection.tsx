@@ -1,7 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight, Download, FileText, FileDown, CheckSquare, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
+import jsPDF from "jspdf";
+import { applyPdfBranding } from "@/lib/pdfBranding";
+import { toast } from "sonner";
 
 interface WikiPage {
   slug: string;
@@ -31,6 +34,15 @@ const STATIC_PAGES: Array<{ slug: string; title: string }> = [
   { slug: "oppodb-search", title: "OppoDB Search" },
   { slug: "oppohub", title: "OppoHub" },
   { slug: "messaginghub", title: "MessagingHub" },
+  { slug: "intelhub", title: "IntelHub" },
+  { slug: "datahub", title: "DataHub" },
+  { slug: "reporthub", title: "ReportHub" },
+  { slug: "internationalhub", title: "InternationalHub" },
+  { slug: "live-elections", title: "Live Elections" },
+  { slug: "polling-alerts-and-email-preferences", title: "Polling Alerts & Email Preferences" },
+  { slug: "aol-communication-suite", title: "AOL Communication Suite" },
+  { slug: "mcp-server", title: "MCP Server" },
+  { slug: "documentation-system", title: "Documentation System" },
 ];
 
 // Lazy-load wiki content via raw imports (fallback)
@@ -55,7 +67,155 @@ const wikiImports: Record<string, () => Promise<string>> = {
   "oppodb-search": () => import("../../wiki/18-OppoDB-Search.md?raw").then(m => m.default),
   "oppohub": () => import("../../wiki/19-OppoHub.md?raw").then(m => m.default),
   "messaginghub": () => import("../../wiki/20-MessagingHub.md?raw").then(m => m.default),
+  "intelhub": () => import("../../wiki/21-IntelHub.md?raw").then(m => m.default),
+  "datahub": () => import("../../wiki/22-DataHub.md?raw").then(m => m.default),
+  "reporthub": () => import("../../wiki/23-ReportHub.md?raw").then(m => m.default),
+  "internationalhub": () => import("../../wiki/24-InternationalHub.md?raw").then(m => m.default),
+  "live-elections": () => import("../../wiki/25-Live-Elections.md?raw").then(m => m.default),
+  "polling-alerts-and-email-preferences": () => import("../../wiki/26-Polling-Alerts-and-Email-Preferences.md?raw").then(m => m.default),
+  "aol-communication-suite": () => import("../../wiki/27-AOL-Communication-Suite.md?raw").then(m => m.default),
+  "mcp-server": () => import("../../wiki/28-MCP-Server.md?raw").then(m => m.default),
+  "documentation-system": () => import("../../wiki/29-Documentation-System.md?raw").then(m => m.default),
 };
+
+async function loadPageContent(slug: string, dbPages: WikiPage[]): Promise<string> {
+  const dbPage = dbPages.find(p => p.slug === slug);
+  if (dbPage && dbPage.content) return dbPage.content;
+  const loader = wikiImports[slug];
+  if (loader) return await loader();
+  return `# ${slug}\n\n_Content unavailable._`;
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportSinglePageMarkdown(page: WikiPage, content: string) {
+  const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+  downloadBlob(blob, `${page.slug}.md`);
+}
+
+function renderMarkdownToPdf(doc: jsPDF, markdown: string, startY: number): number {
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const marginX = 14;
+  const usableWidth = pageWidth - marginX * 2;
+  let y = startY;
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageHeight - 16) {
+      doc.addPage();
+      y = 20;
+    }
+  };
+
+  const lines = markdown.split(/\r?\n/);
+  for (const raw of lines) {
+    const line = raw.replace(/\t/g, "  ");
+    if (!line.trim()) { y += 3; continue; }
+
+    let text = line;
+    let fontSize = 10;
+    let style: "normal" | "bold" = "normal";
+
+    if (line.startsWith("### ")) { text = line.slice(4); fontSize = 11; style = "bold"; }
+    else if (line.startsWith("## ")) { text = line.slice(3); fontSize = 13; style = "bold"; }
+    else if (line.startsWith("# ")) { text = line.slice(2); fontSize = 16; style = "bold"; }
+    else if (line.startsWith("- ") || line.startsWith("* ")) { text = "• " + line.slice(2); }
+    else if (/^\|.*\|$/.test(line)) { /* table row, render plain */ }
+
+    // strip basic markdown
+    text = text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/`([^`]+)`/g, "$1").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+
+    doc.setFont("helvetica", style);
+    doc.setFontSize(fontSize);
+    doc.setTextColor(20, 20, 20);
+
+    const wrapped = doc.splitTextToSize(text, usableWidth);
+    for (const w of wrapped) {
+      ensureSpace(fontSize * 0.5 + 2);
+      doc.text(w, marginX, y);
+      y += fontSize * 0.5 + 1.5;
+    }
+    y += 1;
+  }
+  return y;
+}
+
+function exportSinglePagePdf(page: WikiPage, content: string) {
+  const doc = new jsPDF({ unit: "mm", format: "letter" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text(page.title, 14, 24);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(120, 120, 120);
+  doc.text(`OppoDB Documentation • ${new Date().toLocaleDateString()}`, 14, 30);
+  renderMarkdownToPdf(doc, content, 38);
+  applyPdfBranding(doc);
+  doc.save(`${page.slug}.pdf`);
+}
+
+async function exportBulkPdf(pages: WikiPage[], dbPages: WikiPage[]) {
+  const doc = new jsPDF({ unit: "mm", format: "letter" });
+  // Cover page
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text("OppoDB Documentation", 14, 30);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+  doc.text(`${pages.length} page${pages.length === 1 ? "" : "s"}`, 14, 40);
+  doc.text(`Generated ${new Date().toLocaleString()}`, 14, 47);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Contents", 14, 60);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  let tocY = 68;
+  pages.forEach((p, i) => {
+    if (tocY > 270) { doc.addPage(); tocY = 20; }
+    doc.text(`${String(i + 1).padStart(2, "0")}. ${p.title}`, 18, tocY);
+    tocY += 6;
+  });
+
+  for (const page of pages) {
+    doc.addPage();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text(page.title, 14, 24);
+    const content = await loadPageContent(page.slug, dbPages);
+    renderMarkdownToPdf(doc, content, 34);
+  }
+
+  applyPdfBranding(doc);
+  doc.save(`oppodb-documentation-${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+async function exportBulkMarkdown(pages: WikiPage[], dbPages: WikiPage[]) {
+  const parts: string[] = [
+    `# OppoDB Documentation`,
+    `_Generated ${new Date().toLocaleString()} • ${pages.length} pages_`,
+    "",
+    "## Contents",
+    ...pages.map((p, i) => `${i + 1}. ${p.title}`),
+    "",
+    "---",
+    "",
+  ];
+  for (const page of pages) {
+    const content = await loadPageContent(page.slug, dbPages);
+    parts.push(content, "", "---", "");
+  }
+  const blob = new Blob([parts.join("\n")], { type: "text/markdown;charset=utf-8" });
+  downloadBlob(blob, `oppodb-documentation-${new Date().toISOString().slice(0, 10)}.md`);
+}
 
 export function DocumentationSection() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
@@ -65,7 +225,11 @@ export function DocumentationSection() {
   const [dbPages, setDbPages] = useState<WikiPage[]>([]);
   const [dbLoaded, setDbLoaded] = useState(false);
 
-  // Load DB pages on mount
+  // Bulk export state
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
   useEffect(() => {
     supabase
       .from("wiki_pages")
@@ -80,7 +244,6 @@ export function DocumentationSection() {
       });
   }, []);
 
-  // Merge: DB pages override static pages by slug, DB-only pages are appended
   const wikiPages = useMemo(() => {
     if (!dbLoaded) return STATIC_PAGES.map(p => ({ ...p, content: "", fromDb: false }));
     const dbMap = new Map(dbPages.map(p => [p.slug, p]));
@@ -88,11 +251,8 @@ export function DocumentationSection() {
       const dbVersion = dbMap.get(sp.slug);
       return dbVersion ? { ...dbVersion } : { ...sp, content: "", fromDb: false };
     });
-    // Add DB-only pages not in static list
     for (const dp of dbPages) {
-      if (!STATIC_PAGES.find(sp => sp.slug === dp.slug)) {
-        merged.push(dp);
-      }
+      if (!STATIC_PAGES.find(sp => sp.slug === dp.slug)) merged.push(dp);
     }
     return merged;
   }, [dbPages, dbLoaded]);
@@ -107,20 +267,8 @@ export function DocumentationSection() {
     setSelectedSlug(slug);
     setLoading(true);
     try {
-      // Check if DB has content for this slug
-      const dbPage = dbPages.find(p => p.slug === slug);
-      if (dbPage && dbPage.content) {
-        setContent(dbPage.content);
-      } else {
-        // Fallback to static file
-        const loader = wikiImports[slug];
-        if (loader) {
-          const text = await loader();
-          setContent(text);
-        } else {
-          setContent("# Page Not Found\n\nThis documentation page could not be loaded.");
-        }
-      }
+      const text = await loadPageContent(slug, dbPages);
+      setContent(text);
     } catch {
       setContent("# Error\n\nFailed to load documentation page.");
     } finally {
@@ -129,6 +277,33 @@ export function DocumentationSection() {
   };
 
   const selectedPage = wikiPages.find(p => p.slug === selectedSlug);
+
+  const toggleSlug = (slug: string) => {
+    setSelectedSlugs(prev => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug); else next.add(slug);
+      return next;
+    });
+  };
+  const selectAll = () => setSelectedSlugs(new Set(wikiPages.map(p => p.slug)));
+  const selectNone = () => setSelectedSlugs(new Set());
+
+  const runBulkExport = async (format: "pdf" | "md") => {
+    const pages = wikiPages.filter(p => selectedSlugs.has(p.slug));
+    if (pages.length === 0) { toast.error("Select at least one page"); return; }
+    setBulkBusy(true);
+    try {
+      if (format === "pdf") await exportBulkPdf(pages, dbPages);
+      else await exportBulkMarkdown(pages, dbPages);
+      toast.success(`Exported ${pages.length} page${pages.length === 1 ? "" : "s"}`);
+      setBulkOpen(false);
+    } catch (e) {
+      console.error(e);
+      toast.error("Export failed");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   if (selectedSlug && selectedPage) {
     return (
@@ -141,11 +316,29 @@ export function DocumentationSection() {
           Back to Documentation
         </button>
 
-        <div className="flex items-center gap-1 text-[10px] text-[hsl(var(--muted-foreground))] mb-3">
-          <BookOpen className="h-3 w-3" />
-          <span>Documentation</span>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-[hsl(var(--foreground))] font-bold">{selectedPage.title}</span>
+        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+          <div className="flex items-center gap-1 text-[10px] text-[hsl(var(--muted-foreground))]">
+            <BookOpen className="h-3 w-3" />
+            <span>Documentation</span>
+            <ChevronRight className="h-3 w-3" />
+            <span className="text-[hsl(var(--foreground))] font-bold">{selectedPage.title}</span>
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={() => exportSinglePageMarkdown(selectedPage, content)}
+              className="win98-button text-[10px] flex items-center gap-1 px-2"
+              title="Download this page as Markdown"
+            >
+              <FileText className="h-3 w-3" /> .md
+            </button>
+            <button
+              onClick={() => exportSinglePagePdf(selectedPage, content)}
+              className="win98-button text-[10px] flex items-center gap-1 px-2"
+              title="Download this page as PDF"
+            >
+              <FileDown className="h-3 w-3" /> PDF
+            </button>
+          </div>
         </div>
 
         <div className="candidate-card">
@@ -177,14 +370,65 @@ export function DocumentationSection() {
       <div className="candidate-card mb-3">
         <div className="flex items-center gap-3 mb-2">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center text-2xl">📖</div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-sm font-bold">OppoDB Documentation Wiki</h1>
             <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
-              Comprehensive documentation for the Opposition Research Database platform
+              Comprehensive technical documentation for the Opposition Research Database platform — {wikiPages.length} pages.
             </p>
           </div>
+          <button
+            onClick={() => { setBulkOpen(o => !o); if (!bulkOpen && selectedSlugs.size === 0) selectAll(); }}
+            className="win98-button text-[10px] flex items-center gap-1 px-2"
+            title="Export multiple pages"
+          >
+            <Download className="h-3 w-3" /> Export…
+          </button>
         </div>
       </div>
+
+      {bulkOpen && (
+        <div className="candidate-card mb-3">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <div className="text-[11px] font-bold">Bulk Export — {selectedSlugs.size} of {wikiPages.length} selected</div>
+            <div className="flex gap-1">
+              <button onClick={selectAll} className="win98-button text-[10px] px-2">Select All</button>
+              <button onClick={selectNone} className="win98-button text-[10px] px-2">Clear</button>
+              <button
+                onClick={() => runBulkExport("md")}
+                disabled={bulkBusy || selectedSlugs.size === 0}
+                className="win98-button text-[10px] px-2 flex items-center gap-1"
+              >
+                <FileText className="h-3 w-3" /> Combined .md
+              </button>
+              <button
+                onClick={() => runBulkExport("pdf")}
+                disabled={bulkBusy || selectedSlugs.size === 0}
+                className="win98-button text-[10px] px-2 flex items-center gap-1"
+              >
+                <FileDown className="h-3 w-3" /> Combined PDF
+              </button>
+            </div>
+          </div>
+          <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3 max-h-[40vh] overflow-y-auto win98-sunken p-2">
+            {wikiPages.map(p => {
+              const checked = selectedSlugs.has(p.slug);
+              return (
+                <button
+                  key={p.slug}
+                  onClick={() => toggleSlug(p.slug)}
+                  className="flex items-center gap-1.5 text-left text-[11px] px-1 py-0.5 hover:bg-[hsl(var(--win98-light))]"
+                >
+                  {checked
+                    ? <CheckSquare className="h-3 w-3 shrink-0 text-[hsl(var(--primary))]" />
+                    : <Square className="h-3 w-3 shrink-0 text-[hsl(var(--muted-foreground))]" />}
+                  <span className="truncate">{p.title}</span>
+                </button>
+              );
+            })}
+          </div>
+          {bulkBusy && <div className="text-[10px] text-[hsl(var(--muted-foreground))] mt-2">Building export…</div>}
+        </div>
+      )}
 
       <div className="mb-3">
         <div className="win98-sunken flex items-center px-2 py-1">
@@ -233,7 +477,6 @@ export function DocumentationSection() {
   );
 }
 
-// Extracted markdown renderer
 function WikiMarkdown({ content }: { content: string }) {
   return (
     <div className="prose-research">
