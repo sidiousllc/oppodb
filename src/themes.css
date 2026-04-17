@@ -1126,6 +1126,14 @@
 
 /* -------- Palm Treo (smartphone-era, dark blue) -------- */
 .theme-palm-treo {
+  --palm-case: hsl(215 25% 22%);
+  --palm-case-edge: hsl(215 30% 40%);
+  --palm-brand: "Treo";
+  --palm-brand-color: hsl(215 30% 75%);
+  --palm-screen-bezel: hsl(215 40% 8%);
+  --palm-silkscreen: hsl(215 25% 18%);
+  --palm-btn: hsl(215 20% 35%);
+  --palm-btn-center: hsl(215 70% 45%);
   --background: 215 50% 18%;
   --foreground: 0 0% 95%;
   --card: 215 30% 92%;
