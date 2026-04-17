@@ -275,20 +275,10 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
       ) : null}
 
       {/* AI Vulnerability Analysis */}
-      <VulnerabilityScorePanel
-        entityType="candidate"
-        entityId={candidate.slug}
-        entityName={candidate.name}
-        context={candidate.content?.slice(0, 4000)}
-      />
+      <VulnerabilityScorePanel candidateSlug={candidate.slug} />
 
       {/* AI Talking Points */}
-      <TalkingPointsPanel
-        entityType="candidate"
-        entityId={candidate.slug}
-        entityName={candidate.name}
-        context={candidate.content?.slice(0, 4000)}
-      />
+      <TalkingPointsPanel subjectType="candidate" subjectRef={candidate.slug} />
 
       {/* Candidate Polling */}
       <CandidatePollingPanel candidateName={candidate.name} candidateSlug={candidate.slug} />
