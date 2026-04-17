@@ -49,6 +49,7 @@ export function NewsTicker() {
   const looped = [...items, ...items];
 
   return (
+    <>
     <div
       className="fixed bottom-[28px] left-0 right-0 z-[997] h-[22px] bg-[hsl(var(--win98-titlebar))] text-white border-t-2 border-t-[hsl(var(--win98-highlight))] border-b border-b-[hsl(var(--win98-shadow))] overflow-hidden flex items-center"
       onMouseEnter={() => setPaused(true)}
@@ -107,5 +108,13 @@ export function NewsTicker() {
         }
       `}</style>
     </div>
+    {selectedCluster && (
+      <GroundNewsDetailWindow
+        cluster={selectedCluster}
+        onClose={() => setSelectedCluster(null)}
+        contextLabel="News Ticker"
+      />
+    )}
+    </>
   );
 }
