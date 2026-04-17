@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Win98PageLayout } from "./Win98PageLayout";
-import { Win98Window } from "./Win98Window";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -111,9 +109,9 @@ export function ForecastHub() {
   }
 
   return (
-    <Win98PageLayout title="Forecast Lab">
       <div className="space-y-3">
-        <Win98Window title="🎲 Scenario Simulator">
+        <div className="win98-raised bg-[hsl(var(--win98-face))]">
+          <div className="px-2 py-1 text-[11px] font-bold border-b border-b-[hsl(var(--win98-shadow))]">🎲 Scenario Simulator</div>
           <div className="p-3 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
@@ -167,7 +165,7 @@ export function ForecastHub() {
               </div>
             )}
           </div>
-        </Win98Window>
+        </div>
 
         <Tabs defaultValue="scenarios">
           <TabsList>
@@ -176,7 +174,8 @@ export function ForecastHub() {
           </TabsList>
 
           <TabsContent value="scenarios">
-            <Win98Window title="Saved scenarios">
+            <div className="win98-raised bg-[hsl(var(--win98-face))]">
+              <div className="px-2 py-1 text-[11px] font-bold border-b border-b-[hsl(var(--win98-shadow))]">Saved scenarios</div>
               <div className="p-2 space-y-2">
                 {scenarios.length === 0 ? (
                   <div className="text-[11px] text-muted-foreground p-3">No saved scenarios. Configure above and click "Save & run".</div>
@@ -193,11 +192,12 @@ export function ForecastHub() {
                   </div>
                 ))}
               </div>
-            </Win98Window>
+            </div>
           </TabsContent>
 
           <TabsContent value="polls">
-            <Win98Window title="Weighted polling averages">
+            <div className="win98-raised bg-[hsl(var(--win98-face))]">
+              <div className="px-2 py-1 text-[11px] font-bold border-b border-b-[hsl(var(--win98-shadow))]">Weighted polling averages</div>
               <div className="p-2">
                 <Button size="sm" onClick={recomputeAggregates} disabled={running} className="text-[11px] mb-2">
                   {running ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
@@ -224,10 +224,9 @@ export function ForecastHub() {
                   </table>
                 </div>
               </div>
-            </Win98Window>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
-    </Win98PageLayout>
   );
 }
