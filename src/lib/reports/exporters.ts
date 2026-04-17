@@ -353,7 +353,7 @@ async function renderBlock(doc: jsPDF, block: ReportBlock, y: number, depth = 0)
     // ─── New intelligence blocks ──────────────────────────────────────────
 
     case "talking_points": {
-      y = sectionTitle(doc, block.title ?? `🗣️ Talking Points — ${block.refId}`);
+      y = sectionTitle(doc, block.title ?? `🗣️ Talking Points — ${block.refId}`, y);
       const items = ((block as any).snapshot?.items ?? []) as Array<any>;
       if (items.length === 0) return writeText(doc, "(no cached talking points)", y, { size: 8, italic: true, color: [120, 120, 120] });
       for (const tp of items) {
@@ -393,7 +393,7 @@ async function renderBlock(doc: jsPDF, block: ReportBlock, y: number, depth = 0)
 
     case "bill_impact": {
       const s = (block as any).snapshot ?? {};
-      y = sectionTitle(doc, block.title ?? `🧠 Bill Impact — ${s.bill_id ?? block.refId}`);
+      y = sectionTitle(doc, block.title ?? `🧠 Bill Impact — ${s.bill_id ?? block.refId}`, y);
       y = kvTable(doc, [
         ["Scope", `${s.scope ?? "—"}${s.scope_ref ? " (" + s.scope_ref + ")" : ""}`],
         ["Generated", fmtDate(s.generated_at)],
@@ -409,7 +409,7 @@ async function renderBlock(doc: jsPDF, block: ReportBlock, y: number, depth = 0)
     }
 
     case "forecast": {
-      y = sectionTitle(doc, block.title ?? `🎲 Forecast — ${block.refId}`);
+      y = sectionTitle(doc, block.title ?? `🎲 Forecast — ${block.refId}`, y);
       const items = ((block as any).snapshot?.items ?? []) as Array<any>;
       if (items.length === 0) return writeText(doc, "(no forecast data)", y, { size: 8, italic: true, color: [120, 120, 120] });
       autoTable(doc, {
@@ -436,7 +436,7 @@ async function renderBlock(doc: jsPDF, block: ReportBlock, y: number, depth = 0)
 
     case "prediction_market": {
       const s = (block as any).snapshot ?? {};
-      y = sectionTitle(doc, block.title ?? `📉 Market — ${s.title ?? s.question ?? block.refId}`);
+      y = sectionTitle(doc, block.title ?? `📉 Market — ${s.title ?? s.question ?? block.refId}`, y);
       y = kvTable(doc, [
         ["Platform", s.platform ?? "—"],
         ["Question", s.question ?? s.title ?? "—"],
@@ -488,7 +488,7 @@ async function renderBlock(doc: jsPDF, block: ReportBlock, y: number, depth = 0)
     case "war_room": {
       const s = (block as any).snapshot ?? {};
       const room = s.room ?? {};
-      y = sectionTitle(doc, block.title ?? `⚔️ War Room — ${room.name ?? block.refId}`);
+      y = sectionTitle(doc, block.title ?? `⚔️ War Room — ${room.name ?? block.refId}`, y);
       y = kvTable(doc, [
         ["Name", room.name ?? "—"],
         ["Description", room.description ?? "—"],
@@ -520,7 +520,7 @@ async function renderBlock(doc: jsPDF, block: ReportBlock, y: number, depth = 0)
 
     case "entity_graph": {
       const s = (block as any).snapshot ?? {};
-      y = sectionTitle(doc, block.title ?? `🕸️ Entity Graph — ${s.root ?? block.refId}`);
+      y = sectionTitle(doc, block.title ?? `🕸️ Entity Graph — ${s.root ?? block.refId}`, y);
       const items = (s.items ?? []) as any[];
       if (items.length === 0) return writeText(doc, "(no relationships)", y, { size: 8, italic: true, color: [120, 120, 120] });
       autoTable(doc, {
