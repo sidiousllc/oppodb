@@ -6,7 +6,6 @@ import { AOLBuddyList } from "./AOLBuddyList";
 import { AOLMailWindow } from "./AOLMailWindow";
 import { Win98MenuBar } from "./Win98MenuBar";
 import { Win98Desktop } from "./Win98Desktop";
-import { NewsTicker } from "./NewsTicker";
 import { useMail } from "@/contexts/MailContext";
 import { ArrowLeft, ArrowRight, RotateCw, Home, Star, Mail } from "lucide-react";
 
@@ -119,7 +118,6 @@ export function Win98PageLayout({ title, icon = "📁", children, addressUrl }: 
         )}
       </div>
 
-      <NewsTicker />
       <Win98Taskbar
         minimizedWindow={isMinimized ? title : undefined}
         onRestoreWindow={() => setIsMinimized(false)}
