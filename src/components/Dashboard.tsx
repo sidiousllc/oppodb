@@ -7,6 +7,27 @@ import { candidates } from "@/data/candidates";
 import { magaFiles } from "@/data/magaFiles";
 import { BarChart3, TrendingDown, TrendingUp, Minus, MapPin, Users, AlertTriangle, FileText, Compass, Scale } from "lucide-react";
 import type { DistrictProfile } from "@/data/districtIntel";
+import { useSectionAccess } from "@/hooks/useSectionAccess";
+
+// Mirrors the order/labels of AppSidebar so Quick Navigation stays in sync.
+const QUICK_NAV_SECTIONS: Array<{ id: string; label: string; emoji: string }> = [
+  { id: "dashboard", label: "Dashboard", emoji: "🏠" },
+  { id: "oppohub", label: "OppoHub", emoji: "🎯" },
+  { id: "leghub", label: "LegHub", emoji: "⚖️" },
+  { id: "polling", label: "DataHub", emoji: "📊" },
+  { id: "intelhub", label: "IntelHub", emoji: "🕵️" },
+  { id: "messaging", label: "MessagingHub", emoji: "📢" },
+  { id: "research-tools", label: "Research Tools", emoji: "🔬" },
+  { id: "internationalhub", label: "InternationalHub", emoji: "🌐" },
+  { id: "live-elections", label: "Live Elections", emoji: "🏛️" },
+  { id: "reports", label: "ReportHub", emoji: "📝" },
+  { id: "warroom", label: "War Rooms", emoji: "⚔️" },
+  { id: "crm", label: "Stakeholders", emoji: "🤝" },
+  { id: "alerts", label: "Alerts & Watch", emoji: "🔔" },
+  { id: "forecast", label: "Forecast Lab", emoji: "🎲" },
+  { id: "graph", label: "Entity Graph", emoji: "🕸️" },
+  { id: "documentation", label: "Documentation", emoji: "📖" },
+];
 
 
 interface DashboardProps {
