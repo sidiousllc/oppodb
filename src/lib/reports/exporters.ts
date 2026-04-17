@@ -200,7 +200,7 @@ export function exportReportCsv(report: Report) {
           for (const [k, v] of Object.entries(r)) {
             lines.push([block.type, prefix + title, k, v].map(csvEscape).join(","));
           }
-          lines.push([]);
+          lines.push("");
         }
       } else if (typeof snap === "object" && snap !== null) {
         for (const [k, v] of Object.entries(snap)) {
