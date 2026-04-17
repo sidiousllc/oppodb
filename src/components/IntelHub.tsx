@@ -203,6 +203,17 @@ export function IntelHub() {
     return acc;
   }, {});
 
+  const clusters = clusterArticles(
+    filteredBriefings.map((b) => ({
+      title: b.title,
+      source: b.source_name,
+      link: b.source_url ?? undefined,
+      pubDate: b.published_at ?? undefined,
+      summary: b.summary,
+      id: b.id,
+    })),
+  );
+
   return (
     <div className="space-y-3">
       {/* Scope Tabs */}
