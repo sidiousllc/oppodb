@@ -13,6 +13,7 @@ import { DistrictPollingPanel } from "@/components/DistrictPollingPanel";
 import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 import { DistrictCongressPanel } from "@/components/DistrictCongressPanel";
 import { DistrictNewsTab } from "@/components/DistrictNewsTab";
+import { BillImpactPanel } from "@/components/BillImpactPanel";
 import { getCookRating, getCookRatingColor, type CookRating } from "@/data/cookRatings";
 import { supabase } from "@/integrations/supabase/client";
 import { stateAbbrToName } from "@/lib/stateAbbreviations";
