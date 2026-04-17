@@ -60,7 +60,7 @@ export function NewsTicker() {
         <div
           className="flex gap-6 whitespace-nowrap text-[11px] py-[3px] will-change-transform"
           style={{
-            animation: `news-ticker-scroll ${Math.max(items.length * 2, 20)}s linear infinite`,
+            animation: `news-ticker-scroll ${Math.max(items.length * 0.5, 5)}s linear infinite`,
             animationPlayState: paused ? "paused" : "running",
           }}
         >
