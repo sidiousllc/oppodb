@@ -546,7 +546,104 @@ function BlockEditor({ block, onChange }: { block: ReportBlock; onChange: (patch
     );
   }
 
-  // Generic data block — just refId + title
+  if (block.type === "chart") {
+    return (
+      <div className="space-y-2">
+        <select
+          value={block.chartType}
+          onChange={(e) => setField("chartType", e.target.value)}
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        >
+          <option value="bar">Bar</option>
+          <option value="line">Line</option>
+          <option value="pie">Pie</option>
+        </select>
+        <label className="block text-[10px] font-bold">Data (JSON array of {`{label, value, ...}`})</label>
+        <textarea
+          value={JSON.stringify(block.data, null, 2)}
+          onChange={(e) => { try { setField("data", JSON.parse(e.target.value)); } catch { /* ignore */ } }}
+          rows={6}
+          className="w-full text-xs border border-border bg-background rounded p-2 font-mono"
+        />
+        <input
+          value={(block.series ?? ["value"]).join(",")}
+          onChange={(e) => setField("series", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+          placeholder="series keys (comma-separated)"
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        />
+        <input
+          value={block.caption ?? ""}
+          onChange={(e) => setField("caption", e.target.value)}
+          placeholder="Caption"
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        />
+      </div>
+    );
+  }
+
+  if (block.type === "table") {
+    return (
+      <div className="space-y-2">
+        <input
+          value={block.columns.join(",")}
+          onChange={(e) => setField("columns", e.target.value.split(",").map((s) => s.trim()))}
+          placeholder="Columns (comma-separated)"
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        />
+        <label className="block text-[10px] font-bold">Rows (JSON array of arrays)</label>
+        <textarea
+          value={JSON.stringify(block.rows, null, 2)}
+          onChange={(e) => { try { setField("rows", JSON.parse(e.target.value)); } catch { /* ignore */ } }}
+          rows={6}
+          className="w-full text-xs border border-border bg-background rounded p-2 font-mono"
+        />
+        <input
+          value={block.caption ?? ""}
+          onChange={(e) => setField("caption", e.target.value)}
+          placeholder="Caption"
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        />
+      </div>
+    );
+  }
+
+  if (block.type === "map") {
+    return (
+      <div className="space-y-2">
+        <select
+          value={block.mode}
+          onChange={(e) => setField("mode", e.target.value)}
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        >
+          <option value="districts">District highlights</option>
+          <option value="points">GPS points</option>
+        </select>
+        {block.mode === "districts" ? (
+          <input
+            value={(block.districts ?? []).join(",")}
+            onChange={(e) => setField("districts", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+            placeholder="MN-05, TX-22, CA-12"
+            className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+          />
+        ) : (
+          <textarea
+            value={JSON.stringify(block.points ?? [], null, 2)}
+            onChange={(e) => { try { setField("points", JSON.parse(e.target.value)); } catch { /* ignore */ } }}
+            rows={5}
+            placeholder='[{"lat":44.97,"lng":-93.26,"label":"Mpls"}]'
+            className="w-full text-xs border border-border bg-background rounded p-2 font-mono"
+          />
+        )}
+        <input
+          value={block.caption ?? ""}
+          onChange={(e) => setField("caption", e.target.value)}
+          placeholder="Caption"
+          className="w-full text-xs border border-border bg-background rounded px-2 py-1"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <label className="block text-[10px] font-bold">Reference ID</label>
