@@ -366,6 +366,37 @@ export function IntelHub() {
         </div>
       )}
 
+      {/* Overall Bias Breakdown */}
+      {filteredBriefings.length > 0 && (() => {
+        const counts = { L: 0, C: 0, R: 0, U: 0 };
+        const seen = new Set<string>();
+        for (const b of filteredBriefings) {
+          if (seen.has(b.source_name)) continue;
+          seen.add(b.source_name);
+          counts[BIAS_META[classifyBias(b.source_name)].bucket]++;
+        }
+        const segs = biasBarSegments(counts);
+        return (
+          <div className="border border-[#808080] bg-white p-2 space-y-1">
+            <div className="text-[10px] font-bold text-gray-700 flex items-center justify-between flex-wrap gap-1">
+              <span>📊 Coverage Bias Breakdown ({seen.size} unique sources)</span>
+              <span className="text-[9px] text-gray-500">
+                <span className="text-blue-600 font-bold">{counts.L}</span> Left ·{" "}
+                <span className="text-purple-600 font-bold">{counts.C}</span> Center ·{" "}
+                <span className="text-red-600 font-bold">{counts.R}</span> Right ·{" "}
+                <span className="text-gray-500 font-bold">{counts.U}</span> Unrated
+              </span>
+            </div>
+            <div className="flex h-2 overflow-hidden rounded-sm border border-[#c0c0c0]">
+              {segs.L > 0 && <div style={{ width: `${segs.L}%`, background: "#3b82f6" }} title={`Left ${segs.L.toFixed(1)}%`} />}
+              {segs.C > 0 && <div style={{ width: `${segs.C}%`, background: "#9333ea" }} title={`Center ${segs.C.toFixed(1)}%`} />}
+              {segs.R > 0 && <div style={{ width: `${segs.R}%`, background: "#dc2626" }} title={`Right ${segs.R.toFixed(1)}%`} />}
+              {segs.U > 0 && <div style={{ width: `${segs.U}%`, background: "#9ca3af" }} title={`Unrated ${segs.U.toFixed(1)}%`} />}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Briefing List */}
       {loading ? (
         <div className="text-xs text-gray-500 py-8 text-center">Loading intelligence briefings...</div>
@@ -411,8 +442,9 @@ export function IntelHub() {
                     </span>
                   )}
                 </div>
-                <div className="text-[9px] text-gray-400">
-                  {c.lead.source} • {c.lead.pubDate ? format(new Date(c.lead.pubDate), "PPp") : ""}
+                <div className="text-[9px] text-gray-400 flex items-center gap-1.5">
+                  <BiasChip source={c.lead.source} />
+                  <span>{c.lead.source} • {c.lead.pubDate ? format(new Date(c.lead.pubDate), "PPp") : ""}</span>
                 </div>
               </button>
             );
@@ -442,7 +474,10 @@ export function IntelHub() {
                     }}
                     className="w-full text-left px-2 py-1.5 hover:bg-[#e8e8ff] transition-colors"
                   >
-                    <div className="text-xs font-bold text-[#000080] line-clamp-1">{b.title}</div>
+                    <div className="text-xs font-bold text-[#000080] line-clamp-1 flex items-center gap-1">
+                      <BiasChip source={b.source_name} />
+                      <span className="truncate">{b.title}</span>
+                    </div>
                     {b.summary && (
                       <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{b.summary}</div>
                     )}
@@ -481,5 +516,21 @@ export function IntelHub() {
         />
       )}
     </div>
+  );
+}
+
+// Tiny inline bias chip used on each card.
+function BiasChip({ source }: { source: string }) {
+  const bias = classifyBias(source);
+  const meta = BIAS_META[bias];
+  const short = meta.label === "Lean Left" ? "L←" : meta.label === "Lean Right" ? "R→" : meta.label === "Left" ? "L" : meta.label === "Right" ? "R" : meta.label === "Center" ? "C" : "?";
+  return (
+    <span
+      className="inline-flex items-center text-[8px] font-bold px-1 py-0 rounded-sm flex-shrink-0"
+      style={{ background: meta.bg, color: meta.color }}
+      title={`${meta.label} — ${source}`}
+    >
+      {short}
+    </span>
   );
 }

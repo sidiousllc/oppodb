@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, RefreshCw, Search, X } from "lucide-react";
+import { Loader2, RefreshCw, Search, X, FileDown, FileText as FileTextIcon, MapPin } from "lucide-react";
+import { exportAdminLogsPdf, exportActivityLogsCsv } from "@/lib/reports/exporters";
+import { toast } from "sonner";
 
 type LogCategory = "all" | "page_view" | "map_view" | "api" | "content" | "chat";
 
