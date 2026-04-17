@@ -278,7 +278,7 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[998] bg-black/30 pointer-events-none">
       <div className="pointer-events-auto">
         <Win98Window
-          title={`ORDB Mail — ${screenName} ${unreadCount > 0 ? `(${unreadCount} new)` : ""}`}
+          title={`ORDB Mail — ${screenName} ${(unreadCount + unreadAlertsCount) > 0 ? `(${unreadCount + unreadAlertsCount} new)` : ""}`}
           icon={<span className="text-[10px]">✉️</span>}
           onClose={onClose}
           defaultPosition={{ x: Math.round(window.innerWidth / 2 - 350), y: Math.round(window.innerHeight / 2 - 250) }}
