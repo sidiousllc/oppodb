@@ -82,6 +82,15 @@ export function ForecastHub() {
   const [running, setRunning] = useState(false);
   const [latestResult, setLatestResult] = useState<any>(null);
   const [forecastSource, setForecastSource] = useState<string>("all");
+  // Advanced tuning
+  const [turnoutShift, setTurnoutShift] = useState(0);
+  const [incumbencyBoost, setIncumbencyBoost] = useState(0);
+  const [uncertaintySd, setUncertaintySd] = useState(0.5);
+  const [correlation, setCorrelation] = useState(0.3);
+  const [simSource, setSimSource] = useState<string>("Cook Political Report");
+  const [regionalText, setRegionalText] = useState(""); // "MN:+2,TX:-1"
+  const [overridesText, setOverridesText] = useState(""); // "MN-05:Lean D,TX-15:Toss Up"
+  const [thresholdOverride, setThresholdOverride] = useState<string>("");
 
   async function load() {
     const [{ data: scens }, { data: aggs }, { data: fc }, { data: mk }] = await Promise.all([
