@@ -513,3 +513,20 @@ function formatDetails(details: Record<string, unknown>): string {
   if (parts.length === 0) return JSON.stringify(details);
   return parts.join(" · ");
 }
+
+function RawBlock({ data }: { data: unknown[] }) {
+  return (
+    <div className="border-t border-[hsl(var(--win98-shadow))] bg-black text-green-400 font-mono text-[9px] p-2 max-h-[300px] overflow-auto">
+      <div className="flex items-center justify-between mb-1 text-white">
+        <span className="font-bold">// RAW JSON OUTPUT ({data.length} records)</span>
+        <button
+          onClick={() => navigator.clipboard.writeText(JSON.stringify(data, null, 2))}
+          className="text-[8px] underline hover:text-yellow-300"
+        >
+          copy
+        </button>
+      </div>
+      <pre className="whitespace-pre-wrap break-all">{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+}
