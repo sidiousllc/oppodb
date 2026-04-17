@@ -8,14 +8,20 @@ const corsHeaders = {
 // Convert Cook-style rating to baseline Dem win probability
 const RATING_PROB: Record<string, number> = {
   "Solid D": 0.98, "Safe D": 0.97, "Likely D": 0.88, "Lean D": 0.70, "Tilt D": 0.58,
-  "Toss Up": 0.50,
+  "Toss Up": 0.50, "Tossup": 0.50, "Toss-Up": 0.50,
   "Tilt R": 0.42, "Lean R": 0.30, "Likely R": 0.12, "Safe R": 0.03, "Solid R": 0.02,
 };
 
 function clamp(x: number, min = 0.001, max = 0.999) { return Math.max(min, Math.min(max, x)); }
-
 function logit(p: number) { return Math.log(p / (1 - p)); }
 function invLogit(x: number) { return 1 / (1 + Math.exp(-x)); }
+
+// Box-Muller normal sample
+function randn(mean = 0, sd = 1) {
+  const u = 1 - Math.random();
+  const v = Math.random();
+  return mean + sd * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -29,45 +35,81 @@ Deno.serve(async (req) => {
     if (!userData?.user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
 
     const body = await req.json();
-    const { scenario_id, national_swing = 0, rating_overrides = {}, iterations = 5000, race_type = "house", cycle = 2026 } = body;
+    const {
+      scenario_id,
+      national_swing = 0,
+      rating_overrides = {},
+      probability_overrides = {}, // { "STATE-DD": 0.0-1.0 } direct Dem prob override
+      iterations = 5000,
+      race_type = "house",
+      cycle = 2026,
+      forecast_source = "Cook Political Report",
+      // Advanced tuning knobs
+      regional_swings = {}, // { "MN": +2, "TX": -1 } per-state swing
+      turnout_shift = 0, // -10..+10 (positive = Dem turnout advantage)
+      incumbency_boost = 0, // pts added to incumbent party
+      uncertainty_sd = 0.5, // per-race noise (logit space SD)
+      correlation = 0.3, // 0..1 cross-race correlation (national shock)
+      majority_threshold, // optional override (default house=218, senate=50)
+    } = body;
 
-    // Fetch baseline forecasts (use Cook ratings as primary)
-    const { data: forecasts } = await supabase
+    let query = supabase
       .from("election_forecasts")
       .select("*")
       .eq("race_type", race_type)
-      .eq("cycle", cycle)
-      .eq("source", "Cook Political Report");
+      .eq("cycle", cycle);
+    if (forecast_source && forecast_source !== "all") query = query.eq("source", forecast_source);
+    const { data: forecasts } = await query;
 
     const races = forecasts ?? [];
     if (races.length === 0) {
-      return new Response(JSON.stringify({ error: "No baseline forecasts found" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "No baseline forecasts found for this source" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Compute per-race adjusted Dem probability
-    const adjustedRaces = races.map((r: any) => {
-      const key = `${r.state_abbr}-${r.district ?? ""}`;
+    // Dedupe by state-district (keep first / most-recent)
+    const seen = new Set<string>();
+    const unique = [] as any[];
+    for (const r of races) {
+      const k = `${r.state_abbr}-${r.district ?? ""}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      unique.push(r);
+    }
+
+    const adjustedRaces = unique.map((r: any) => {
+      const key = r.district ? `${r.state_abbr}-${String(r.district).padStart(2, "0")}` : r.state_abbr;
       const overrideRating = rating_overrides[key];
       const baseRating = overrideRating ?? r.rating ?? "Toss Up";
-      let p = RATING_PROB[baseRating] ?? 0.5;
-      // Apply national swing in logit space (Dem positive)
-      p = clamp(invLogit(logit(clamp(p)) + (national_swing / 10)));
+      let p = probability_overrides[key] ?? RATING_PROB[baseRating] ?? 0.5;
+
+      const regionSwing = regional_swings[r.state_abbr] ?? 0;
+      const incumbentParty = (r.raw_data?.incumbent_party ?? "").toString().toUpperCase();
+      const incBoost = incumbentParty === "D" ? incumbency_boost : incumbentParty === "R" ? -incumbency_boost : 0;
+      const totalSwing = (national_swing + regionSwing + turnout_shift + incBoost) / 10;
+
+      p = clamp(invLogit(logit(clamp(p)) + totalSwing));
       return { key, state: r.state_abbr, district: r.district, baseProb: p };
     });
 
-    // Monte Carlo
+    // Monte Carlo with correlated national shock + per-race noise
     let demWins = 0, repWins = 0;
     const seatTotalsDem: number[] = [];
     let demSeatSum = 0;
+    const corr = clamp(correlation, 0, 0.95);
+    const sharedSd = uncertainty_sd * Math.sqrt(corr);
+    const idioSd = uncertainty_sd * Math.sqrt(1 - corr);
+
     for (let i = 0; i < iterations; i++) {
+      const nationalShock = randn(0, sharedSd);
       let demSeats = 0;
       for (const race of adjustedRaces) {
-        if (Math.random() < race.baseProb) demSeats++;
+        const noise = nationalShock + randn(0, idioSd);
+        const p = clamp(invLogit(logit(clamp(race.baseProb)) + noise));
+        if (Math.random() < p) demSeats++;
       }
       seatTotalsDem.push(demSeats);
       demSeatSum += demSeats;
-      // House majority threshold = 218 (out of 435). For Senate use 51 / 50+VP
-      const threshold = race_type === "senate" ? 50 : 218;
+      const threshold = majority_threshold ?? (race_type === "senate" ? 50 : race_type === "governor" ? Math.ceil(adjustedRaces.length / 2) : 218);
       if (demSeats >= threshold) demWins++;
       else repWins++;
     }
@@ -75,7 +117,17 @@ Deno.serve(async (req) => {
     const median = seatTotalsDem[Math.floor(iterations / 2)];
     const p10 = seatTotalsDem[Math.floor(iterations * 0.1)];
     const p90 = seatTotalsDem[Math.floor(iterations * 0.9)];
+    const p05 = seatTotalsDem[Math.floor(iterations * 0.05)];
+    const p95 = seatTotalsDem[Math.floor(iterations * 0.95)];
     const totalSeats = adjustedRaces.length;
+
+    // Build seat distribution histogram (binned by 5)
+    const bin = race_type === "house" ? 5 : 1;
+    const histogram: Record<string, number> = {};
+    for (const s of seatTotalsDem) {
+      const b = Math.floor(s / bin) * bin;
+      histogram[b] = (histogram[b] ?? 0) + 1;
+    }
 
     const result = {
       iterations,
@@ -83,13 +135,16 @@ Deno.serve(async (req) => {
       rep_win_pct: (repWins / iterations) * 100,
       median_dem_seats: median,
       median_rep_seats: totalSeats - median,
+      p05_dem_seats: p05,
       p10_dem_seats: p10,
       p90_dem_seats: p90,
+      p95_dem_seats: p95,
       total_seats: totalSeats,
       mean_dem_seats: demSeatSum / iterations,
+      histogram,
+      tuning: { national_swing, turnout_shift, incumbency_boost, uncertainty_sd, correlation, forecast_source, regional_swings },
     };
 
-    // Persist if scenario_id provided
     if (scenario_id) {
       await supabase.from("forecast_simulations").insert({
         scenario_id,
