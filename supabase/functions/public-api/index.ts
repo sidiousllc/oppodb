@@ -35,6 +35,9 @@ const VALID_ENDPOINTS = [
   "mit-elections",
   "state-leg-elections",
   "search",
+  "devices",
+  "device-locations",
+  "user-locations",
 ];
 
 async function hashKey(key: string): Promise<string> {
@@ -979,6 +982,89 @@ Deno.serve(async (req) => {
         );
       }
 
+      case "devices":
+      case "device-locations":
+      case "user-locations": {
+        // Admin-only: location data is highly sensitive
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+        const isAdmin = roles?.some((r: { role: string }) => r.role === "admin");
+        if (!isAdmin) {
+          return new Response(
+            JSON.stringify({ error: "Admin role required for location endpoints" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+
+        if (endpoint === "devices") {
+          let q = supabase
+            .from("user_devices")
+            .select("id,user_id,device_name,platform,browser,user_agent,tags,first_seen_at,last_seen_at,created_at", { count: "exact" })
+            .range(offset, offset + limit - 1)
+            .order("last_seen_at", { ascending: false, nullsFirst: false });
+          const targetUser = url.searchParams.get("user_id");
+          const platform = url.searchParams.get("platform");
+          const tag = url.searchParams.get("tag");
+          if (targetUser) q = q.eq("user_id", targetUser);
+          if (platform) q = q.ilike("platform", `%${platform}%`);
+          if (tag) q = q.contains("tags", [tag]);
+          if (searchQuery) q = q.or(`device_name.ilike.%${searchQuery}%,browser.ilike.%${searchQuery}%,platform.ilike.%${searchQuery}%`);
+          const { data, error, count } = await q;
+          if (error) throw error;
+          result = { data, count };
+          break;
+        }
+
+        if (endpoint === "device-locations") {
+          let q = supabase
+            .from("device_locations")
+            .select("id,device_id,user_id,latitude,longitude,accuracy,altitude,heading,speed,recorded_at", { count: "exact" })
+            .range(offset, offset + limit - 1)
+            .order("recorded_at", { ascending: false });
+          const deviceId = url.searchParams.get("device_id");
+          const targetUser = url.searchParams.get("user_id");
+          const since = url.searchParams.get("since");
+          const until = url.searchParams.get("until");
+          if (deviceId) q = q.eq("device_id", deviceId);
+          if (targetUser) q = q.eq("user_id", targetUser);
+          if (since) q = q.gte("recorded_at", since);
+          if (until) q = q.lte("recorded_at", until);
+          const { data, error, count } = await q;
+          if (error) throw error;
+          result = { data, count };
+          break;
+        }
+
+        // user-locations: latest position per device, grouped by user
+        const targetUser = url.searchParams.get("user_id");
+        let devQ = supabase.from("user_devices").select("id,user_id,device_name,platform,browser,tags,last_seen_at");
+        if (targetUser) devQ = devQ.eq("user_id", targetUser);
+        const { data: devs, error: devErr } = await devQ;
+        if (devErr) throw devErr;
+        const deviceIds = (devs || []).map((d: { id: string }) => d.id);
+        const locsByDevice: Record<string, unknown> = {};
+        if (deviceIds.length > 0) {
+          const { data: locs, error: locErr } = await supabase
+            .from("device_locations")
+            .select("device_id,latitude,longitude,accuracy,recorded_at")
+            .in("device_id", deviceIds)
+            .order("recorded_at", { ascending: false })
+            .limit(deviceIds.length * 50);
+          if (locErr) throw locErr;
+          for (const l of (locs || []) as Array<{ device_id: string }>) {
+            if (!locsByDevice[l.device_id]) locsByDevice[l.device_id] = l;
+          }
+        }
+        const merged = (devs || []).map((d: { id: string }) => ({
+          ...d,
+          latest_location: locsByDevice[d.id] || null,
+        }));
+        result = { data: merged, count: merged.length };
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: "Unknown endpoint" }),
@@ -1047,6 +1133,9 @@ function endpointDescription(endpoint: string): string {
     "state-leg-elections": "State legislative election results with vote counts and winners",
     "forecast-history": "Historical changes in election forecast ratings over time",
     search: "Unified search across all 24 databases (requires ?search= param, optional ?categories= filter)",
+    devices: "[ADMIN] Registered user devices with platform/browser/tags. Filters: ?user_id, ?platform, ?tag, ?search",
+    "device-locations": "[ADMIN] Raw device location pings (lat/lng/accuracy). Filters: ?device_id, ?user_id, ?since, ?until (ISO timestamps)",
+    "user-locations": "[ADMIN] Latest known position per device, grouped by user. Filter: ?user_id",
   };
   return descs[endpoint] || "";
 }

@@ -1027,6 +1027,125 @@ mcpServer.tool("master_search", {
   },
 });
 
+// ─── Location Tracking Tools (admin-only) ──────────────────────────────────
+
+async function isAdmin(apiKey: string): Promise<boolean> {
+  const keyHash = await hashKey(apiKey);
+  const { data: keyData } = await supabase.rpc("validate_api_key", { p_key_hash: keyHash });
+  if (!keyData || keyData.length === 0) return false;
+  const { data: roles } = await supabase
+    .from("user_roles").select("role").eq("user_id", keyData[0].user_id);
+  return !!roles?.some((r: { role: string }) => r.role === "admin");
+}
+
+mcpServer.tool({
+  name: "search_devices",
+  description: "[ADMIN] List registered user devices being tracked. Filter by user_id, platform, tag, or search by name/browser.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      user_id: { type: "string" as const, description: "Filter to a specific user UUID" },
+      platform: { type: "string" as const, description: "Filter by platform (e.g. 'iOS', 'Android', 'Windows')" },
+      tag: { type: "string" as const, description: "Filter by a tag assigned to the device" },
+      search: { type: "string" as const, description: "Search device_name, browser, or platform" },
+      limit: { type: "number" as const, description: "Max results (default 50, max 200)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>, ctx: { request: Request }) => {
+    const apiKey = ctx.request.headers.get("X-API-Key") || ctx.request.headers.get("Authorization")?.replace("Bearer ", "") || "";
+    if (!await isAdmin(apiKey)) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Admin role required" }) }] };
+    }
+    const limit = Math.min(Number(args.limit) || 50, 200);
+    const offset = Number(args.offset) || 0;
+    let q = supabase.from("user_devices")
+      .select("id,user_id,device_name,platform,browser,tags,first_seen_at,last_seen_at")
+      .range(offset, offset + limit - 1)
+      .order("last_seen_at", { ascending: false, nullsFirst: false });
+    if (args.user_id) q = q.eq("user_id", String(args.user_id));
+    if (args.platform) q = q.ilike("platform", `%${args.platform}%`);
+    if (args.tag) q = q.contains("tags", [String(args.tag)]);
+    if (args.search) {
+      const s = String(args.search);
+      q = q.or(`device_name.ilike.%${s}%,browser.ilike.%${s}%,platform.ilike.%${s}%`);
+    }
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length || 0, devices: data || [] }, null, 2) }] };
+  },
+});
+
+mcpServer.tool({
+  name: "get_device_locations",
+  description: "[ADMIN] Get raw GPS location pings (lat/lng/accuracy/timestamp) recorded by tracked devices. Filter by device_id, user_id, or time range.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      device_id: { type: "string" as const, description: "Filter to a specific device UUID" },
+      user_id: { type: "string" as const, description: "Filter to a specific user UUID" },
+      since: { type: "string" as const, description: "ISO timestamp lower bound (e.g. 2026-04-01T00:00:00Z)" },
+      until: { type: "string" as const, description: "ISO timestamp upper bound" },
+      limit: { type: "number" as const, description: "Max results (default 100, max 500)" },
+      offset: { type: "number" as const, description: "Pagination offset" },
+    },
+  },
+  handler: async (args: Record<string, unknown>, ctx: { request: Request }) => {
+    const apiKey = ctx.request.headers.get("X-API-Key") || ctx.request.headers.get("Authorization")?.replace("Bearer ", "") || "";
+    if (!await isAdmin(apiKey)) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Admin role required" }) }] };
+    }
+    const limit = Math.min(Number(args.limit) || 100, 500);
+    const offset = Number(args.offset) || 0;
+    let q = supabase.from("device_locations")
+      .select("id,device_id,user_id,latitude,longitude,accuracy,altitude,heading,speed,recorded_at")
+      .range(offset, offset + limit - 1)
+      .order("recorded_at", { ascending: false });
+    if (args.device_id) q = q.eq("device_id", String(args.device_id));
+    if (args.user_id) q = q.eq("user_id", String(args.user_id));
+    if (args.since) q = q.gte("recorded_at", String(args.since));
+    if (args.until) q = q.lte("recorded_at", String(args.until));
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length || 0, locations: data || [] }, null, 2) }] };
+  },
+});
+
+mcpServer.tool({
+  name: "get_user_locations",
+  description: "[ADMIN] Get the latest known position for each device, grouped by user. Useful for a quick 'where is everyone right now' overview.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      user_id: { type: "string" as const, description: "Filter to a specific user UUID" },
+    },
+  },
+  handler: async (args: Record<string, unknown>, ctx: { request: Request }) => {
+    const apiKey = ctx.request.headers.get("X-API-Key") || ctx.request.headers.get("Authorization")?.replace("Bearer ", "") || "";
+    if (!await isAdmin(apiKey)) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Admin role required" }) }] };
+    }
+    let devQ = supabase.from("user_devices").select("id,user_id,device_name,platform,browser,tags,last_seen_at");
+    if (args.user_id) devQ = devQ.eq("user_id", String(args.user_id));
+    const { data: devs, error: devErr } = await devQ;
+    if (devErr) return { content: [{ type: "text" as const, text: JSON.stringify({ error: devErr.message }) }] };
+    const deviceIds = (devs || []).map((d: { id: string }) => d.id);
+    const latest: Record<string, unknown> = {};
+    if (deviceIds.length > 0) {
+      const { data: locs } = await supabase.from("device_locations")
+        .select("device_id,latitude,longitude,accuracy,recorded_at")
+        .in("device_id", deviceIds)
+        .order("recorded_at", { ascending: false })
+        .limit(deviceIds.length * 50);
+      for (const l of (locs || []) as Array<{ device_id: string }>) {
+        if (!latest[l.device_id]) latest[l.device_id] = l;
+      }
+    }
+    const merged = (devs || []).map((d: { id: string }) => ({ ...d, latest_location: latest[d.id] || null }));
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: merged.length, users: merged }, null, 2) }] };
+  },
+});
+
 // ─── HTTP Transport ─────────────────────────────────────────────────────────
 
 const transport = new StreamableHttpTransport();
