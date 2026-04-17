@@ -21,8 +21,9 @@ export const MobileNav = forwardRef<HTMLDivElement, MobileNavProps>(
     const { canManageContent, canAccessApi } = useUserRole();
     const { signOut } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [accountOpen, setAccountOpen] = useState(false);
 
-    const go = (path: string) => { navigate(path); setSidebarOpen(false); };
+    const go = (path: string) => { navigate(path); setSidebarOpen(false); setAccountOpen(false); };
 
     return (
       <div ref={ref} className="lg:hidden space-y-1">
