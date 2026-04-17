@@ -263,13 +263,25 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
 
           {tab === "government" && (
             <div className="space-y-3">
-              <InfoCard title="Leadership" items={[
-                ["Head of State", p?.head_of_state],
-                ["Head of Government", p?.head_of_government],
-                ["Ruling Party", p?.ruling_party],
-                ["Last Election", p?.last_election_date],
-                ["Next Election", p?.next_election_date],
-              ]} />
+              <InfoCard
+                title="Leadership"
+                onView={p ? () => openRecord(`${country.name} — Leadership`, {
+                  head_of_state: p.head_of_state,
+                  head_of_government: p.head_of_government,
+                  ruling_party: p.ruling_party,
+                  opposition_parties: p.opposition_parties,
+                  last_election_date: p.last_election_date,
+                  next_election_date: p.next_election_date,
+                  election_type: p.election_type,
+                }) : undefined}
+                items={[
+                  ["Head of State", p?.head_of_state],
+                  ["Head of Government", p?.head_of_government],
+                  ["Ruling Party", p?.ruling_party],
+                  ["Last Election", p?.last_election_date],
+                  ["Next Election", p?.next_election_date],
+                ]}
+              />
               {data.leaders.length > 0 && (
                 <div className="candidate-card p-3">
                   <h3 className="text-[11px] font-bold mb-2">Current Leaders</h3>
@@ -328,13 +340,37 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
 
           {tab === "economy" && (
             <div className="grid gap-3 sm:grid-cols-2">
-              <InfoCard title="Economic Indicators" items={[
-                ["GDP", money(p?.gdp)],
-                ["GDP Per Capita", money(p?.gdp_per_capita)],
-                ["Unemployment", pct(p?.unemployment_rate)],
-                ["Poverty Rate", pct(p?.poverty_rate)],
-                ["Inflation", pct(p?.inflation_rate)],
-              ]} />
+              <InfoCard
+                title="Economic Indicators"
+                onView={p ? () => openRecord(`${country.name} — Economy`, {
+                  gdp: p.gdp,
+                  real_gdp: p.real_gdp,
+                  gdp_per_capita: p.gdp_per_capita,
+                  gdp_growth_rate: p.gdp_growth_rate,
+                  unemployment_rate: p.unemployment_rate,
+                  poverty_rate: p.poverty_rate,
+                  inflation_rate: p.inflation_rate,
+                  cpi_rate: p.cpi_rate,
+                  pce_rate: p.pce_rate,
+                  consumer_spending: p.consumer_spending,
+                  corporate_profits: p.corporate_profits,
+                  current_account_balance: p.current_account_balance,
+                  fdi_inflows: p.fdi_inflows,
+                  government_debt_gdp_pct: p.government_debt_gdp_pct,
+                  industrial_production_index: p.industrial_production_index,
+                  labor_force_participation: p.labor_force_participation,
+                  stock_market_name: p.stock_market_name,
+                  stock_market_index: p.stock_market_index,
+                  trade_partners: p.trade_partners,
+                }) : undefined}
+                items={[
+                  ["GDP", money(p?.gdp)],
+                  ["GDP Per Capita", money(p?.gdp_per_capita)],
+                  ["Unemployment", pct(p?.unemployment_rate)],
+                  ["Poverty Rate", pct(p?.poverty_rate)],
+                  ["Inflation", pct(p?.inflation_rate)],
+                ]}
+              />
               {p?.major_industries?.length > 0 && (
                 <div className="candidate-card p-3">
                   <h3 className="text-[11px] font-bold mb-2">Major Industries</h3>
