@@ -34,7 +34,7 @@ import { MessagingHub } from "@/components/MessagingHub";
 import { IntelHub } from "@/components/IntelHub";
 import { WarRoomHub } from "@/components/WarRoomHub";
 import { CRMHub } from "@/components/CRMHub";
-import { AlertsHub } from "@/components/AlertsHub";
+import { useMail } from "@/contexts/MailContext";
 import { ForecastHub } from "@/components/ForecastHub";
 import { InvestigationsPanel } from "@/components/InvestigationsPanel";
 import { GraphHub } from "@/components/GraphHub";
