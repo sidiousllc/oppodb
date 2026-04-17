@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Win98Window } from "@/components/Win98Window";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
-import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, ExternalLink, Clock, Loader2, Search, Filter, X } from "lucide-react";
+import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, Clock, Search, Filter, X, Layers, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import { applyPdfBranding } from "@/lib/pdfBranding";
+import { GroundNewsDetailWindow } from "@/components/GroundNewsDetailWindow";
+import { clusterArticles, classifyBias, BIAS_META, biasBarSegments, type StoryCluster, type ClusterableArticle } from "@/lib/newsBias";
 
 type Scope = "local" | "state" | "national" | "international";
 
@@ -65,14 +65,13 @@ export function IntelHub() {
   const [briefings, setBriefings] = useState<Briefing[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [selectedBriefing, setSelectedBriefing] = useState<Briefing | null>(null);
+  const [selectedCluster, setSelectedCluster] = useState<StoryCluster<ClusterableArticle> | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [fullArticle, setFullArticle] = useState<string | null>(null);
-  const [loadingArticle, setLoadingArticle] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all");
   const [partyLeaning, setPartyLeaning] = useState<PartyLeaning>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [groupMode, setGroupMode] = useState<"clusters" | "sources">("clusters");
 
   const fetchBriefings = useCallback(async () => {
     setLoading(true);
@@ -81,7 +80,7 @@ export function IntelHub() {
       .select("*")
       .eq("scope", activeScope)
       .order("published_at", { ascending: false })
-      .limit(100);
+      .limit(300);
 
     if (error) {
       console.error("Error fetching briefings:", error);
@@ -133,26 +132,6 @@ export function IntelHub() {
       setSyncing(false);
     }
   };
-
-  const handleSelectBriefing = useCallback(async (b: Briefing) => {
-    setSelectedBriefing(b);
-    setFullArticle(null);
-    if (b.source_url) {
-      setLoadingArticle(true);
-      try {
-        const { data, error } = await supabase.functions.invoke("scrape-article", {
-          body: { url: b.source_url },
-        });
-        if (!error && data?.success && data.markdown) {
-          setFullArticle(data.markdown);
-        }
-      } catch (e) {
-        console.error("Failed to scrape article:", e);
-      } finally {
-        setLoadingArticle(false);
-      }
-    }
-  }, []);
 
   const exportPDF = () => {
     const doc = new jsPDF();
@@ -270,6 +249,15 @@ export function IntelHub() {
           <FileText size={12} />
           Export PDF
         </button>
+
+        <button
+          onClick={() => setGroupMode(groupMode === "clusters" ? "sources" : "clusters")}
+          className="px-2 py-1 text-xs bg-[#c0c0c0] border border-[#808080] hover:bg-[#d4d4d4] flex items-center gap-1"
+          title="Toggle between story clusters and source groups"
+        >
+          <Layers size={12} />
+          {groupMode === "clusters" ? "By Story" : "By Source"}
+        </button>
       </div>
 
       {/* Search & Filters */}
@@ -376,6 +364,49 @@ export function IntelHub() {
             ? `No briefings found for ${SCOPE_CONFIG[activeScope].label}. Click "Sync" to fetch latest intelligence.`
             : "No briefings match your search/filter criteria."}
         </div>
+      ) : groupMode === "clusters" ? (
+        <div className="space-y-2">
+          {clusters.map((c) => {
+            const segs = biasBarSegments(c.bias);
+            const uniqueSrc = new Set(c.articles.map(a => a.source)).size;
+            return (
+              <button
+                key={c.id}
+                onClick={() => setSelectedCluster(c)}
+                className="w-full text-left border border-[#808080] bg-white hover:bg-[#e8e8ff] transition-colors p-2 space-y-1"
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-[#000080] line-clamp-2">{c.lead.title}</div>
+                    {c.lead.summary && (
+                      <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{c.lead.summary}</div>
+                    )}
+                  </div>
+                  <span className="flex-shrink-0 text-[10px] font-bold bg-[#000080] text-white px-1.5 py-0.5 rounded-sm flex items-center gap-1">
+                    <Layers size={10} /> {uniqueSrc}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-1.5 flex-1 overflow-hidden rounded-sm border border-[#c0c0c0]">
+                    {segs.L > 0 && <div style={{ width: `${segs.L}%`, background: "#3b82f6" }} />}
+                    {segs.C > 0 && <div style={{ width: `${segs.C}%`, background: "#9333ea" }} />}
+                    {segs.R > 0 && <div style={{ width: `${segs.R}%`, background: "#dc2626" }} />}
+                    {segs.U > 0 && <div style={{ width: `${segs.U}%`, background: "#9ca3af" }} />}
+                  </div>
+                  <span className="text-[9px] text-gray-500">L{c.bias.L} C{c.bias.C} R{c.bias.R}</span>
+                  {c.blindspot && (
+                    <span className="text-[9px] font-bold text-amber-700 flex items-center gap-0.5">
+                      <AlertTriangle size={10} /> {c.blindspot} blindspot
+                    </span>
+                  )}
+                </div>
+                <div className="text-[9px] text-gray-400">
+                  {c.lead.source} • {c.lead.pubDate ? format(new Date(c.lead.pubDate), "PPp") : ""}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       ) : (
         <div className="space-y-4">
           {Object.entries(groupedBySource).map(([source, items]) => (
@@ -389,18 +420,23 @@ export function IntelHub() {
                 {items.map((b) => (
                   <button
                     key={b.id}
-                    onClick={() => handleSelectBriefing(b)}
+                    onClick={() => {
+                      const found = clusters.find(c => c.articles.some(a => a.title === b.title && a.source === b.source_name));
+                      setSelectedCluster(found ?? {
+                        id: b.id,
+                        lead: { title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary },
+                        articles: [{ title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary }],
+                        bias: { L: 0, C: 0, R: 0, U: 0 }, blindspot: null,
+                      });
+                    }}
                     className="w-full text-left px-2 py-1.5 hover:bg-[#e8e8ff] transition-colors"
                   >
                     <div className="text-xs font-bold text-[#000080] line-clamp-1">{b.title}</div>
                     {b.summary && (
                       <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{b.summary}</div>
                     )}
-                    <div className="text-[9px] text-gray-400 mt-0.5 flex items-center gap-1">
+                    <div className="text-[9px] text-gray-400 mt-0.5">
                       {b.published_at ? format(new Date(b.published_at), "PPp") : ""}
-                      {b.category && b.category !== "general" && (
-                        <span className="bg-[#e8e8ff] text-[#000080] px-1 rounded text-[8px] font-bold uppercase">{b.category}</span>
-                      )}
                     </div>
                   </button>
                 ))}
@@ -410,104 +446,28 @@ export function IntelHub() {
         </div>
       )}
 
-      {/* Detail Mini Window */}
-      {selectedBriefing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <Win98Window
-            title={`📄 ${selectedBriefing.source_name} — Intel Brief`}
-            icon={<span className="text-[14px]">📰</span>}
-            onClose={() => setSelectedBriefing(null)}
-          >
-            <div className="w-[600px] max-w-[90vw] max-h-[70vh] overflow-y-auto p-3 bg-white text-xs">
-              <h2 className="text-sm font-bold text-[#000080] mb-1">{selectedBriefing.title}</h2>
-              <div className="text-[10px] text-gray-500 mb-2 flex items-center gap-2">
-                <span>{selectedBriefing.source_name}</span>
-                <span>•</span>
-                <span>{selectedBriefing.published_at ? format(new Date(selectedBriefing.published_at), "PPpp") : ""}</span>
-                <span className="uppercase bg-[#000080] text-white px-1 rounded text-[8px]">
-                  {selectedBriefing.scope}
-                </span>
-              </div>
-
-              {selectedBriefing.summary && (
-                <div className="bg-[#ffffcc] border border-[#e6e6a0] p-2 mb-2 text-xs italic">
-                  {selectedBriefing.summary}
-                </div>
-              )}
-
-              {loadingArticle ? (
-                <div className="flex items-center gap-2 py-4 text-xs text-gray-500">
-                  <Loader2 size={14} className="animate-spin" />
-                  Loading full article...
-                </div>
-              ) : fullArticle ? (
-                <div className="prose-research text-xs leading-relaxed">
-                  <ReactMarkdown
-                    components={{
-                      a: ({ href, children }) => (
-                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#000080] underline hover:text-blue-700">
-                          {children}
-                        </a>
-                      ),
-                    }}
-                  >
-                    {fullArticle}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                <div className="whitespace-pre-wrap text-xs leading-relaxed">
-                  {selectedBriefing.content || selectedBriefing.summary || "No content available."}
-                </div>
-              )}
-
-              <div className="mt-3 pt-2 border-t border-[#c0c0c0] flex items-center gap-2">
-                {selectedBriefing.source_url && (
-                  <a
-                    href={selectedBriefing.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] text-[#000080] underline flex items-center gap-1 hover:text-blue-700"
-                  >
-                    <ExternalLink size={10} />
-                    Read original article
-                  </a>
-                )}
-                <div className="flex-1" />
-                <button
-                  onClick={() => {
-                    const doc = new jsPDF();
-                    const pw = doc.internal.pageSize.width;
-                    let y = 18;
-                    doc.setFontSize(14);
-                    doc.setFont("helvetica", "bold");
-                    const titleLines = doc.splitTextToSize(selectedBriefing.title, pw - 30);
-                    doc.text(titleLines, 15, y);
-                    y += titleLines.length * 6 + 4;
-
-                    doc.setFontSize(9);
-                    doc.setFont("helvetica", "italic");
-                    doc.text(`${selectedBriefing.source_name} • ${selectedBriefing.published_at ? format(new Date(selectedBriefing.published_at), "PPp") : ""}`, 15, y);
-                    y += 8;
-
-                    doc.setFont("helvetica", "normal");
-                    doc.setFontSize(10);
-                    const contentText = fullArticle || selectedBriefing.content || selectedBriefing.summary || "";
-                    const contentLines = doc.splitTextToSize(contentText, pw - 30);
-                    doc.text(contentLines, 15, y);
-
-                    applyPdfBranding(doc);
-                    doc.save(`intel-brief-${selectedBriefing.id.substring(0, 8)}.pdf`);
-                    toast.success("PDF exported");
-                  }}
-                  className="px-2 py-1 text-[10px] bg-[#c0c0c0] border border-[#808080] hover:bg-[#d4d4d4] flex items-center gap-1"
-                >
-                  <FileText size={10} />
-                  Export PDF
-                </button>
-              </div>
-            </div>
-          </Win98Window>
-        </div>
+      {selectedCluster && (
+        <GroundNewsDetailWindow
+          cluster={selectedCluster}
+          onClose={() => setSelectedCluster(null)}
+          contextLabel={`Intel — ${SCOPE_CONFIG[activeScope].label}`}
+          onSavePDF={(article) => {
+            const doc = new jsPDF();
+            const pw = doc.internal.pageSize.width;
+            let y = 18;
+            doc.setFontSize(14); doc.setFont("helvetica", "bold");
+            const titleLines = doc.splitTextToSize(article.title, pw - 30);
+            doc.text(titleLines, 15, y); y += titleLines.length * 6 + 4;
+            doc.setFontSize(9); doc.setFont("helvetica", "italic");
+            doc.text(`${article.source} • ${article.pubDate ? format(new Date(article.pubDate), "PPp") : ""}`, 15, y); y += 8;
+            doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+            const lines = doc.splitTextToSize(article.summary || article.title, pw - 30);
+            doc.text(lines, 15, y);
+            applyPdfBranding(doc);
+            doc.save(`intel-brief.pdf`);
+            toast.success("PDF exported");
+          }}
+        />
       )}
     </div>
   );
