@@ -35,6 +35,9 @@ import { IntelHub } from "@/components/IntelHub";
 import { WarRoomHub } from "@/components/WarRoomHub";
 import { CRMHub } from "@/components/CRMHub";
 import { AlertsHub } from "@/components/AlertsHub";
+import { ForecastHub } from "@/components/ForecastHub";
+import { InvestigationsHub } from "@/components/InvestigationsHub";
+import { GraphHub } from "@/components/GraphHub";
 
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
@@ -296,6 +299,9 @@ export default function Index() {
     warroom: 0,
     crm: 0,
     alerts: 0,
+    forecast: 0,
+    investigations: 0,
+    graph: 0,
   }), [dataVersion, districts, stateLegDistricts, pollingCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
@@ -330,6 +336,9 @@ export default function Index() {
     warroom: "War Rooms",
     crm: "Stakeholders",
     alerts: "Alerts & Watch",
+    forecast: "Forecast Lab",
+    investigations: "Investigations",
+    graph: "Entity Graph",
   };
 
   function renderDetail() {
@@ -449,6 +458,18 @@ export default function Index() {
 
     if (section === "alerts") {
       return <AlertsHub />;
+    }
+
+    if (section === "forecast") {
+      return <ForecastHub />;
+    }
+
+    if (section === "investigations") {
+      return <InvestigationsHub />;
+    }
+
+    if (section === "graph") {
+      return <GraphHub />;
     }
 
     if (section === "documentation") {

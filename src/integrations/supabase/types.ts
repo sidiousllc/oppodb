@@ -866,6 +866,63 @@ export type Database = {
         }
         Relationships: []
       }
+      court_cases: {
+        Row: {
+          case_id: string | null
+          case_name: string
+          case_number: string | null
+          closed_date: string | null
+          court: string
+          created_at: string
+          docket_url: string | null
+          filed_date: string | null
+          id: string
+          judge: string | null
+          nature_of_suit: string | null
+          parties: Json | null
+          raw_data: Json | null
+          source: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          case_id?: string | null
+          case_name: string
+          case_number?: string | null
+          closed_date?: string | null
+          court: string
+          created_at?: string
+          docket_url?: string | null
+          filed_date?: string | null
+          id?: string
+          judge?: string | null
+          nature_of_suit?: string | null
+          parties?: Json | null
+          raw_data?: Json | null
+          source?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string | null
+          case_name?: string
+          case_number?: string | null
+          closed_date?: string | null
+          court?: string
+          created_at?: string
+          docket_url?: string | null
+          filed_date?: string | null
+          id?: string
+          judge?: string | null
+          nature_of_suit?: string | null
+          parties?: Json | null
+          raw_data?: Json | null
+          source?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       device_locations: {
         Row: {
           accuracy: number | null
@@ -1120,6 +1177,63 @@ export type Database = {
         }
         Relationships: []
       }
+      election_night_streams: {
+        Row: {
+          candidate_name: string
+          county_fips: string | null
+          district: string | null
+          election_date: string
+          id: string
+          is_called: boolean
+          party: string | null
+          precinct: string | null
+          precincts_reporting_pct: number | null
+          race_type: string
+          raw_data: Json | null
+          reported_at: string
+          source: string
+          state_abbr: string
+          vote_pct: number | null
+          votes: number | null
+        }
+        Insert: {
+          candidate_name: string
+          county_fips?: string | null
+          district?: string | null
+          election_date: string
+          id?: string
+          is_called?: boolean
+          party?: string | null
+          precinct?: string | null
+          precincts_reporting_pct?: number | null
+          race_type: string
+          raw_data?: Json | null
+          reported_at?: string
+          source?: string
+          state_abbr: string
+          vote_pct?: number | null
+          votes?: number | null
+        }
+        Update: {
+          candidate_name?: string
+          county_fips?: string | null
+          district?: string | null
+          election_date?: string
+          id?: string
+          is_called?: boolean
+          party?: string | null
+          precinct?: string | null
+          precincts_reporting_pct?: number | null
+          race_type?: string
+          raw_data?: Json | null
+          reported_at?: string
+          source?: string
+          state_abbr?: string
+          vote_pct?: number | null
+          votes?: number | null
+        }
+        Relationships: []
+      }
       email_notification_preferences: {
         Row: {
           created_at: string
@@ -1321,6 +1435,57 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_relationships: {
+        Row: {
+          amount: number | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          observed_at: string | null
+          relationship_type: string
+          source: string | null
+          source_id: string
+          source_label: string
+          source_type: string
+          target_id: string
+          target_label: string
+          target_type: string
+          weight: number | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          observed_at?: string | null
+          relationship_type: string
+          source?: string | null
+          source_id: string
+          source_label: string
+          source_type: string
+          target_id: string
+          target_label: string
+          target_type: string
+          weight?: number | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          observed_at?: string | null
+          relationship_type?: string
+          source?: string | null
+          source_id?: string
+          source_label?: string
+          source_type?: string
+          target_id?: string
+          target_label?: string
+          target_type?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
       fara_registrants: {
         Row: {
           address: string | null
@@ -1462,6 +1627,209 @@ export type Database = {
           source_url?: string | null
           total_obligation?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      forecast_scenarios: {
+        Row: {
+          assumptions: Json
+          created_at: string
+          cycle: number
+          description: string | null
+          id: string
+          is_shared: boolean
+          name: string
+          national_swing: number | null
+          projected_seats: Json
+          race_type: string
+          rating_overrides: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assumptions?: Json
+          created_at?: string
+          cycle?: number
+          description?: string | null
+          id?: string
+          is_shared?: boolean
+          name: string
+          national_swing?: number | null
+          projected_seats?: Json
+          race_type?: string
+          rating_overrides?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assumptions?: Json
+          created_at?: string
+          cycle?: number
+          description?: string | null
+          id?: string
+          is_shared?: boolean
+          name?: string
+          national_swing?: number | null
+          projected_seats?: Json
+          race_type?: string
+          rating_overrides?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      forecast_simulations: {
+        Row: {
+          created_at: string
+          dem_win_pct: number | null
+          id: string
+          iterations: number
+          median_dem_seats: number | null
+          median_rep_seats: number | null
+          rep_win_pct: number | null
+          results: Json
+          scenario_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dem_win_pct?: number | null
+          id?: string
+          iterations?: number
+          median_dem_seats?: number | null
+          median_rep_seats?: number | null
+          rep_win_pct?: number | null
+          results?: Json
+          scenario_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dem_win_pct?: number | null
+          id?: string
+          iterations?: number
+          median_dem_seats?: number | null
+          median_rep_seats?: number | null
+          rep_win_pct?: number | null
+          results?: Json
+          scenario_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_simulations_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gov_contracts: {
+        Row: {
+          award_amount: number | null
+          award_id: string | null
+          award_type: string | null
+          awarding_agency: string | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          fiscal_year: number | null
+          id: string
+          naics_code: string | null
+          raw_data: Json | null
+          recipient_district: string | null
+          recipient_name: string
+          recipient_state: string | null
+          recipient_uei: string | null
+          source: string
+          source_url: string | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          award_amount?: number | null
+          award_id?: string | null
+          award_type?: string | null
+          awarding_agency?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          fiscal_year?: number | null
+          id?: string
+          naics_code?: string | null
+          raw_data?: Json | null
+          recipient_district?: string | null
+          recipient_name: string
+          recipient_state?: string | null
+          recipient_uei?: string | null
+          source?: string
+          source_url?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          award_amount?: number | null
+          award_id?: string | null
+          award_type?: string | null
+          awarding_agency?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          fiscal_year?: number | null
+          id?: string
+          naics_code?: string | null
+          raw_data?: Json | null
+          recipient_district?: string | null
+          recipient_name?: string
+          recipient_state?: string | null
+          recipient_uei?: string | null
+          source?: string
+          source_url?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      graph_snapshots: {
+        Row: {
+          created_at: string
+          description: string | null
+          filters: Json | null
+          graph_data: Json
+          id: string
+          is_shared: boolean
+          name: string
+          root_entity_id: string
+          root_entity_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          filters?: Json | null
+          graph_data?: Json
+          id?: string
+          is_shared?: boolean
+          name: string
+          root_entity_id: string
+          root_entity_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          filters?: Json | null
+          graph_data?: Json
+          id?: string
+          is_shared?: boolean
+          name?: string
+          root_entity_id?: string
+          root_entity_type?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2047,6 +2415,63 @@ export type Database = {
         }
         Relationships: []
       }
+      lobbying_disclosures: {
+        Row: {
+          amount: number | null
+          client_name: string | null
+          created_at: string
+          filing_date: string | null
+          filing_period: string | null
+          filing_uuid: string | null
+          filing_year: number | null
+          govt_entities: Json | null
+          id: string
+          issues: Json | null
+          lobbyists: Json | null
+          raw_data: Json | null
+          registrant_name: string
+          source: string
+          source_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          client_name?: string | null
+          created_at?: string
+          filing_date?: string | null
+          filing_period?: string | null
+          filing_uuid?: string | null
+          filing_year?: number | null
+          govt_entities?: Json | null
+          id?: string
+          issues?: Json | null
+          lobbyists?: Json | null
+          raw_data?: Json | null
+          registrant_name: string
+          source?: string
+          source_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          client_name?: string | null
+          created_at?: string
+          filing_date?: string | null
+          filing_period?: string | null
+          filing_uuid?: string | null
+          filing_year?: number | null
+          govt_entities?: Json | null
+          id?: string
+          issues?: Json | null
+          lobbyists?: Json | null
+          raw_data?: Json | null
+          registrant_name?: string
+          source?: string
+          source_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       local_impacts: {
         Row: {
           content: string
@@ -2457,6 +2882,66 @@ export type Database = {
           scope?: string
           scope_ref?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      polling_aggregates: {
+        Row: {
+          candidate_a: string | null
+          candidate_a_pct: number | null
+          candidate_b: string | null
+          candidate_b_pct: number | null
+          computed_at: string
+          cycle: number
+          district: string | null
+          id: string
+          last_poll_date: string | null
+          margin: number | null
+          poll_count: number
+          race_type: string
+          raw_data: Json | null
+          state_abbr: string
+          trend_30d: number | null
+          undecided_pct: number | null
+          weighted_method: string
+        }
+        Insert: {
+          candidate_a?: string | null
+          candidate_a_pct?: number | null
+          candidate_b?: string | null
+          candidate_b_pct?: number | null
+          computed_at?: string
+          cycle?: number
+          district?: string | null
+          id?: string
+          last_poll_date?: string | null
+          margin?: number | null
+          poll_count?: number
+          race_type: string
+          raw_data?: Json | null
+          state_abbr: string
+          trend_30d?: number | null
+          undecided_pct?: number | null
+          weighted_method?: string
+        }
+        Update: {
+          candidate_a?: string | null
+          candidate_a_pct?: number | null
+          candidate_b?: string | null
+          candidate_b_pct?: number | null
+          computed_at?: string
+          cycle?: number
+          district?: string | null
+          id?: string
+          last_poll_date?: string | null
+          margin?: number | null
+          poll_count?: number
+          race_type?: string
+          raw_data?: Json | null
+          state_abbr?: string
+          trend_30d?: number | null
+          undecided_pct?: number | null
+          weighted_method?: string
         }
         Relationships: []
       }
