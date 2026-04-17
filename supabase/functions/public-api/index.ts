@@ -31,6 +31,7 @@ const VALID_ENDPOINTS = [
   "state-finance",
   "mn-finance",
   "intel-briefings",
+  "news-ticker",
   "tracked-bills",
   "mit-elections",
   "state-leg-elections",
@@ -665,7 +666,24 @@ Deno.serve(async (req) => {
         break;
       }
 
-      case "tracked-bills": {
+      case "news-ticker": {
+        // Curated, lightweight feed of latest cross-scope headlines for tickers/marquees.
+        // Optional: ?scope=local|state|national|international, ?category=..., ?limit=1..100
+        const tickerLimit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "30"), 1), 100);
+        let q = supabase
+          .from("intel_briefings")
+          .select("id,title,scope,category,source_name,source_url,published_at")
+          .order("published_at", { ascending: false, nullsFirst: false })
+          .limit(tickerLimit);
+        const tickerScope = url.searchParams.get("scope");
+        if (tickerScope) q = q.eq("scope", tickerScope);
+        const tickerCat = url.searchParams.get("category");
+        if (tickerCat) q = q.eq("category", tickerCat);
+        const { data, error } = await q;
+        if (error) throw error;
+        result = { data: data || [], count: data?.length || 0, generated_at: new Date().toISOString() };
+        break;
+      }
         let q = supabase
           .from("tracked_bills")
           .select("id,bill_number,title,state,status_desc,last_action,last_action_date,bill_id,session_id,url", { count: "exact" })
