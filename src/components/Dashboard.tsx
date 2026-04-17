@@ -386,8 +386,10 @@ export function Dashboard({ onNavigateSection, candidateCount, districtCount, di
             { label: "DataHub", emoji: "📊", section: "polling" },
             { label: "IntelHub", emoji: "🕵️", section: "intelhub" },
             { label: "MessagingHub", emoji: "📢", section: "messaging" },
+            { label: "InternationalHub", emoji: "🌐", section: "internationalhub" },
             { label: "Research Tools", emoji: "🔬", section: "research-tools" },
             { label: "Live Elections", emoji: "🏛️", section: "live-elections" },
+            { label: "ReportHub", emoji: "📝", section: "reports" },
             { label: "Documentation", emoji: "📖", section: "documentation" },
           ].map((item) => (
             <button

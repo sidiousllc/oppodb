@@ -319,7 +319,7 @@ export default function Index() {
     "research-tools": "Research Tools",
     internationalhub: "InternationalHub",
     "live-elections": "Live Elections",
-    reports: "Reports",
+    reports: "ReportHub",
     documentation: "Documentation",
   };
 
