@@ -14,6 +14,7 @@ import { template as accessApproved } from './access-approved.tsx'
 import { template as accessDenied } from './access-denied.tsx'
 import { template as mailNotification } from './mail-notification.tsx'
 import { template as inviteLink } from './invite-link.tsx'
+import { template as externalUserMail } from './external-user-mail.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'welcome': welcome,
@@ -21,4 +22,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'access-denied': accessDenied,
   'mail-notification': mailNotification,
   'invite-link': inviteLink,
+  'external-user-mail': externalUserMail,
 }
