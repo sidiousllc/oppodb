@@ -317,6 +317,41 @@ export function ActivityLogsTab() {
               <X className="h-2.5 w-2.5" /> Clear
             </button>
           )}
+
+          {/* Raw JSON toggle */}
+          <button
+            onClick={() => setShowRaw(v => !v)}
+            className={`win98-button text-[9px] px-2 py-0.5 ${showRaw ? "font-bold bg-white" : ""}`}
+            title="Toggle raw JSON output for all logs"
+          >
+            {`{ }`} {showRaw ? "Hide Raw" : "Show Raw"}
+          </button>
+          <button
+            onClick={() => {
+              const payload = { activity: fActivity, api: fApi, content: fContent, chat: fChat };
+              navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+            }}
+            className="win98-button text-[9px] px-2 py-0.5"
+            title="Copy raw JSON of filtered logs to clipboard"
+          >
+            📋 Copy Raw
+          </button>
+          <button
+            onClick={() => {
+              const payload = { activity: fActivity, api: fApi, content: fContent, chat: fChat };
+              const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `access-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="win98-button text-[9px] px-2 py-0.5"
+            title="Download raw JSON of filtered logs"
+          >
+            💾 Export JSON
+          </button>
         </div>
         {hasFilters && (
           <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
