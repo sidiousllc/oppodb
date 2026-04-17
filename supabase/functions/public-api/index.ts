@@ -31,14 +31,24 @@ const VALID_ENDPOINTS = [
   "state-finance",
   "mn-finance",
   "intel-briefings",
+  "intel-clusters",
   "news-ticker",
   "tracked-bills",
   "mit-elections",
   "state-leg-elections",
+  "international-profiles",
+  "international-elections",
+  "international-leaders",
+  "international-polling",
   "search",
   "devices",
   "device-locations",
   "user-locations",
+  // User-scoped (require API key's owning user)
+  "reports",
+  "report-schedules",
+  "polling-alerts",
+  "email-preferences",
 ];
 
 async function hashKey(key: string): Promise<string> {
