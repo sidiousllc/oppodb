@@ -313,6 +313,75 @@ export function ForecastHub() {
               <Slider value={[iterations]} min={1000} max={20000} step={1000} onValueChange={(v) => setIterations(v[0])} className="mt-2" />
             </div>
 
+            {/* Advanced Tuning */}
+            <details className="border-2 border-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))]">
+              <summary className="px-2 py-1 text-[11px] font-bold cursor-pointer select-none">⚙️ Advanced tuning</summary>
+              <div className="p-3 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-[11px]">Forecast source (baseline)</Label>
+                    <Select value={simSource} onValueChange={setSimSource}>
+                      <SelectTrigger className="h-7 text-[11px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All sources (consensus)</SelectItem>
+                        {forecastSources.filter(s => s !== "all").map(s => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">Majority threshold (override)</Label>
+                    <Input value={thresholdOverride} onChange={(e) => setThresholdOverride(e.target.value)}
+                      placeholder={raceType === "senate" ? "50" : raceType === "house" ? "218" : "auto"}
+                      className="h-7 text-[11px]" />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-[11px]">Turnout shift toward Dems: {turnoutShift > 0 ? "+" : ""}{turnoutShift.toFixed(1)} pts</Label>
+                  <Slider value={[turnoutShift]} min={-10} max={10} step={0.5} onValueChange={(v) => setTurnoutShift(v[0])} className="mt-2" />
+                </div>
+
+                <div>
+                  <Label className="text-[11px]">Incumbency boost: +{incumbencyBoost.toFixed(1)} pts (to incumbent party)</Label>
+                  <Slider value={[incumbencyBoost]} min={0} max={6} step={0.5} onValueChange={(v) => setIncumbencyBoost(v[0])} className="mt-2" />
+                </div>
+
+                <div>
+                  <Label className="text-[11px]">Per-race uncertainty (logit SD): {uncertaintySd.toFixed(2)}</Label>
+                  <Slider value={[uncertaintySd]} min={0} max={1.5} step={0.05} onValueChange={(v) => setUncertaintySd(v[0])} className="mt-2" />
+                  <div className="text-[10px] text-muted-foreground mt-1">Higher = wider seat distribution. 0 = deterministic ratings.</div>
+                </div>
+
+                <div>
+                  <Label className="text-[11px]">Cross-race correlation: {(correlation * 100).toFixed(0)}%</Label>
+                  <Slider value={[correlation]} min={0} max={0.95} step={0.05} onValueChange={(v) => setCorrelation(v[0])} className="mt-2" />
+                  <div className="text-[10px] text-muted-foreground mt-1">National wave shock vs independent races. 30% is typical.</div>
+                </div>
+
+                <div>
+                  <Label className="text-[11px]">Regional swings (state:pts, comma-separated)</Label>
+                  <Input value={regionalText} onChange={(e) => setRegionalText(e.target.value)}
+                    placeholder="MN:+2, TX:-1, CA:+3" className="h-7 text-[11px]" />
+                </div>
+
+                <div>
+                  <Label className="text-[11px]">Manual rating overrides (key:rating, comma-separated)</Label>
+                  <Input value={overridesText} onChange={(e) => setOverridesText(e.target.value)}
+                    placeholder="MN-05:Lean D, TX-15:Toss Up, AZ:Lean R" className="h-7 text-[11px]" />
+                  <div className="text-[10px] text-muted-foreground mt-1">Allowed: Solid/Likely/Lean/Tilt D or R, Toss Up.</div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => {
+                    setTurnoutShift(0); setIncumbencyBoost(0); setUncertaintySd(0.5);
+                    setCorrelation(0.3); setRegionalText(""); setOverridesText(""); setThresholdOverride("");
+                  }} className="text-[11px]">Reset tuning</Button>
+                </div>
+              </div>
+            </details>
+
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={() => runSimulation()} disabled={running} className="text-[11px]">
                 {running ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Play className="w-3 h-3 mr-1" />}
