@@ -112,8 +112,8 @@ Deno.serve(async (req) => {
 
     if (action === "latest") {
       const runsRes = await fetch(
-        `https://api.github.com/repos/${repo}/actions/workflows/build-android.yml/runs?per_page=5`,
-        { headers: { Authorization: `Bearer ${ghToken}`, Accept: "application/vnd.github+json" } },
+        `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/runs?per_page=5`,
+        { headers: ghHeaders },
       );
       const runs = await runsRes.json();
       const recent = (runs.workflow_runs ?? []).slice(0, 5).map((r: any) => ({
