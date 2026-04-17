@@ -249,6 +249,15 @@ export function IntelHub() {
           <FileText size={12} />
           Export PDF
         </button>
+
+        <button
+          onClick={() => setGroupMode(groupMode === "clusters" ? "sources" : "clusters")}
+          className="px-2 py-1 text-xs bg-[#c0c0c0] border border-[#808080] hover:bg-[#d4d4d4] flex items-center gap-1"
+          title="Toggle between story clusters and source groups"
+        >
+          <Layers size={12} />
+          {groupMode === "clusters" ? "By Story" : "By Source"}
+        </button>
       </div>
 
       {/* Search & Filters */}
