@@ -506,8 +506,8 @@ export default function Index() {
         )}
       </div>
 
-      {/* News Ticker */}
-      <NewsTicker />
+      {/* News Ticker - Dashboard only */}
+      {section === "dashboard" && !selectedSlug && !editorMode && <NewsTicker />}
 
       {/* Win98 Taskbar */}
       <Win98Taskbar
