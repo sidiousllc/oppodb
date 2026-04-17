@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSectionAccess } from "@/hooks/useSectionAccess";
 
-export type FilterCategory = "all" | "house" | "senate" | "governor" | "state";
+export type FilterCategory = "all" | "house" | "senate" | "governor" | "state" | "uncategorized";
 export type Section =
   | "dashboard"
   | "oppohub"
@@ -55,6 +55,7 @@ const filters: Array<{ id: FilterCategory; label: string; emoji: string }> = [
   { id: "senate", label: "Senate Races", emoji: "🏛️" },
   { id: "governor", label: "Governor Races", emoji: "👔" },
   { id: "state", label: "State Races", emoji: "📍" },
+  { id: "uncategorized", label: "Uncategorized", emoji: "❓" },
 ];
 
 const sections: Array<{ id: Section; label: string; emoji: string }> = [

@@ -36,6 +36,7 @@ const filters: Array<{ id: FilterCategory; label: string }> = [
   { id: "senate", label: "Senate" },
   { id: "governor", label: "Gov" },
   { id: "state", label: "State" },
+  { id: "uncategorized", label: "Other" },
 ];
 
 export function OppoHub({
