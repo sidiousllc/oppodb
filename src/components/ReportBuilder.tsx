@@ -50,6 +50,7 @@ export function ReportBuilder({ reportId, onBack }: Props) {
   const [shareEmail, setShareEmail] = useState("");
   const [shares, setShares] = useState<Array<{ id: string; shared_with_user_id: string; can_edit: boolean; profile?: { display_name: string | null } }>>([]);
   const [showShare, setShowShare] = useState(false);
+  const [showSchedules, setShowSchedules] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -206,7 +207,6 @@ export function ReportBuilder({ reportId, onBack }: Props) {
   };
 
   const groups = ["Content", "Visuals", "Data", "Admin", "API"] as const;
-  const [showSchedules, setShowSchedules] = useState(false);
 
   return (
     <div className="flex flex-col h-full bg-[hsl(var(--background))]">
