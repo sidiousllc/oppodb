@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getCountryByCode } from "@/data/internationalCountries";
 import { Win98Window } from "./Win98Window";
 import { exportContentPDF } from "@/lib/contentExport";
+import { CountryGeopoliticsTab } from "./CountryGeopoliticsTab";
 
 interface CountryDetailProps {
   countryCode: string;
@@ -18,7 +19,7 @@ interface CountryData {
 
 export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
   const country = getCountryByCode(countryCode);
-  const [tab, setTab] = useState<"overview" | "government" | "elections" | "economy" | "intel">("overview");
+  const [tab, setTab] = useState<"overview" | "government" | "geopolitics" | "elections" | "economy" | "intel">("overview");
   const [data, setData] = useState<CountryData>({ profile: null, elections: [], leaders: [] });
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -140,6 +141,7 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
   const tabs = [
     { id: "overview" as const, label: "Overview" },
     { id: "government" as const, label: "Government" },
+    { id: "geopolitics" as const, label: "Geopolitics" },
     { id: "elections" as const, label: "Elections" },
     { id: "economy" as const, label: "Economy" },
     { id: "intel" as const, label: "Intel" },
@@ -251,6 +253,10 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                 </div>
               )}
             </div>
+          )}
+
+          {tab === "geopolitics" && (
+            <CountryGeopoliticsTab countryCode={countryCode} countryName={country.name} />
           )}
 
           {tab === "elections" && (

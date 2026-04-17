@@ -2269,6 +2269,9 @@ export type Database = {
           gdp: number | null
           gdp_growth_rate: number | null
           gdp_per_capita: number | null
+          geopolitics: Json
+          geopolitics_generated_at: string | null
+          geopolitics_model: string | null
           government_debt_gdp_pct: number | null
           government_type: string | null
           head_of_government: string | null
@@ -2324,6 +2327,9 @@ export type Database = {
           gdp?: number | null
           gdp_growth_rate?: number | null
           gdp_per_capita?: number | null
+          geopolitics?: Json
+          geopolitics_generated_at?: string | null
+          geopolitics_model?: string | null
           government_debt_gdp_pct?: number | null
           government_type?: string | null
           head_of_government?: string | null
@@ -2379,6 +2385,9 @@ export type Database = {
           gdp?: number | null
           gdp_growth_rate?: number | null
           gdp_per_capita?: number | null
+          geopolitics?: Json
+          geopolitics_generated_at?: string | null
+          geopolitics_model?: string | null
           government_debt_gdp_pct?: number | null
           government_type?: string | null
           head_of_government?: string | null
