@@ -1344,6 +1344,180 @@ mcpServer.tool({
   },
 });
 
+// ─── Phase 1-5 tools (alerts, notes, graph, AI cache) ──────────────────────
+
+async function resolveCallerUser(c: any): Promise<{ userId: string; isAdmin: boolean } | null> {
+  const apiKey = c.req.header("X-API-Key") || c.req.header("Authorization")?.replace("Bearer ", "");
+  if (!apiKey) return null;
+  const keyHash = await hashKey(apiKey);
+  const { data: keyData } = await supabase.rpc("validate_api_key", { p_key_hash: keyHash });
+  if (!keyData?.length) return null;
+  const userId = keyData[0].user_id;
+  const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  return { userId, isAdmin: (roles || []).some((r: { role: string }) => r.role === "admin") };
+}
+
+mcpServer.tool("list_alert_rules", {
+  description: "List the caller's alert rules (admin-keyed callers see all).",
+  inputSchema: { type: "object" as const, properties: { limit: { type: "number" as const } } },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    const limit = Math.min((args.limit as number) || 50, 200);
+    let q = supabase.from("alert_rules").select("*").order("created_at", { ascending: false }).limit(limit);
+    if (caller && !caller.isAdmin) q = q.eq("user_id", caller.userId);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("create_alert_rule", {
+  description: "Create a new alert rule for the caller.",
+  inputSchema: { type: "object" as const, properties: {
+    name: { type: "string" as const }, entity_type: { type: "string" as const }, entity_id: { type: "string" as const },
+    event_types: { type: "array" as const, items: { type: "string" as const } }, keywords: { type: "array" as const, items: { type: "string" as const } },
+    channels: { type: "array" as const, items: { type: "string" as const } }, webhook_endpoint_id: { type: "string" as const },
+  }, required: ["name"] },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    if (!caller) return { content: [{ type: "text" as const, text: "Unauthorized" }] };
+    const { data, error } = await supabase.from("alert_rules").insert({ ...args, user_id: caller.userId } as never).select();
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("list_entity_activity", {
+  description: "Recent activity across entities (candidates, districts, bills). Optionally filter by entity_type/entity_id.",
+  inputSchema: { type: "object" as const, properties: { entity_type: { type: "string" as const }, entity_id: { type: "string" as const }, limit: { type: "number" as const } } },
+  handler: async (args: Record<string, unknown>) => {
+    const limit = Math.min((args.limit as number) || 50, 200);
+    let q = supabase.from("entity_activity").select("*").order("created_at", { ascending: false }).limit(limit);
+    if (args.entity_type) q = q.eq("entity_type", String(args.entity_type));
+    if (args.entity_id) q = q.eq("entity_id", String(args.entity_id));
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("list_entity_notes", {
+  description: "List entity notes the caller can see (own + shared; admins see all).",
+  inputSchema: { type: "object" as const, properties: { entity_type: { type: "string" as const }, entity_id: { type: "string" as const }, limit: { type: "number" as const } } },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    const limit = Math.min((args.limit as number) || 50, 200);
+    let q;
+    if (caller && !caller.isAdmin) {
+      q = supabase.from("entity_notes").select("*").or(`user_id.eq.${caller.userId},is_shared.eq.true`).order("created_at", { ascending: false }).limit(limit);
+    } else {
+      q = supabase.from("entity_notes").select("*").order("created_at", { ascending: false }).limit(limit);
+    }
+    if (args.entity_type) q = q.eq("entity_type", String(args.entity_type));
+    if (args.entity_id) q = q.eq("entity_id", String(args.entity_id));
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length, results: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("create_entity_note", {
+  description: "Create a note on an entity. Set is_shared=true to share with team.",
+  inputSchema: { type: "object" as const, properties: {
+    entity_type: { type: "string" as const }, entity_id: { type: "string" as const }, body: { type: "string" as const },
+    is_shared: { type: "boolean" as const }, mentions: { type: "array" as const, items: { type: "string" as const } },
+  }, required: ["entity_type", "entity_id", "body"] },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    if (!caller) return { content: [{ type: "text" as const, text: "Unauthorized" }] };
+    const { data, error } = await supabase.from("entity_notes").insert({ ...args, user_id: caller.userId } as never).select();
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_entity_graph", {
+  description: "Get relationship edges centered on an entity (donations, votes, lobbying, etc).",
+  inputSchema: { type: "object" as const, properties: {
+    entity_id: { type: "string" as const }, relationship_type: { type: "string" as const }, limit: { type: "number" as const },
+  } },
+  handler: async (args: Record<string, unknown>) => {
+    const limit = Math.min((args.limit as number) || 100, 500);
+    let q = supabase.from("entity_relationships").select("*").limit(limit).order("created_at", { ascending: false });
+    if (args.entity_id) q = q.or(`source_id.eq.${args.entity_id},target_id.eq.${args.entity_id}`);
+    if (args.relationship_type) q = q.eq("relationship_type", String(args.relationship_type));
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length, edges: data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_vulnerability_score", {
+  description: "AI-generated vulnerability score for a candidate (cached). Pass force=true to regenerate.",
+  inputSchema: { type: "object" as const, properties: { candidate_slug: { type: "string" as const }, force: { type: "boolean" as const } }, required: ["candidate_slug"] },
+  handler: async (args: Record<string, unknown>) => {
+    if (args.force) {
+      const { data, error } = await supabase.functions.invoke("vulnerability-score", { body: { candidate_slug: args.candidate_slug, force: true } });
+      if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+    }
+    const { data, error } = await supabase.from("vulnerability_scores").select("*").eq("candidate_slug", String(args.candidate_slug)).maybeSingle();
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_talking_points", {
+  description: "AI-generated talking points for a subject (candidate/issue/bill).",
+  inputSchema: { type: "object" as const, properties: {
+    subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
+    audience: { type: "string" as const }, angle: { type: "string" as const }, force: { type: "boolean" as const },
+  }, required: ["subject_type", "subject_ref"] },
+  handler: async (args: Record<string, unknown>) => {
+    if (args.force) {
+      const { data, error } = await supabase.functions.invoke("talking-points", { body: { ...args, force: true } });
+      if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+    }
+    let q = supabase.from("talking_points").select("*").eq("subject_type", String(args.subject_type)).eq("subject_ref", String(args.subject_ref)).limit(10);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_bill_impact", {
+  description: "AI-generated bill impact analysis (national/state/district scoped).",
+  inputSchema: { type: "object" as const, properties: {
+    bill_id: { type: "string" as const }, scope: { type: "string" as const }, scope_ref: { type: "string" as const }, force: { type: "boolean" as const },
+  }, required: ["bill_id"] },
+  handler: async (args: Record<string, unknown>) => {
+    if (args.force) {
+      const { data, error } = await supabase.functions.invoke("bill-impact", { body: { ...args, force: true } });
+      if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+    }
+    let q = supabase.from("bill_impact_analyses").select("*").eq("bill_id", String(args.bill_id));
+    if (args.scope) q = q.eq("scope", String(args.scope));
+    if (args.scope_ref) q = q.eq("scope_ref", String(args.scope_ref));
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("admin_dispatch_alerts", {
+  description: "[ADMIN] Force-run the dispatch-alerts cron job immediately.",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async (_args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    if (!caller?.isAdmin) return { content: [{ type: "text" as const, text: "Admin role required" }] };
+    const { data, error } = await supabase.functions.invoke("dispatch-alerts");
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
 // ─── HTTP Transport ─────────────────────────────────────────────────────────
 
 const transport = new StreamableHttpTransport();
