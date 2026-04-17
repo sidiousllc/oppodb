@@ -3967,6 +3967,39 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_run_log: {
+        Row: {
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          rows_synced: number | null
+          source: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          rows_synced?: number | null
+          source: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          rows_synced?: number | null
+          source?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       talking_points: {
         Row: {
           angle: string
@@ -4371,6 +4404,36 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sync_preferences: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          interval_minutes: number
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          interval_minutes?: number
+          source: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          interval_minutes?: number
+          source?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
