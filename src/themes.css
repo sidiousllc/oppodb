@@ -1069,6 +1069,14 @@
 
 /* -------- Palm m505 (color, beige/orange) -------- */
 .theme-palm-m505 {
+  --palm-case: hsl(35 25% 88%);
+  --palm-case-edge: hsl(30 20% 65%);
+  --palm-brand: "Palm m505";
+  --palm-brand-color: hsl(25 50% 25%);
+  --palm-screen-bezel: hsl(25 40% 18%);
+  --palm-silkscreen: hsl(35 20% 80%);
+  --palm-btn: hsl(25 30% 60%);
+  --palm-btn-center: hsl(25 80% 45%);
   --background: 30 35% 75%;
   --foreground: 25 50% 12%;
   --card: 35 50% 92%;
