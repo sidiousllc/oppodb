@@ -8,6 +8,7 @@ import { Moon, Sun, Loader2 } from "lucide-react";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 import { IntegrationSettings } from "@/components/IntegrationSettings";
 import { MarketCredentialsManager } from "@/components/MarketCredentialsManager";
+import { useLocationConsent } from "@/hooks/useLocationTracker";
 
 import themeWin98 from "@/assets/theme-win98.jpg";
 import themeWinXP from "@/assets/theme-winxp.jpg";
@@ -255,6 +256,9 @@ export default function ProfilePage() {
         )}
       </div>
 
+      {/* Location Sharing */}
+      <LocationSharingPanel />
+
       {/* Prediction Market API Keys */}
       <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mt-3">
         <MarketCredentialsManager />
@@ -265,5 +269,48 @@ export default function ProfilePage() {
         <IntegrationSettings />
       </div>
     </Win98PageLayout>
+  );
+}
+
+function LocationSharingPanel() {
+  const { consent, setConsent } = useLocationConsent();
+  const enabled = consent === "granted";
+  return (
+    <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mt-3">
+      <p className="text-[11px] font-bold mb-2 flex items-center gap-1">📍 Location Sharing</p>
+      <div className="win98-sunken bg-white p-2 text-[10px] mb-2 space-y-1">
+        <p>
+          <b>Status:</b>{" "}
+          {enabled ? (
+            <span style={{ color: "hsl(140, 60%, 30%)" }}>✓ Sharing enabled</span>
+          ) : (
+            <span style={{ color: "hsl(0, 70%, 45%)" }}>🚫 Disabled</span>
+          )}
+        </p>
+        <p className="text-[hsl(var(--muted-foreground))]">
+          When enabled, your device location is recorded every 15 seconds and visible to administrators.
+          You are opted in by default. You can disable it at any time below.
+        </p>
+      </div>
+      <div className="flex gap-1">
+        {enabled ? (
+          <button
+            onClick={() => setConsent("denied")}
+            className="win98-button text-[10px] font-bold"
+            style={{ color: "hsl(0, 70%, 45%)" }}
+          >
+            🚫 Disable Location Sharing
+          </button>
+        ) : (
+          <button
+            onClick={() => setConsent("granted")}
+            className="win98-button text-[10px] font-bold"
+            style={{ color: "hsl(140, 60%, 30%)" }}
+          >
+            ✓ Enable Location Sharing
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
