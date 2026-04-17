@@ -427,6 +427,8 @@ export function ActivityLogsTab() {
               {showRaw && <RawBlock data={fApi} />}
             </LogSection>
           )}
+
+          {fContent.length > 0 && (
             <LogSection title="📝 Content Change History" count={fContent.length}>
               <table className="w-full text-[9px]">
                 <thead>
@@ -448,6 +450,7 @@ export function ActivityLogsTab() {
                   ))}
                 </tbody>
               </table>
+              {showRaw && <RawBlock data={fContent} />}
             </LogSection>
           )}
 
