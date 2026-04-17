@@ -156,7 +156,45 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   };
 
   const handleSend = async () => {
-    if (!user || !toUserId || !subject.trim() || !body.trim()) return;
+    if (!user || !subject.trim() || !body.trim()) return;
+
+    if (recipientMode === "external") {
+      const email = toEmail.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast.error("Please enter a valid email address.");
+        return;
+      }
+      setSending(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("send-external-mail", {
+          body: {
+            recipientEmail: email,
+            subject: subject.trim().slice(0, 200),
+            body: body.trim().slice(0, 5000),
+          },
+        });
+        if (error || !data?.success) {
+          console.error("Failed to send external mail", error || data);
+          toast.error("Failed to send email. " + (data?.reason === "email_suppressed" ? "Recipient has unsubscribed." : ""));
+          setSending(false);
+          return;
+        }
+        toast.success(`Email sent from ${data.from}`);
+      } catch (err) {
+        console.error("Failed to send external mail", err);
+        toast.error("Failed to send email.");
+        setSending(false);
+        return;
+      }
+      setSending(false);
+      setToEmail("");
+      setSubject("");
+      setBody("");
+      setFolder("sent");
+      return;
+    }
+
+    if (!toUserId) return;
     setSending(true);
     const { error: mailInsertError } = await supabase.from("user_mail").insert({
       sender_id: user.id,
