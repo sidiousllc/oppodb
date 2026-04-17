@@ -137,6 +137,7 @@ export default function ProfilePage() {
           <TabsTrigger value="notifications" className="text-[11px] py-1.5">🔔 Notifications</TabsTrigger>
           <TabsTrigger value="integrations" className="text-[11px] py-1.5">🔌 Integrations</TabsTrigger>
           <TabsTrigger value="sync" className="text-[11px] py-1.5">🔄 Sync</TabsTrigger>
+          <TabsTrigger value="android" className="text-[11px] py-1.5">📱 Android</TabsTrigger>
           <TabsTrigger value="network" className="text-[11px] py-1.5">📡 Privacy</TabsTrigger>
         </TabsList>
 
