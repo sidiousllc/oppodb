@@ -31,6 +31,7 @@ const VALID_ENDPOINTS = [
   "state-finance",
   "mn-finance",
   "intel-briefings",
+  "news-ticker",
   "tracked-bills",
   "mit-elections",
   "state-leg-elections",
@@ -665,6 +666,25 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "news-ticker": {
+        // Curated, lightweight feed of latest cross-scope headlines for tickers/marquees.
+        // Optional: ?scope=local|state|national|international, ?category=..., ?limit=1..100
+        const tickerLimit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "30"), 1), 100);
+        let q = supabase
+          .from("intel_briefings")
+          .select("id,title,scope,category,source_name,source_url,published_at")
+          .order("published_at", { ascending: false, nullsFirst: false })
+          .limit(tickerLimit);
+        const tickerScope = url.searchParams.get("scope");
+        if (tickerScope) q = q.eq("scope", tickerScope);
+        const tickerCat = url.searchParams.get("category");
+        if (tickerCat) q = q.eq("category", tickerCat);
+        const { data, error } = await q;
+        if (error) throw error;
+        result = { data: data || [], count: data?.length || 0, generated_at: new Date().toISOString() };
+        break;
+      }
+
       case "tracked-bills": {
         let q = supabase
           .from("tracked_bills")
@@ -1126,6 +1146,7 @@ function endpointDescription(endpoint: string): string {
     "state-finance": "State-level campaign finance data across all states",
     "mn-finance": "Minnesota Campaign Finance Board candidate data",
     "intel-briefings": "Intelligence briefings from 150+ news sources categorized by scope and topic",
+    "news-ticker": "Latest cross-scope news headlines optimized for tickers/marquees (params: scope, category, limit 1-100)",
     "tracked-bills": "LegiScan tracked state legislation with status and actions",
     "mit-elections": "MIT Election Lab historical election results (1976-2024) with county-level data",
     "congress-committees": "Congressional committees with members and subcommittees",
