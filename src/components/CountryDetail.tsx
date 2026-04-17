@@ -255,6 +255,10 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
             </div>
           )}
 
+          {tab === "geopolitics" && (
+            <CountryGeopoliticsTab countryCode={countryCode} countryName={country.name} />
+          )}
+
           {tab === "elections" && (
             <div className="space-y-3">
               {data.elections.length === 0 ? (
