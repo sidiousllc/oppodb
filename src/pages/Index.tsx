@@ -83,36 +83,66 @@ export default function Index() {
   useEffect(() => {
     loadCandidateData();
     setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
     fetchCandidatesFromDB().then((dbCandidates) => {
-      if (dbCandidates.length > 0) {
-        initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
-        setDataVersion((v) => v + 1);
-      }
+      if (cancelled || dbCandidates.length === 0) return;
+      initCandidates(dbCandidates.map(c => ({ name: c.name, slug: c.slug, content: c.content })));
+      setDataVersion((v) => v + 1);
     });
-    fetchAllDistricts().then(setDistricts);
+
+    fetchAllDistricts().then((data) => {
+      if (cancelled) return;
+      setDistricts(data);
+    });
+
     supabase.from("polling_data").select("id", { count: "exact", head: true }).then(({ count }) => {
+      if (cancelled) return;
       setPollingCount(count ?? 0);
     });
 
-    // Merge DB data for MAGA files, local impact, and narrative reports
-    supabase.from("maga_files").select("name, slug, content").order("name").then(({ data }) => {
-      if (data && data.length > 0) {
-        mergeMagaFilesFromDB(data);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSupplementalContent = async () => {
+      const [magaRes, localRes, narrativeRes] = await Promise.all([
+        supabase.from("maga_files").select("name, slug, content").order("name"),
+        supabase.from("local_impacts").select("state, slug, summary, content").order("state"),
+        supabase.from("narrative_reports").select("name, slug, content").order("name"),
+      ]);
+
+      if (cancelled) return;
+
+      if (magaRes.data && magaRes.data.length > 0) {
+        mergeMagaFilesFromDB(magaRes.data);
+      }
+      if (localRes.data && localRes.data.length > 0) {
+        mergeLocalImpactFromDB(localRes.data);
+      }
+      if (narrativeRes.data && narrativeRes.data.length > 0) {
+        mergeNarrativeReportsFromDB(narrativeRes.data);
+      }
+      if ((magaRes.data?.length || 0) > 0 || (localRes.data?.length || 0) > 0 || (narrativeRes.data?.length || 0) > 0) {
         setDataVersion((v) => v + 1);
       }
-    });
-    supabase.from("local_impacts").select("state, slug, summary, content").order("state").then(({ data }) => {
-      if (data && data.length > 0) {
-        mergeLocalImpactFromDB(data);
-        setDataVersion((v) => v + 1);
-      }
-    });
-    supabase.from("narrative_reports").select("name, slug, content").order("name").then(({ data }) => {
-      if (data && data.length > 0) {
-        mergeNarrativeReportsFromDB(data);
-        setDataVersion((v) => v + 1);
-      }
-    });
+    };
+
+    const timer = window.setTimeout(() => {
+      loadSupplementalContent();
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -149,6 +179,7 @@ export default function Index() {
       if (result.success) {
         const fresh = await fetchStateLegislativeDistricts();
         setStateLegDistricts(fresh);
+        setHasLoadedStateLegDistricts(true);
       } else {
         console.error("State legislative sync failed:", result.error);
       }
@@ -264,7 +295,16 @@ export default function Index() {
   const selectedNarrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
   
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[hsl(var(--background))]">
+        <div className="win98-raised bg-[hsl(var(--win98-face))] px-4 py-3 text-center">
+          <div className="mb-2 text-[11px] font-bold">Loading ORO…</div>
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
 
   const sectionLabels: Record<Section, string> = {
     dashboard: "Dashboard",
