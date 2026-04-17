@@ -296,6 +296,9 @@ export default function Index() {
     warroom: 0,
     crm: 0,
     alerts: 0,
+    forecast: 0,
+    investigations: 0,
+    graph: 0,
   }), [dataVersion, districts, stateLegDistricts, pollingCount]);
 
   const selectedCandidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
