@@ -1146,6 +1146,7 @@ function endpointDescription(endpoint: string): string {
     "state-finance": "State-level campaign finance data across all states",
     "mn-finance": "Minnesota Campaign Finance Board candidate data",
     "intel-briefings": "Intelligence briefings from 150+ news sources categorized by scope and topic",
+    "news-ticker": "Latest cross-scope news headlines optimized for tickers/marquees (params: scope, category, limit 1-100)",
     "tracked-bills": "LegiScan tracked state legislation with status and actions",
     "mit-elections": "MIT Election Lab historical election results (1976-2024) with county-level data",
     "congress-committees": "Congressional committees with members and subcommittees",
