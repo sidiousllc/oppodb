@@ -60,6 +60,7 @@ export function ActivityLogsTab() {
   const [filterSearch, setFilterSearch] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [showRaw, setShowRaw] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
