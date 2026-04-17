@@ -56,7 +56,7 @@ export default function Index() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
   const [stateLegDistricts, setStateLegDistricts] = useState<StateLegislativeProfile[]>([]);
-  const [stateLegLoading, setStateLegLoading] = useState(true);
+  const [stateLegLoading, setStateLegLoading] = useState(false);
   const [pollingCount, setPollingCount] = useState(0);
   
   const [stateLegSyncing, setStateLegSyncing] = useState(false);
@@ -64,6 +64,7 @@ export default function Index() {
   const [candidateSubsection, setCandidateSubsection] = useState<"profiles" | "maga-files">("profiles");
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [hasLoadedStateLegDistricts, setHasLoadedStateLegDistricts] = useState(false);
   const [editData, setEditData] = useState<{
     id: string; name: string; slug: string; content: string;
     github_path: string; is_subpage: boolean; parent_slug: string | null; subpage_title: string | null;
@@ -89,10 +90,6 @@ export default function Index() {
       }
     });
     fetchAllDistricts().then(setDistricts);
-    fetchStateLegislativeDistricts().then((d) => {
-      setStateLegDistricts(d);
-      setStateLegLoading(false);
-    }).catch(() => setStateLegLoading(false));
     supabase.from("polling_data").select("id", { count: "exact", head: true }).then(({ count }) => {
       setPollingCount(count ?? 0);
     });
@@ -117,6 +114,32 @@ export default function Index() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (section !== "leghub" || hasLoadedStateLegDistricts || stateLegLoading) return;
+
+    let cancelled = false;
+    setStateLegLoading(true);
+
+    fetchStateLegislativeDistricts()
+      .then((d) => {
+        if (cancelled) return;
+        setStateLegDistricts(d);
+        setHasLoadedStateLegDistricts(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setHasLoadedStateLegDistricts(true);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setStateLegLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [section, hasLoadedStateLegDistricts, stateLegLoading]);
 
 
   const handleStateLegSync = useCallback(async (stateAbbr?: string, chamber?: string) => {
