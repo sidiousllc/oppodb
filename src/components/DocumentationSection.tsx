@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
 import { applyPdfBranding } from "@/lib/pdfBranding";
 import { toast } from "sonner";
+import { AndroidBuildPanel } from "./AndroidBuildPanel";
 
 interface WikiPage {
   slug: string;
@@ -348,6 +349,8 @@ export function DocumentationSection() {
             <WikiMarkdown content={content} />
           )}
         </div>
+
+        {selectedSlug === "android-app" && <AndroidBuildPanel />}
 
         <div className="mt-4 candidate-card">
           <div className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] mb-2">📑 OTHER PAGES</div>
