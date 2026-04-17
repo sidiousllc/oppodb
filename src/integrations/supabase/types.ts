@@ -2586,6 +2586,48 @@ export type Database = {
         }
         Relationships: []
       }
+      messaging_audience_analyses: {
+        Row: {
+          audience_scores: Json
+          effectiveness_score: number
+          generated_at: string
+          id: string
+          messaging_slug: string
+          model: string
+          resonance_factors: Json
+          risks: Json
+          segment_breakdown: Json
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          audience_scores?: Json
+          effectiveness_score?: number
+          generated_at?: string
+          id?: string
+          messaging_slug: string
+          model?: string
+          resonance_factors?: Json
+          risks?: Json
+          segment_breakdown?: Json
+          summary?: string
+          updated_at?: string
+        }
+        Update: {
+          audience_scores?: Json
+          effectiveness_score?: number
+          generated_at?: string
+          id?: string
+          messaging_slug?: string
+          model?: string
+          resonance_factors?: Json
+          risks?: Json
+          segment_breakdown?: Json
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messaging_guidance: {
         Row: {
           author: string | null
@@ -2630,6 +2672,57 @@ export type Database = {
           source_url?: string | null
           summary?: string
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messaging_impact_analyses: {
+        Row: {
+          affected_groups: Json
+          amplifies: Json
+          generated_at: string
+          id: string
+          media_impact: string | null
+          messaging_slug: string
+          model: string
+          political_impact: string | null
+          recommended_channels: Json
+          scope: string
+          scope_ref: string | null
+          summary: string
+          undermines: Json
+          updated_at: string
+        }
+        Insert: {
+          affected_groups?: Json
+          amplifies?: Json
+          generated_at?: string
+          id?: string
+          media_impact?: string | null
+          messaging_slug: string
+          model?: string
+          political_impact?: string | null
+          recommended_channels?: Json
+          scope?: string
+          scope_ref?: string | null
+          summary?: string
+          undermines?: Json
+          updated_at?: string
+        }
+        Update: {
+          affected_groups?: Json
+          amplifies?: Json
+          generated_at?: string
+          id?: string
+          media_impact?: string | null
+          messaging_slug?: string
+          model?: string
+          political_impact?: string | null
+          recommended_channels?: Json
+          scope?: string
+          scope_ref?: string | null
+          summary?: string
+          undermines?: Json
           updated_at?: string
         }
         Relationships: []
