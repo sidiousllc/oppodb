@@ -8,6 +8,7 @@ import { Moon, Sun, Loader2 } from "lucide-react";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 import { IntegrationSettings } from "@/components/IntegrationSettings";
 import { MarketCredentialsManager } from "@/components/MarketCredentialsManager";
+import { PollingAlertsManager } from "@/components/PollingAlertsManager";
 import { useLocationConsent } from "@/hooks/useLocationTracker";
 
 import themeWin98 from "@/assets/theme-win98.jpg";
@@ -271,6 +272,12 @@ export default function ProfilePage() {
       {/* Voter Data Integrations */}
       <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mt-3">
         <IntegrationSettings />
+      </div>
+
+      {/* Polling Email Alerts & Notification Preferences */}
+      <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mt-3">
+        <h2 className="text-sm font-bold mb-2">Email Alerts & Notifications</h2>
+        <PollingAlertsManager />
       </div>
     </Win98PageLayout>
   );
