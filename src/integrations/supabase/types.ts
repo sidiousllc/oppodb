@@ -2223,6 +2223,71 @@ export type Database = {
         }
         Relationships: []
       }
+      report_shares: {
+        Row: {
+          can_edit: boolean
+          created_at: string
+          id: string
+          report_id: string
+          shared_with_user_id: string
+        }
+        Insert: {
+          can_edit?: boolean
+          created_at?: string
+          id?: string
+          report_id: string
+          shared_with_user_id: string
+        }
+        Update: {
+          can_edit?: boolean
+          created_at?: string
+          id?: string
+          report_id?: string
+          shared_with_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_shares_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          blocks: Json
+          created_at: string
+          description: string
+          id: string
+          is_public: boolean
+          owner_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          blocks?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          is_public?: boolean
+          owner_id: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          blocks?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          is_public?: boolean
+          owner_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       role_group_members: {
         Row: {
           created_at: string
@@ -3325,6 +3390,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      user_has_report_access: {
+        Args: { _need_edit?: boolean; _report_id: string; _user_id: string }
+        Returns: boolean
       }
       validate_api_key: {
         Args: { p_key_hash: string }
