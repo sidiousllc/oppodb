@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MessageSquare } from "lucide-react";
+import { Loader2, MessageSquare, Save } from "lucide-react";
 import { toast } from "sonner";
+import { updateContent } from "@/lib/contentAdmin";
 
 interface Point { message: string; rationale: string; delivery_tips?: string }
 interface Tp {
