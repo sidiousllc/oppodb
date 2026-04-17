@@ -486,7 +486,7 @@ export default function Index() {
   return (
     <>
       {/* Desktop background */}
-      <div className="flex flex-col h-screen bg-[hsl(var(--background))] pb-[50px]">
+      <div className={`flex flex-col h-screen bg-[hsl(var(--background))] ${section === "dashboard" && !selectedSlug && !editorMode ? "pb-[72px]" : "pb-[50px]"}`}>
         {isMinimized ? (
           <Win98Desktop onOpenWindow={() => setIsMinimized(false)} />
         ) : (
