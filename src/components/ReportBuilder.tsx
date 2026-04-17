@@ -278,6 +278,18 @@ export function ReportBuilder({ reportId, onBack }: Props) {
         </div>
       )}
 
+      {/* Schedule panel */}
+      {showSchedules && isOwner && (
+        <div className="border-b border-border bg-muted px-3 py-2">
+          {report.is_public ? null : (
+            <div className="text-[10px] text-muted-foreground mb-2 italic">
+              Tip: enable "Public" in Share to give recipients a viewable link.
+            </div>
+          )}
+          <ReportSchedules reportId={report.id} reportTitle={report.title} />
+        </div>
+      )}
+
       <div className="flex-1 flex overflow-hidden">
         {/* Block palette */}
         {canEdit && (
@@ -390,6 +402,9 @@ function BlockPreview({ block }: { block: ReportBlock }) {
     }
     case "api_data": return <div className="text-xs text-muted-foreground">🔌 API: {(block as any).endpoint}</div>;
     case "mcp_data": return <div className="text-xs text-muted-foreground">🤖 MCP: {(block as any).toolName}</div>;
+    case "chart": return <ChartBlockView block={block} />;
+    case "table": return <TableBlockView block={block} />;
+    case "map":   return <MapBlockView block={block} />;
     default: {
       const ref = (block as any).refId;
       const snap = (block as any).snapshot;
