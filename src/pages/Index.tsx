@@ -278,10 +278,12 @@ export default function Index() {
 
   const counts = useMemo(() => ({
     all: candidates.length,
-    house: getCandidatesByCategory("house").length,
-    senate: getCandidatesByCategory("senate").length,
+    "us-house": getCandidatesByCategory("us-house").length,
+    "us-senate": getCandidatesByCategory("us-senate").length,
     governor: getCandidatesByCategory("governor").length,
-    state: getCandidatesByCategory("state").length,
+    statewide: getCandidatesByCategory("statewide").length,
+    "state-leg": getCandidatesByCategory("state-leg").length,
+    local: getCandidatesByCategory("local").length,
     uncategorized: getCandidatesByCategory("uncategorized").length,
   }), [dataVersion]);
 

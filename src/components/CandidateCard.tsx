@@ -10,10 +10,13 @@ interface CandidateCardProps {
 }
 
 const categoryLabels: Record<string, string> = {
-  house: "House",
-  senate: "Senate",
+  "us-house": "U.S. House",
+  "us-senate": "U.S. Senate",
   governor: "Governor",
-  state: "State",
+  statewide: "Statewide",
+  "state-leg": "State Leg",
+  local: "Local",
+  uncategorized: "Other",
 };
 
 export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
@@ -34,8 +37,11 @@ export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
               </h3>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className={`tag tag-${candidate.category}`}>
-                  {categoryLabels[candidate.category]}
+                  {categoryLabels[candidate.category] || candidate.category}
                 </span>
+                {candidate.office && candidate.office !== categoryLabels[candidate.category] && (
+                  <span className="text-xs text-muted-foreground">{candidate.office}</span>
+                )}
                 {districtId && (
                   <button
                     onClick={(e) => {
@@ -47,6 +53,9 @@ export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
                     <MapPin className="h-3 w-3" />
                     {districtId}
                   </button>
+                )}
+                {!districtId && candidate.district && (
+                  <span className="text-xs font-medium text-muted-foreground">{candidate.district}</span>
                 )}
                 {!districtId && candidate.state && (
                   <span className="text-xs text-muted-foreground">{candidate.state}</span>
