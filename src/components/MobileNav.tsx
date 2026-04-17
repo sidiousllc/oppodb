@@ -50,7 +50,7 @@ export const MobileNav = forwardRef<HTMLDivElement, MobileNavProps>(
               <SheetTitle>Navigation</SheetTitle>
             </SheetHeader>
             <div className="h-full flex flex-col">
-              <div className="flex-1 min-h-0 flex">
+              <div className="flex-1 min-h-0 overflow-y-auto flex [&>*]:w-full [&>*]:!h-auto [&>*]:!min-h-0">
                 <AppSidebar
                   activeFilter={activeFilter}
                   onFilterChange={(f) => { onFilterChange(f); }}
@@ -61,7 +61,7 @@ export const MobileNav = forwardRef<HTMLDivElement, MobileNavProps>(
                   onSyncComplete={onSyncComplete}
                 />
               </div>
-              <div className="border-t-2 border-t-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))] p-2 space-y-1">
+              <div className="shrink-0 border-t-2 border-t-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))] p-2 space-y-1 max-h-[50vh] overflow-y-auto">
                 <button
                   className="win98-button w-full text-left text-[11px] flex items-center justify-between"
                   onClick={() => setAccountOpen((v) => !v)}
