@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MessageSquare } from "lucide-react";
+import { Loader2, MessageSquare, Save } from "lucide-react";
 import { toast } from "sonner";
+import { updateContent } from "@/lib/contentAdmin";
 
 interface Point { message: string; rationale: string; delivery_tips?: string }
 interface Tp {
@@ -18,6 +19,7 @@ export function TalkingPointsPanel({ subjectType, subjectRef }: { subjectType: s
   const [angle, setAngle] = useState("attack");
   const [tp, setTp] = useState<Tp | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   async function generate() {
     setLoading(true);
@@ -32,6 +34,46 @@ export function TalkingPointsPanel({ subjectType, subjectRef }: { subjectType: s
       toast.error(e?.message || "Failed to generate");
     } finally {
       setLoading(false);
+    }
+  }
+
+  function buildMarkdown(tp: Tp): string {
+    const date = new Date().toISOString().slice(0, 10);
+    const lines: string[] = [];
+    lines.push(`\n\n## 🗣️ Talking Points — ${tp.audience} / ${tp.angle} (${date})\n`);
+    tp.points.forEach((p, i) => {
+      lines.push(`${i + 1}. **${p.message}**`);
+      lines.push(`   - _Why:_ ${p.rationale}`);
+      if (p.delivery_tips) lines.push(`   - _Tip:_ ${p.delivery_tips}`);
+    });
+    if (tp.evidence?.length) {
+      lines.push(`\n**Evidence to cite:**`);
+      tp.evidence.forEach((e) => {
+        lines.push(`- ${e.claim}${e.source_hint ? ` — ${e.source_hint}` : ""}`);
+      });
+    }
+    return lines.join("\n");
+  }
+
+  async function saveToProfile() {
+    if (!tp || subjectType !== "candidate") return;
+    setSaving(true);
+    try {
+      const { data: profile, error: fetchErr } = await supabase
+        .from("candidate_profiles")
+        .select("id, content")
+        .eq("slug", subjectRef)
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
+      if (!profile) throw new Error("Candidate profile not found");
+
+      const newContent = (profile.content || "") + buildMarkdown(tp);
+      await updateContent("candidate_profiles", profile.id, { content: newContent });
+      toast.success("Talking points saved to candidate profile");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to save");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -58,7 +100,20 @@ export function TalkingPointsPanel({ subjectType, subjectRef }: { subjectType: s
       </div>
       {tp && (
         <div className="space-y-2">
-          <div className="text-[10px] font-bold">Points</div>
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] font-bold">Points</div>
+            {subjectType === "candidate" && (
+              <button
+                onClick={saveToProfile}
+                disabled={saving}
+                className="win98-button text-[10px] px-2 py-0.5 flex items-center gap-1"
+                title="Append these talking points to the candidate profile"
+              >
+                {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                Save to profile
+              </button>
+            )}
+          </div>
           {tp.points.map((p, i) => (
             <div key={i} className="bg-white border border-[hsl(var(--win98-shadow))] p-1.5 text-[10px]">
               <div className="font-bold">{p.message}</div>
