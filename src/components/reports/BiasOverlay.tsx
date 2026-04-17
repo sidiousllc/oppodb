@@ -3,24 +3,20 @@
 // the partisan lean of source attributions consistently.
 import { classifyBias, BIAS_META, type Bias } from "@/lib/newsBias";
 
+const SHORT: Record<Bias, string> = {
+  left: "L←", "lean-left": "L", center: "C", "lean-right": "R", right: "R→", unknown: "?",
+};
+
 export function BiasChip({ source, className = "" }: { source: string; className?: string }) {
   const bias = classifyBias(source);
   const meta = BIAS_META[bias];
-  if (bias === "unknown") {
-    return (
-      <span
-        className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border border-border bg-muted text-muted-foreground ${className}`}
-        title="Unrated source"
-      >?</span>
-    );
-  }
   return (
     <span
       className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded ${className}`}
-      style={{ background: `hsl(${meta.color} / 0.18)`, color: `hsl(${meta.color})`, border: `1px solid hsl(${meta.color} / 0.4)` }}
+      style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.bg}` }}
       title={`${meta.label} — ${source}`}
     >
-      {meta.short}
+      {SHORT[bias]}
     </span>
   );
 }
@@ -65,16 +61,16 @@ export function BiasBreakdown({ sources, className = "", showCounts = true }: Bi
   return (
     <div className={`flex flex-col gap-0.5 ${className}`}>
       <div className="flex h-1.5 w-full overflow-hidden rounded border border-border bg-muted">
-        {seg("L", `hsl(220 70% 50%)`, "Left")}
-        {seg("C", `hsl(280 30% 50%)`, "Center")}
-        {seg("R", `hsl(0 70% 50%)`, "Right")}
-        {seg("U", `hsl(0 0% 60%)`, "Unrated")}
+        {seg("L", "#3b82f6", "Left")}
+        {seg("C", "#9333ea", "Center")}
+        {seg("R", "#dc2626", "Right")}
+        {seg("U", "#9ca3af", "Unrated")}
       </div>
       {showCounts && (
         <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground">
-          {buckets.L.count > 0 && <span className="text-[hsl(220,70%,50%)]">L {buckets.L.count}</span>}
-          {buckets.C.count > 0 && <span className="text-[hsl(280,30%,50%)]">C {buckets.C.count}</span>}
-          {buckets.R.count > 0 && <span className="text-[hsl(0,70%,50%)]">R {buckets.R.count}</span>}
+          {buckets.L.count > 0 && <span style={{ color: "#3b82f6" }}>L {buckets.L.count}</span>}
+          {buckets.C.count > 0 && <span style={{ color: "#9333ea" }}>C {buckets.C.count}</span>}
+          {buckets.R.count > 0 && <span style={{ color: "#dc2626" }}>R {buckets.R.count}</span>}
           {buckets.U.count > 0 && <span>? {buckets.U.count}</span>}
           <span className="opacity-60">· {total} src</span>
         </div>
