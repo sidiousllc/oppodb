@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { GroundNewsDetailWindow } from "@/components/GroundNewsDetailWindow";
+import type { StoryCluster, ClusterableArticle } from "@/lib/newsBias";
 
 interface TickerItem {
   id: string;
@@ -9,6 +10,7 @@ interface TickerItem {
   scope: string;
   source_url: string | null;
   published_at: string | null;
+  summary?: string | null;
 }
 
 const SCOPE_ICON: Record<string, string> = {
@@ -19,16 +21,16 @@ const SCOPE_ICON: Record<string, string> = {
 };
 
 export function NewsTicker() {
-  const navigate = useNavigate();
   const [items, setItems] = useState<TickerItem[]>([]);
   const [paused, setPaused] = useState(false);
+  const [selectedCluster, setSelectedCluster] = useState<StoryCluster<ClusterableArticle> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       const { data } = await supabase
         .from("intel_briefings")
-        .select("id,title,source_name,scope,source_url,published_at")
+        .select("id,title,source_name,scope,source_url,published_at,summary")
         .order("published_at", { ascending: false, nullsFirst: false })
         .limit(40);
       if (!cancelled && data) setItems(data as TickerItem[]);
@@ -68,8 +70,24 @@ export function NewsTicker() {
             <button
               key={`${item.id}-${idx}`}
               onClick={() => {
-                if (item.source_url) window.open(item.source_url, "_blank", "noopener");
-                else navigate("/");
+                setSelectedCluster({
+                  id: item.id,
+                  lead: {
+                    title: item.title,
+                    source: item.source_name,
+                    link: item.source_url,
+                    pubDate: item.published_at,
+                    summary: item.summary ?? undefined,
+                  },
+                  articles: [{
+                    title: item.title,
+                    source: item.source_name,
+                    link: item.source_url,
+                    pubDate: item.published_at,
+                    summary: item.summary ?? undefined,
+                  }],
+                  sourceCount: 1,
+                });
               }}
               className="inline-flex items-center gap-1.5 hover:underline focus:outline-none"
             >
