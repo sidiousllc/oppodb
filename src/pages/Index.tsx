@@ -48,6 +48,19 @@ import { LiveElectionsSection } from "@/components/LiveElectionsSection";
 import { DocumentationSection } from "@/components/DocumentationSection";
 import { ReportsHub } from "@/components/ReportsHub";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
+
+/** Legacy `?section=alerts` deep links open the Mail window on the Alerts tab. */
+function AlertsRedirectToMail({ onDone }: { onDone: () => void }) {
+  const { openMail } = useMail();
+  useEffect(() => {
+    openMail("alerts");
+    onDone();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div className="text-[11px] p-4">Opening Alerts in your Mail window…</div>
+  );
+}
 import { useSectionAccess } from "@/hooks/useSectionAccess";
 
 export default function Index() {
