@@ -2,7 +2,73 @@
 
 ## Description
 
-OppoDB provides a comprehensive public REST API and MCP (Model Context Protocol) server that allow authenticated users to programmatically access the entire database. API access is available to premium users and above, enabling integration with external tools, scripts, and AI agents. The API exposes **22 REST endpoints** (including 2 chart-data endpoints) and **18 MCP tools** covering all data sources available in the web application.
+OppoDB provides a comprehensive public REST API and MCP (Model Context Protocol) server that allow authenticated users to programmatically access the entire database. API access is available to premium users and above, enabling integration with external tools, scripts, and AI agents. The API exposes **30+ REST endpoints** and **35+ MCP tools** covering all data sources and Phase 5 management surfaces (alerts, webhooks, activity, notes, graph, AI cache) available in the web application.
+
+---
+
+## Phase 5 REST Endpoints
+
+All Phase 5 endpoints support standard CRUD via `GET` (list/read), `POST` (create), `PATCH /:id` (update), and `DELETE /:id` (delete). User-scoped endpoints automatically filter by the API key's owning user; admin-only endpoints return `403` for non-admin keys.
+
+### `/public-api/alert-rules` — User-scoped CRUD
+Manage custom alert rules. Each rule defines an entity filter (entity_type/entity_id), event_types, keywords, channels (`email`/`in_app`/`webhook`), and an optional `webhook_endpoint_id`.
+
+```bash
+# List your alert rules
+curl -H "X-API-Key: ordb_…" https://<project>.functions.supabase.co/public-api/alert-rules
+
+# Create a rule
+curl -X POST -H "X-API-Key: ordb_…" -H "Content-Type: application/json" \
+  -d '{"name":"NC-01 forecast watch","entity_type":"district","entity_id":"NC-01",
+       "event_types":["forecast_change"],"channels":["email","webhook"],
+       "webhook_endpoint_id":"<uuid>"}' \
+  https://<project>.functions.supabase.co/public-api/alert-rules
+
+# Toggle / update
+curl -X PATCH -H "X-API-Key: ordb_…" -H "Content-Type: application/json" \
+  -d '{"enabled":false}' \
+  https://<project>.functions.supabase.co/public-api/alert-rules/<id>
+
+# Delete
+curl -X DELETE -H "X-API-Key: ordb_…" \
+  https://<project>.functions.supabase.co/public-api/alert-rules/<id>
+```
+
+### `/public-api/webhook-endpoints` — User-scoped CRUD
+Register external webhook URLs (Slack, Discord, Zapier, custom services) that alert rules can target. Fields: `label`, `url`, `enabled`.
+
+### `/public-api/alert-dispatch-log` — Read-only
+View dispatch attempts for your alert rules: `status`, `channel`, `payload`, `error`, `created_at`.
+
+### `/public-api/entity-activity` — Read-only feed
+Cross-entity activity stream. Query params: `entity_type`, `entity_id`, `limit`.
+
+### `/public-api/entity-notes` — User-scoped CRUD
+Notes attached to any entity. Caller sees own notes plus `is_shared=true` notes from others. Admins see all. Fields: `entity_type`, `entity_id`, `body`, `is_shared`, `mentions[]`, `attachments`.
+
+### `/public-api/entity-relationships` — Graph edges
+- `GET` — Read edges (filter by `source_id`/`target_id`/`relationship_type`).
+- `POST`/`PATCH`/`DELETE` — **Admin-only**. Manage donation/vote/lobbying/etc edges.
+
+### `/public-api/vulnerability-scores` — AI cache
+- `GET ?candidate_slug=<slug>` — Read cached score.
+- `POST` (with `force=true`) — Trigger regeneration via `vulnerability-score` function.
+
+### `/public-api/talking-points` — AI cache
+- `GET ?subject_type=<t>&subject_ref=<r>` — Read cached points.
+- `POST` — Generate new (admin or own).
+
+### `/public-api/bill-impact` — AI cache
+- `GET ?bill_id=<id>&scope=<national|state|district>&scope_ref=<ref>` — Read cached analysis.
+- `POST` — Generate new.
+
+### `/public-api/admin-dispatch-alerts` — Admin-only
+`POST` to force-run the `dispatch-alerts` cron job immediately. Useful for testing rule changes without waiting for the scheduled tick.
+
+### `/public-api/admin-regenerate-ai` — Admin-only
+`POST { "type": "vulnerability_score" | "talking_points" | "bill_impact", "ref": "<slug-or-bill-id>", "scope?": "...", "scope_ref?": "..." }` to bust the cache and regenerate. Per-record refresh from the Admin Panel uses this endpoint under the hood.
+
+---
 
 ---
 

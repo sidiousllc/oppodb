@@ -9,6 +9,7 @@ import { Win98PageLayout } from "@/components/Win98PageLayout";
 import { IntegrationSettings } from "@/components/IntegrationSettings";
 import { MarketCredentialsManager } from "@/components/MarketCredentialsManager";
 import { PollingAlertsManager } from "@/components/PollingAlertsManager";
+import { AlertWebhooksManager } from "@/components/AlertWebhooksManager";
 import { useLocationConsent } from "@/hooks/useLocationTracker";
 
 import themeWin98 from "@/assets/theme-win98.jpg";
@@ -278,6 +279,16 @@ export default function ProfilePage() {
       <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mt-3">
         <h2 className="text-sm font-bold mb-2">Email Alerts & Notifications</h2>
         <PollingAlertsManager />
+      </div>
+
+      {/* Alert Rules & Webhook Endpoints (Phase 5) */}
+      <div className="win98-raised bg-[hsl(var(--win98-face))] p-3 mt-3">
+        <h2 className="text-sm font-bold mb-2">🔔 Alert Rules & Webhooks</h2>
+        <p className="text-[10px] text-[hsl(var(--muted-foreground))] mb-2">
+          Configure custom alert rules that trigger when entities you care about change. Route notifications to email,
+          in-app, or external webhook endpoints (Slack, Discord, Zapier, your own service).
+        </p>
+        <AlertWebhooksManager />
       </div>
     </Win98PageLayout>
   );
