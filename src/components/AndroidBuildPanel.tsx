@@ -56,7 +56,7 @@ export function AndroidBuildPanel() {
       </h3>
 
       {notConfigured ? (
-        <div className="win98-sunken bg-[#fff8e1] border border-yellow-400 p-2 text-[10px] space-y-1">
+        <div className="win98-sunken bg-[hsl(var(--win98-light))] border border-[hsl(var(--border))] p-2 text-[10px] space-y-1">
           <p className="font-bold">⚠ GitHub auto-build is not configured yet.</p>
           <p>To enable one-click APK builds, an admin must add two project secrets:</p>
           <ul className="list-disc pl-4">

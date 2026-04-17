@@ -13,6 +13,7 @@ import { AlertWebhooksManager } from "@/components/AlertWebhooksManager";
 import { NetworkSettingsPanel } from "@/components/NetworkSettingsPanel";
 import { NewsTickerSettings } from "@/components/NewsTickerSettings";
 import { SyncPreferencesPanel } from "@/components/SyncPreferencesPanel";
+import { SerialKeyManager } from "@/components/SerialKeyManager";
 import { useLocationConsent } from "@/hooks/useLocationTracker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -38,7 +39,7 @@ const THEME_THUMBNAILS: Record<WindowsTheme, string> = {
   "palm-treo": themeWin98,
 };
 
-const VALID_TABS = ["account", "appearance", "notifications", "integrations", "sync", "network"] as const;
+const VALID_TABS = ["account", "appearance", "notifications", "integrations", "sync", "android", "network"] as const;
 type ProfileTab = (typeof VALID_TABS)[number];
 
 export default function ProfilePage() {
@@ -328,6 +329,14 @@ export default function ProfilePage() {
           <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
             <p className="text-[11px] font-bold mb-2 flex items-center gap-1">🔄 Auto-Sync Preferences</p>
             <SyncPreferencesPanel />
+          </div>
+        </TabsContent>
+
+        {/* ============== ANDROID APP ============== */}
+        <TabsContent value="android" className="space-y-3 mt-0">
+          <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
+            <p className="text-[11px] font-bold mb-2 flex items-center gap-1">📱 Android App Serial Keys</p>
+            <SerialKeyManager />
           </div>
         </TabsContent>
 
