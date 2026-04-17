@@ -92,7 +92,68 @@ function stripMarkdown(text: string): string {
     .replace(/^#{1,6}\s/gm, "");
 }
 
-export function exportMessagingPDF(item: MessagingExportItem) {
+export interface MessagingAIBundle {
+  talking_points?: Array<{ audience: string; angle: string; points: any[]; evidence?: any[]; created_at: string; model?: string }>;
+  audience_analysis?: any;
+  impact_analyses?: any[];
+}
+
+export function exportMessagingPDF(item: MessagingExportItem, ai?: MessagingAIBundle) {
+  // Append AI sections to content so the existing markdown renderer covers them
+  if (ai && (ai.talking_points?.length || ai.audience_analysis || ai.impact_analyses?.length)) {
+    let extra = "\n\n# AI Messaging Intelligence\n";
+    if (ai.audience_analysis) {
+      const a = ai.audience_analysis;
+      extra += `\n## Audience Effectiveness — ${Math.round(a.effectiveness_score || 0)}/100\n`;
+      if (a.summary) extra += `\n${a.summary}\n`;
+      if (a.audience_scores) {
+        extra += `\n**Audience scores:** ${Object.entries(a.audience_scores).map(([k, v]) => `${k}: ${v}`).join(" • ")}\n`;
+      }
+      if (a.segment_breakdown?.length) {
+        extra += `\n### Segment breakdown\n`;
+        a.segment_breakdown.forEach((s: any) => { extra += `- **${s.segment} (${s.score})**: ${s.reasoning}\n`; });
+      }
+      if (a.risks?.length) {
+        extra += `\n### Risks\n`;
+        a.risks.forEach((r: any) => { extra += `- **${r.headline}** [${r.severity}]: ${r.summary}\n`; });
+      }
+    }
+    if (ai.impact_analyses?.length) {
+      extra += `\n## Impact Analyses\n`;
+      ai.impact_analyses.forEach((imp: any) => {
+        extra += `\n### ${imp.scope}${imp.scope_ref ? ` · ${imp.scope_ref}` : ""}\n${imp.summary || ""}\n`;
+        if (imp.amplifies?.length) { extra += `\n**Amplifies:**\n`; imp.amplifies.forEach((a: any) => extra += `- ${a.group}: ${a.why}\n`); }
+        if (imp.undermines?.length) { extra += `\n**Undermines:**\n`; imp.undermines.forEach((a: any) => extra += `- ${a.group}: ${a.why}\n`); }
+        if (imp.political_impact) extra += `\n**Political:** ${imp.political_impact}\n`;
+        if (imp.media_impact) extra += `\n**Media:** ${imp.media_impact}\n`;
+        if (imp.recommended_channels?.length) {
+          extra += `\n**Recommended channels:**\n`;
+          imp.recommended_channels.forEach((c: any) => extra += `- ${c.channel}: ${c.rationale}\n`);
+        }
+      });
+    }
+    if (ai.talking_points?.length) {
+      extra += `\n## AI Talking Points\n`;
+      ai.talking_points.forEach((tp) => {
+        const date = new Date(tp.created_at).toISOString().slice(0, 10);
+        extra += `\n### ${tp.audience} / ${tp.angle} (${date})\n`;
+        if (tp.model) extra += `_Model: ${tp.model}_\n`;
+        (tp.points || []).forEach((p: any, i: number) => {
+          extra += `\n**${i + 1}. ${p.message}**\n- _Why:_ ${p.rationale}\n`;
+          if (p.delivery_tips) extra += `- _Tip:_ ${p.delivery_tips}\n`;
+        });
+        if (tp.evidence?.length) {
+          extra += `\n**Evidence:**\n`;
+          tp.evidence.forEach((e: any) => extra += `- ${e.claim}${e.source_hint ? ` — ${e.source_hint}` : ""}\n`);
+        }
+      });
+    }
+    item = { ...item, content: (item.content || "") + extra };
+  }
+  return _exportMessagingPDFInner(item);
+}
+
+function _exportMessagingPDFInner(item: MessagingExportItem) {
   const c = getThemeColors();
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.width;
