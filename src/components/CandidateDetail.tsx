@@ -226,7 +226,45 @@ export function CandidateDetail({ candidate, onBack, onNavigateSlug, onEdit }: C
               </button>
             )}
             <button
-              onClick={() => exportContentPDF({ title: candidate.name, subtitle: candidate.state, tag: categoryLabels[candidate.category], content: candidate.content, section: "Candidate Profile" })}
+              onClick={async () => {
+                // Fetch AI talking points so the PDF includes both core + AI sections
+                const { data: tps } = await supabase
+                  .from("talking_points")
+                  .select("audience, angle, points, evidence, created_at, model")
+                  .eq("subject_type", "candidate")
+                  .eq("subject_ref", candidate.slug)
+                  .order("created_at", { ascending: false })
+                  .limit(10);
+
+                let extra = "";
+                if (tps && tps.length > 0) {
+                  extra += `\n\n# AI-Generated Talking Points\n`;
+                  tps.forEach((tp: any) => {
+                    const date = new Date(tp.created_at).toISOString().slice(0, 10);
+                    extra += `\n## ${tp.audience} / ${tp.angle} (${date})\n`;
+                    if (tp.model) extra += `_Model: ${tp.model}_\n\n`;
+                    (tp.points || []).forEach((p: any, i: number) => {
+                      extra += `\n**${i + 1}. ${p.message}**\n`;
+                      extra += `- _Why:_ ${p.rationale}\n`;
+                      if (p.delivery_tips) extra += `- _Tip:_ ${p.delivery_tips}\n`;
+                    });
+                    if (tp.evidence?.length) {
+                      extra += `\n**Evidence to cite:**\n`;
+                      tp.evidence.forEach((e: any) => {
+                        extra += `- ${e.claim}${e.source_hint ? ` — ${e.source_hint}` : ""}\n`;
+                      });
+                    }
+                  });
+                }
+
+                exportContentPDF({
+                  title: candidate.name,
+                  subtitle: candidate.state,
+                  tag: categoryLabels[candidate.category],
+                  content: (candidate.content || "") + extra,
+                  section: "Candidate Profile",
+                });
+              }}
               className="win98-button text-[10px] flex items-center gap-1"
             >
               <Download className="h-3 w-3" />
