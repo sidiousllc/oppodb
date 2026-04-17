@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { GroundNewsDetailWindow } from "@/components/GroundNewsDetailWindow";
 import type { StoryCluster, ClusterableArticle } from "@/lib/newsBias";
@@ -20,29 +20,27 @@ const SCOPE_ICON: Record<string, string> = {
   international: "🌍",
 };
 
-// Speed = seconds-per-item multiplier. Lower = faster.
-const SPEED_PRESETS: { label: string; value: number }[] = [
-  { label: "Very Slow", value: 1.5 },
-  { label: "Slow", value: 1.0 },
-  { label: "Normal", value: 0.5 },
-  { label: "Fast", value: 0.25 },
-  { label: "Very Fast", value: 0.12 },
-];
-const STORAGE_KEY = "ordb.newsTicker.speed";
+const SPEED_KEY = "ordb.newsTicker.speed";
+const ENABLED_KEY = "ordb.newsTicker.enabled";
 const DEFAULT_SPEED = 0.5;
+
+function readSpeed(): number {
+  if (typeof window === "undefined") return DEFAULT_SPEED;
+  const stored = window.localStorage.getItem(SPEED_KEY);
+  const parsed = stored ? Number(stored) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_SPEED;
+}
+function readEnabled(): boolean {
+  if (typeof window === "undefined") return true;
+  return window.localStorage.getItem(ENABLED_KEY) !== "false";
+}
 
 export function NewsTicker() {
   const [items, setItems] = useState<TickerItem[]>([]);
   const [paused, setPaused] = useState(false);
   const [selectedCluster, setSelectedCluster] = useState<StoryCluster<ClusterableArticle> | null>(null);
-  const [speed, setSpeed] = useState<number>(() => {
-    if (typeof window === "undefined") return DEFAULT_SPEED;
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    const parsed = stored ? Number(stored) : NaN;
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_SPEED;
-  });
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [speed, setSpeed] = useState<number>(() => readSpeed());
+  const [enabled, setEnabled] = useState<boolean>(() => readEnabled());
 
   useEffect(() => {
     let cancelled = false;
@@ -55,33 +53,36 @@ export function NewsTicker() {
       if (!cancelled && data) setItems(data as TickerItem[]);
     };
     load();
-    const interval = setInterval(load, 5 * 60 * 1000); // refresh every 5 min
+    const interval = setInterval(load, 5 * 60 * 1000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
+  // Live-react to settings changes from Profile page (same tab via CustomEvent, other tabs via storage)
+  useEffect(() => {
+    const onSpeed = (e: Event) => {
+      const v = (e as CustomEvent<number>).detail;
+      if (typeof v === "number" && v > 0) setSpeed(v);
+    };
+    const onEnabled = (e: Event) => {
+      const v = (e as CustomEvent<boolean>).detail;
+      if (typeof v === "boolean") setEnabled(v);
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === SPEED_KEY) setSpeed(readSpeed());
+      if (e.key === ENABLED_KEY) setEnabled(readEnabled());
+    };
+    window.addEventListener("ordb:newsTicker:speed", onSpeed as EventListener);
+    window.addEventListener("ordb:newsTicker:enabled", onEnabled as EventListener);
+    window.addEventListener("storage", onStorage);
     return () => {
-      cancelled = true;
-      clearInterval(interval);
+      window.removeEventListener("ordb:newsTicker:speed", onSpeed as EventListener);
+      window.removeEventListener("ordb:newsTicker:enabled", onEnabled as EventListener);
+      window.removeEventListener("storage", onStorage);
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, String(speed));
-    }
-  }, [speed]);
+  if (!enabled || items.length === 0) return null;
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    window.addEventListener("mousedown", onDown);
-    return () => window.removeEventListener("mousedown", onDown);
-  }, [menuOpen]);
-
-  if (items.length === 0) return null;
-
-  // Duplicate for seamless loop
   const looped = [...items, ...items];
   const durationSeconds = Math.max(items.length * speed, 4);
 
@@ -91,7 +92,7 @@ export function NewsTicker() {
       className="fixed bottom-[28px] left-0 right-0 z-[997] h-[22px] bg-[hsl(var(--win98-titlebar))] text-white border-t-2 border-t-[hsl(var(--win98-highlight))] border-b border-b-[hsl(var(--win98-shadow))] overflow-hidden flex items-center"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
-      title="Live news ticker — IntelHub feed"
+      title="Live news ticker — adjust speed in Profile › Appearance"
     >
       <div className="flex-shrink-0 px-2 h-full flex items-center bg-[hsl(var(--destructive))] font-bold text-[10px] uppercase tracking-wide border-r border-r-[hsl(var(--win98-shadow))]">
         🔴 Live
@@ -137,46 +138,6 @@ export function NewsTicker() {
             </button>
           ))}
         </div>
-      </div>
-      {/* Speed control */}
-      <div ref={menuRef} className="relative flex-shrink-0 h-full flex items-center border-l border-l-[hsl(var(--win98-shadow))]">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setMenuOpen((o) => !o);
-          }}
-          className="h-full px-2 text-[11px] font-bold hover:bg-white/10 focus:outline-none"
-          title="Ticker speed"
-          aria-label="Ticker speed"
-        >
-          ⚙ {SPEED_PRESETS.find((p) => p.value === speed)?.label ?? "Speed"}
-        </button>
-        {menuOpen && (
-          <div className="absolute right-0 bottom-full mb-1 z-[998] min-w-[140px] bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] border-2 border-t-[hsl(var(--win98-highlight))] border-l-[hsl(var(--win98-highlight))] border-r-[hsl(var(--win98-dark-shadow))] border-b-[hsl(var(--win98-dark-shadow))] shadow-md">
-            <div className="px-2 py-1 text-[10px] uppercase tracking-wide bg-[hsl(var(--win98-titlebar))] text-white font-bold">
-              Ticker Speed
-            </div>
-            {SPEED_PRESETS.map((preset) => {
-              const active = preset.value === speed;
-              return (
-                <button
-                  key={preset.label}
-                  type="button"
-                  onClick={() => {
-                    setSpeed(preset.value);
-                    setMenuOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-1 text-[11px] hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))] ${
-                    active ? "bg-[hsl(var(--primary))]/20 font-bold" : ""
-                  }`}
-                >
-                  {active ? "✓ " : "  "}{preset.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
       </div>
       <style>{`
         @keyframes news-ticker-scroll {
