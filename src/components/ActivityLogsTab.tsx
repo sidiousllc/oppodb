@@ -60,6 +60,7 @@ export function ActivityLogsTab() {
   const [filterSearch, setFilterSearch] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [showRaw, setShowRaw] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -316,6 +317,41 @@ export function ActivityLogsTab() {
               <X className="h-2.5 w-2.5" /> Clear
             </button>
           )}
+
+          {/* Raw JSON toggle */}
+          <button
+            onClick={() => setShowRaw(v => !v)}
+            className={`win98-button text-[9px] px-2 py-0.5 ${showRaw ? "font-bold bg-white" : ""}`}
+            title="Toggle raw JSON output for all logs"
+          >
+            {`{ }`} {showRaw ? "Hide Raw" : "Show Raw"}
+          </button>
+          <button
+            onClick={() => {
+              const payload = { activity: fActivity, api: fApi, content: fContent, chat: fChat };
+              navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+            }}
+            className="win98-button text-[9px] px-2 py-0.5"
+            title="Copy raw JSON of filtered logs to clipboard"
+          >
+            📋 Copy Raw
+          </button>
+          <button
+            onClick={() => {
+              const payload = { activity: fActivity, api: fApi, content: fContent, chat: fChat };
+              const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `access-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="win98-button text-[9px] px-2 py-0.5"
+            title="Download raw JSON of filtered logs"
+          >
+            💾 Export JSON
+          </button>
         </div>
         {hasFilters && (
           <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
@@ -358,6 +394,7 @@ export function ActivityLogsTab() {
                   ))}
                 </tbody>
               </table>
+              {showRaw && <RawBlock data={fActivity} />}
             </LogSection>
           )}
 
@@ -387,6 +424,7 @@ export function ActivityLogsTab() {
                   ))}
                 </tbody>
               </table>
+              {showRaw && <RawBlock data={fApi} />}
             </LogSection>
           )}
 
@@ -412,6 +450,7 @@ export function ActivityLogsTab() {
                   ))}
                 </tbody>
               </table>
+              {showRaw && <RawBlock data={fContent} />}
             </LogSection>
           )}
 
@@ -437,6 +476,7 @@ export function ActivityLogsTab() {
                   ))}
                 </tbody>
               </table>
+              {showRaw && <RawBlock data={fChat} />}
             </LogSection>
           )}
 
@@ -472,4 +512,21 @@ function formatDetails(details: Record<string, unknown>): string {
   if (details.state) parts.push(`state: ${details.state}`);
   if (parts.length === 0) return JSON.stringify(details);
   return parts.join(" · ");
+}
+
+function RawBlock({ data }: { data: unknown[] }) {
+  return (
+    <div className="border-t border-[hsl(var(--win98-shadow))] bg-black text-green-400 font-mono text-[9px] p-2 max-h-[300px] overflow-auto">
+      <div className="flex items-center justify-between mb-1 text-white">
+        <span className="font-bold">// RAW JSON OUTPUT ({data.length} records)</span>
+        <button
+          onClick={() => navigator.clipboard.writeText(JSON.stringify(data, null, 2))}
+          className="text-[8px] underline hover:text-yellow-300"
+        >
+          copy
+        </button>
+      </div>
+      <pre className="whitespace-pre-wrap break-all">{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
 }
