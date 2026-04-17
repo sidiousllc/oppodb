@@ -24,10 +24,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: true
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,23 +44,43 @@ jobs:
           java-version: 17
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+          accept-android-sdk-licenses: true
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Add Android platform
-        run: npx cap add android || true
-
       - name: Build web assets
         run: npm run build
 
-      - name: Sync Capacitor
+      - name: Sync Capacitor (regenerates Android plugin scaffolding)
         run: npx cap sync android
 
       - name: Make gradlew executable
         working-directory: android
         run: chmod +x ./gradlew
+
+      - name: Validate release secrets
+        if: ${{ inputs.build_type == 'release' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=()
+          [ -z "$ANDROID_KEYSTORE_BASE64" ]    && missing+=("ANDROID_KEYSTORE_BASE64")
+          [ -z "$ANDROID_KEYSTORE_PASSWORD" ]  && missing+=("ANDROID_KEYSTORE_PASSWORD")
+          [ -z "$ANDROID_KEY_ALIAS" ]          && missing+=("ANDROID_KEY_ALIAS")
+          [ -z "$ANDROID_KEY_PASSWORD" ]       && missing+=("ANDROID_KEY_PASSWORD")
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "::error::Missing required release secrets: ${missing[*]}"
+            echo "Add them in GitHub repo Settings → Secrets and variables → Actions, or pick 'debug' build_type."
+            exit 1
+          fi
 
       - name: Decode keystore
         if: ${{ inputs.build_type == 'release' }}
@@ -70,7 +89,12 @@ jobs:
       - name: Build Debug APK
         if: ${{ inputs.build_type == 'debug' && inputs.output_format == 'apk' }}
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Build Debug AAB
+        if: ${{ inputs.build_type == 'debug' && inputs.output_format == 'aab' }}
+        working-directory: android
+        run: ./gradlew bundleDebug --stacktrace
 
       - name: Build Release APK
         if: ${{ inputs.build_type == 'release' && inputs.output_format == 'apk' }}
@@ -80,7 +104,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          ./gradlew assembleRelease \
+          ./gradlew assembleRelease --stacktrace \
             -Pandroid.injected.signing.store.file=$PWD/app/release-keystore.jks \
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
@@ -94,32 +118,55 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          ./gradlew bundleRelease \
+          ./gradlew bundleRelease --stacktrace \
             -Pandroid.injected.signing.store.file=$PWD/app/release-keystore.jks \
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
 
       - name: Upload Debug APK
-        if: ${{ inputs.build_type == 'debug' }}
+        if: ${{ inputs.build_type == 'debug' && inputs.output_format == 'apk' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ordb-debug.apk
+          name: ordb-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Debug AAB
+        if: ${{ inputs.build_type == 'debug' && inputs.output_format == 'aab' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ordb-debug-aab
+          path: android/app/build/outputs/bundle/debug/app-debug.aab
+          if-no-files-found: error
           retention-days: 30
 
       - name: Upload Release APK
         if: ${{ inputs.build_type == 'release' && inputs.output_format == 'apk' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ordb-release.apk
+          name: ordb-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
           retention-days: 30
 
       - name: Upload Release AAB
         if: ${{ inputs.build_type == 'release' && inputs.output_format == 'aab' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ordb-release.aab
+          name: ordb-release-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
           retention-days: 30
+
+      - name: Upload Gradle reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-reports
+          path: |
+            android/app/build/reports/
+            android/build/reports/
+          if-no-files-found: ignore
+          retention-days: 7
