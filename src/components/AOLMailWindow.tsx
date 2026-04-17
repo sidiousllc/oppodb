@@ -34,8 +34,10 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Compose state
+  const [recipientMode, setRecipientMode] = useState<"user" | "external">("user");
   const [toUserId, setToUserId] = useState("");
   const [toSearch, setToSearch] = useState("");
+  const [toEmail, setToEmail] = useState("");
   const [toSuggestions, setToSuggestions] = useState<OnlineUser[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [subject, setSubject] = useState("");
