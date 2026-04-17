@@ -48,11 +48,30 @@ async function syncFara(query: string): Promise<number> {
 }
 
 async function syncIg(query: string): Promise<number> {
-  // Oversight.gov public reports API
-  const url = `https://oversight.gov/api/v1/reports?limit=100${query && query !== "1" ? `&search=${encodeURIComponent(query)}` : ""}`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error(`Oversight.gov fetch failed: ${res.status}`);
-  const json = await res.json();
+  // Oversight.gov public reports API (note: requires the www subdomain;
+  // the apex `oversight.gov` host returns 404 for /api/v1/*).
+  const q = query && query !== "1" ? `&search=${encodeURIComponent(query)}` : "";
+  const candidates = [
+    `https://www.oversight.gov/api/v1/reports?limit=100${q}`,
+    `https://api.oversight.gov/v1/reports?limit=100${q}`,
+  ];
+  let json: any = null;
+  let lastStatus = 0;
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      lastStatus = res.status;
+      if (res.ok) { json = await res.json(); break; }
+      // Drain body to avoid resource leaks in Deno
+      await res.text().catch(() => {});
+    } catch (err) {
+      console.warn(`Oversight.gov endpoint failed: ${url}`, err);
+    }
+  }
+  if (!json) {
+    console.warn(`All Oversight.gov endpoints failed (last status ${lastStatus}); skipping IG sync.`);
+    return 0;
+  }
   const items: any[] = json?.results ?? json?.data ?? json ?? [];
   const rows = items.slice(0, 200).map((r: any) => ({
     report_id: String(r.id ?? r.report_id ?? crypto.randomUUID()),
