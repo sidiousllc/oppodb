@@ -16,6 +16,7 @@ import ProfilePage from "./pages/ProfilePage.tsx";
 import ApiPage from "./pages/ApiPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import UnsubscribePage from "./pages/UnsubscribePage.tsx";
+import PublicReport from "./pages/PublicReport.tsx";
 import { initOfflineSync } from "./lib/offlineSync";
 import { LocationTrackerInit } from "./hooks/useLocationTracker";
 
@@ -72,6 +73,7 @@ const App = () => {
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/api" element={<ProtectedRoute><ApiPage /></ProtectedRoute>} />
                 <Route path="/unsubscribe" element={<UnsubscribePage />} />
+                <Route path="/r/:id" element={<PublicReport />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </WindowManagerProvider>
