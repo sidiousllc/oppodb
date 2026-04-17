@@ -3,6 +3,7 @@ import { ArrowLeft, Download, Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCountryByCode } from "@/data/internationalCountries";
 import { Win98Window } from "./Win98Window";
+import { ResearchDetailWindow } from "./ResearchDetailWindow";
 import { exportContentPDF } from "@/lib/contentExport";
 import { CountryGeopoliticsTab } from "./CountryGeopoliticsTab";
 
@@ -24,6 +25,14 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [reportWindow, setReportWindow] = useState(false);
+  const [detail, setDetail] = useState<{ title: string; subtitle?: string; fields: Array<{ label: string; value: any }>; sourceUrl?: string | null } | null>(null);
+
+  const openRecord = useCallback((title: string, record: Record<string, any>, opts?: { subtitle?: string; sourceUrl?: string | null }) => {
+    const fields = Object.entries(record)
+      .filter(([k]) => !["id", "raw_data", "country_code"].includes(k))
+      .map(([k, v]) => ({ label: k.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()), value: v }));
+    setDetail({ title, subtitle: opts?.subtitle, fields, sourceUrl: opts?.sourceUrl ?? null });
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
