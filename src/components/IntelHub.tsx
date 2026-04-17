@@ -411,8 +411,9 @@ export function IntelHub() {
                     </span>
                   )}
                 </div>
-                <div className="text-[9px] text-gray-400">
-                  {c.lead.source} • {c.lead.pubDate ? format(new Date(c.lead.pubDate), "PPp") : ""}
+                <div className="text-[9px] text-gray-400 flex items-center gap-1.5">
+                  <BiasChip source={c.lead.source} />
+                  <span>{c.lead.source} • {c.lead.pubDate ? format(new Date(c.lead.pubDate), "PPp") : ""}</span>
                 </div>
               </button>
             );
@@ -442,7 +443,10 @@ export function IntelHub() {
                     }}
                     className="w-full text-left px-2 py-1.5 hover:bg-[#e8e8ff] transition-colors"
                   >
-                    <div className="text-xs font-bold text-[#000080] line-clamp-1">{b.title}</div>
+                    <div className="text-xs font-bold text-[#000080] line-clamp-1 flex items-center gap-1">
+                      <BiasChip source={b.source_name} />
+                      <span className="truncate">{b.title}</span>
+                    </div>
                     {b.summary && (
                       <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{b.summary}</div>
                     )}
