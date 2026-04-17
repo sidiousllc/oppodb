@@ -684,6 +684,8 @@ Deno.serve(async (req) => {
         result = { data: data || [], count: data?.length || 0, generated_at: new Date().toISOString() };
         break;
       }
+
+      case "tracked-bills": {
         let q = supabase
           .from("tracked_bills")
           .select("id,bill_number,title,state,status_desc,last_action,last_action_date,bill_id,session_id,url", { count: "exact" })
