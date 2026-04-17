@@ -3,6 +3,7 @@ import { ArrowLeft, Download, Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCountryByCode } from "@/data/internationalCountries";
 import { Win98Window } from "./Win98Window";
+import { ResearchDetailWindow } from "./ResearchDetailWindow";
 import { exportContentPDF } from "@/lib/contentExport";
 import { CountryGeopoliticsTab } from "./CountryGeopoliticsTab";
 
@@ -24,6 +25,14 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [reportWindow, setReportWindow] = useState(false);
+  const [detail, setDetail] = useState<{ title: string; subtitle?: string; fields: Array<{ label: string; value: any }>; sourceUrl?: string | null } | null>(null);
+
+  const openRecord = useCallback((title: string, record: Record<string, any>, opts?: { subtitle?: string; sourceUrl?: string | null }) => {
+    const fields = Object.entries(record)
+      .filter(([k]) => !["id", "raw_data", "country_code"].includes(k))
+      .map(([k, v]) => ({ label: k.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()), value: v }));
+    setDetail({ title, subtitle: opts?.subtitle, fields, sourceUrl: opts?.sourceUrl ?? null });
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -201,20 +210,46 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
         <div className="space-y-3">
           {tab === "overview" && (
             <div className="grid gap-3 sm:grid-cols-2">
-              <InfoCard title="General" items={[
-                ["Capital", p?.capital],
-                ["Population", fmt(p?.population)],
-                ["Area", p?.area_sq_km ? `${fmt(p.area_sq_km)} sq km` : "N/A"],
-                ["Languages", p?.official_languages?.join(", ")],
-                ["Currency", p?.currency],
-                ["Government", p?.government_type],
-              ]} />
-              <InfoCard title="Key Indicators" items={[
-                ["HDI", p?.human_dev_index?.toFixed(3)],
-                ["Press Freedom Rank", p?.press_freedom_rank ? `#${p.press_freedom_rank}` : undefined],
-                ["Corruption Index", p?.corruption_index?.toFixed(1)],
-                ["Median Age", p?.median_age?.toFixed(1)],
-              ]} />
+              <InfoCard
+                title="General"
+                onView={p ? () => openRecord(`${country.name} — General`, {
+                  capital: p.capital,
+                  population: p.population,
+                  area_sq_km: p.area_sq_km,
+                  official_languages: p.official_languages,
+                  currency: p.currency,
+                  government_type: p.government_type,
+                  continent: p.continent,
+                  region: p.region,
+                }) : undefined}
+                items={[
+                  ["Capital", p?.capital],
+                  ["Population", fmt(p?.population)],
+                  ["Area", p?.area_sq_km ? `${fmt(p.area_sq_km)} sq km` : "N/A"],
+                  ["Languages", p?.official_languages?.join(", ")],
+                  ["Currency", p?.currency],
+                  ["Government", p?.government_type],
+                ]}
+              />
+              <InfoCard
+                title="Key Indicators"
+                onView={p ? () => openRecord(`${country.name} — Indicators`, {
+                  human_dev_index: p.human_dev_index,
+                  press_freedom_rank: p.press_freedom_rank,
+                  corruption_index: p.corruption_index,
+                  median_age: p.median_age,
+                  poverty_rate: p.poverty_rate,
+                  unemployment_rate: p.unemployment_rate,
+                  inflation_rate: p.inflation_rate,
+                  gdp_growth_rate: p.gdp_growth_rate,
+                }) : undefined}
+                items={[
+                  ["HDI", p?.human_dev_index?.toFixed(3)],
+                  ["Press Freedom Rank", p?.press_freedom_rank ? `#${p.press_freedom_rank}` : undefined],
+                  ["Corruption Index", p?.corruption_index?.toFixed(1)],
+                  ["Median Age", p?.median_age?.toFixed(1)],
+                ]}
+              />
               {!p && (
                 <div className="col-span-full candidate-card p-4 text-center">
                   <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">No data loaded yet for {country.name}.</p>
@@ -228,22 +263,38 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
 
           {tab === "government" && (
             <div className="space-y-3">
-              <InfoCard title="Leadership" items={[
-                ["Head of State", p?.head_of_state],
-                ["Head of Government", p?.head_of_government],
-                ["Ruling Party", p?.ruling_party],
-                ["Last Election", p?.last_election_date],
-                ["Next Election", p?.next_election_date],
-              ]} />
+              <InfoCard
+                title="Leadership"
+                onView={p ? () => openRecord(`${country.name} — Leadership`, {
+                  head_of_state: p.head_of_state,
+                  head_of_government: p.head_of_government,
+                  ruling_party: p.ruling_party,
+                  opposition_parties: p.opposition_parties,
+                  last_election_date: p.last_election_date,
+                  next_election_date: p.next_election_date,
+                  election_type: p.election_type,
+                }) : undefined}
+                items={[
+                  ["Head of State", p?.head_of_state],
+                  ["Head of Government", p?.head_of_government],
+                  ["Ruling Party", p?.ruling_party],
+                  ["Last Election", p?.last_election_date],
+                  ["Next Election", p?.next_election_date],
+                ]}
+              />
               {data.leaders.length > 0 && (
                 <div className="candidate-card p-3">
                   <h3 className="text-[11px] font-bold mb-2">Current Leaders</h3>
                   {data.leaders.map(l => (
-                    <div key={l.id} className="mb-2 pb-2 border-b border-[hsl(var(--border))] last:border-0">
+                    <button
+                      key={l.id}
+                      onClick={() => openRecord(l.name, l, { subtitle: `${l.title}${l.party ? ` · ${l.party}` : ""}` })}
+                      className="w-full text-left mb-2 pb-2 border-b border-[hsl(var(--border))] last:border-0 hover:bg-[hsl(var(--win98-light))] px-1 -mx-1 rounded transition-colors"
+                    >
                       <div className="text-[11px] font-bold">{l.name}</div>
                       <div className="text-[10px] text-[hsl(var(--muted-foreground))]">{l.title} · {l.party || "Independent"}</div>
-                      {l.bio && <p className="text-[9px] mt-1">{l.bio.slice(0, 200)}…</p>}
-                    </div>
+                      {l.bio && <p className="text-[9px] mt-1 line-clamp-2">{l.bio.slice(0, 200)}…</p>}
+                    </button>
                   ))}
                 </div>
               )}
@@ -266,7 +317,11 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                   No election data available. Sync to fetch.
                 </div>
               ) : data.elections.map(e => (
-                <div key={e.id} className="candidate-card p-3">
+                <button
+                  key={e.id}
+                  onClick={() => openRecord(`${e.election_year} — ${e.election_type}`, e, { subtitle: e.winner_name ? `Winner: ${e.winner_name}` : undefined, sourceUrl: e.source_url })}
+                  className="candidate-card p-3 w-full text-left hover:bg-[hsl(var(--win98-light))] transition-colors"
+                >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[11px] font-bold">{e.election_year} — {e.election_type}</span>
                     {e.election_date && <span className="text-[9px] text-[hsl(var(--muted-foreground))]">{e.election_date}</span>}
@@ -278,27 +333,55 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                   )}
                   {e.turnout_pct != null && <div className="text-[10px]"><strong>Turnout:</strong> {pct(e.turnout_pct)}</div>}
                   {e.source && <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">Source: {e.source}</div>}
-                </div>
+                </button>
               ))}
             </div>
           )}
 
           {tab === "economy" && (
             <div className="grid gap-3 sm:grid-cols-2">
-              <InfoCard title="Economic Indicators" items={[
-                ["GDP", money(p?.gdp)],
-                ["GDP Per Capita", money(p?.gdp_per_capita)],
-                ["Unemployment", pct(p?.unemployment_rate)],
-                ["Poverty Rate", pct(p?.poverty_rate)],
-                ["Inflation", pct(p?.inflation_rate)],
-              ]} />
+              <InfoCard
+                title="Economic Indicators"
+                onView={p ? () => openRecord(`${country.name} — Economy`, {
+                  gdp: p.gdp,
+                  real_gdp: p.real_gdp,
+                  gdp_per_capita: p.gdp_per_capita,
+                  gdp_growth_rate: p.gdp_growth_rate,
+                  unemployment_rate: p.unemployment_rate,
+                  poverty_rate: p.poverty_rate,
+                  inflation_rate: p.inflation_rate,
+                  cpi_rate: p.cpi_rate,
+                  pce_rate: p.pce_rate,
+                  consumer_spending: p.consumer_spending,
+                  corporate_profits: p.corporate_profits,
+                  current_account_balance: p.current_account_balance,
+                  fdi_inflows: p.fdi_inflows,
+                  government_debt_gdp_pct: p.government_debt_gdp_pct,
+                  industrial_production_index: p.industrial_production_index,
+                  labor_force_participation: p.labor_force_participation,
+                  stock_market_name: p.stock_market_name,
+                  stock_market_index: p.stock_market_index,
+                  trade_partners: p.trade_partners,
+                }) : undefined}
+                items={[
+                  ["GDP", money(p?.gdp)],
+                  ["GDP Per Capita", money(p?.gdp_per_capita)],
+                  ["Unemployment", pct(p?.unemployment_rate)],
+                  ["Poverty Rate", pct(p?.poverty_rate)],
+                  ["Inflation", pct(p?.inflation_rate)],
+                ]}
+              />
               {p?.major_industries?.length > 0 && (
                 <div className="candidate-card p-3">
                   <h3 className="text-[11px] font-bold mb-2">Major Industries</h3>
                   {p.major_industries.map((ind: string, i: number) => (
-                    <div key={i} className="text-[10px] flex items-center gap-1 mb-0.5">
+                    <button
+                      key={i}
+                      onClick={() => openRecord(ind, { industry: ind, country: country.name, region: country.region })}
+                      className="w-full text-left text-[10px] flex items-center gap-1 mb-0.5 hover:bg-[hsl(var(--win98-light))] px-1 rounded"
+                    >
                       <span className="text-[hsl(var(--muted-foreground))]">•</span> {ind}
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -354,14 +437,43 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
           </div>
         </Win98Window>
       )}
+
+      {detail && (
+        <ResearchDetailWindow
+          title={detail.title}
+          subtitle={detail.subtitle}
+          fields={detail.fields}
+          sourceUrl={detail.sourceUrl}
+          onClose={() => setDetail(null)}
+        />
+      )}
     </div>
   );
 }
 
-function InfoCard({ title, items }: { title: string; items: [string, any][] }) {
+function InfoCard({
+  title,
+  items,
+  onView,
+}: {
+  title: string;
+  items: [string, any][];
+  onView?: () => void;
+}) {
   return (
     <div className="candidate-card p-3">
-      <h3 className="text-[11px] font-bold mb-2">{title}</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-[11px] font-bold">{title}</h3>
+        {onView && (
+          <button
+            onClick={onView}
+            className="win98-button text-[9px] px-2 py-[1px]"
+            title="View full details"
+          >
+            Details
+          </button>
+        )}
+      </div>
       {items.map(([label, val]) => (
         <div key={label} className="flex justify-between text-[10px] py-0.5 border-b border-[hsl(var(--border))] last:border-0">
           <span className="text-[hsl(var(--muted-foreground))]">{label}</span>
