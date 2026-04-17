@@ -4,6 +4,7 @@ import { LocationMap, type MapPoint } from "./LocationMap";
 
 interface UserLocationSectionProps {
   userId: string;
+  /** Kept for back-compat; ignored — we now fetch ALL points via pagination. */
   limit?: number;
 }
 
@@ -25,41 +26,70 @@ interface LocationRow {
   recorded_at: string;
 }
 
-export function UserLocationSection({ userId, limit = 200 }: UserLocationSectionProps) {
+const PAGE_SIZE = 1000;
+
+export function UserLocationSection({ userId }: UserLocationSectionProps) {
   const [devices, setDevices] = useState<DeviceRow[]>([]);
   const [locations, setLocations] = useState<LocationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDevice, setSelectedDevice] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [{ data: devs }, { data: locs }] = await Promise.all([
-        supabase
-          .from("user_devices")
-          .select("id, device_name, platform, browser, tags, last_seen_at")
-          .eq("user_id", userId)
-          .order("last_seen_at", { ascending: false }),
-        supabase
+
+      // Devices for this user
+      const devsQ = supabase
+        .from("user_devices")
+        .select("id, device_name, platform, browser, tags, last_seen_at")
+        .eq("user_id", userId)
+        .order("last_seen_at", { ascending: false });
+
+      // Paginated fetch of ALL location pings for this user
+      const allLocs: LocationRow[] = [];
+      let offset = 0;
+      while (!cancelled) {
+        const { data, error } = await supabase
           .from("device_locations")
           .select("id, device_id, latitude, longitude, accuracy, recorded_at")
           .eq("user_id", userId)
-          .order("recorded_at", { ascending: false })
-          .limit(limit),
-      ]);
+          .order("recorded_at", { ascending: true })
+          .range(offset, offset + PAGE_SIZE - 1);
+        if (error || !data || data.length === 0) break;
+        allLocs.push(...(data as LocationRow[]));
+        if (data.length < PAGE_SIZE) break;
+        offset += PAGE_SIZE;
+      }
+
+      const { data: devs } = await devsQ;
       if (cancelled) return;
       setDevices((devs || []) as DeviceRow[]);
-      setLocations((locs || []) as LocationRow[]);
+      setLocations(allLocs);
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [userId, limit]);
+  }, [userId]);
 
-  const filteredLocs = useMemo(
-    () => selectedDevice === "all" ? locations : locations.filter(l => l.device_id === selectedDevice),
-    [locations, selectedDevice]
-  );
+  // Default the date range to the full span the first time data loads
+  useEffect(() => {
+    if (locations.length === 0) return;
+    if (!dateFrom) setDateFrom(locations[0].recorded_at.slice(0, 10));
+    if (!dateTo) setDateTo(locations[locations.length - 1].recorded_at.slice(0, 10));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locations]);
+
+  const filteredLocs = useMemo(() => {
+    const fromTs = dateFrom ? new Date(dateFrom + "T00:00:00").getTime() : -Infinity;
+    const toTs = dateTo ? new Date(dateTo + "T23:59:59").getTime() : Infinity;
+    return locations.filter(l => {
+      if (selectedDevice !== "all" && l.device_id !== selectedDevice) return false;
+      const t = new Date(l.recorded_at).getTime();
+      return t >= fromTs && t <= toTs;
+    });
+  }, [locations, selectedDevice, dateFrom, dateTo]);
 
   const mapPoints: MapPoint[] = useMemo(() => filteredLocs.map(l => ({
     id: l.id,
@@ -79,11 +109,14 @@ export function UserLocationSection({ userId, limit = 200 }: UserLocationSection
     );
   }
 
+  const minDay = locations[0]?.recorded_at.slice(0, 10);
+  const maxDay = locations[locations.length - 1]?.recorded_at.slice(0, 10);
+
   return (
     <div className="space-y-2">
       <div>
         <p className="text-[10px] font-bold mb-1">Devices ({devices.length}):</p>
-        <div className="space-y-0.5 mb-2">
+        <div className="space-y-0.5 mb-2 flex flex-wrap gap-0.5">
           <button
             onClick={() => setSelectedDevice("all")}
             className={`win98-button text-[9px] mr-1 ${selectedDevice === "all" ? "font-bold" : ""}`}
@@ -108,13 +141,54 @@ export function UserLocationSection({ userId, limit = 200 }: UserLocationSection
         </div>
       </div>
 
+      {/* Date range filter */}
+      <div className="win98-raised bg-[hsl(var(--win98-face))] p-1 flex flex-wrap gap-2 items-end text-[9px]">
+        <div>
+          <label className="block font-bold mb-0.5">From:</label>
+          <input
+            type="date"
+            value={dateFrom}
+            min={minDay}
+            max={maxDay}
+            onChange={e => setDateFrom(e.target.value)}
+            className="win98-input text-[9px]"
+          />
+        </div>
+        <div>
+          <label className="block font-bold mb-0.5">To:</label>
+          <input
+            type="date"
+            value={dateTo}
+            min={minDay}
+            max={maxDay}
+            onChange={e => setDateTo(e.target.value)}
+            className="win98-input text-[9px]"
+          />
+        </div>
+        <button
+          onClick={() => { setDateFrom(minDay || ""); setDateTo(maxDay || ""); }}
+          className="win98-button text-[9px]"
+        >
+          Reset range
+        </button>
+        <span className="ml-auto font-[monospace]">
+          Showing {filteredLocs.length} of {locations.length} pings
+        </span>
+      </div>
+
       {mapPoints.length === 0 ? (
         <div className="text-[10px] text-[hsl(var(--muted-foreground))] italic py-3">
-          No location pings recorded yet.
+          No location pings in this range.
         </div>
       ) : (
         <>
-          <LocationMap points={mapPoints} height={260} showPath />
+          <LocationMap
+            points={mapPoints}
+            height={320}
+            showPath
+            colorByDate
+            animateTrail
+          />
           <div className="win98-sunken bg-white max-h-[140px] overflow-auto">
             <table className="w-full text-[9px]">
               <thead className="bg-[hsl(var(--win98-face))] sticky top-0">
@@ -126,7 +200,7 @@ export function UserLocationSection({ userId, limit = 200 }: UserLocationSection
                 </tr>
               </thead>
               <tbody>
-                {filteredLocs.slice(0, 50).map(l => (
+                {filteredLocs.slice(-100).reverse().map(l => (
                   <tr key={l.id} className="border-b border-[hsl(var(--win98-light))]">
                     <td className="px-1 py-0.5">{new Date(l.recorded_at).toLocaleString()}</td>
                     <td className="px-1 py-0.5 font-[monospace]">{Number(l.latitude).toFixed(4)}, {Number(l.longitude).toFixed(4)}</td>
