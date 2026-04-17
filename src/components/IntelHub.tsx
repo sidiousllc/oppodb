@@ -65,14 +65,13 @@ export function IntelHub() {
   const [briefings, setBriefings] = useState<Briefing[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [selectedBriefing, setSelectedBriefing] = useState<Briefing | null>(null);
+  const [selectedCluster, setSelectedCluster] = useState<StoryCluster<ClusterableArticle> | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [fullArticle, setFullArticle] = useState<string | null>(null);
-  const [loadingArticle, setLoadingArticle] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all");
   const [partyLeaning, setPartyLeaning] = useState<PartyLeaning>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [groupMode, setGroupMode] = useState<"clusters" | "sources">("clusters");
 
   const fetchBriefings = useCallback(async () => {
     setLoading(true);
@@ -81,7 +80,7 @@ export function IntelHub() {
       .select("*")
       .eq("scope", activeScope)
       .order("published_at", { ascending: false })
-      .limit(100);
+      .limit(300);
 
     if (error) {
       console.error("Error fetching briefings:", error);
@@ -133,26 +132,6 @@ export function IntelHub() {
       setSyncing(false);
     }
   };
-
-  const handleSelectBriefing = useCallback(async (b: Briefing) => {
-    setSelectedBriefing(b);
-    setFullArticle(null);
-    if (b.source_url) {
-      setLoadingArticle(true);
-      try {
-        const { data, error } = await supabase.functions.invoke("scrape-article", {
-          body: { url: b.source_url },
-        });
-        if (!error && data?.success && data.markdown) {
-          setFullArticle(data.markdown);
-        }
-      } catch (e) {
-        console.error("Failed to scrape article:", e);
-      } finally {
-        setLoadingArticle(false);
-      }
-    }
-  }, []);
 
   const exportPDF = () => {
     const doc = new jsPDF();
