@@ -375,9 +375,13 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
                 <div className="candidate-card p-3">
                   <h3 className="text-[11px] font-bold mb-2">Major Industries</h3>
                   {p.major_industries.map((ind: string, i: number) => (
-                    <div key={i} className="text-[10px] flex items-center gap-1 mb-0.5">
+                    <button
+                      key={i}
+                      onClick={() => openRecord(ind, { industry: ind, country: country.name, region: country.region })}
+                      className="w-full text-left text-[10px] flex items-center gap-1 mb-0.5 hover:bg-[hsl(var(--win98-light))] px-1 rounded"
+                    >
                       <span className="text-[hsl(var(--muted-foreground))]">•</span> {ind}
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -433,11 +437,29 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
           </div>
         </Win98Window>
       )}
+
+      {detail && (
+        <ResearchDetailWindow
+          title={detail.title}
+          subtitle={detail.subtitle}
+          fields={detail.fields}
+          sourceUrl={detail.sourceUrl}
+          onClose={() => setDetail(null)}
+        />
+      )}
     </div>
   );
 }
 
-function InfoCard({ title, items }: { title: string; items: [string, any][] }) {
+function InfoCard({
+  title,
+  items,
+  onView,
+}: {
+  title: string;
+  items: [string, any][];
+  onView?: () => void;
+}) {
   return (
     <div className="candidate-card p-3">
       <h3 className="text-[11px] font-bold mb-2">{title}</h3>
