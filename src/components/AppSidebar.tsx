@@ -83,7 +83,7 @@ const sections: Array<{ id: Section; label: string; emoji: string }> = [
   { id: "crm", label: "Stakeholders", emoji: "🤝" },
   { id: "alerts", label: "Alerts & Watch", emoji: "🔔" },
   { id: "forecast", label: "Forecast Lab", emoji: "🎲" },
-  { id: "investigations", label: "Investigations", emoji: "🔍" },
+  
   { id: "graph", label: "Entity Graph", emoji: "🕸️" },
   { id: "documentation", label: "Documentation", emoji: "📖" },
 ];

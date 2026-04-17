@@ -36,7 +36,7 @@ import { WarRoomHub } from "@/components/WarRoomHub";
 import { CRMHub } from "@/components/CRMHub";
 import { AlertsHub } from "@/components/AlertsHub";
 import { ForecastHub } from "@/components/ForecastHub";
-import { InvestigationsHub } from "@/components/InvestigationsHub";
+import { InvestigationsPanel } from "@/components/InvestigationsPanel";
 import { GraphHub } from "@/components/GraphHub";
 
 import { Dashboard } from "@/components/Dashboard";
@@ -425,6 +425,9 @@ export default function Index() {
       if (researchSubsection === "court-records") {
         return <CourtRecordsSearch onBack={() => setResearchSubsection(null)} />;
       }
+      if (researchSubsection === "investigations") {
+        return <InvestigationsPanel onBack={() => setResearchSubsection(null)} />;
+      }
       if (researchSubsection === "state-report") {
         return <StateReportGenerator onBack={() => setResearchSubsection(null)} />;
       }
@@ -468,7 +471,8 @@ export default function Index() {
     }
 
     if (section === "investigations") {
-      return <InvestigationsHub />;
+      // Legacy redirect — Investigations now lives under Research Tools
+      return <InvestigationsPanel />;
     }
 
     if (section === "graph") {
