@@ -150,19 +150,49 @@ export function WarRoomHub() {
     const scope = newScope.trim().slice(0, MAX_SCOPE_LEN) || null;
 
     setSubmitting(true);
-    const { data, error } = await supabase
+    // Insert without chained .select() — the SELECT RLS sometimes fires before the
+    // owner-membership trigger commits, which can cause the returned row to be
+    // filtered out by the "Read war rooms if member or owner" policy. Insert first,
+    // then re-fetch by id.
+    const { data: inserted, error: insertErr } = await supabase
       .from("war_rooms")
       .insert({ owner_id: user.id, name: trimmed, race_scope: scope })
-      .select("id,name,description,race_scope,owner_id,updated_at")
-      .single();
-    setSubmitting(false);
+      .select("id")
+      .maybeSingle();
 
-    if (error || !data) {
-      toast.error("Couldn't create war room", { description: error?.message });
+    if (insertErr || !inserted) {
+      setSubmitting(false);
+      console.error("[war-rooms] create failed", insertErr);
+      toast.error("Couldn't create war room", {
+        description: insertErr?.message || "The server did not return the new room. Please try again.",
+      });
       return;
     }
-    setRooms((prev) => [data as WarRoom, ...prev]);
-    setActiveId((data as WarRoom).id);
+
+    // Defensive: ensure owner is a member even if the trigger didn't fire.
+    await supabase
+      .from("war_room_members")
+      .upsert(
+        { war_room_id: inserted.id, user_id: user.id, role: "owner" },
+        { onConflict: "war_room_id,user_id" }
+      );
+
+    const { data: room } = await supabase
+      .from("war_rooms")
+      .select("id,name,description,race_scope,owner_id,updated_at")
+      .eq("id", inserted.id)
+      .maybeSingle();
+
+    setSubmitting(false);
+
+    if (!room) {
+      // Created, but read-back failed — refresh the list to recover.
+      await loadRooms();
+      setActiveId(inserted.id);
+    } else {
+      setRooms((prev) => [room as WarRoom, ...prev.filter((r) => r.id !== room.id)]);
+      setActiveId((room as WarRoom).id);
+    }
     setCreating(false);
     setNewName("");
     setNewScope("");

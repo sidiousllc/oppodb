@@ -21,11 +21,7 @@ const QUICK_NAV_SECTIONS: Array<{ id: string; label: string; emoji: string }> = 
   { id: "internationalhub", label: "InternationalHub", emoji: "🌐" },
   { id: "live-elections", label: "Live Elections", emoji: "🏛️" },
   { id: "reports", label: "ReportHub", emoji: "📝" },
-  { id: "warroom", label: "War Rooms", emoji: "⚔️" },
-  { id: "crm", label: "Stakeholders", emoji: "🤝" },
   { id: "alerts", label: "Alerts & Watch", emoji: "🔔" },
-  { id: "forecast", label: "Forecast Lab", emoji: "🎲" },
-  { id: "graph", label: "Entity Graph", emoji: "🕸️" },
   { id: "documentation", label: "Documentation", emoji: "📖" },
 ];
 

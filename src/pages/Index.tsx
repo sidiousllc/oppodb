@@ -431,6 +431,38 @@ export default function Index() {
       if (researchSubsection === "state-report") {
         return <StateReportGenerator onBack={() => setResearchSubsection(null)} />;
       }
+      if (researchSubsection === "war-rooms") {
+        return (
+          <div className="space-y-2">
+            <button onClick={() => setResearchSubsection(null)} className="win98-button text-[10px]">← Back to Research Tools</button>
+            <WarRoomHub />
+          </div>
+        );
+      }
+      if (researchSubsection === "stakeholders") {
+        return (
+          <div className="space-y-2">
+            <button onClick={() => setResearchSubsection(null)} className="win98-button text-[10px]">← Back to Research Tools</button>
+            <CRMHub />
+          </div>
+        );
+      }
+      if (researchSubsection === "forecast-lab") {
+        return (
+          <div className="space-y-2">
+            <button onClick={() => setResearchSubsection(null)} className="win98-button text-[10px]">← Back to Research Tools</button>
+            <ForecastHub />
+          </div>
+        );
+      }
+      if (researchSubsection === "entity-graph") {
+        return (
+          <div className="space-y-2">
+            <button onClick={() => setResearchSubsection(null)} className="win98-button text-[10px]">← Back to Research Tools</button>
+            <GraphHub />
+          </div>
+        );
+      }
       return (
         <ResearchToolsDashboard
           onNavigateSubsection={(sub) => setResearchSubsection(sub)}
