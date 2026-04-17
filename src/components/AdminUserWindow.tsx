@@ -16,8 +16,9 @@ import {
 } from "@/hooks/useSectionAccess";
 import { toast } from "sonner";
 import { Save, Trash2, Plus, Ban, ShieldCheck, KeyRound, Lock, Unlock } from "lucide-react";
+import { UserLocationSection } from "@/components/UserLocationSection";
 
-type UserTab = "info" | "password" | "roles" | "permissions";
+type UserTab = "info" | "password" | "roles" | "permissions" | "location";
 
 const AVAILABLE_ROLES = ["admin", "moderator", "premium", "user"];
 const SUSPEND_DURATIONS = [
@@ -47,6 +48,7 @@ export function AdminUserWindow({ user, onClose, onUserUpdated, windowIndex = 0 
     { id: "password", label: "Password", emoji: "🔑" },
     { id: "roles", label: "Roles & Groups", emoji: "🛡️" },
     { id: "permissions", label: "Permissions", emoji: "🔒" },
+    { id: "location", label: "Location", emoji: "📍" },
   ];
 
   const isBanned = currentUser.banned_until && new Date(currentUser.banned_until) > new Date();
@@ -92,6 +94,9 @@ export function AdminUserWindow({ user, onClose, onUserUpdated, windowIndex = 0 
           )}
           {activeTab === "permissions" && (
             <UserPermissionsSection user={currentUser} />
+          )}
+          {activeTab === "location" && (
+            <UserLocationSection userId={currentUser.id} />
           )}
         </div>
       </div>

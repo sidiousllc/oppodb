@@ -17,6 +17,7 @@ import ApiPage from "./pages/ApiPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import UnsubscribePage from "./pages/UnsubscribePage.tsx";
 import { initOfflineSync } from "./lib/offlineSync";
+import { LocationTrackerInit } from "./hooks/useLocationTracker";
 
 const queryClient = new QueryClient();
 
@@ -30,7 +31,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
-  return <>{children}</>;
+  return <><LocationTrackerInit />{children}</>;
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
