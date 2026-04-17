@@ -20,6 +20,14 @@ export type ReportBlockType =
   | "legislation"    // congress bill/votes
   | "messaging"      // messaging hub doc
   | "research"       // candidate research subpage
+  | "talking_points"      // AI talking points cached for a candidate/bill
+  | "vulnerability"       // AI vulnerability score for candidate
+  | "bill_impact"         // AI bill impact analysis
+  | "forecast"            // election forecast (Cook/Sabato/538) for state-district-cycle
+  | "prediction_market"   // prediction market snapshot
+  | "investigations"      // bundled court cases + IG reports + FARA + spending + contracts
+  | "war_room"            // war room digest
+  | "entity_graph"        // entity relationships snapshot
   | "admin_activity" // admin only — activity logs table
   | "admin_locations" // admin only — locations w/ map
   | "api_data"       // raw call to public-api endpoint
@@ -76,7 +84,15 @@ export interface DataBlock extends BaseBlock {
     | "international"
     | "legislation"
     | "messaging"
-    | "research";
+    | "research"
+    | "talking_points"
+    | "vulnerability"
+    | "bill_impact"
+    | "forecast"
+    | "prediction_market"
+    | "investigations"
+    | "war_room"
+    | "entity_graph";
   /** Reference to the source row (slug, district id, country code, etc.) */
   refId: string;
   /** Optional sub-tab/subsection identifier inside that source. */
@@ -179,7 +195,7 @@ export const BLOCK_PALETTE: Array<{
   label: string;
   emoji: string;
   adminOnly?: boolean;
-  group: "Content" | "Data" | "Visuals" | "Admin" | "API";
+  group: "Content" | "Data" | "Intelligence" | "Visuals" | "Admin" | "API";
 }> = [
   { type: "heading", label: "Heading", emoji: "🅷", group: "Content" },
   { type: "subheading", label: "Subheading", emoji: "🅢", group: "Content" },
@@ -203,6 +219,15 @@ export const BLOCK_PALETTE: Array<{
   { type: "international", label: "International", emoji: "🌐", group: "Data" },
   { type: "legislation", label: "Legislation", emoji: "⚖️", group: "Data" },
   { type: "messaging", label: "Messaging Doc", emoji: "📢", group: "Data" },
+
+  { type: "talking_points", label: "AI Talking Points", emoji: "🗣️", group: "Intelligence" },
+  { type: "vulnerability", label: "Vulnerability Score", emoji: "🛡️", group: "Intelligence" },
+  { type: "bill_impact", label: "Bill Impact (AI)", emoji: "🧠", group: "Intelligence" },
+  { type: "forecast", label: "Race Forecast", emoji: "🎲", group: "Intelligence" },
+  { type: "prediction_market", label: "Prediction Market", emoji: "📉", group: "Intelligence" },
+  { type: "investigations", label: "Investigations Bundle", emoji: "🔎", group: "Intelligence" },
+  { type: "war_room", label: "War Room Digest", emoji: "⚔️", group: "Intelligence" },
+  { type: "entity_graph", label: "Entity Graph", emoji: "🕸️", group: "Intelligence" },
 
   { type: "admin_activity", label: "Activity Logs", emoji: "📋", adminOnly: true, group: "Admin" },
   { type: "admin_locations", label: "Location History", emoji: "📍", adminOnly: true, group: "Admin" },
