@@ -34,8 +34,10 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Compose state
+  const [recipientMode, setRecipientMode] = useState<"user" | "external">("user");
   const [toUserId, setToUserId] = useState("");
   const [toSearch, setToSearch] = useState("");
+  const [toEmail, setToEmail] = useState("");
   const [toSuggestions, setToSuggestions] = useState<OnlineUser[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [subject, setSubject] = useState("");
@@ -154,7 +156,45 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
   };
 
   const handleSend = async () => {
-    if (!user || !toUserId || !subject.trim() || !body.trim()) return;
+    if (!user || !subject.trim() || !body.trim()) return;
+
+    if (recipientMode === "external") {
+      const email = toEmail.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast.error("Please enter a valid email address.");
+        return;
+      }
+      setSending(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("send-external-mail", {
+          body: {
+            recipientEmail: email,
+            subject: subject.trim().slice(0, 200),
+            body: body.trim().slice(0, 5000),
+          },
+        });
+        if (error || !data?.success) {
+          console.error("Failed to send external mail", error || data);
+          toast.error("Failed to send email. " + (data?.reason === "email_suppressed" ? "Recipient has unsubscribed." : ""));
+          setSending(false);
+          return;
+        }
+        toast.success(`Email sent from ${data.from}`);
+      } catch (err) {
+        console.error("Failed to send external mail", err);
+        toast.error("Failed to send email.");
+        setSending(false);
+        return;
+      }
+      setSending(false);
+      setToEmail("");
+      setSubject("");
+      setBody("");
+      setFolder("sent");
+      return;
+    }
+
+    if (!toUserId) return;
     setSending(true);
     const { error: mailInsertError } = await supabase.from("user_mail").insert({
       sender_id: user.id,
@@ -281,49 +321,93 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
               {folder === "compose" ? (
                 /* Compose view */
                 <div className="flex-1 flex flex-col p-2 gap-1">
-                  <div className="flex items-center gap-2 text-[10px] relative">
-                    <span className="font-bold w-10">To:</span>
-                    <div className="flex-1 relative">
+                  {/* Recipient mode toggle */}
+                  <div className="flex items-center gap-3 text-[10px] pb-1">
+                    <span className="font-bold w-10">Mode:</span>
+                    <label className="flex items-center gap-1 cursor-pointer">
                       <input
-                        ref={toInputRef}
-                        value={toSearch}
-                        onChange={(e) => {
-                          setToSearch(e.target.value);
-                          setToUserId("");
-                          setShowSuggestions(true);
-                        }}
-                        onFocus={() => toSearch.length > 0 && setShowSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                        className="win98-input w-full text-[10px]"
-                        placeholder="Type a screen name..."
-                        maxLength={100}
-                        autoComplete="off"
+                        type="radio"
+                        name="recipient-mode"
+                        checked={recipientMode === "user"}
+                        onChange={() => setRecipientMode("user")}
                       />
-                      {showSuggestions && toSuggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-[hsl(var(--win98-shadow))] shadow max-h-[120px] overflow-y-auto">
-                          {toSuggestions.map(u => (
-                            <button
-                              key={u.user_id}
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                setToUserId(u.user_id);
-                                setToSearch(u.display_name);
-                                setShowSuggestions(false);
-                              }}
-                              className="block w-full text-left px-2 py-1 text-[10px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
-                            >
-                              {u.display_name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {toSearch.length > 0 && toSuggestions.length === 0 && showSuggestions && !toUserId && (
-                        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-[hsl(var(--win98-shadow))] px-2 py-1 text-[9px] text-[hsl(var(--muted-foreground))]">
-                          No users found
-                        </div>
-                      )}
-                    </div>
+                      👤 ORDB user
+                    </label>
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="recipient-mode"
+                        checked={recipientMode === "external"}
+                        onChange={() => setRecipientMode("external")}
+                      />
+                      ✉️ External email
+                    </label>
                   </div>
+
+                  {recipientMode === "user" ? (
+                    <div className="flex items-center gap-2 text-[10px] relative">
+                      <span className="font-bold w-10">To:</span>
+                      <div className="flex-1 relative">
+                        <input
+                          ref={toInputRef}
+                          value={toSearch}
+                          onChange={(e) => {
+                            setToSearch(e.target.value);
+                            setToUserId("");
+                            setShowSuggestions(true);
+                          }}
+                          onFocus={() => toSearch.length > 0 && setShowSuggestions(true)}
+                          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                          className="win98-input w-full text-[10px]"
+                          placeholder="Type a screen name..."
+                          maxLength={100}
+                          autoComplete="off"
+                        />
+                        {showSuggestions && toSuggestions.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 z-50 bg-white border border-[hsl(var(--win98-shadow))] shadow max-h-[120px] overflow-y-auto">
+                            {toSuggestions.map(u => (
+                              <button
+                                key={u.user_id}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setToUserId(u.user_id);
+                                  setToSearch(u.display_name);
+                                  setShowSuggestions(false);
+                                }}
+                                className="block w-full text-left px-2 py-1 text-[10px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
+                              >
+                                {u.display_name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {toSearch.length > 0 && toSuggestions.length === 0 && showSuggestions && !toUserId && (
+                          <div className="absolute top-full left-0 right-0 z-50 bg-white border border-[hsl(var(--win98-shadow))] px-2 py-1 text-[9px] text-[hsl(var(--muted-foreground))]">
+                            No users found
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <span className="font-bold w-10">To:</span>
+                        <input
+                          type="email"
+                          value={toEmail}
+                          onChange={(e) => setToEmail(e.target.value)}
+                          className="win98-input flex-1 text-[10px]"
+                          placeholder="recipient@example.com"
+                          maxLength={254}
+                          autoComplete="off"
+                        />
+                      </div>
+                      <div className="text-[9px] text-[hsl(var(--muted-foreground))] pl-12">
+                        Sends from <strong>{(user?.email?.split("@")[0] || "you").toLowerCase().replace(/[^a-z0-9._-]+/g, ".")}@oppodb.com</strong> · Replies go to <strong>{user?.email}</strong>
+                      </div>
+                    </>
+                  )}
+
                   <div className="flex items-center gap-2 text-[10px]">
                     <span className="font-bold w-10">Subj:</span>
                     <input
@@ -342,18 +426,25 @@ export function AOLMailWindow({ onClose }: { onClose: () => void }) {
                     maxLength={5000}
                   />
                   <div className="flex items-center justify-between gap-2">
-                    <label className="flex items-center gap-1.5 text-[9px] cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={sendToEmail}
-                        onChange={(e) => setSendToEmail(e.target.checked)}
-                        className="accent-[hsl(var(--win98-titlebar))]"
-                      />
-                      📧 Also send to their email
-                    </label>
+                    {recipientMode === "user" ? (
+                      <label className="flex items-center gap-1.5 text-[9px] cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={sendToEmail}
+                          onChange={(e) => setSendToEmail(e.target.checked)}
+                          className="accent-[hsl(var(--win98-titlebar))]"
+                        />
+                        📧 Also send to their email
+                      </label>
+                    ) : <span />}
                     <button
                       onClick={handleSend}
-                      disabled={sending || !toUserId || !subject.trim() || !body.trim()}
+                      disabled={
+                        sending ||
+                        !subject.trim() ||
+                        !body.trim() ||
+                        (recipientMode === "user" ? !toUserId : !toEmail.trim())
+                      }
                       className="win98-button text-[10px] font-bold px-4 disabled:opacity-50"
                     >
                       {sending ? "Sending..." : "📤 Send"}
