@@ -142,6 +142,7 @@ function UsersTab() {
   const [creating, setCreating] = useState(false);
   const [openUserWindows, setOpenUserWindows] = useState<AdminUser[]>([]);
   const [userGroupMap, setUserGroupMap] = useState<Record<string, Array<{ name: string; color: string }>>>({});
+  const [userDeviceMap, setUserDeviceMap] = useState<Record<string, number>>({});
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -175,7 +176,17 @@ function UsersTab() {
     setUserGroupMap(map);
   }, []);
 
-  useEffect(() => { loadUsers(); loadGroupMemberships(); }, [loadUsers, loadGroupMemberships]);
+  const loadDeviceCounts = useCallback(async () => {
+    const { data } = await supabase.from("user_devices").select("user_id");
+    if (!data) return;
+    const counts: Record<string, number> = {};
+    for (const row of data as Array<{ user_id: string }>) {
+      counts[row.user_id] = (counts[row.user_id] || 0) + 1;
+    }
+    setUserDeviceMap(counts);
+  }, []);
+
+  useEffect(() => { loadUsers(); loadGroupMemberships(); loadDeviceCounts(); }, [loadUsers, loadGroupMemberships, loadDeviceCounts]);
 
   const handleOpenUser = (u: AdminUser) => {
     if (!openUserWindows.some(ou => ou.id === u.id)) {
@@ -292,6 +303,17 @@ function UsersTab() {
                           🛡️ {g.name}
                         </span>
                       ))}
+                    </div>
+                  )}
+                  {userDeviceMap[u.id] > 0 && (
+                    <div className="mt-0.5">
+                      <span
+                        className="text-[8px] font-bold px-1 py-0 win98-raised rounded-sm"
+                        style={{ backgroundColor: "hsl(200, 70%, 85%)" }}
+                        title={`${userDeviceMap[u.id]} device(s) sharing location`}
+                      >
+                        📍 Location ({userDeviceMap[u.id]})
+                      </span>
                     </div>
                   )}
                 </td>
