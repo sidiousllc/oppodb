@@ -26,6 +26,10 @@ const THEME_THUMBNAILS: Record<WindowsTheme, string> = {
   win8: themeWin8,
   win10: themeWin10,
   win11: themeWin11,
+  "palm-classic": themeWin98,
+  "palm-v": themeWin98,
+  "palm-m505": themeWin98,
+  "palm-treo": themeWin98,
 };
 
 export default function ProfilePage() {
