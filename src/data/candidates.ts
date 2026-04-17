@@ -1,20 +1,35 @@
+export type CandidateCategory =
+  | "us-house"
+  | "us-senate"
+  | "governor"
+  | "statewide"     // AG, SoS, Treasurer, Lt Gov, etc.
+  | "state-leg"     // State House / State Senate
+  | "local"         // Mayor, City Council, County, School Board, DA, Sheriff
+  | "uncategorized";
+
 export interface Candidate {
   name: string;
   slug: string;
-  category: "house" | "senate" | "governor" | "state" | "uncategorized";
+  category: CandidateCategory;
   state: string;
+  /** Optional district identifier (e.g. "TX-21", "SD-15", "HD-3") */
+  district?: string;
+  /** Specific office title when known (e.g. "Attorney General", "Mayor") */
+  office?: string;
   content: string;
 }
 
-// Lookup tables for slug-based fallback inference
+// ============================================================================
+// Slug lookup tables (legacy fallback when github_path is missing)
+// ============================================================================
 const SENATE_SLUGS: Record<string, string> = {
   "dan-sullivan": "AK", "john-cornyn": "TX", "joni-ernst": "IA",
   "susan-collins": "ME", "thom-tillis": "NC", "mike-rogers": "MI",
 };
 
 const GOV_SLUGS: Record<string, string> = {
-  "jack-ciattarelli": "NJ", "jason-miyares": "VA", "winsome-earle-sears": "VA",
-  "derek-dooley": "GA", "john-king": "GA",
+  "jack-ciattarelli": "NJ", "winsome-earle-sears": "VA",
+  "derek-dooley": "GA",
   "andy-biggs": "AZ", "brad-raffensperger": "GA", "brad-sherman": "IA",
   "burt-jones": "GA", "chris-carr": "GA", "david-schweikert": "AZ",
   "doug-mastriano": "PA", "joe-lombardo": "NV", "john-james": "MI",
@@ -23,6 +38,12 @@ const GOV_SLUGS: Record<string, string> = {
   "mike-lindell": "MN", "perry-johnson": "MI", "randy-feenstra": "IA",
   "rick-jackson": "GA", "bobby-charles": "ME", "stacy-garrity": "PA",
   "tom-tiffany": "WI",
+};
+
+// Statewide non-gubernatorial offices (AG, SoS, Treasurer, Lt Gov, etc.)
+const STATEWIDE_SLUGS: Record<string, { state: string; office: string }> = {
+  "jason-miyares": { state: "VA", office: "Attorney General" },
+  "john-king": { state: "GA", office: "Insurance Commissioner" },
 };
 
 const HOUSE_SLUGS: Record<string, string> = {
@@ -46,9 +67,11 @@ const HOUSE_SLUGS: Record<string, string> = {
   "brian-fitzpatrick": "PA",
 };
 
-const STATE_SLUGS = new Set(["john-lujan", "carlos-de-la-cruz"]);
+const STATE_LEG_SLUGS = new Set(["john-lujan", "carlos-de-la-cruz"]);
 
-// US state abbreviations for path-based extraction
+// ============================================================================
+// State abbreviation maps
+// ============================================================================
 const STATE_ABBRS = new Set([
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
   "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
@@ -73,57 +96,133 @@ const STATE_NAME_TO_ABBR: Record<string, string> = {
   wisconsin:"WI", wyoming:"WY",
 };
 
+// ============================================================================
+// Path keyword detection — covers GitHub repo folder conventions
+// ============================================================================
+const STATEWIDE_KEYWORDS = [
+  "attorney-general", "ag-race", "secretary-of-state", "sos-race",
+  "treasurer", "comptroller", "auditor", "lt-governor", "lieutenant-governor",
+  "insurance-commissioner", "agriculture-commissioner", "land-commissioner",
+  "statewide",
+];
+
+const STATE_LEG_KEYWORDS = [
+  "state-leg", "state-legislature", "state-house", "state-senate",
+  "state-assembly", "assembly", "statehouse", "statesenate",
+];
+
+const LOCAL_KEYWORDS = [
+  "mayor", "city-council", "council", "county", "supervisor",
+  "school-board", "schoolboard", "district-attorney", "da-race",
+  "sheriff", "judge", "judicial", "alderman", "commissioner",
+  "local", "municipal",
+];
+
+function extractStateFromPath(path: string): string {
+  const segments = path.split("/").filter(Boolean);
+  for (const seg of segments) {
+    const norm = seg.replace(/\.md$/, "").toLowerCase();
+    if (norm.length === 2 && STATE_ABBRS.has(norm.toUpperCase())) {
+      return norm.toUpperCase();
+    }
+    if (STATE_NAME_TO_ABBR[norm]) return STATE_NAME_TO_ABBR[norm];
+  }
+  return "";
+}
+
+function extractDistrictFromPath(path: string, slug: string): string {
+  // Match patterns like "tx-21", "ca-22", "hd-3", "sd-15"
+  const districtMatch = (path + " " + slug).toLowerCase().match(
+    /\b([a-z]{2}-\d{1,3}|hd-?\d{1,3}|sd-?\d{1,3}|cd-?\d{1,3})\b/,
+  );
+  return districtMatch ? districtMatch[1].toUpperCase() : "";
+}
+
+function inferOfficeFromPath(path: string): string {
+  if (path.includes("attorney-general") || path.includes("/ag-")) return "Attorney General";
+  if (path.includes("secretary-of-state") || path.includes("/sos-")) return "Secretary of State";
+  if (path.includes("treasurer")) return "Treasurer";
+  if (path.includes("comptroller")) return "Comptroller";
+  if (path.includes("auditor")) return "Auditor";
+  if (path.includes("lt-governor") || path.includes("lieutenant")) return "Lt. Governor";
+  if (path.includes("insurance-commissioner")) return "Insurance Commissioner";
+  if (path.includes("mayor")) return "Mayor";
+  if (path.includes("sheriff")) return "Sheriff";
+  if (path.includes("district-attorney") || path.includes("/da-")) return "District Attorney";
+  if (path.includes("school-board")) return "School Board";
+  if (path.includes("city-council")) return "City Council";
+  if (path.includes("county")) return "County Office";
+  if (path.includes("state-senate") || path.includes("statesenate")) return "State Senate";
+  if (path.includes("state-house") || path.includes("statehouse") || path.includes("assembly")) return "State House";
+  return "";
+}
+
 /**
  * Categorize a candidate using github_path first (most reliable),
- * then slug lookup tables, then fall back to "uncategorized" so unknown
- * profiles remain visible without being silently bucketed into House.
+ * then slug lookup tables, then fall back to "uncategorized".
  */
 function categorize(
   name: string,
   slug: string,
   githubPath?: string,
-): { category: Candidate["category"]; state: string } {
+): { category: CandidateCategory; state: string; district?: string; office?: string } {
   const lslug = slug.toLowerCase();
   const lname = name.toLowerCase();
   const path = (githubPath || "").toLowerCase();
 
   // ---- 1. Path-based inference (most reliable, comes from DB) ----
   if (path) {
-    const segments = path.split("/").filter(Boolean);
-    let inferredState = "";
-    for (const seg of segments) {
-      const norm = seg.replace(/\.md$/, "");
-      if (norm.length === 2 && STATE_ABBRS.has(norm.toUpperCase())) {
-        inferredState = norm.toUpperCase();
-        break;
-      }
-      if (STATE_NAME_TO_ABBR[norm]) {
-        inferredState = STATE_NAME_TO_ABBR[norm];
-        break;
-      }
-    }
+    const state = extractStateFromPath(path);
+    const district = extractDistrictFromPath(path, slug);
+    const office = inferOfficeFromPath(path);
 
+    // Local first (most specific)
+    if (LOCAL_KEYWORDS.some(k => path.includes(k))) {
+      return { category: "local", state, district, office };
+    }
+    // State legislature
+    if (STATE_LEG_KEYWORDS.some(k => path.includes(k))) {
+      return { category: "state-leg", state, district, office: office || "State Legislature" };
+    }
+    // Statewide non-gubernatorial offices
+    if (STATEWIDE_KEYWORDS.some(k => path.includes(k))) {
+      return { category: "statewide", state, office };
+    }
+    // Federal Senate
     if (path.includes("/senate") || path.startsWith("senate/")) {
-      return { category: "senate", state: inferredState || SENATE_SLUGS[lslug] || "" };
+      return { category: "us-senate", state: state || SENATE_SLUGS[lslug] || "", office: "U.S. Senate" };
     }
+    // Governor
     if (path.includes("gov") || path.includes("governor")) {
-      return { category: "governor", state: inferredState || GOV_SLUGS[lslug] || "" };
+      return { category: "governor", state: state || GOV_SLUGS[lslug] || "", office: "Governor" };
     }
-    if (path.includes("state-races") || path.includes("/state/") || path.includes("state-leg")) {
-      return { category: "state", state: inferredState };
-    }
+    // Federal House
     if (path.includes("/house") || path.startsWith("house/")) {
-      return { category: "house", state: inferredState || HOUSE_SLUGS[lslug] || "" };
+      return {
+        category: "us-house",
+        state: state || HOUSE_SLUGS[lslug] || "",
+        district,
+        office: "U.S. House",
+      };
     }
   }
 
-  // ---- 2. Slug-based lookup tables ----
-  if (SENATE_SLUGS[lslug]) return { category: "senate", state: SENATE_SLUGS[lslug] };
-  if (GOV_SLUGS[lslug]) return { category: "governor", state: GOV_SLUGS[lslug] };
-  if (STATE_SLUGS.has(lslug) || lname.includes("state level")) {
-    return { category: "state", state: "" };
+  // ---- 2. Slug-based lookup tables (legacy fallback) ----
+  if (SENATE_SLUGS[lslug]) {
+    return { category: "us-senate", state: SENATE_SLUGS[lslug], office: "U.S. Senate" };
   }
-  if (HOUSE_SLUGS[lslug]) return { category: "house", state: HOUSE_SLUGS[lslug] };
+  if (STATEWIDE_SLUGS[lslug]) {
+    return { category: "statewide", state: STATEWIDE_SLUGS[lslug].state, office: STATEWIDE_SLUGS[lslug].office };
+  }
+  if (GOV_SLUGS[lslug]) {
+    return { category: "governor", state: GOV_SLUGS[lslug], office: "Governor" };
+  }
+  if (STATE_LEG_SLUGS.has(lslug) || lname.includes("state level")) {
+    return { category: "state-leg", state: "", office: "State Legislature" };
+  }
+  if (HOUSE_SLUGS[lslug]) {
+    return { category: "us-house", state: HOUSE_SLUGS[lslug], office: "U.S. House" };
+  }
 
   // ---- 3. Unknown — surface as "uncategorized" so profile stays visible ----
   return { category: "uncategorized", state: "" };
@@ -132,8 +231,8 @@ function categorize(
 export const candidates: Candidate[] = [];
 
 export function addCandidate(name: string, slug: string, content: string, githubPath?: string) {
-  const { category, state } = categorize(name, slug, githubPath);
-  candidates.push({ name, slug, category, state, content });
+  const { category, state, district, office } = categorize(name, slug, githubPath);
+  candidates.push({ name, slug, category, state, district, office, content });
 }
 
 export function initCandidates(
@@ -152,6 +251,8 @@ export function searchCandidates(query: string): Candidate[] {
   return candidates.filter(c =>
     c.name.toLowerCase().includes(q) ||
     c.state.toLowerCase().includes(q) ||
+    (c.office?.toLowerCase().includes(q) ?? false) ||
+    (c.district?.toLowerCase().includes(q) ?? false) ||
     c.content.toLowerCase().includes(q)
   );
 }
@@ -160,6 +261,16 @@ export function getCandidateBySlug(slug: string): Candidate | undefined {
   return candidates.find(c => c.slug === slug);
 }
 
-export function getCandidatesByCategory(category: Candidate["category"]): Candidate[] {
+export function getCandidatesByCategory(category: CandidateCategory): Candidate[] {
   return candidates.filter(c => c.category === category);
+}
+
+/** Group candidates by state for sidebar/state-based filtering. */
+export function getCandidatesByState(state: string): Candidate[] {
+  return candidates.filter(c => c.state === state);
+}
+
+/** Unique sorted list of all states represented in current dataset. */
+export function getAllStates(): string[] {
+  return Array.from(new Set(candidates.map(c => c.state).filter(Boolean))).sort();
 }
