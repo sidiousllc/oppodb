@@ -52,7 +52,13 @@ export function LocationMap({ points, height = 320, showPath = false }: Location
     const ro = new ResizeObserver(() => map.invalidateSize());
     ro.observe(containerRef.current);
 
+    // Force size recalculation after mount (fixes blank map in tabs/modals)
+    const t1 = setTimeout(() => map.invalidateSize(), 100);
+    const t2 = setTimeout(() => map.invalidateSize(), 500);
+
     return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
       ro.disconnect();
       map.remove();
       mapRef.current = null;
