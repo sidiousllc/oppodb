@@ -179,6 +179,7 @@ export default function Index() {
       if (result.success) {
         const fresh = await fetchStateLegislativeDistricts();
         setStateLegDistricts(fresh);
+        setHasLoadedStateLegDistricts(true);
       } else {
         console.error("State legislative sync failed:", result.error);
       }
