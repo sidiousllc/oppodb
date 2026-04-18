@@ -14,13 +14,29 @@ const NODE_COLORS: Record<string, string> = {
   candidate: "hsl(0, 70%, 55%)",
   member: "hsl(220, 70%, 55%)",
   donor: "hsl(120, 50%, 45%)",
+  industry: "hsl(140, 60%, 40%)",
   client: "hsl(280, 50%, 50%)",
   lobbyist: "hsl(30, 80%, 55%)",
   agency: "hsl(200, 50%, 45%)",
   contractor: "hsl(160, 50%, 45%)",
   bill: "hsl(50, 80%, 50%)",
+  topic: "hsl(45, 70%, 60%)",
+  state: "hsl(210, 60%, 60%)",
+  district: "hsl(190, 60%, 50%)",
+  party: "hsl(340, 60%, 55%)",
+  case: "hsl(15, 60%, 50%)",
+  country: "hsl(170, 50%, 50%)",
+  continent: "hsl(180, 40%, 40%)",
+  tag: "hsl(60, 40%, 55%)",
+  group: "hsl(290, 40%, 60%)",
+  subpage: "hsl(0, 30%, 70%)",
   default: "hsl(0, 0%, 50%)",
 };
+
+const ENTITY_TYPES = [
+  "candidate","member","donor","industry","client","lobbyist","agency","contractor",
+  "bill","topic","state","district","party","case","country","continent","tag","group",
+];
 
 export function GraphHub() {
   const [entityType, setEntityType] = useState("candidate");
@@ -153,14 +169,9 @@ export function GraphHub() {
                 <Select value={entityType} onValueChange={setEntityType}>
                   <SelectTrigger className="h-7 text-[11px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="candidate">Candidate</SelectItem>
-                    <SelectItem value="member">Member of Congress</SelectItem>
-                    <SelectItem value="donor">Donor</SelectItem>
-                    <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="lobbyist">Lobbyist</SelectItem>
-                    <SelectItem value="agency">Agency</SelectItem>
-                    <SelectItem value="contractor">Contractor</SelectItem>
-                    <SelectItem value="bill">Bill</SelectItem>
+                    {ENTITY_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
