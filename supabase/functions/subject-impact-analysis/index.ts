@@ -60,7 +60,7 @@ async function loadSubject(admin: SAdmin, subject_type: string, subject_ref: str
   return null;
 }
 
-async function buildSectionContext(admin: SAdmin, subject: any, selected: Section[], scope: string, scopeRef: string | null): Promise<string> {
+async function buildContext(admin: SAdmin, subject: any, selected: Section[], scope: string, scopeRef: string | null): Promise<string> {
   const tags = (subject.tags || []).filter((t: string) => !["Democrat","Republican","Independent"].includes(t));
   const parts: string[] = [];
   if (scope === "district" && scopeRef) {
@@ -116,7 +116,7 @@ serve(async (req) => {
     if (!subject) return new Response(JSON.stringify({ error: "Subject not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const selected = (Array.isArray(include_sections) ? include_sections : SECTIONS).filter((s: string) => SECTIONS.includes(s as Section)) as Section[];
-    const ctx = await buildSectionContext(admin, subject, selected, scope, scope_ref);
+    const ctx = await buildContext(admin, subject, selected, scope, scope_ref);
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
