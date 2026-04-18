@@ -109,13 +109,25 @@ export function InvestigationsPanel({ onBack }: InvestigationsPanelProps) {
     if (!c) return;
     setLoading(true);
     try {
-      const { data: rows, error } = await supabase
-        .from(c.table as any)
-        .select("*")
-        .order(c.orderBy, { ascending: false, nullsFirst: false })
-        .limit(200);
-      if (error) throw error;
-      setData((d) => ({ ...d, [key]: (rows ?? []) as unknown as Row[] }));
+      // Page through all rows (PostgREST default cap is 1000 per request)
+      const pageSize = 1000;
+      let from = 0;
+      const all: Row[] = [];
+      // Hard safety ceiling to avoid runaway loops; effectively unlimited for our datasets
+      const maxIterations = 200;
+      for (let i = 0; i < maxIterations; i++) {
+        const { data: rows, error } = await supabase
+          .from(c.table as any)
+          .select("*")
+          .order(c.orderBy, { ascending: false, nullsFirst: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const batch = (rows ?? []) as unknown as Row[];
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
+      setData((d) => ({ ...d, [key]: all }));
     } catch (e: any) {
       console.error(`Load ${key} failed`, e);
     } finally {
@@ -123,8 +135,14 @@ export function InvestigationsPanel({ onBack }: InvestigationsPanelProps) {
     }
   }
 
+  // Auto-load every source on mount so all tabs show their full datasets immediately
   useEffect(() => {
-    loadTab(tab);
+    Object.keys(SOURCES).forEach((key) => loadTab(key));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!data[tab]) loadTab(tab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
