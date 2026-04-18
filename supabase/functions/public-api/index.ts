@@ -79,8 +79,11 @@ const VALID_ENDPOINTS = [
   "war-room-messages",            // GET ?room_id=&limit= | POST { room_id, body }
   "sync-status",                  // GET (latest run per source from sync_run_log)
   "sync-preferences",             // GET (caller prefs) | PUT { source, interval_minutes, enabled }
-  "international-elections",      // GET ?country_code=
-  "international-leaders",        // GET ?country_code=
+    "international-elections",      // GET ?country_code=
+    "international-leaders",        // GET ?country_code=
+    // OSINT Workbench (Phase 8)
+    "osint-tools",                  // GET — list all OSINT tools (registry)
+    "osint-search",                 // POST { tool_id, query } — execute an OSINT lookup (uses caller's stored API keys for keyed tools)
 ];
 
 async function hashKey(key: string): Promise<string> {
