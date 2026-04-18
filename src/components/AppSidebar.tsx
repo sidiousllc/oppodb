@@ -18,6 +18,7 @@ import { getLastSyncTime } from "@/data/githubSync";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSectionAccess } from "@/hooks/useSectionAccess";
+import { useOpenApp } from "@/components/desktop/appRegistry";
 
 export type FilterCategory =
   | "all"
@@ -95,6 +96,13 @@ export function AppSidebar({
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const { canAccess } = useSectionAccess();
+  const openApp = useOpenApp();
+
+  // Each sidebar click opens the section as its own floating Win98 window
+  const handleSectionClick = (id: Section) => {
+    openApp(id);
+    onSectionChange(id);
+  };
 
   useEffect(() => {
     getLastSyncTime().then(setLastSync);
@@ -157,7 +165,7 @@ export function AppSidebar({
             {sections.filter(s => canAccess(s.id)).map((s, i) => (
               <div key={s.id}>
                 <button
-                  onClick={() => onSectionChange(s.id)}
+                  onClick={() => handleSectionClick(s.id)}
                   className={`flex w-full items-center gap-1 px-2 py-[2px] text-[11px] text-left ${
                     activeSection === s.id
                       ? "bg-[hsl(var(--win98-titlebar))] text-white"

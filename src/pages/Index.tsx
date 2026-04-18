@@ -22,6 +22,7 @@ import { Win98Taskbar } from "@/components/Win98Taskbar";
 import { NewsTicker } from "@/components/NewsTicker";
 import { AOLToolbar } from "@/components/AOLToolbar";
 import { Win98Desktop } from "@/components/Win98Desktop";
+import { DesktopWindowHost } from "@/components/desktop/DesktopWindowHost";
 import { AOLBuddyList } from "@/components/AOLBuddyList";
 import { AOLMailWindow } from "@/components/AOLMailWindow";
 import { useMail } from "@/contexts/MailContext";
@@ -678,6 +679,9 @@ export default function Index() {
 
       {/* AOL Mail Window */}
       {isMailOpen && <AOLMailWindow onClose={closeMail} />}
+
+      {/* Floating Win98 windows for sidebar sections, desktop icons, and tools */}
+      <DesktopWindowHost />
     </>
   );
 }
