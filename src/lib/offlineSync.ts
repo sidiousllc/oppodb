@@ -13,27 +13,29 @@ import {
   queueWrite,
 } from "./encryptedStore";
 
-/** Tables to sync for offline use */
-const SYNC_TABLES = [
+/** Tables to sync for offline use.
+ * pageSize tuned per table to avoid timeouts on heavy JSON columns.
+ * Authentication is required for many tables — sync is skipped when not signed in. */
+const SYNC_TABLES: Array<{ table: string; select: string; orderBy: string; pageSize?: number }> = [
   { table: "district_profiles", select: "*", orderBy: "district_id" },
-  { table: "candidate_profiles", select: "id,slug,name,tags,content,is_subpage,parent_slug,subpage_title,github_path,legiscan_people_id,legiscan_state", orderBy: "name" },
-  { table: "candidate_versions", select: "id,github_path,commit_sha,commit_message,commit_date,author", orderBy: "commit_date" },
-  { table: "congress_members", select: "id,bioguide_id,name,first_name,last_name,party,state,district,chamber,depiction_url,official_url,candidate_slug,congress,terms,leadership", orderBy: "name" },
-  { table: "congress_bills", select: "id,bill_id,bill_type,bill_number,congress,title,short_title,status,sponsor_name,sponsor_bioguide_id,policy_area,origin_chamber,introduced_date,latest_action_date,latest_action_text,cosponsor_count,committees,subjects", orderBy: "bill_id" },
-  { table: "congress_committees", select: "id,system_code,name,chamber,committee_type,parent_system_code,url,members,subcommittees", orderBy: "name" },
-  { table: "congress_votes", select: "id,vote_id,chamber,congress,session,roll_number,vote_date,question,description,result,bill_id,yea_total,nay_total,not_voting_total,present_total,member_votes", orderBy: "vote_date" },
+  { table: "candidate_profiles", select: "id,slug,name,tags,is_subpage,parent_slug,subpage_title,github_path,legiscan_people_id,legiscan_state,updated_at", orderBy: "name", pageSize: 500 },
+  { table: "candidate_versions", select: "id,github_path,commit_sha,commit_message,commit_date,author", orderBy: "commit_date", pageSize: 500 },
+  { table: "congress_members", select: "id,bioguide_id,name,first_name,last_name,party,state,district,chamber,depiction_url,official_url,candidate_slug,congress", orderBy: "name" },
+  { table: "congress_bills", select: "id,bill_id,bill_type,bill_number,congress,title,short_title,status,sponsor_name,sponsor_bioguide_id,policy_area,origin_chamber,introduced_date,latest_action_date,latest_action_text,cosponsor_count", orderBy: "bill_id" },
+  { table: "congress_committees", select: "id,system_code,name,chamber,committee_type,parent_system_code,url", orderBy: "name" },
+  { table: "congress_votes", select: "id,vote_id,chamber,congress,session,roll_number,vote_date,question,description,result,bill_id,yea_total,nay_total,not_voting_total,present_total", orderBy: "vote_date", pageSize: 200 },
   { table: "election_forecasts", select: "*", orderBy: "state_abbr" },
   { table: "election_forecast_history", select: "*", orderBy: "changed_at" },
   { table: "campaign_finance", select: "*", orderBy: "candidate_name" },
   { table: "polling_data", select: "*", orderBy: "date_conducted" },
   { table: "congressional_election_results", select: "*", orderBy: "election_year" },
-  { table: "state_legislative_profiles", select: "*", orderBy: "district_id" },
-  { table: "state_leg_election_results", select: "*", orderBy: "election_year" },
+  { table: "state_legislative_profiles", select: "*", orderBy: "district_id", pageSize: 500 },
+  { table: "state_leg_election_results", select: "*", orderBy: "election_year", pageSize: 500 },
   { table: "state_voter_stats", select: "*", orderBy: "state" },
   { table: "mit_election_results", select: "id,year,state,state_po,office,district,candidate,party,candidatevotes,totalvotes,stage,special,writein", orderBy: "year" },
   { table: "mn_cfb_candidates", select: "*", orderBy: "candidate_name" },
   { table: "state_cfb_candidates", select: "*", orderBy: "candidate_name" },
-  { table: "messaging_guidance", select: "id,slug,title,source,source_url,summary,issue_areas,research_type,content,published_date,author", orderBy: "title" },
+  { table: "messaging_guidance", select: "id,slug,title,source,source_url,summary,issue_areas,research_type,published_date,author", orderBy: "title" },
   { table: "local_impacts", select: "*", orderBy: "state" },
   { table: "maga_files", select: "*", orderBy: "name" },
   { table: "narrative_reports", select: "*", orderBy: "name" },
