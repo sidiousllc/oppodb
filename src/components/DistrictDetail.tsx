@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { exportDistrictPDF } from "@/lib/districtDetailExport";
+import { SubjectAIPanel } from "@/components/SubjectAIPanel";
 
 interface DistrictDetailProps {
   district: DistrictProfile;

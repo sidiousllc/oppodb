@@ -18,6 +18,7 @@ import { StatePollingPanel } from "@/components/StatePollingPanel";
 import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 import { MNFinancePanel } from "@/components/MNFinancePanel";
 import { StateFinancePanel } from "@/components/StateFinancePanel";
+import { SubjectAIPanel } from "@/components/SubjectAIPanel";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
