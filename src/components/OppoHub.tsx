@@ -49,7 +49,7 @@ const filters: Array<{ id: FilterCategory; label: string }> = [
 ];
 
 export function OppoHub({
-  search, filter, dataVersion, isAdmin, onSelectSlug, selectedSlug,
+  search, filter, onFilterChange, dataVersion, isAdmin, onSelectSlug, selectedSlug,
   onNavigateSlug, onEditCandidate, onCreateCandidate, onSetSection,
 }: OppoHubProps) {
   const [tab, setTab] = useState<OppoTab>("candidates");
