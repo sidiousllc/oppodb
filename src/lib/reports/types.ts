@@ -35,7 +35,9 @@ export type ReportBlockType =
   | "mcp_data"       // raw call to mcp-server tool
   | "chart"          // bar/line/pie chart from custom data
   | "table"          // arbitrary tabular data
-  | "map";           // generic geo points / district highlight map
+  | "map"            // generic geo points / district highlight map
+  | "osint_results"  // NEW — AI-parsed OSINT search results from any catalog tool
+  | "subject_ai";    // NEW — AI subject panel: talking points + audience + impact for arbitrary subject
 
 export interface BaseBlock {
   id: string;
