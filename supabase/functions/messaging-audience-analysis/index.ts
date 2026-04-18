@@ -2,6 +2,7 @@
 // Cached in messaging_audience_analyses with cross-section context enrichment.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAIGeneration } from "../_shared/ai-history.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

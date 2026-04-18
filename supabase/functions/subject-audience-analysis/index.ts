@@ -2,6 +2,7 @@
 // Districts / Legislation bills. Cached in subject_audience_analyses.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAIGeneration } from "../_shared/ai-history.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -169,6 +170,15 @@ serve(async (req) => {
       model, generated_at: new Date().toISOString(),
     } as never, { onConflict: "subject_type,subject_ref" }).select().single();
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    logAIGeneration(admin, {
+      feature: "subject_audience_analysis",
+      subject_type, subject_ref,
+      model,
+      output: { effectiveness_score: parsed.effectiveness_score, audience_scores: parsed.audience_scores, segment_breakdown: parsed.segment_breakdown, resonance_factors: parsed.resonance_factors, risks: parsed.risks, summary: parsed.summary },
+      triggered_by: user?.id ?? null,
+      trigger_source: "user",
+    });
 
     return new Response(JSON.stringify({ cached: false, analysis: row }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {

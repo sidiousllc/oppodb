@@ -7,6 +7,8 @@
  */
 import { corsHeaders } from "../_shared/cors.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAIGeneration } from "../_shared/ai-history.ts";
 
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -154,6 +156,22 @@ Deno.serve(async (req) => {
       sourceUrl: url,
       pageTitle: title,
     });
+
+    // Log to unified AI generation history (fire-and-forget; needs service role)
+    try {
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+      const SR_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const admin = createClient(SUPABASE_URL, SR_KEY);
+      logAIGeneration(admin, {
+        feature: "osint_scrape_parse",
+        subject_type: subject_type ?? "osint",
+        subject_ref: query.slice(0, 200),
+        model: "google/gemini-2.5-flash",
+        prompt_summary: `${tool_label ?? "OSINT tool"} → ${url}`,
+        output: { results, source_url: url, fetched_at: new Date().toISOString() },
+        trigger_source: "user",
+      });
+    } catch (_) { /* never block response */ }
 
     return new Response(
       JSON.stringify({ results, source: tool_label ?? "scrape", source_url: url, fetched_at: new Date().toISOString() }),
