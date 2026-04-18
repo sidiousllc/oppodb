@@ -109,6 +109,8 @@ async function loadSubject(admin: SAdmin, subject_type: string, subject_ref: str
   }
   return null;
 }
+
+async function buildSectionContext(admin: SAdmin, subject: any, selected: Section[]): Promise<string> {
   const tags = (subject.tags || []).filter((t: string) => !["Democrat","Republican","Independent"].includes(t));
   const orFilter = tags.length ? tags.map((t: string) => `title.ilike.%${t}%,summary.ilike.%${t}%`).join(",") : null;
   const parts: string[] = [];
