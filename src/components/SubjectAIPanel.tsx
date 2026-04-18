@@ -62,19 +62,27 @@ export function SubjectAIPanel({ subjectType, subjectRef, subjectTitle, defaultS
   }
 
   async function loadCached() {
-    const [tpRes, audRes, impRes, hist] = await Promise.all([
-      supabase.from("talking_points").select("*").eq("subject_type", subjectType).eq("subject_ref", subjectRef).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      (supabase.from as any)("subject_audience_analyses").select("*").eq("subject_type", subjectType).eq("subject_ref", subjectRef).maybeSingle(),
-      (supabase.from as any)("subject_impact_analyses").select("*").eq("subject_type", subjectType).eq("subject_ref", subjectRef).order("generated_at", { ascending: false }).limit(1).maybeSingle(),
-      supabase.from("talking_points").select("*").eq("subject_type", subjectType).eq("subject_ref", subjectRef).order("created_at", { ascending: false }).limit(20),
-    ]);
-    if (tpRes.data) setTp(tpRes.data);
-    if (audRes.data) setAudAnalysis(audRes.data);
-    if (impRes.data) setImpact(impRes.data);
-    setTpHistory((hist.data as any[]) || []);
+    if (!subjectRef || !subjectType) return;
+    try {
+      const results = await Promise.allSettled([
+        supabase.from("talking_points").select("*").eq("subject_type", subjectType).eq("subject_ref", subjectRef).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        (supabase.from as any)("subject_audience_analyses").select("*").eq("subject_type", subjectType).eq("subject_ref", subjectRef).maybeSingle(),
+        (supabase.from as any)("subject_impact_analyses").select("*").eq("subject_type", subjectType).eq("subject_ref", subjectRef).order("generated_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("talking_points").select("*").eq("subject_type", subjectType).eq("subject_ref", subjectRef).order("created_at", { ascending: false }).limit(20),
+      ]);
+      const [tpRes, audRes, impRes, hist] = results;
+      if (tpRes.status === "fulfilled" && tpRes.value?.data) setTp(tpRes.value.data);
+      if (audRes.status === "fulfilled" && audRes.value?.data) setAudAnalysis(audRes.value.data);
+      if (impRes.status === "fulfilled" && impRes.value?.data) setImpact(impRes.value.data);
+      if (hist.status === "fulfilled") setTpHistory((hist.value?.data as any[]) || []);
+    } catch (e) {
+      console.error("SubjectAIPanel loadCached error:", e);
+    }
   }
 
-  useEffect(() => { loadCached(); }, [subjectRef, subjectType]);
+  useEffect(() => {
+    loadCached().catch((e) => console.error("SubjectAIPanel effect error:", e));
+  }, [subjectRef, subjectType]);
 
   async function genTalking() {
     setTpLoading(true);
