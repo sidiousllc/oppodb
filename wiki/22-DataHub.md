@@ -65,3 +65,8 @@ The **DataHub** is the application's central intelligence repository, consolidat
 
 ## Polling Email Alerts
 See [Polling Alerts & Email Preferences](Polling-Alerts-and-Email-Preferences).
+
+## AI Intelligence (Polling)
+
+`PollDetailWindow` mounts a `SubjectAIPanel` (`subject_type="polling"`, `subject_ref=polling_data.id`) with three sub-tabs: **Talking Points**, **Audience Fit**, **Impact**. Edge functions: `subject-talking-points`, `subject-audience-analysis`, `subject-impact-analysis`. Cache tables: `talking_points`, `subject_audience_analyses`, `subject_impact_analyses`. Available via REST `/public-api/v1/subject-ai-bundle?subject_type=polling&subject_ref=<uuid>` and MCP (`get_subject_ai_bundle`, `generate_subject_*`). Cross-section context toggles: polling / intel / legislation / finance / forecasts / international / demographics.
+

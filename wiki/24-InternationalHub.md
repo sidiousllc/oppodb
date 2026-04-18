@@ -36,3 +36,15 @@ When a country is selected, `CountryDetail.tsx` opens with:
 - `international_legislation`
 - `international_polling`
 - `international_policy_issues`
+
+## AI Intelligence (Country)
+
+`CountryDetail.tsx` mounts a `SubjectAIPanel` with `subject_type="country"` and `subject_ref=<country_code>` (e.g. `DEU`, `JPN`). Three sub-tabs:
+
+| Tab | Edge function | Cache table |
+|-----|---------------|-------------|
+| Talking Points | `subject-talking-points` | `talking_points` |
+| Audience Fit | `subject-audience-analysis` | `subject_audience_analyses` (7-day cache) |
+| Impact | `subject-impact-analysis` | `subject_impact_analyses` (per-scope) |
+
+Cross-section context pulls from `polling_data`, `intel_briefings`, `congress_bills`, `campaign_finance`, `election_forecasts`, plus the country's own `international_profiles` row. Surfaced via REST (`/public-api/v1/subject-ai-bundle?subject_type=country&subject_ref=DEU`) and MCP (`generate_subject_*`, `get_subject_ai_bundle`).
