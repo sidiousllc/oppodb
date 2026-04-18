@@ -183,7 +183,64 @@ Deno.serve(async (req) => {
 
     let result: { data: unknown; count: number | null };
 
-    // ─── CRUD + admin handling for Phase 1-5 endpoints ───────────────────
+    // ─── Messaging AI endpoints (Phase 7) ────────────────────────────────
+    const MSG_AI_ENDPOINTS = new Set([
+      "messaging-talking-points", "messaging-audience", "messaging-impact", "messaging-ai-bundle",
+    ]);
+    if (MSG_AI_ENDPOINTS.has(endpoint)) {
+      const slug = url.searchParams.get("slug") || url.searchParams.get("messaging_slug");
+      if (endpoint === "messaging-ai-bundle") {
+        if (!slug) return new Response(JSON.stringify({ error: "slug required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const [tp, aud, imp, item] = await Promise.all([
+          supabase.from("talking_points").select("audience, angle, points, evidence, created_at").eq("subject_type", "messaging").eq("subject_ref", slug).order("created_at", { ascending: false }).limit(10),
+          (supabase.from as any)("messaging_audience_analyses").select("*").eq("messaging_slug", slug).maybeSingle(),
+          (supabase.from as any)("messaging_impact_analyses").select("*").eq("messaging_slug", slug).order("generated_at", { ascending: false }).limit(10),
+          supabase.from("messaging_guidance").select("title, slug, source, author, summary, issue_areas").eq("slug", slug).maybeSingle(),
+        ]);
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify({ data: { item: item.data, talking_points: tp.data || [], audience_analysis: aud.data, impact_analyses: imp.data || [] } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const fnMap: Record<string, string> = {
+        "messaging-talking-points": "messaging-talking-points",
+        "messaging-audience": "messaging-audience-analysis",
+        "messaging-impact": "messaging-impact",
+      };
+      const tableMap: Record<string, string> = {
+        "messaging-audience": "messaging_audience_analyses",
+        "messaging-impact": "messaging_impact_analyses",
+      };
+      if (req.method === "GET") {
+        if (endpoint === "messaging-talking-points") {
+          if (!slug) return new Response(JSON.stringify({ error: "slug required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          const { data, error } = await supabase.from("talking_points").select("*").eq("subject_type", "messaging").eq("subject_ref", slug).order("created_at", { ascending: false }).limit(limit);
+          if (error) throw error;
+          supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+          return new Response(JSON.stringify({ data, count: data?.length ?? 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const tbl = tableMap[endpoint];
+        let q = (supabase.from as any)(tbl).select("*", { count: "exact" }).range(offset, offset + limit - 1).order("generated_at", { ascending: false });
+        if (slug) q = q.eq("messaging_slug", slug);
+        const { data, error, count } = await q;
+        if (error) throw error;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify({ data, count }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (req.method === "POST") {
+        const body = await req.json().catch(() => ({}));
+        // force regenerate is admin-only
+        if (body?.force_refresh || body?.force) {
+          const { data: rolesData } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+          const isAdmin = (rolesData || []).some((r: { role: string }) => r.role === "admin");
+          if (!isAdmin) return new Response(JSON.stringify({ error: "Admin role required for force regenerate" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data, error } = await supabase.functions.invoke(fnMap[endpoint], { body });
+        if (error) throw error;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify({ data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const PHASE5_ENDPOINTS = new Set([
       "alert-rules", "alert-dispatch-log", "webhook-endpoints",
       "entity-activity", "entity-notes", "entity-relationships",
