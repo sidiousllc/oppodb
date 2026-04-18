@@ -119,4 +119,13 @@ Generic AI suite that mirrors candidate/messaging AI for additional entity types
 
 `include_sections` accepts any of `polling`, `intel`, `legislation`, `finance`, `forecasts`, `international`, `demographics`.
 
-Total tool count: **60+** across all groups.
+### Phase 9 — OSINT Workbench (71 tools)
+Full passthrough access to the OSINT research catalog (People / Business / Property). Edge tools are dispatched server-side and resolve the caller's stored API keys via `credential-vault`; URL tools return a constructed deep-link.
+
+- `osint_list_tools({ category?, requires_key? })` — Enumerate the 71-tool catalog. Filter by `people|business|property` or by whether the tool needs a user-supplied API key.
+- `osint_get_tool({ id })` — Full metadata for a single tool (id, label, source, kind, edge_action, url_template, requires_key, tags).
+- `osint_search({ tool_id, query })` — Execute a tool. URL tools → `{ kind: "url", url, source }`. Edge tools → upstream-normalized `{ results, source, fetched_at }`.
+
+See [wiki/14-Research-Tools.md](14-Research-Tools.md) for the full tool catalog, key requirements, and provider list.
+
+Total tool count: **63+** across all groups.

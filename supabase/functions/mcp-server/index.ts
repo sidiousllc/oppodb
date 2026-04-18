@@ -2183,6 +2183,75 @@ mcpServer.tool("generate_subject_impact", {
   },
 });
 
+// =====================================================================
+// OSINT Workbench (71 tools across people / business / property)
+// =====================================================================
+import { OSINT_CATALOG, getOsintCatalogEntry } from "../_shared/osint-catalog.ts";
+
+mcpServer.tool("osint_list_tools", {
+  description: "List all OSINT research tools (71 total) across People, Business, and Property categories. Returns id, label, source, kind (url|edge), category, requires_key (if any), and tags.",
+  inputSchema: { type: "object" as const, properties: {
+    category: { type: "string" as const, description: "Optional filter: people | business | property" },
+    requires_key: { type: "boolean" as const, description: "If true, only tools needing a user API key" },
+  } },
+  handler: async (args: Record<string, unknown>) => {
+    let list = OSINT_CATALOG;
+    if (args.category) list = list.filter((t) => t.category === args.category);
+    if (typeof args.requires_key === "boolean") {
+      list = list.filter((t) => Boolean(t.requires_key) === args.requires_key);
+    }
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: list.length, tools: list }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("osint_get_tool", {
+  description: "Get full metadata for a single OSINT tool by id.",
+  inputSchema: { type: "object" as const, properties: {
+    id: { type: "string" as const, description: "Tool id (e.g. 'opensanctions', 'whois-dns')" },
+  }, required: ["id"] },
+  handler: async (args: Record<string, unknown>) => {
+    const tool = getOsintCatalogEntry(String(args.id));
+    if (!tool) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Tool not found" }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(tool, null, 2) }] };
+  },
+});
+
+mcpServer.tool("osint_search", {
+  description: "Execute an OSINT search. For 'edge' tools the request is dispatched to the osint-search edge function (uses caller's stored keys when needed). For 'url' tools returns a deep-link URL the client can open. Pass tool_id from osint_list_tools.",
+  inputSchema: { type: "object" as const, properties: {
+    tool_id: { type: "string" as const, description: "OSINT tool id" },
+    query: { type: "string" as const, description: "Search query / target" },
+  }, required: ["tool_id", "query"] },
+  handler: async (args: Record<string, unknown>) => {
+    const tool = getOsintCatalogEntry(String(args.tool_id));
+    const query = String(args.query || "").trim();
+    if (!tool) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unknown tool_id" }) }] };
+    if (!query) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Query required" }) }] };
+
+    if (tool.kind === "url") {
+      const url = (tool.url_template || "").replace("{q}", encodeURIComponent(query));
+      return { content: [{ type: "text" as const, text: JSON.stringify({ tool: tool.id, kind: "url", url, source: tool.source, fetched_at: new Date().toISOString() }, null, 2) }] };
+    }
+
+    // edge dispatch
+    try {
+      const resp = await fetch(`${supabaseUrl}/functions/v1/osint-search`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseKey}`,
+          "x-osint-caller": "mcp-server",
+        },
+        body: JSON.stringify({ action: tool.edge_action, query, tool_id: tool.id }),
+      });
+      const data = await resp.json();
+      return { content: [{ type: "text" as const, text: JSON.stringify({ tool: tool.id, kind: "edge", ...data }, null, 2) }] };
+    } catch (e) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Edge dispatch failed: ${(e as Error).message}` }) }] };
+    }
+  },
+});
+
 mcpServer.tool("get_subject_ai_bundle", {
   description: "One-call bundle: talking points + audience + impact analyses for a subject.",
   inputSchema: { type: "object" as const, properties: {
