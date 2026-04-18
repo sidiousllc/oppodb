@@ -37,6 +37,7 @@ import { CRMHub } from "@/components/CRMHub";
 import { ForecastHub } from "@/components/ForecastHub";
 import { InvestigationsPanel } from "@/components/InvestigationsPanel";
 import { GraphHub } from "@/components/GraphHub";
+import { OSINTToolPanel } from "@/components/OSINTToolPanel";
 
 import { Dashboard } from "@/components/Dashboard";
 import { VoterDataSection } from "@/components/VoterDataSection";
@@ -253,6 +254,12 @@ export default function Index() {
   const navigateBySlug = useCallback((rawSlug: string) => {
     const slug = rawSlug.trim().toLowerCase();
     if (!slug) return false;
+    if (slug.startsWith("osint:")) {
+      setSection("research-tools");
+      setResearchSubsection(slug);
+      setSelectedSlug(null);
+      return true;
+    }
     const candidateMatch = getCandidateBySlug(slug);
     if (candidateMatch) { setSection("oppohub"); setSelectedSlug(candidateMatch.slug); return true; }
     const magaMatch = magaFiles.find(m => m.slug.toLowerCase() === slug);
@@ -473,6 +480,15 @@ export default function Index() {
             <button onClick={() => setResearchSubsection(null)} className="win98-button text-[10px]">← Back to Research Tools</button>
             <GraphHub />
           </div>
+        );
+      }
+      if (researchSubsection?.startsWith("osint:")) {
+        const toolId = researchSubsection.slice("osint:".length);
+        return (
+          <OSINTToolPanel
+            toolId={toolId}
+            onBack={() => setResearchSubsection(null)}
+          />
         );
       }
       return (
