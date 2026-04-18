@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme, THEME_LABELS, type WindowsTheme } from "@/contexts/ThemeContext";
+import { useTheme, THEME_LABELS, THEME_CATEGORIES, type WindowsTheme, type ThemeCategory } from "@/contexts/ThemeContext";
 import { Moon, Sun } from "lucide-react";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 import { IntegrationSettings } from "@/components/IntegrationSettings";
@@ -25,6 +25,28 @@ import themeWin7 from "@/assets/theme-win7.jpg";
 import themeWin8 from "@/assets/theme-win8.jpg";
 import themeWin10 from "@/assets/theme-win10.jpg";
 import themeWin11 from "@/assets/theme-win11.jpg";
+import themeMacClassic from "@/assets/theme-mac-classic.jpg";
+import themeMacAqua from "@/assets/theme-mac-osx-aqua.jpg";
+import themeMacLeopard from "@/assets/theme-mac-leopard.jpg";
+import themeMacYosemite from "@/assets/theme-mac-yosemite.jpg";
+import themeMacBigSur from "@/assets/theme-mac-bigsur.jpg";
+import themeMacSonoma from "@/assets/theme-mac-sonoma.jpg";
+import themeUbuntu from "@/assets/theme-linux-ubuntu.jpg";
+import themeMint from "@/assets/theme-linux-mint.jpg";
+import themeFedora from "@/assets/theme-linux-fedora.jpg";
+import themePopOS from "@/assets/theme-linux-popos.jpg";
+import themeKali from "@/assets/theme-linux-kali.jpg";
+import themeArch from "@/assets/theme-linux-arch.jpg";
+import themeIos6 from "@/assets/theme-ios-6.jpg";
+import themeIos7 from "@/assets/theme-ios-7.jpg";
+import themeIos11 from "@/assets/theme-ios-11.jpg";
+import themeIos16 from "@/assets/theme-ios-16.jpg";
+import themeIos18 from "@/assets/theme-ios-18.jpg";
+import themeAndGinger from "@/assets/theme-android-gingerbread.jpg";
+import themeAndKitkat from "@/assets/theme-android-kitkat.jpg";
+import themeAndLollipop from "@/assets/theme-android-lollipop.jpg";
+import themeAnd12 from "@/assets/theme-android-12.jpg";
+import themeAnd15 from "@/assets/theme-android-15.jpg";
 
 const THEME_THUMBNAILS: Record<WindowsTheme, string> = {
   win98: themeWin98,
@@ -38,7 +60,31 @@ const THEME_THUMBNAILS: Record<WindowsTheme, string> = {
   "palm-v": themeWin98,
   "palm-m505": themeWin98,
   "palm-treo": themeWin98,
+  "mac-classic": themeMacClassic,
+  "mac-osx-aqua": themeMacAqua,
+  "mac-leopard": themeMacLeopard,
+  "mac-yosemite": themeMacYosemite,
+  "mac-bigsur": themeMacBigSur,
+  "mac-sonoma": themeMacSonoma,
+  "linux-ubuntu": themeUbuntu,
+  "linux-mint": themeMint,
+  "linux-fedora": themeFedora,
+  "linux-popos": themePopOS,
+  "linux-kali": themeKali,
+  "linux-arch": themeArch,
+  "ios-6": themeIos6,
+  "ios-7": themeIos7,
+  "ios-11": themeIos11,
+  "ios-16": themeIos16,
+  "ios-18": themeIos18,
+  "android-gingerbread": themeAndGinger,
+  "android-kitkat": themeAndKitkat,
+  "android-lollipop": themeAndLollipop,
+  "android-12": themeAnd12,
+  "android-15": themeAnd15,
 };
+
+const CATEGORY_ORDER: ThemeCategory[] = ["windows", "macos", "linux", "ios", "android", "palm"];
 
 const VALID_TABS = ["account", "appearance", "notifications", "integrations", "osint-keys", "sync", "android", "network"] as const;
 type ProfileTab = (typeof VALID_TABS)[number];
@@ -250,8 +296,8 @@ export default function ProfilePage() {
         {/* ============== APPEARANCE ============== */}
         <TabsContent value="appearance" className="space-y-3 mt-0">
           <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] font-bold flex items-center gap-1">🎨 Desktop Theme</p>
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+              <p className="text-[11px] font-bold flex items-center gap-1">🎨 Theme Picker</p>
               <button
                 onClick={() => setDarkMode(!darkMode)}
                 className="win98-button text-[10px] flex items-center gap-1 px-2 py-1"
@@ -260,36 +306,78 @@ export default function ProfilePage() {
                 {darkMode ? "Light Mode" : "Dark Mode"}
               </button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {(Object.entries(THEME_LABELS) as [WindowsTheme, string][]).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setTheme(key)}
-                  className={`win98-button text-[10px] p-1.5 text-left flex flex-col items-center gap-1 ${
-                    theme === key ? "font-bold" : ""
-                  }`}
-                  style={theme === key ? {
-                    borderColor: "hsl(var(--primary))",
-                    background: "hsl(var(--accent))",
-                    boxShadow: "0 0 0 2px hsl(var(--primary) / 0.3)",
-                  } : {}}
-                >
-                  <img
-                    src={THEME_THUMBNAILS[key]}
-                    alt={label}
-                    loading="lazy"
-                    width={512}
-                    height={512}
-                    className="w-full aspect-square object-cover"
-                    style={{ borderRadius: "1px", border: theme === key ? "2px solid hsl(var(--primary))" : "1px solid hsl(var(--win98-shadow))" }}
-                  />
-                  <div className="text-center w-full">
-                    <div className="truncate">{label}</div>
-                    {theme === key && <div className="text-[8px] text-[hsl(var(--primary))]">✓ Active</div>}
-                  </div>
-                </button>
-              ))}
-            </div>
+            <p className="text-[10px] text-[hsl(var(--muted-foreground))] mb-2">
+              Choose a theme by category. Mobile categories (iOS / Android) are best suited for phones; Desktop
+              categories (Windows / macOS / Linux) for larger screens.
+            </p>
+
+            <Tabs defaultValue={CATEGORY_ORDER.find(c => THEME_CATEGORIES[c].themes.includes(theme)) ?? "windows"}>
+              <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto bg-[hsl(var(--win98-face))] mb-3">
+                {CATEGORY_ORDER.map((cat) => {
+                  const meta = THEME_CATEGORIES[cat];
+                  const activeInCat = meta.themes.includes(theme);
+                  return (
+                    <TabsTrigger
+                      key={cat}
+                      value={cat}
+                      className="text-[10px] py-1.5 flex flex-col items-center gap-0"
+                    >
+                      <span>{meta.icon} {meta.label}</span>
+                      <span className="text-[8px] text-[hsl(var(--muted-foreground))]">
+                        {meta.kind} {activeInCat ? "• ✓" : ""}
+                      </span>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+
+              {CATEGORY_ORDER.map((cat) => {
+                const meta = THEME_CATEGORIES[cat];
+                return (
+                  <TabsContent key={cat} value={cat} className="mt-0">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {meta.themes.map((key) => {
+                        const label = THEME_LABELS[key];
+                        const isActive = theme === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => setTheme(key)}
+                            className={`win98-button text-[10px] p-1.5 text-left flex flex-col items-center gap-1 ${
+                              isActive ? "font-bold" : ""
+                            }`}
+                            style={isActive ? {
+                              borderColor: "hsl(var(--primary))",
+                              background: "hsl(var(--accent))",
+                              boxShadow: "0 0 0 2px hsl(var(--primary) / 0.3)",
+                            } : {}}
+                          >
+                            <img
+                              src={THEME_THUMBNAILS[key]}
+                              alt={label}
+                              loading="lazy"
+                              width={512}
+                              height={512}
+                              className="w-full aspect-square object-cover"
+                              style={{
+                                borderRadius: "1px",
+                                border: isActive
+                                  ? "2px solid hsl(var(--primary))"
+                                  : "1px solid hsl(var(--win98-shadow))",
+                              }}
+                            />
+                            <div className="text-center w-full">
+                              <div className="truncate">{label}</div>
+                              {isActive && <div className="text-[8px] text-[hsl(var(--primary))]">✓ Active</div>}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
           </div>
 
           {/* News Ticker */}
