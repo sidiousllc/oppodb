@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Win98Notepad } from "./Win98Notepad";
 import { Win98Window } from "./Win98Window";
+import { useOpenApp } from "./desktop/appRegistry";
 
 interface DesktopIcon {
   label: string;
@@ -21,20 +21,20 @@ interface ContextMenuState {
 }
 
 export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
-  const navigate = useNavigate();
   const { signOut } = useAuth();
+  const openApp = useOpenApp();
   const [notepadOpen, setNotepadOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [propertiesOpen, setPropertiesOpen] = useState(false);
 
   const icons: DesktopIcon[] = [
-    { label: "Opposition\nResearch DB", icon: "🌐", action: () => onOpenWindow?.() },
-    { label: "My Computer", icon: "🖥️", action: () => onOpenWindow?.() },
-    { label: "My Profile", icon: "👤", action: () => { onOpenWindow?.(); navigate("/profile"); } },
+    { label: "Opposition\nResearch DB", icon: "🌐", action: () => { onOpenWindow?.(); openApp("dashboard"); } },
+    { label: "My Computer", icon: "🖥️", action: () => openApp("my-computer") },
+    { label: "My Profile", icon: "👤", action: () => openApp("profile") },
     { label: "Recycle Bin", icon: "🗑️", action: () => {} },
-    { label: "Admin Panel", icon: "🛡️", action: () => { onOpenWindow?.(); navigate("/admin"); } },
-    { label: "API Access", icon: "🔑", action: () => { onOpenWindow?.(); navigate("/api"); } },
-    { label: "Network\nNeighborhood", icon: "🌍", action: () => {} },
+    { label: "Admin Panel", icon: "🛡️", action: () => openApp("admin") },
+    { label: "API Access", icon: "🔑", action: () => openApp("api") },
+    { label: "Network\nNeighborhood", icon: "🌍", action: () => openApp("network-neighborhood") },
     { label: "Notepad", icon: "📝", action: () => setNotepadOpen(true) },
     { label: "Log Off", icon: "🔌", action: () => signOut() },
   ];
