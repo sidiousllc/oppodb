@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
-import { ArrowLeft, Search, Loader2, ExternalLink, Info, KeyRound, Sparkles, ChevronRight } from "lucide-react";
+import { ArrowLeft, Search, Loader2, ExternalLink, Info, KeyRound, Sparkles, ChevronRight, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { getOSINTToolById, type OSINTTool } from "@/data/osintTools";
+import { OSINTResultWindow } from "@/components/OSINTResultWindow";
 
 interface OSINTToolPanelProps {
   toolId: string;
