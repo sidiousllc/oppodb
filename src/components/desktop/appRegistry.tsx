@@ -1,4 +1,4 @@
-import { ReactNode, lazy, Suspense } from "react";
+import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
 // Eager imports for the most-used sections (already in main bundle)
