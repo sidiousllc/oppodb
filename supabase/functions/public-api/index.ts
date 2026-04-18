@@ -1722,6 +1722,10 @@ function endpointDescription(endpoint: string): string {
     "vulnerability-scores": "[READ] AI candidate vulnerability scores. Filter: ?candidate_slug",
     "talking-points": "[READ] AI-generated talking points cache.",
     "bill-impact": "[READ] AI bill-impact analyses. Filter: ?bill_id, ?scope",
+    "messaging-talking-points": "[READ/POST] Cached AI talking points for a messaging item. GET ?slug=, POST {messaging_slug, audience, angle, model, include_sections[]}",
+    "messaging-audience": "[READ/POST] Audience effectiveness analysis for a messaging item. GET ?slug=, POST {messaging_slug, model, include_sections[]}",
+    "messaging-impact": "[READ/POST] Cross-section impact analysis for a messaging item. GET ?slug=, POST {messaging_slug, scope, scope_ref, model, include_sections[]}",
+    "messaging-ai-bundle": "[READ] Combined AI bundle (item + talking points + audience + impact). Required: ?slug=",
     "admin-dispatch-alerts": "[ADMIN POST] Force-run the dispatch-alerts cron job.",
     "admin-regenerate-ai": "[ADMIN POST] Regenerate AI cache. Body: {type:'vulnerability|talking_points|bill_impact', payload:{...}}",
   };
