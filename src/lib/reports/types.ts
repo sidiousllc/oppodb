@@ -167,6 +167,35 @@ export interface MapBlock extends BaseBlock {
   caption?: string;
 }
 
+export interface OsintResultsBlock extends BaseBlock {
+  type: "osint_results";
+  /** Tool ID from the OSINT catalog (e.g. "fec-individual", "opencorporates") */
+  toolId: string;
+  toolLabel?: string;
+  /** Original user query string */
+  query: string;
+  /** AI-parsed structured results returned by osint-scrape-parse / osint-search */
+  snapshot?: {
+    results?: Array<Record<string, unknown>>;
+    raw_text?: string;
+    source_url?: string;
+    fetched_at?: string;
+  };
+}
+
+export interface SubjectAiBlock extends BaseBlock {
+  type: "subject_ai";
+  /** Free-form subject/topic the AI analysed (e.g. "school choice", "Project 2025") */
+  subject: string;
+  snapshot?: {
+    talking_points?: unknown;
+    audience_analysis?: unknown;
+    impact_analysis?: unknown;
+    generated_at?: string;
+    model?: string;
+  };
+}
+
 export type ReportBlock =
   | HeadingBlock
   | TextBlock
@@ -181,7 +210,9 @@ export type ReportBlock =
   | McpDataBlock
   | ChartBlock
   | TableBlock
-  | MapBlock;
+  | MapBlock
+  | OsintResultsBlock
+  | SubjectAiBlock;
 
 export interface Report {
   id: string;
@@ -239,4 +270,6 @@ export const BLOCK_PALETTE: Array<{
 
   { type: "api_data", label: "Public API Call", emoji: "🔌", group: "API" },
   { type: "mcp_data", label: "MCP Tool Call", emoji: "🤖", group: "API" },
+  { type: "osint_results", label: "OSINT Search Results", emoji: "🔎", group: "Intelligence" },
+  { type: "subject_ai", label: "AI Subject Brief", emoji: "🧠", group: "Intelligence" },
 ];
