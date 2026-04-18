@@ -59,6 +59,8 @@ async function loadSubject(admin: SAdmin, subject_type: string, subject_ref: str
   }
   return null;
 }
+
+async function buildSectionContext(admin: SAdmin, subject: any, selected: Section[], scope: string, scopeRef: string | null): Promise<string> {
   const tags = (subject.tags || []).filter((t: string) => !["Democrat","Republican","Independent"].includes(t));
   const parts: string[] = [];
   if (scope === "district" && scopeRef) {
