@@ -136,7 +136,8 @@ async function syncSpending(query: string): Promise<number> {
     filters: {
       keywords: [recipient],
       award_type_codes: ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
-      time_period: [{ start_date: "2020-01-01", end_date: new Date().toISOString().slice(0, 10) }],
+      // Pull as much historical data as the API allows (USAspending data starts ~2008)
+      time_period: [{ start_date: "2008-01-01", end_date: new Date().toISOString().slice(0, 10) }],
     },
     fields: [
       "Award ID",
@@ -152,7 +153,7 @@ async function syncSpending(query: string): Promise<number> {
       "Period of Performance Current End Date",
     ],
     page: 1,
-    limit: 100,
+    limit: 500, // max page size for USAspending
     sort: "Award Amount",
     order: "desc",
   };
