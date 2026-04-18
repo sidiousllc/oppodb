@@ -70,6 +70,133 @@ function RouteShim({ to, label }: { to: string; label: string }) {
 /** Pick a sensible default size per app */
 const DEFAULT_LARGE = { width: Math.min(1100, typeof window !== "undefined" ? window.innerWidth - 220 : 900), height: Math.min(720, typeof window !== "undefined" ? window.innerHeight - 140 : 640) };
 
+/* ─── Stateful wrappers used by registry render() functions ────────────── */
+
+function DashboardWindow({ openApp }: { openApp: AppRenderContext["openApp"] }) {
+  const [districts, setDistricts] = useState<DistrictProfile[]>([]);
+  const [count, setCount] = useState(candidates.length);
+  useEffect(() => {
+    let c = false;
+    fetchAllDistricts().then(d => !c && setDistricts(d));
+    fetchCandidatesFromDB().then(x => {
+      if (c || !x.length) return;
+      initCandidates(x.map(v => ({ name: v.name, slug: v.slug, content: v.content, github_path: v.github_path })));
+      setCount(candidates.length);
+    });
+    return () => { c = true; };
+  }, []);
+  return (
+    <Dashboard
+      onNavigateSection={(s, slug) => openApp(s, slug ? { slug } : undefined)}
+      candidateCount={count}
+      districtCount={districts.length}
+      districts={districts}
+    />
+  );
+}
+
+function OppoHubWindow({ initialSlug, openApp }: { initialSlug?: string; openApp: AppRenderContext["openApp"] }) {
+  const { isAdmin } = useIsAdmin();
+  const [filter, setFilter] = useState<any>("all");
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(initialSlug ?? null);
+  const [version, setVersion] = useState(0);
+
+  useEffect(() => {
+    let c = false;
+    fetchCandidatesFromDB().then(x => {
+      if (c || !x.length) return;
+      initCandidates(x.map(v => ({ name: v.name, slug: v.slug, content: v.content, github_path: v.github_path })));
+      setVersion(v => v + 1);
+    });
+    Promise.all([
+      supabase.from("maga_files").select("name, slug, content").order("name"),
+      supabase.from("local_impacts").select("state, slug, summary, content").order("state"),
+      supabase.from("narrative_reports").select("name, slug, content").order("name"),
+    ]).then(([m, l, n]) => {
+      if (c) return;
+      if (m.data?.length) mergeMagaFilesFromDB(m.data);
+      if (l.data?.length) mergeLocalImpactFromDB(l.data);
+      if (n.data?.length) mergeNarrativeReportsFromDB(n.data);
+      setVersion(v => v + 1);
+    });
+    return () => { c = true; };
+  }, []);
+
+  const candidate = selectedSlug ? getCandidateBySlug(selectedSlug) : null;
+  const maga = selectedSlug ? magaFiles.find(m => m.slug === selectedSlug) : null;
+  const local = selectedSlug ? getLocalImpactBySlug(selectedSlug) : null;
+  const narrative = selectedSlug ? narrativeReports.find(n => n.slug === selectedSlug) : null;
+
+  if (candidate) {
+    return (
+      <CandidateDetail
+        candidate={candidate}
+        onBack={() => setSelectedSlug(null)}
+        onNavigateSlug={(slug) => { setSelectedSlug(slug); return true; }}
+        onEdit={() => {}}
+      />
+    );
+  }
+  if (maga) return <GenericDetail title={maga.name} content={maga.content} onBack={() => setSelectedSlug(null)} onNavigateSlug={(s) => { setSelectedSlug(s); return true; }} />;
+  if (local) return <GenericDetail title={`${local.state} — Local Impact`} content={local.content} onBack={() => setSelectedSlug(null)} onNavigateSlug={(s) => { setSelectedSlug(s); return true; }} />;
+  if (narrative) return <GenericDetail title={narrative.name} content={narrative.content} onBack={() => setSelectedSlug(null)} onNavigateSlug={(s) => { setSelectedSlug(s); return true; }} />;
+
+  return (
+    <OppoHub
+      search=""
+      filter={filter}
+      dataVersion={version}
+      isAdmin={isAdmin}
+      onSelectSlug={setSelectedSlug}
+      selectedSlug={null}
+      onNavigateSlug={(slug) => { setSelectedSlug(slug); return true; }}
+      onEditCandidate={() => {}}
+      onCreateCandidate={() => {}}
+      onSetSection={(s) => openApp(s)}
+    />
+  );
+}
+
+function LegHubWindow({ initialSlug, openApp }: { initialSlug?: string; openApp: AppRenderContext["openApp"] }) {
+  const [districts, setDistricts] = useState<DistrictProfile[]>([]);
+  const [stateLeg, setStateLeg] = useState<StateLegislativeProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(initialSlug ?? null);
+
+  useEffect(() => {
+    let c = false;
+    Promise.all([fetchAllDistricts(), fetchStateLegislativeDistricts()])
+      .then(([d, s]) => { if (!c) { setDistricts(d); setStateLeg(s); } })
+      .finally(() => !c && setLoading(false));
+    return () => { c = true; };
+  }, []);
+
+  const handleSync = useCallback(async (stateAbbr?: string, chamber?: string) => {
+    setSyncing(true);
+    try {
+      await syncStateLegislativeData(stateAbbr, chamber);
+      const fresh = await fetchStateLegislativeDistricts();
+      setStateLeg(fresh);
+    } finally { setSyncing(false); }
+  }, []);
+
+  return (
+    <LegHub
+      stateLegDistricts={stateLeg}
+      stateLegLoading={loading}
+      onStateLegSync={handleSync}
+      stateLegSyncing={syncing}
+      districts={districts}
+      onDistrictsChange={setDistricts}
+      search=""
+      onSelectSlug={setSelectedSlug}
+      selectedSlug={selectedSlug}
+      onNavigateToCandidate={(slug) => openApp("oppohub", { slug })}
+    />
+  );
+}
+
 export const APP_REGISTRY: Record<string, AppDescriptor> = {
   // ─── Sidebar sections ──────────────────────────────────────────────────────
   dashboard: {
@@ -77,16 +204,7 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     title: "Dashboard",
     icon: "🏠",
     singleton: true,
-    render: (_p, ctx) => (
-      <div className="p-3">
-        <Dashboard
-          onNavigateSection={(s, slug) => ctx.openApp(s, slug ? { slug } : undefined)}
-          candidateCount={0}
-          districtCount={0}
-          districts={[]}
-        />
-      </div>
-    ),
+    render: (_p, ctx) => <div className="p-3"><DashboardWindow openApp={ctx.openApp} /></div>,
   },
   oppohub: {
     id: "oppohub",
@@ -95,18 +213,7 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     singleton: true,
     render: (payload, ctx) => (
       <div className="p-3">
-        <OppoHub
-          search=""
-          filter="all"
-          dataVersion={0}
-          isAdmin={false}
-          onSelectSlug={() => {}}
-          selectedSlug={(payload?.slug as string) ?? null}
-          onNavigateSlug={(slug) => { ctx.openApp("oppohub", { slug }); return true; }}
-          onEditCandidate={() => {}}
-          onCreateCandidate={() => {}}
-          onSetSection={(s) => ctx.openApp(s)}
-        />
+        <OppoHubWindow initialSlug={payload?.slug as string | undefined} openApp={ctx.openApp} />
       </div>
     ),
   },
@@ -117,18 +224,7 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     singleton: true,
     render: (payload, ctx) => (
       <div className="p-3">
-        <LegHub
-          stateLegDistricts={[]}
-          stateLegLoading={false}
-          onStateLegSync={async () => {}}
-          stateLegSyncing={false}
-          districts={[]}
-          onDistrictsChange={() => {}}
-          search=""
-          onSelectSlug={() => {}}
-          selectedSlug={(payload?.slug as string) ?? null}
-          onNavigateToCandidate={(slug) => ctx.openApp("oppohub", { slug })}
-        />
+        <LegHubWindow initialSlug={payload?.slug as string | undefined} openApp={ctx.openApp} />
       </div>
     ),
   },
