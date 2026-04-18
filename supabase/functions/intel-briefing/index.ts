@@ -417,7 +417,8 @@ async function parseRSS(url: string, sourceName: string, scope: string): Promise
     const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>/gi;
     let match;
     let count = 0;
-    while ((match = itemRegex.exec(xml)) !== null && count < 10) {
+    const PER_FEED_CAP = 50; // was 10 — now pulls full feed depth
+    while ((match = itemRegex.exec(xml)) !== null && count < PER_FEED_CAP) {
       const block = match[1];
       const titleMatch = block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
       const linkMatch = block.match(/<link[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i);
@@ -435,7 +436,11 @@ async function parseRSS(url: string, sourceName: string, scope: string): Promise
 
       let parsedDate: string;
       try {
-        parsedDate = new Date(pubDate).toISOString();
+        const d = new Date(pubDate);
+        // Reject NaN and clamp future dates (RSS feeds frequently lie) to "now"
+        if (isNaN(d.getTime())) parsedDate = new Date().toISOString();
+        else if (d.getTime() > Date.now() + 60 * 60 * 1000) parsedDate = new Date().toISOString();
+        else parsedDate = d.toISOString();
       } catch {
         parsedDate = new Date().toISOString();
       }
@@ -456,7 +461,7 @@ async function parseRSS(url: string, sourceName: string, scope: string): Promise
     // Also try Atom entries
     if (items.length === 0) {
       const entryRegex = /<entry[^>]*>([\s\S]*?)<\/entry>/gi;
-      while ((match = entryRegex.exec(xml)) !== null && items.length < 10) {
+      while ((match = entryRegex.exec(xml)) !== null && items.length < 50) {
         const block = match[1];
         const titleMatch = block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
         const linkMatch = block.match(/<link[^>]*href="([^"]*)"[^>]*\/?>/i);
@@ -471,7 +476,12 @@ async function parseRSS(url: string, sourceName: string, scope: string): Promise
         const pubDate = updatedMatch ? updatedMatch[1].trim() : new Date().toISOString();
 
         let parsedDate: string;
-        try { parsedDate = new Date(pubDate).toISOString(); } catch { parsedDate = new Date().toISOString(); }
+        try {
+          const d = new Date(pubDate);
+          if (isNaN(d.getTime())) parsedDate = new Date().toISOString();
+          else if (d.getTime() > Date.now() + 60 * 60 * 1000) parsedDate = new Date().toISOString();
+          else parsedDate = d.toISOString();
+        } catch { parsedDate = new Date().toISOString(); }
 
         items.push({
           title,
@@ -540,15 +550,24 @@ Deno.serve(async (req) => {
     console.log(`Fetched ${allItems.length} total items from ${requestedScopes.length} scopes`);
 
     if (allItems.length > 0) {
-      // Delete items older than 48 hours
-      const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+      // Keep 7 days of history (was 48h) so the ticker and IntelHub have depth
+      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       await supabase.from("intel_briefings").delete().lt("published_at", cutoff);
 
-      // Upsert new items (deduplicate by title + source)
+      // Dedupe in-memory by (title, source_name) before upsert to avoid
+      // "ON CONFLICT … cannot affect row a second time" errors when a feed repeats a headline
+      const seen = new Set<string>();
+      const deduped = allItems.filter((it) => {
+        const key = `${(it.title || "").trim().toLowerCase()}|${(it.source_name || "").toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
       const batchSize = 50;
-      let inserted = 0;
-      for (let i = 0; i < allItems.length; i += batchSize) {
-        const batch = allItems.slice(i, i + batchSize);
+      let upserted = 0;
+      for (let i = 0; i < deduped.length; i += batchSize) {
+        const batch = deduped.slice(i, i + batchSize);
         const { error } = await supabase.from("intel_briefings").upsert(
           batch.map((item) => ({
             title: item.title,
@@ -565,10 +584,10 @@ Deno.serve(async (req) => {
         if (error) {
           console.error("Upsert error:", error.message);
         } else {
-          inserted += batch.length;
+          upserted += batch.length;
         }
       }
-      console.log(`Inserted/updated ${inserted} briefings`);
+      console.log(`Upserted ${upserted} of ${deduped.length} unique briefings (from ${allItems.length} fetched)`);
     }
 
     return new Response(

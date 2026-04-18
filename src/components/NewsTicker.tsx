@@ -45,15 +45,30 @@ export function NewsTicker() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
+      // Cap published_at at "now" so future-dated RSS items don't crowd out real news
+      const nowIso = new Date().toISOString();
       const { data } = await supabase
         .from("intel_briefings")
         .select("id,title,source_name,scope,source_url,published_at,summary")
+        .lte("published_at", nowIso)
         .order("published_at", { ascending: false, nullsFirst: false })
-        .limit(40);
-      if (!cancelled && data) setItems(data as TickerItem[]);
+        .limit(200);
+      if (cancelled || !data) return;
+      // Dedupe by normalized title; keep up to 80 unique headlines
+      const seen = new Set<string>();
+      const unique: TickerItem[] = [];
+      for (const item of data as TickerItem[]) {
+        const key = (item.title || "").trim().toLowerCase().slice(0, 120);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        unique.push(item);
+        if (unique.length >= 80) break;
+      }
+      setItems(unique);
     };
     load();
-    const interval = setInterval(load, 5 * 60 * 1000);
+    // Refresh every 15 min (was 5) — DB cron only syncs every 15 min anyway
+    const interval = setInterval(load, 15 * 60 * 1000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
@@ -84,7 +99,8 @@ export function NewsTicker() {
   if (!enabled || items.length === 0) return null;
 
   const looped = [...items, ...items];
-  const durationSeconds = Math.max(items.length * speed, 4);
+  // Larger queue → longer scroll so all stories are visible before looping
+  const durationSeconds = Math.max(items.length * speed * 4, 30);
 
   return (
     <>
