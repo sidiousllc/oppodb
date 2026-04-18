@@ -135,6 +135,14 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
     }
   }
 
+  if (!tool) {
+    return (
+      <div className="p-4 text-[11px]">
+        Tool not found. <button onClick={onBack} className="underline">Back</button>
+      </div>
+    );
+  }
+
   return (
     <div>
       {onBack && (
