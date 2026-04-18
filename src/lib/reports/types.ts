@@ -19,6 +19,7 @@ export type ReportBlockType =
   | "international"  // country profile
   | "legislation"    // congress bill/votes
   | "messaging"      // messaging hub doc
+  | "messaging_ai"   // bundled AI talking points + audience analysis + impact for a messaging item
   | "research"       // candidate research subpage
   | "talking_points"      // AI talking points cached for a candidate/bill
   | "vulnerability"       // AI vulnerability score for candidate
@@ -84,6 +85,7 @@ export interface DataBlock extends BaseBlock {
     | "international"
     | "legislation"
     | "messaging"
+    | "messaging_ai"
     | "research"
     | "talking_points"
     | "vulnerability"
@@ -219,6 +221,7 @@ export const BLOCK_PALETTE: Array<{
   { type: "international", label: "International", emoji: "🌐", group: "Data" },
   { type: "legislation", label: "Legislation", emoji: "⚖️", group: "Data" },
   { type: "messaging", label: "Messaging Doc", emoji: "📢", group: "Data" },
+  { type: "messaging_ai", label: "Messaging AI Bundle", emoji: "🧠", group: "Intelligence" },
 
   { type: "talking_points", label: "AI Talking Points", emoji: "🗣️", group: "Intelligence" },
   { type: "vulnerability", label: "Vulnerability Score", emoji: "🛡️", group: "Intelligence" },
