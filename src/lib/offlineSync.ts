@@ -82,41 +82,67 @@ export function getSyncStatus(): SyncStatus {
   return { ...syncStatus };
 }
 
+/** Soft-error patterns we treat as "skip table" rather than hard failure */
+function isSoftSyncError(msg: string): boolean {
+  const m = msg.toLowerCase();
+  return (
+    m.includes("permission denied") ||
+    m.includes("row-level security") ||
+    m.includes("jwt") ||
+    m.includes("not authenticated") ||
+    m.includes("does not exist")
+  );
+}
+
 /** Sync a single table from Supabase to encrypted IndexedDB */
-async function syncTable(tableName: string, select: string, orderBy: string): Promise<number> {
-  let allData: Record<string, unknown>[] = [];
+async function syncTable(
+  tableName: string,
+  select: string,
+  orderBy: string,
+  pageSize = 1000,
+): Promise<number> {
+  let total = 0;
   let offset = 0;
-  const pageSize = 1000;
 
   while (true) {
     const { data, error } = await (supabase as any)
       .from(tableName)
       .select(select)
-      .order(orderBy)
+      .order(orderBy, { nullsFirst: false })
       .range(offset, offset + pageSize - 1);
 
-    if (error) throw new Error(`Failed to sync ${tableName}: ${error.message}`);
+    if (error) {
+      if (isSoftSyncError(error.message || "")) {
+        console.warn(`[offlineSync] skip ${tableName}: ${error.message}`);
+        return total;
+      }
+      throw new Error(`Failed to sync ${tableName}: ${error.message}`);
+    }
     if (!data || data.length === 0) break;
 
-    allData = allData.concat(data as Record<string, unknown>[]);
+    // Encrypt + persist each page immediately to bound memory
+    await storeEncrypted(tableName, data as Record<string, unknown>[]);
+    total += data.length;
+
     if (data.length < pageSize) break;
     offset += pageSize;
   }
 
-  if (allData.length > 0) {
-    await storeEncrypted(tableName, allData);
-  }
-
   await setSyncMeta(`lastSync:${tableName}`, Date.now());
-  return allData.length;
+  return total;
 }
 
-/** Full sync of all tables */
+/** Full sync of all tables. Skips entirely when not authenticated. */
 export async function syncAllTables(
-  onProgress?: (table: string, index: number, total: number) => void
+  onProgress?: (table: string, index: number, total: number) => void,
 ): Promise<{ synced: number; errors: string[] }> {
   if (!navigator.onLine) {
     return { synced: 0, errors: ["Device is offline"] };
+  }
+
+  const { data: sess } = await supabase.auth.getSession();
+  if (!sess?.session) {
+    return { synced: 0, errors: ["Not signed in — sign in to sync data for offline use"] };
   }
 
   syncStatus.isSyncing = true;
@@ -127,18 +153,19 @@ export async function syncAllTables(
   const errors: string[] = [];
 
   for (let i = 0; i < SYNC_TABLES.length; i++) {
-    const { table, select, orderBy } = SYNC_TABLES[i];
+    const { table, select, orderBy, pageSize } = SYNC_TABLES[i];
     onProgress?.(table, i, SYNC_TABLES.length);
 
     try {
-      const count = await syncTable(table, select, orderBy);
+      const count = await syncTable(table, select, orderBy, pageSize);
       synced += count;
       if (!syncStatus.tablesAvailable.includes(table)) {
         syncStatus.tablesAvailable.push(table);
       }
     } catch (e: any) {
-      errors.push(e.message || `Failed to sync ${table}`);
-      console.error(`Sync error for ${table}:`, e);
+      const msg = e?.message || `Failed to sync ${table}`;
+      errors.push(`${table}: ${msg}`);
+      console.error(`[offlineSync] ${table} failed:`, e);
     }
   }
 
