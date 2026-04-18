@@ -54,7 +54,7 @@ async function syncFara(query: string): Promise<number> {
   const filtered = query && query !== "1"
     ? items.filter((r) => JSON.stringify(r).toLowerCase().includes(query.toLowerCase()))
     : items;
-  const rows = filtered.slice(0, 500).map((r: any) => ({
+  const rows = filtered.map((r: any) => ({
     registrant_name: r.Name ?? r.registrant_name ?? "Unknown",
     registration_number: String(r.Registration_Number ?? r.registration_number ?? crypto.randomUUID()),
     address: r.Address_1 ?? null,
@@ -103,7 +103,7 @@ async function syncIg(query: string): Promise<number> {
     return 0;
   }
   const items: any[] = json?.results ?? json?.data ?? json ?? [];
-  const rows = items.slice(0, 200).map((r: any) => ({
+  const rows = items.map((r: any) => ({
     report_id: String(r.id ?? r.report_id ?? crypto.randomUUID()),
     title: r.title ?? r.report_title ?? "Untitled",
     agency: r.agency ?? r.agencyAbbreviation ?? "Unknown",
