@@ -1,7 +1,7 @@
 {
-  "name": "Opposition Research Database",
-  "short_name": "ORDB",
-  "description": "Sidio.us Opposition Research Database",
+  "name": "OppoDB",
+  "short_name": "OppoDB",
+  "description": "OppoDB — Opposition Research Database",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
