@@ -254,6 +254,12 @@ export default function Index() {
   const navigateBySlug = useCallback((rawSlug: string) => {
     const slug = rawSlug.trim().toLowerCase();
     if (!slug) return false;
+    if (slug.startsWith("osint:")) {
+      setSection("research-tools");
+      setResearchSubsection(slug);
+      setSelectedSlug(null);
+      return true;
+    }
     const candidateMatch = getCandidateBySlug(slug);
     if (candidateMatch) { setSection("oppohub"); setSelectedSlug(candidateMatch.slug); return true; }
     const magaMatch = magaFiles.find(m => m.slug.toLowerCase() === slug);
