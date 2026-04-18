@@ -476,7 +476,12 @@ async function parseRSS(url: string, sourceName: string, scope: string): Promise
         const pubDate = updatedMatch ? updatedMatch[1].trim() : new Date().toISOString();
 
         let parsedDate: string;
-        try { parsedDate = new Date(pubDate).toISOString(); } catch { parsedDate = new Date().toISOString(); }
+        try {
+          const d = new Date(pubDate);
+          if (isNaN(d.getTime())) parsedDate = new Date().toISOString();
+          else if (d.getTime() > Date.now() + 60 * 60 * 1000) parsedDate = new Date().toISOString();
+          else parsedDate = d.toISOString();
+        } catch { parsedDate = new Date().toISOString(); }
 
         items.push({
           title,
