@@ -59,6 +59,11 @@ const VALID_ENDPOINTS = [
   "vulnerability-scores",
   "talking-points",
   "bill-impact",
+  // Messaging AI (Phase 7)
+  "messaging-talking-points",     // GET (cached) | POST (generate; admin force=true)
+  "messaging-audience",           // GET (cached) | POST (generate)
+  "messaging-impact",             // GET (cached) | POST (generate)
+  "messaging-ai-bundle",          // GET ?slug= → { item, talking_points, audience, impact[] }
   // Admin-only operations
   "admin-dispatch-alerts",
   "admin-regenerate-ai",
