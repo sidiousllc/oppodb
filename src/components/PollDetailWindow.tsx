@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Win98Window } from "@/components/Win98Window";
+import { SubjectAIPanel } from "@/components/SubjectAIPanel";
 import { getSourceInfo, POLL_TYPES, type PollEntry } from "@/data/pollingData";
 import {
   BarChart3, ExternalLink, Clock, Users, Target, FileText,
