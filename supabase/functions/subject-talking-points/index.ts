@@ -190,7 +190,7 @@ serve(async (req) => {
       long: "Each point: a full paragraph (~80 words).",
     };
 
-    const subjectLabel = subject_type === "district" ? "congressional district" : subject_type === "state_leg" ? "state legislative district" : "bill";
+    const subjectLabel = subject_type === "district" ? "congressional district" : subject_type === "state_leg" ? "state legislative district" : subject_type === "legislation" ? "bill" : subject_type === "polling" ? "poll" : "country";
     const systemPrompt = [
       "You are a multi-partisan political communications strategist.",
       `Generate exactly ${safeCount} ${angle} talking points about this ${subjectLabel} for a ${audience} audience.`,
