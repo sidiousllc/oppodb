@@ -37,8 +37,30 @@ function saveToStorage(key: string, items: string[]) {
   localStorage.setItem(key, JSON.stringify(items));
 }
 
-const EMPTY_DB: Record<string, any[]> = { polling: [], finance: [], members: [], bills: [], forecasts: [], congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [], voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [], trackedBills: [], messagingGuidance: [], intelBriefings: [], congressCommittees: [], congressVotes: [], stateLegElections: [], forecastHistory: [], internationalProfiles: [] };
+const EMPTY_DB: Record<string, any[]> = {
+  polling: [], finance: [], members: [], bills: [], forecasts: [],
+  congressElections: [], stateFinance: [], mnFinance: [], winredDonations: [],
+  voterStats: [], predictionMarkets: [], stateLeg: [], mitElections: [],
+  trackedBills: [], messagingGuidance: [], intelBriefings: [],
+  congressCommittees: [], congressVotes: [], stateLegElections: [],
+  forecastHistory: [], internationalProfiles: [],
+  // NEW: public records & investigations
+  courtCases: [], faraRegistrants: [], federalSpending: [], lobbyingDisclosures: [],
+  govContracts: [], igReports: [], congressionalRecord: [], districtProfiles: [],
+  electionNightStreams: [], stateLegislators: [], stateLegBills: [],
+  pollingAggregates: [],
+  // NEW: international extras
+  internationalElections: [], internationalLeaders: [], internationalLegislation: [],
+  internationalPolling: [],
+  // NEW: knowledge & collab
+  wikiPages: [], warRooms: [], stakeholders: [], entityNotes: [], reports: [],
+  oppoTrackers: [], watchlistItems: [],
+  // NEW: AI cache (searchable summaries)
+  vulnerabilityScores: [], talkingPoints: [], billImpactAnalyses: [],
+  subjectImpactAnalyses: [], messagingAudienceAnalyses: [], messagingImpactAnalyses: [],
+};
 
+type DbResults = typeof EMPTY_DB;
 
 export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -46,29 +68,7 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [savedSearches, setSavedSearches] = useState<string[]>(() => loadFromStorage(STORAGE_KEY));
   const [recentSearches, setRecentSearches] = useState<string[]>(() => loadFromStorage(RECENT_KEY));
-  const [dbResults, setDbResults] = useState<{
-    polling: any[];
-    finance: any[];
-    members: any[];
-    bills: any[];
-    forecasts: any[];
-    congressElections: any[];
-    stateFinance: any[];
-    mnFinance: any[];
-    winredDonations: any[];
-    voterStats: any[];
-    predictionMarkets: any[];
-    stateLeg: any[];
-    mitElections: any[];
-    trackedBills: any[];
-    messagingGuidance: any[];
-    intelBriefings: any[];
-    congressCommittees: any[];
-    congressVotes: any[];
-    stateLegElections: any[];
-    forecastHistory: any[];
-    internationalProfiles: any[];
-  }>(EMPTY_DB as any);
+  const [dbResults, setDbResults] = useState<DbResults>(EMPTY_DB);
   const [hasSearched, setHasSearched] = useState(false);
 
   // Ctrl+K shortcut to focus search
