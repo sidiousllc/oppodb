@@ -159,7 +159,7 @@ export function AIHistoryWindow({ initialFeature, initialSubjectType, initialSub
                 <pre className="text-[10px] bg-[hsl(var(--win98-face))] p-1 overflow-auto whitespace-pre-wrap">{JSON.stringify(selected.output, null, 2)}</pre>
               </div>
               {selected.error_message && (
-                <div className="text-red-700">
+                <div className="text-destructive">
                   <div className="font-bold">Error</div>
                   <div className="text-[10px]">{selected.error_message}</div>
                 </div>
