@@ -580,7 +580,7 @@ export default function Index() {
         ) : (
           /* Main ORO browser window */
           <Win98Window
-            title="ORO - Opposition Research Database - Sidio.us Group"
+            title="OppoDB - Opposition Research Database"
             icon={<span className="text-[14px]">🌐</span>}
             maximized
             onMinimize={() => setIsMinimized(true)}
