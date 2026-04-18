@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 // Eager imports for the most-used sections (already in main bundle)
@@ -22,9 +22,21 @@ import { VoterDataSection } from "@/components/VoterDataSection";
 import { CourtRecordsSearch } from "@/components/CourtRecordsSearch";
 import { StateReportGenerator } from "@/components/StateReportGenerator";
 import { OSINTToolPanel } from "@/components/OSINTToolPanel";
+import { CandidateDetail } from "@/components/CandidateDetail";
+import { GenericDetail } from "@/components/GenericDetail";
+import { DistrictDetail } from "@/components/DistrictDetail";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { candidates, getCandidateBySlug, initCandidates } from "@/data/candidates";
+import { fetchCandidatesFromDB } from "@/data/githubSync";
+import { fetchAllDistricts, type DistrictProfile } from "@/data/districtIntel";
+import { fetchStateLegislativeDistricts, syncStateLegislativeData, type StateLegislativeProfile } from "@/data/stateLegislativeIntel";
+import { magaFiles, mergeMagaFilesFromDB } from "@/data/magaFiles";
+import { localImpactReports, getLocalImpactBySlug, mergeLocalImpactFromDB } from "@/data/localImpact";
+import { narrativeReports, mergeNarrativeReportsFromDB } from "@/data/narrativeReports";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface AppDescriptor {
   /** Stable ID — also used as the singleton key when only one instance is allowed */
