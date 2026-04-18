@@ -1,13 +1,13 @@
-// Reusable AI panel for District Intel, State Legislative, and Legislation items.
-// subject_type: 'district' | 'state_leg' | 'legislation'
-// subject_ref: district_id, state-leg row id, or congress_bills.bill_id
+// Reusable AI panel for District Intel, State Legislative, Legislation, Polling, and Country items.
+// subject_type: 'district' | 'state_leg' | 'legislation' | 'polling' | 'country'
+// subject_ref: district_id, state-leg row id, congress_bills.bill_id, polling_data.id, or country_code
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, MessageSquare, Target, BarChart3, Sparkles, Settings2, History, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 interface SubjectAIPanelProps {
-  subjectType: "district" | "state_leg" | "legislation";
+  subjectType: "district" | "state_leg" | "legislation" | "polling" | "country";
   subjectRef: string;
   subjectTitle: string;
   defaultScope?: "national" | "state" | "district";
