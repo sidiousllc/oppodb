@@ -433,6 +433,47 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ─── OSINT Workbench ─────────────────────────────────────────────────
+    if (endpoint === "osint-tools") {
+      const { OSINT_CATALOG } = await import("../_shared/osint-catalog.ts");
+      supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+      return new Response(JSON.stringify({ data: OSINT_CATALOG, meta: { total: OSINT_CATALOG.length, endpoint } }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (endpoint === "osint-search") {
+      if (req.method !== "POST") {
+        return new Response(JSON.stringify({ error: "POST required: { tool_id, query }" }),
+          { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { getOsintCatalogEntry } = await import("../_shared/osint-catalog.ts");
+      const body = await req.json().catch(() => ({}));
+      const tool = getOsintCatalogEntry(String(body.tool_id || ""));
+      if (!tool) {
+        return new Response(JSON.stringify({ error: `Unknown tool_id: ${body.tool_id}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const queryStr = String(body.query || "").trim();
+      if (!queryStr) {
+        return new Response(JSON.stringify({ error: "query required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (tool.kind === "url") {
+        const target = tool.url_template?.replace("{q}", encodeURIComponent(queryStr)) ?? null;
+        return new Response(JSON.stringify({ data: { kind: "url", source: tool.source, source_url: target, query: queryStr } }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // edge — proxy to osint-search using service-role + caller user_id
+      const proxyResp = await fetch(`${supabaseUrl}/functions/v1/osint-search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseKey}` },
+        body: JSON.stringify({ action: tool.edge_action, query: queryStr, user_id: userId }),
+      });
+      const out = await proxyResp.json().catch(() => ({ error: "Proxy parse error" }));
+      supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: proxyResp.status }).then(() => {});
+      return new Response(JSON.stringify({ data: out, meta: { tool_id: tool.id, source: tool.source, endpoint } }),
+        { status: proxyResp.ok ? 200 : 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ─── Original GET-only switch for legacy endpoints ───────────────────
     if (req.method !== "GET") {
       return new Response(JSON.stringify({ error: "This endpoint only supports GET" }),
