@@ -137,8 +137,51 @@ MessagingHub data is included in **OppoDB Master Search**:
 | `search` | Search by title or summary |
 | `issue_area` | Filter by issue area tag |
 
+### REST: Messaging AI (Phase 7)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/messaging-talking-points?slug=…` | GET | Cached AI talking points for a messaging item |
+| `/messaging-talking-points` | POST | Generate talking points (body: `{ messaging_slug, audience, angle, tone, model, include_sections[] }`) |
+| `/messaging-audience?slug=…` | GET | Cached audience effectiveness analysis |
+| `/messaging-audience` | POST | Generate audience analysis. Body supports `force_refresh` (admin-only) |
+| `/messaging-impact?slug=…` | GET | Cached impact analyses (national/state/district) |
+| `/messaging-impact` | POST | Generate impact analysis (body: `{ messaging_slug, scope, scope_ref, model, include_sections[] }`) |
+| `/messaging-ai-bundle?slug=…` | GET | One-shot fetch of item + talking points + audience + impact. Powers report blocks and PDF export. |
+
+`include_sections` accepts any combination of `polling`, `intel`, `legislation`, `finance`, `forecasts`, `international`. The corresponding edge functions enrich AI prompts with current data from those sections to produce contextual, evidence-backed output.
+
+### MCP Tools (Phase 7)
+
+| Tool | Purpose |
+|------|---------|
+| `get_messaging_talking_points` | Read cached AI talking points |
+| `generate_messaging_talking_points` | Create new talking points with cross-section context |
+| `get_messaging_audience_analysis` | Read cached audience effectiveness scoring |
+| `generate_messaging_audience_analysis` | Recompute audience analysis (7-day cache) |
+| `get_messaging_impact` | Read cached impact analyses by scope |
+| `generate_messaging_impact` | Generate scope-specific impact analysis |
+| `get_messaging_ai_bundle` | Combined item + AI artifacts in a single call |
+| `admin_regenerate_messaging_ai` | [ADMIN] Force-regenerate any cached artifact |
+
 ### MCP: `master_search`
 Included in unified search under `messaging_guidance` category.
+
+---
+
+## Report Builder Integration
+
+A `messaging_ai` block type is available in the Report Builder under the **Intelligence** group. It snapshots the full AI bundle (talking points + audience analysis + impact) for a messaging item, renders effectiveness scores, segment breakdowns, risks, and the latest talking points in PDF exports. The classic `messaging` block now also captures source/author/issue tags in its snapshot for richer rendering.
+
+---
+
+## PDF Export Bundle
+
+`MessagingHub` PDFs auto-append the latest cached AI artifacts under an "AI Messaging Intelligence" section. This includes:
+- Audience effectiveness score and per-segment breakdown
+- Top resonance factors and risks (severity-ranked)
+- Most recent talking points blocks (audience/angle/points/evidence)
+- Latest impact analyses by scope
 
 ---
 
