@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     const results = data.results ?? [];
 
     let upserted = 0;
-    for (const r of results.slice(0, 50)) {
+    for (const r of results) {
       const caseId = r.docket_id ? String(r.docket_id) : r.id ? String(r.id) : null;
       if (!caseId) continue;
       const { error } = await supabase.from("court_cases").upsert({
