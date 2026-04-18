@@ -174,7 +174,7 @@ export function OppoHub({
               {filters.map(f => (
                 <button
                   key={f.id}
-                  onClick={() => {/* filter is managed by parent */}}
+                  onClick={() => onFilterChange(f.id)}
                   className={`win98-button text-[9px] ${filter === f.id ? "font-bold" : ""}`}
                 >
                   {f.label}
