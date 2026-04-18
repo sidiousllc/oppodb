@@ -218,132 +218,96 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       } catch { return []; }
     };
 
-    const [pollingRes, financeRes, membersRes, billsRes, forecastsRes, congressElRes, stateFinRes, mnFinRes, winredRes, voterStatsRes, predMarketsRes, stateLegRes, mitElRes, trackedBillsRes, messagingRes, intelRes, committeesRes, votesRes, stateLegElRes, forecastHistRes, intlProfilesRes] = await Promise.all([
-      supabase.from("polling_data")
-        .select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted")
-        .or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`)
-        .order("date_conducted", { ascending: false })
-        .limit(10),
-      supabase.from("campaign_finance")
-        .select("id, candidate_name, state_abbr, district, party, total_raised, total_spent, cash_on_hand, office, cycle")
-        .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ},district.ilike.${likeQ}`)
-        .order("total_raised", { ascending: false })
-        .limit(10),
-      supabase.from("congress_members")
-        .select("id, name, state, district, party, chamber, bioguide_id, candidate_slug")
-        .or(`name.ilike.${likeQ},state.ilike.${likeQ},bioguide_id.ilike.${likeQ}`)
-        .limit(10),
-      supabase.from("congress_bills")
-        .select("id, bill_id, title, short_title, sponsor_name, status, latest_action_date")
-        .or(`title.ilike.${likeQ},short_title.ilike.${likeQ},sponsor_name.ilike.${likeQ},bill_id.ilike.${likeQ}`)
-        .order("latest_action_date", { ascending: false })
-        .limit(10),
-      supabase.from("election_forecasts")
-        .select("id, state_abbr, district, source, rating, race_type")
-        .or(`state_abbr.ilike.${likeQ},district.ilike.${likeQ},rating.ilike.${likeQ}`)
-        .eq("cycle", 2026)
-        .limit(10),
-      supabase.from("congressional_election_results")
-        .select("id, candidate_name, state_abbr, district_number, party, election_year, votes, vote_pct, is_winner")
-        .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
-        .order("election_year", { ascending: false })
-        .limit(10),
-      supabase.from("state_cfb_candidates")
-        .select("id, candidate_name, state_abbr, chamber, party, office, total_contributions, total_expenditures, net_cash")
-        .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ},committee_name.ilike.${likeQ}`)
-        .order("total_contributions", { ascending: false })
-        .limit(10),
-      supabase.from("mn_cfb_candidates")
-        .select("id, candidate_name, chamber, committee_name, total_contributions, total_expenditures, net_cash")
-        .or(`candidate_name.ilike.${likeQ},committee_name.ilike.${likeQ}`)
-        .order("total_contributions", { ascending: false })
-        .limit(10),
-      supabase.from("winred_donations")
-        .select("id, donor_first_name, donor_last_name, donor_state, donor_city, amount, candidate_name, committee_name, transaction_date, recurring")
-        .or(`donor_last_name.ilike.${likeQ},donor_city.ilike.${likeQ},candidate_name.ilike.${likeQ},committee_name.ilike.${likeQ},donor_state.ilike.${likeQ}`)
-        .order("transaction_date", { ascending: false })
-        .limit(10),
+    const LIMIT = 20;
+    const safe = <T,>(p: PromiseLike<{ data: T[] | null }>) =>
+      Promise.resolve(p).then(r => r?.data || []).catch(() => [] as T[]);
+
+    const [
+      polling, finance, members, bills, forecasts, congressElections,
+      stateFinance, mnFinance, winredDonations, voterStats, predictionMarkets,
+      stateLeg, mitElections, trackedBills, messagingGuidance, intelBriefings,
+      congressCommittees, congressVotes, stateLegElections, forecastHistory,
+      internationalProfiles,
+      // NEW
+      courtCases, faraRegistrants, federalSpending, lobbyingDisclosures,
+      govContracts, igReports, congressionalRecord, districtProfiles,
+      electionNightStreams, stateLegislators, stateLegBills, pollingAggregates,
+      internationalElections, internationalLeaders, internationalLegislation,
+      internationalPolling, wikiPages, warRooms, stakeholders, entityNotes,
+      reports, oppoTrackers, watchlistItems,
+      vulnerabilityScores, talkingPoints, billImpactAnalyses,
+      subjectImpactAnalyses, messagingAudienceAnalyses, messagingImpactAnalyses,
+    ] = await Promise.all([
+      safe(supabase.from("polling_data").select("id, candidate_or_topic, source, poll_type, approve_pct, disapprove_pct, date_conducted").or(`candidate_or_topic.ilike.${likeQ},source.ilike.${likeQ},question.ilike.${likeQ}`).order("date_conducted", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("campaign_finance").select("id, candidate_name, state_abbr, district, party, total_raised, total_spent, cash_on_hand, office, cycle").or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ},district.ilike.${likeQ}`).order("total_raised", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("congress_members").select("id, name, state, district, party, chamber, bioguide_id, candidate_slug").or(`name.ilike.${likeQ},state.ilike.${likeQ},bioguide_id.ilike.${likeQ}`).limit(LIMIT)),
+      safe(supabase.from("congress_bills").select("id, bill_id, title, short_title, sponsor_name, status, latest_action_date").or(`title.ilike.${likeQ},short_title.ilike.${likeQ},sponsor_name.ilike.${likeQ},bill_id.ilike.${likeQ}`).order("latest_action_date", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("election_forecasts").select("id, state_abbr, district, source, rating, race_type").or(`state_abbr.ilike.${likeQ},district.ilike.${likeQ},rating.ilike.${likeQ}`).eq("cycle", 2026).limit(LIMIT)),
+      safe(supabase.from("congressional_election_results").select("id, candidate_name, state_abbr, district_number, party, election_year, votes, vote_pct, is_winner").or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`).order("election_year", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("state_cfb_candidates").select("id, candidate_name, state_abbr, chamber, party, office, total_contributions, total_expenditures, net_cash").or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ},committee_name.ilike.${likeQ}`).order("total_contributions", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("mn_cfb_candidates").select("id, candidate_name, chamber, committee_name, total_contributions, total_expenditures, net_cash").or(`candidate_name.ilike.${likeQ},committee_name.ilike.${likeQ}`).order("total_contributions", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("winred_donations").select("id, donor_first_name, donor_last_name, donor_state, donor_city, amount, candidate_name, committee_name, transaction_date, recurring").or(`donor_last_name.ilike.${likeQ},donor_city.ilike.${likeQ},candidate_name.ilike.${likeQ},committee_name.ilike.${likeQ},donor_state.ilike.${likeQ}`).order("transaction_date", { ascending: false }).limit(LIMIT)),
       fetchVoterStats(),
-      supabase.from("prediction_markets")
-        .select("id, title, source, category, state_abbr, district, yes_price, no_price, volume, status, market_url")
-        .or(`title.ilike.${likeQ},state_abbr.ilike.${likeQ},candidate_name.ilike.${likeQ}`)
-        .eq("status", "active")
-        .order("volume", { ascending: false })
-        .limit(10),
-      supabase.from("state_legislative_profiles")
-        .select("id, district_id, state, state_abbr, chamber, district_number, population, median_income")
-        .or(`state.ilike.${likeQ},state_abbr.ilike.${likeQ},district_id.ilike.${likeQ}`)
-        .limit(10),
-      supabase.from("mit_election_results")
-        .select("id, candidate, state, state_po, office, year, party, candidatevotes, totalvotes, district")
-        .or(`candidate.ilike.${likeQ},state.ilike.${likeQ},state_po.ilike.${likeQ}`)
-        .order("year", { ascending: false })
-        .limit(10),
-      supabase.from("tracked_bills")
-        .select("id, bill_number, title, state, status_desc, last_action, last_action_date")
-        .or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},state.ilike.${likeQ}`)
-        .order("last_action_date", { ascending: false })
-        .limit(10),
-      supabase.from("messaging_guidance")
-        .select("id, title, slug, source, author, published_date, summary, issue_areas")
-        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},author.ilike.${likeQ}`)
-        .order("published_date", { ascending: false })
-        .limit(10),
-      supabase.from("intel_briefings")
-        .select("id, title, summary, scope, category, source_name, published_at")
-        .or(`title.ilike.${likeQ},summary.ilike.${likeQ},source_name.ilike.${likeQ},category.ilike.${likeQ}`)
-        .order("published_at", { ascending: false })
-        .limit(10),
-      supabase.from("congress_committees")
-        .select("id, system_code, name, chamber")
-        .or(`name.ilike.${likeQ},system_code.ilike.${likeQ}`)
-        .order("name")
-        .limit(10),
-      supabase.from("congress_votes")
-        .select("id, vote_id, chamber, vote_date, question, result, bill_id, yea_total, nay_total")
-        .or(`description.ilike.${likeQ},question.ilike.${likeQ},bill_id.ilike.${likeQ}`)
-        .order("vote_date", { ascending: false })
-        .limit(10),
-      supabase.from("state_leg_election_results")
-        .select("id, candidate_name, state_abbr, chamber, district_number, election_year, party, votes, vote_pct, is_winner")
-        .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
-        .order("election_year", { ascending: false })
-        .limit(10),
-      supabase.from("election_forecast_history")
-        .select("id, source, state_abbr, district, race_type, old_rating, new_rating, changed_at")
-        .or(`state_abbr.ilike.${likeQ},source.ilike.${likeQ}`)
-        .eq("cycle", 2026)
-        .order("changed_at", { ascending: false })
-        .limit(10),
-      supabase.from("international_profiles")
-        .select("id, country_code, country_name, continent, region, population, gdp_per_capita, government_type, head_of_state, ruling_party, tags")
-        .or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ},region.ilike.${likeQ},head_of_state.ilike.${likeQ},ruling_party.ilike.${likeQ}`)
-        .order("country_name")
-        .limit(10),
+      safe(supabase.from("prediction_markets").select("id, title, source, category, state_abbr, district, yes_price, no_price, volume, status, market_url").or(`title.ilike.${likeQ},state_abbr.ilike.${likeQ},candidate_name.ilike.${likeQ}`).eq("status", "active").order("volume", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("state_legislative_profiles").select("id, district_id, state, state_abbr, chamber, district_number, population, median_income").or(`state.ilike.${likeQ},state_abbr.ilike.${likeQ},district_id.ilike.${likeQ}`).limit(LIMIT)),
+      safe(supabase.from("mit_election_results").select("id, candidate, state, state_po, office, year, party, candidatevotes, totalvotes, district").or(`candidate.ilike.${likeQ},state.ilike.${likeQ},state_po.ilike.${likeQ}`).order("year", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("tracked_bills").select("id, bill_number, title, state, status_desc, last_action, last_action_date").or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},state.ilike.${likeQ}`).order("last_action_date", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("messaging_guidance").select("id, title, slug, source, author, published_date, summary, issue_areas").or(`title.ilike.${likeQ},summary.ilike.${likeQ},author.ilike.${likeQ}`).order("published_date", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("intel_briefings").select("id, title, summary, scope, category, source_name, published_at").or(`title.ilike.${likeQ},summary.ilike.${likeQ},source_name.ilike.${likeQ},category.ilike.${likeQ}`).order("published_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("congress_committees").select("id, system_code, name, chamber").or(`name.ilike.${likeQ},system_code.ilike.${likeQ}`).order("name").limit(LIMIT)),
+      safe(supabase.from("congress_votes").select("id, vote_id, chamber, vote_date, question, result, bill_id, yea_total, nay_total").or(`description.ilike.${likeQ},question.ilike.${likeQ},bill_id.ilike.${likeQ}`).order("vote_date", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("state_leg_election_results").select("id, candidate_name, state_abbr, chamber, district_number, election_year, party, votes, vote_pct, is_winner").or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`).order("election_year", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("election_forecast_history").select("id, source, state_abbr, district, race_type, old_rating, new_rating, changed_at").or(`state_abbr.ilike.${likeQ},source.ilike.${likeQ}`).eq("cycle", 2026).order("changed_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("international_profiles").select("id, country_code, country_name, continent, region, population, gdp_per_capita, government_type, head_of_state, ruling_party, tags").or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ},region.ilike.${likeQ},head_of_state.ilike.${likeQ},ruling_party.ilike.${likeQ}`).order("country_name").limit(LIMIT)),
+      // NEW — public records & investigations
+      safe(supabase.from("court_cases").select("id, case_name, case_number, court, judge, status, filed_date, docket_url").or(`case_name.ilike.${likeQ},case_number.ilike.${likeQ},judge.ilike.${likeQ},court.ilike.${likeQ}`).order("filed_date", { ascending: false, nullsFirst: false }).limit(LIMIT)),
+      safe(supabase.from("fara_registrants").select("id, registrant_name, country, status, registration_date, registration_number").or(`registrant_name.ilike.${likeQ},country.ilike.${likeQ},registration_number.ilike.${likeQ}`).order("registration_date", { ascending: false, nullsFirst: false }).limit(LIMIT)),
+      safe(supabase.from("federal_spending").select("id, recipient_name, recipient_state, awarding_agency, description, award_amount, fiscal_year, award_type").or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ},recipient_state.ilike.${likeQ}`).order("award_amount", { ascending: false, nullsFirst: false }).limit(LIMIT)),
+      safe(supabase.from("lobbying_disclosures").select("id, registrant_name, client_name, filing_year, amount, filing_period").or(`registrant_name.ilike.${likeQ},client_name.ilike.${likeQ}`).order("filing_year", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("gov_contracts").select("id, recipient_name, awarding_agency, description, award_amount, recipient_state, fiscal_year").or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ}`).order("award_amount", { ascending: false, nullsFirst: false }).limit(LIMIT)),
+      safe(supabase.from("ig_reports").select("id, title, agency_name, summary, topic, published_on, url").or(`title.ilike.${likeQ},agency_name.ilike.${likeQ},summary.ilike.${likeQ},topic.ilike.${likeQ}`).order("published_on", { ascending: false, nullsFirst: false }).limit(LIMIT)),
+      safe(supabase.from("congressional_record").select("id, speaker_name, title, chamber, date, category").or(`speaker_name.ilike.${likeQ},title.ilike.${likeQ},content.ilike.${likeQ}`).order("date", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("district_profiles").select("id, district_id, state, population, median_income, median_age").or(`district_id.ilike.${likeQ},state.ilike.${likeQ}`).limit(LIMIT)),
+      safe(supabase.from("election_night_streams").select("id, candidate_name, state_abbr, district, party, votes, vote_pct, precincts_reporting_pct, is_called, race_type, election_date").or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`).order("election_date", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("state_legislators").select("id, name, state_abbr, chamber, district, party, email").or(`name.ilike.${likeQ},state_abbr.ilike.${likeQ},party.ilike.${likeQ}`).limit(LIMIT)),
+      safe(supabase.from("state_legislative_bills").select("id, identifier, title, state_abbr, sponsor_name, status, latest_action_date").or(`title.ilike.${likeQ},identifier.ilike.${likeQ},sponsor_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`).order("latest_action_date", { ascending: false, nullsFirst: false }).limit(LIMIT)),
+      safe(supabase.from("polling_aggregates").select("id, race_type, state_abbr, district, candidate_a, candidate_b, margin, candidate_a_pct, candidate_b_pct, last_poll_date").or(`candidate_a.ilike.${likeQ},candidate_b.ilike.${likeQ},state_abbr.ilike.${likeQ}`).order("last_poll_date", { ascending: false, nullsFirst: false }).limit(LIMIT)),
+      // International extras
+      safe(supabase.from("international_elections").select("id, country_code, election_year, election_type, winner_name, winner_party, election_date, turnout_pct").or(`country_code.ilike.${likeQ},winner_name.ilike.${likeQ},winner_party.ilike.${likeQ},election_type.ilike.${likeQ}`).order("election_date", { ascending: false, nullsFirst: false }).limit(LIMIT)),
+      safe(supabase.from("international_leaders").select("id, country_code, name, title, party, in_office_since, term_ends").or(`name.ilike.${likeQ},country_code.ilike.${likeQ},party.ilike.${likeQ},title.ilike.${likeQ}`).limit(LIMIT)),
+      safe(supabase.from("international_legislation").select("id, country_code, title, bill_number, status, sponsor, introduced_date, policy_area").or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},sponsor.ilike.${likeQ},country_code.ilike.${likeQ},policy_area.ilike.${likeQ}`).order("introduced_date", { ascending: false, nullsFirst: false }).limit(LIMIT)),
+      safe(supabase.from("international_polling").select("id, country_code, poll_topic, question, source, date_conducted, approve_pct, key_finding").or(`poll_topic.ilike.${likeQ},question.ilike.${likeQ},country_code.ilike.${likeQ},source.ilike.${likeQ}`).order("date_conducted", { ascending: false, nullsFirst: false }).limit(LIMIT)),
+      // Knowledge & collab (RLS handles owner/shared scope automatically)
+      safe(supabase.from("wiki_pages").select("id, slug, title").eq("published", true).or(`title.ilike.${likeQ},content.ilike.${likeQ}`).limit(LIMIT)),
+      safe(supabase.from("war_rooms").select("id, name, description, race_scope, updated_at").or(`name.ilike.${likeQ},description.ilike.${likeQ}`).order("updated_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("stakeholders").select("id, name, type, organization, title, email, state_abbr, party").or(`name.ilike.${likeQ},organization.ilike.${likeQ},email.ilike.${likeQ},title.ilike.${likeQ}`).limit(LIMIT)),
+      safe(supabase.from("entity_notes").select("id, entity_type, entity_id, body, is_shared, created_at").ilike("body", likeQ).order("created_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("reports").select("id, title, description, is_public, updated_at").or(`title.ilike.${likeQ},description.ilike.${likeQ}`).order("updated_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("oppo_trackers").select("id, name, description, scope, scope_ref, updated_at").or(`name.ilike.${likeQ},description.ilike.${likeQ}`).order("updated_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("watchlist_items").select("id, entity_type, entity_id, label, notes, created_at").or(`label.ilike.${likeQ},notes.ilike.${likeQ},entity_id.ilike.${likeQ}`).order("created_at", { ascending: false }).limit(LIMIT)),
+      // AI cache
+      safe(supabase.from("vulnerability_scores").select("id, candidate_slug, overall_score, summary, generated_at").or(`candidate_slug.ilike.${likeQ},summary.ilike.${likeQ}`).order("generated_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("talking_points").select("id, subject_type, subject_ref, audience, angle, generated_by, created_at").or(`subject_ref.ilike.${likeQ},audience.ilike.${likeQ},angle.ilike.${likeQ},subject_type.ilike.${likeQ}`).order("created_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("bill_impact_analyses").select("id, bill_id, scope, scope_ref, summary, generated_at").or(`bill_id.ilike.${likeQ},summary.ilike.${likeQ},scope_ref.ilike.${likeQ}`).order("generated_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("subject_impact_analyses").select("id, subject_type, subject_ref, scope, scope_ref, summary, generated_at").or(`subject_ref.ilike.${likeQ},summary.ilike.${likeQ},subject_type.ilike.${likeQ}`).order("generated_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("messaging_audience_analyses").select("id, messaging_slug, effectiveness_score, summary, generated_at").or(`messaging_slug.ilike.${likeQ},summary.ilike.${likeQ}`).order("generated_at", { ascending: false }).limit(LIMIT)),
+      safe(supabase.from("messaging_impact_analyses").select("id, messaging_slug, scope, scope_ref, summary, generated_at").or(`messaging_slug.ilike.${likeQ},summary.ilike.${likeQ},scope_ref.ilike.${likeQ}`).order("generated_at", { ascending: false }).limit(LIMIT)),
     ]);
 
     setDbResults({
-      polling: pollingRes.data || [],
-      finance: financeRes.data || [],
-      members: membersRes.data || [],
-      bills: billsRes.data || [],
-      forecasts: forecastsRes.data || [],
-      congressElections: congressElRes.data || [],
-      stateFinance: stateFinRes.data || [],
-      mnFinance: mnFinRes.data || [],
-      winredDonations: winredRes.data || [],
-      voterStats: voterStatsRes || [],
-      predictionMarkets: predMarketsRes.data || [],
-      stateLeg: stateLegRes.data || [],
-      mitElections: mitElRes.data || [],
-      trackedBills: trackedBillsRes.data || [],
-      messagingGuidance: messagingRes.data || [],
-      intelBriefings: intelRes.data || [],
-      congressCommittees: committeesRes.data || [],
-      congressVotes: votesRes.data || [],
-      stateLegElections: stateLegElRes.data || [],
-      forecastHistory: forecastHistRes.data || [],
-      internationalProfiles: intlProfilesRes.data || [],
+      polling, finance, members, bills, forecasts, congressElections,
+      stateFinance, mnFinance, winredDonations, voterStats, predictionMarkets,
+      stateLeg, mitElections, trackedBills, messagingGuidance, intelBriefings,
+      congressCommittees, congressVotes, stateLegElections, forecastHistory,
+      internationalProfiles,
+      courtCases, faraRegistrants, federalSpending, lobbyingDisclosures,
+      govContracts, igReports, congressionalRecord, districtProfiles,
+      electionNightStreams, stateLegislators, stateLegBills, pollingAggregates,
+      internationalElections, internationalLeaders, internationalLegislation,
+      internationalPolling, wikiPages, warRooms, stakeholders, entityNotes,
+      reports, oppoTrackers, watchlistItems,
+      vulnerabilityScores, talkingPoints, billImpactAnalyses,
+      subjectImpactAnalyses, messagingAudienceAnalyses, messagingImpactAnalyses,
     });
     setIsSearching(false);
 
