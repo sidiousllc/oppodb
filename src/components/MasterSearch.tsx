@@ -203,6 +203,26 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
       });
     }
 
+    // OSINT live query passthrough — for url-kind tools, offer "Run '<query>' in [Tool]"
+    // shortcuts so the user can pivot the current search string straight to the source.
+    if (q.length >= 2) {
+      const passthroughTools = OSINT_TOOLS.filter((t) => t.kind === "url" && t.urlTemplate).slice(0, 6);
+      if (passthroughTools.length > 0) {
+        groups.push({
+          key: "osint-run",
+          label: `🚀 Run "${q.slice(0, 32)}${q.length > 32 ? "…" : ""}" in OSINT tool`,
+          icon: <Zap className="h-3.5 w-3.5" />,
+          section: "research-tools",
+          results: passthroughTools.map((t) => ({
+            id: `osint-run:${t.id}`,
+            title: `${t.emoji} ${t.label}`,
+            subtitle: `Opens ${t.source} with your query in a new tab`,
+            slug: `osint-run:${t.id}:${q}`,
+          })),
+        });
+      }
+    }
+
     return groups;
   }, [query, districts]);
 
