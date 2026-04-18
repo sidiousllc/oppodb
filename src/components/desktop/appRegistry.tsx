@@ -148,6 +148,7 @@ function OppoHubWindow({ initialSlug, openApp }: { initialSlug?: string; openApp
     <OppoHub
       search=""
       filter={filter}
+      onFilterChange={setFilter}
       dataVersion={version}
       isAdmin={isAdmin}
       onSelectSlug={setSelectedSlug}

@@ -14,6 +14,7 @@ import { type FilterCategory } from "@/components/AppSidebar";
 interface OppoHubProps {
   search: string;
   filter: FilterCategory;
+  onFilterChange: (filter: FilterCategory) => void;
   dataVersion: number;
   isAdmin: boolean;
   onSelectSlug: (slug: string | null) => void;
@@ -48,7 +49,7 @@ const filters: Array<{ id: FilterCategory; label: string }> = [
 ];
 
 export function OppoHub({
-  search, filter, dataVersion, isAdmin, onSelectSlug, selectedSlug,
+  search, filter, onFilterChange, dataVersion, isAdmin, onSelectSlug, selectedSlug,
   onNavigateSlug, onEditCandidate, onCreateCandidate, onSetSection,
 }: OppoHubProps) {
   const [tab, setTab] = useState<OppoTab>("candidates");
@@ -173,7 +174,7 @@ export function OppoHub({
               {filters.map(f => (
                 <button
                   key={f.id}
-                  onClick={() => {/* filter is managed by parent */}}
+                  onClick={() => onFilterChange(f.id)}
                   className={`win98-button text-[9px] ${filter === f.id ? "font-bold" : ""}`}
                 >
                   {f.label}
