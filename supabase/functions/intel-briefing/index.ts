@@ -550,10 +550,7 @@ Deno.serve(async (req) => {
     console.log(`Fetched ${allItems.length} total items from ${requestedScopes.length} scopes`);
 
     if (allItems.length > 0) {
-      // Keep 7 days of history (was 48h) so the ticker and IntelHub have depth
-      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      await supabase.from("intel_briefings").delete().lt("published_at", cutoff);
-
+      // Retention: keep all articles indefinitely. No date-based cleanup.
       // Dedupe in-memory by (title, source_name) before upsert to avoid
       // "ON CONFLICT … cannot affect row a second time" errors when a feed repeats a headline
       const seen = new Set<string>();
