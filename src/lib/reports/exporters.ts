@@ -643,6 +643,35 @@ async function renderBlock(doc: jsPDF, block: ReportBlock, y: number, depth = 0)
       const json = JSON.stringify((block as any).snapshot ?? {}, null, 2);
       return writeText(doc, json.length > 2500 ? json.slice(0, 2500) + "\n…(truncated)" : json, y, { size: 7 });
     }
+    case "osint_results": {
+      const b = block as any;
+      y = sectionTitle(doc, block.title ?? `🔎 OSINT — ${b.toolLabel ?? b.toolId} — "${b.query}"`, y, [40, 80, 120]);
+      const results = (b.snapshot?.results ?? []) as Array<Record<string, unknown>>;
+      if (results.length === 0) return writeText(doc, "(no results)", y, { size: 8, italic: true, color: [120, 120, 120] });
+      const cols = Array.from(results.reduce((s, r) => { Object.keys(r).forEach(k => s.add(k)); return s; }, new Set<string>())).slice(0, 6);
+      autoTable(doc, {
+        startY: y,
+        head: [cols],
+        body: results.slice(0, 50).map(r => cols.map(c => {
+          const v = (r as any)[c];
+          return v == null ? "" : (typeof v === "object" ? JSON.stringify(v).slice(0, 80) : String(v).slice(0, 120));
+        })),
+        styles: { fontSize: 7 },
+        headStyles: { fillColor: [40, 80, 120] },
+        margin: { left: M, right: M },
+      });
+      // @ts-ignore
+      return (doc.lastAutoTable?.finalY ?? y) + 3;
+    }
+    case "subject_ai": {
+      const b = block as any;
+      const s = b.snapshot ?? {};
+      y = sectionTitle(doc, block.title ?? `🧠 AI Subject Brief — ${b.subject}`, y, [80, 0, 120]);
+      if (s.talking_points) { y = writeText(doc, "Talking Points:", y, { size: 10, bold: true }); y = writeText(doc, JSON.stringify(s.talking_points, null, 2).slice(0, 1500), y, { size: 7 }); }
+      if (s.audience_analysis) { y = writeText(doc, "Audience Analysis:", y, { size: 10, bold: true }); y = writeText(doc, JSON.stringify(s.audience_analysis, null, 2).slice(0, 1500), y, { size: 7 }); }
+      if (s.impact_analysis) { y = writeText(doc, "Impact Analysis:", y, { size: 10, bold: true }); y = writeText(doc, JSON.stringify(s.impact_analysis, null, 2).slice(0, 1500), y, { size: 7 }); }
+      return y;
+    }
     default:
       return y;
   }
