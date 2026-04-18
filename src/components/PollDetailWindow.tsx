@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Win98Window } from "@/components/Win98Window";
+import { SubjectAIPanel } from "@/components/SubjectAIPanel";
 import { getSourceInfo, POLL_TYPES, type PollEntry } from "@/data/pollingData";
 import {
   BarChart3, ExternalLink, Clock, Users, Target, FileText,
@@ -440,6 +441,14 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
           </div>
         )}
       </div>
+
+      {/* AI Intelligence Panel */}
+      <SubjectAIPanel
+        subjectType="polling"
+        subjectRef={p.id}
+        subjectTitle={`${p.candidate_or_topic} — ${src.name}`}
+        defaultScope="national"
+      />
 
       {/* Demographic Detail Window */}
       {demoDetailGroup && (

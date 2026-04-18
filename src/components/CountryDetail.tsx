@@ -6,6 +6,7 @@ import { Win98Window } from "./Win98Window";
 import { ResearchDetailWindow } from "./ResearchDetailWindow";
 import { exportContentPDF } from "@/lib/contentExport";
 import { CountryGeopoliticsTab } from "./CountryGeopoliticsTab";
+import { SubjectAIPanel } from "./SubjectAIPanel";
 
 interface CountryDetailProps {
   countryCode: string;
@@ -397,6 +398,14 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
               </button>
             </div>
           )}
+
+          {/* AI Intelligence Panel */}
+          <SubjectAIPanel
+            subjectType="country"
+            subjectRef={countryCode}
+            subjectTitle={`${country.name} (${countryCode})`}
+            defaultScope="national"
+          />
         </div>
       )}
 

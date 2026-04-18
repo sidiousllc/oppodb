@@ -106,4 +106,17 @@ Cross-section AI tools that resonate MessagingHub items against polling, intel, 
 - `get_messaging_ai_bundle({ messaging_slug })` — Combined item + talking points + audience + impact in one call. Powers PDF export and the `messaging_ai` report block.
 - `admin_regenerate_messaging_ai({ type, messaging_slug, ... })` — [ADMIN] Force-bust + regenerate. `type` ∈ `talking_points|audience|impact`.
 
-Total tool count: **52+** across all groups.
+### Phase 8 — Subject AI (District / State Leg / Legislation / Polling / Country)
+Generic AI suite that mirrors candidate/messaging AI for additional entity types. `subject_type` ∈ `district|state_leg|legislation|polling|country`; `subject_ref` is the relevant primary key (district_id, state_legislative_profiles.id, congress_bills.bill_id, polling_data.id, or country_code).
+
+- `get_subject_talking_points({ subject_type, subject_ref, limit? })` — Cached talking points.
+- `generate_subject_talking_points({ subject_type, subject_ref, audience?, angle?, tone?, length?, count?, model?, include_sections?, custom_instructions? })` — Generate fresh.
+- `get_subject_audience_analysis({ subject_type, subject_ref })` — Cached effectiveness scoring.
+- `generate_subject_audience_analysis({ subject_type, subject_ref, force_refresh?, model?, include_sections? })` — Generate; 7-day cache; `force_refresh` admin-only via REST.
+- `get_subject_impact({ subject_type, subject_ref, scope?, scope_ref? })` — Cached impact analyses.
+- `generate_subject_impact({ subject_type, subject_ref, scope?, scope_ref?, force_refresh?, model?, include_sections? })` — Generate scoped impact (national|state|district).
+- `get_subject_ai_bundle({ subject_type, subject_ref })` — One-call bundle (talking points + audience + impact).
+
+`include_sections` accepts any of `polling`, `intel`, `legislation`, `finance`, `forecasts`, `international`, `demographics`.
+
+Total tool count: **60+** across all groups.

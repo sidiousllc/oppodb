@@ -1882,7 +1882,114 @@ mcpServer.tool("get_sync_status", {
   },
 });
 
-// ─── HTTP Transport ─────────────────────────────────────────────────────────
+// ─── Subject AI Tools (district / state_leg / legislation / polling / country) ──
+
+const SUBJ_TYPES = ["district", "state_leg", "legislation", "polling", "country"];
+
+mcpServer.tool("get_subject_talking_points", {
+  description: "List cached AI talking points for a subject. subject_type ∈ district|state_leg|legislation|polling|country.",
+  inputSchema: { type: "object" as const, properties: {
+    subject_type: { type: "string" as const }, subject_ref: { type: "string" as const }, limit: { type: "number" as const },
+  }, required: ["subject_type", "subject_ref"] },
+  handler: async (args: Record<string, unknown>) => {
+    const st = String(args.subject_type);
+    if (!SUBJ_TYPES.includes(st)) return { content: [{ type: "text" as const, text: `Invalid subject_type. Allowed: ${SUBJ_TYPES.join("|")}` }] };
+    const { data, error } = await supabase.from("talking_points").select("*").eq("subject_type", st).eq("subject_ref", String(args.subject_ref)).order("created_at", { ascending: false }).limit(Math.min(50, Number(args.limit) || 10));
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("generate_subject_talking_points", {
+  description: "Generate fresh AI talking points for a subject (district|state_leg|legislation|polling|country) with optional cross-section context.",
+  inputSchema: { type: "object" as const, properties: {
+    subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
+    audience: { type: "string" as const }, angle: { type: "string" as const }, tone: { type: "string" as const },
+    length: { type: "string" as const }, count: { type: "number" as const }, model: { type: "string" as const },
+    include_sections: { type: "array" as const, items: { type: "string" as const } },
+    custom_instructions: { type: "string" as const },
+  }, required: ["subject_type", "subject_ref"] },
+  handler: async (args: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("subject-talking-points", { body: args });
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_subject_audience_analysis", {
+  description: "Cached audience effectiveness scoring for a subject.",
+  inputSchema: { type: "object" as const, properties: {
+    subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
+  }, required: ["subject_type", "subject_ref"] },
+  handler: async (args: Record<string, unknown>) => {
+    const { data, error } = await (supabase.from as any)("subject_audience_analyses").select("*").eq("subject_type", String(args.subject_type)).eq("subject_ref", String(args.subject_ref)).maybeSingle();
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("generate_subject_audience_analysis", {
+  description: "Generate (or refresh, when force_refresh=true) audience analysis for a subject.",
+  inputSchema: { type: "object" as const, properties: {
+    subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
+    force_refresh: { type: "boolean" as const }, model: { type: "string" as const },
+    include_sections: { type: "array" as const, items: { type: "string" as const } },
+  }, required: ["subject_type", "subject_ref"] },
+  handler: async (args: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("subject-audience-analysis", { body: args });
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_subject_impact", {
+  description: "Cached impact analyses (national/state/district) for a subject.",
+  inputSchema: { type: "object" as const, properties: {
+    subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
+    scope: { type: "string" as const }, scope_ref: { type: "string" as const },
+  }, required: ["subject_type", "subject_ref"] },
+  handler: async (args: Record<string, unknown>) => {
+    let q = (supabase.from as any)("subject_impact_analyses").select("*").eq("subject_type", String(args.subject_type)).eq("subject_ref", String(args.subject_ref));
+    if (args.scope) q = q.eq("scope", String(args.scope));
+    if (args.scope_ref) q = q.eq("scope_ref", String(args.scope_ref));
+    const { data, error } = await q.order("generated_at", { ascending: false }).limit(20);
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("generate_subject_impact", {
+  description: "Generate impact analysis for a subject at a given scope (national|state|district).",
+  inputSchema: { type: "object" as const, properties: {
+    subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
+    scope: { type: "string" as const }, scope_ref: { type: "string" as const },
+    force_refresh: { type: "boolean" as const }, model: { type: "string" as const },
+    include_sections: { type: "array" as const, items: { type: "string" as const } },
+  }, required: ["subject_type", "subject_ref"] },
+  handler: async (args: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("subject-impact-analysis", { body: args });
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_subject_ai_bundle", {
+  description: "One-call bundle: talking points + audience + impact analyses for a subject.",
+  inputSchema: { type: "object" as const, properties: {
+    subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
+  }, required: ["subject_type", "subject_ref"] },
+  handler: async (args: Record<string, unknown>) => {
+    const st = String(args.subject_type), sr = String(args.subject_ref);
+    const [tp, aud, imp] = await Promise.all([
+      supabase.from("talking_points").select("*").eq("subject_type", st).eq("subject_ref", sr).order("created_at", { ascending: false }).limit(10),
+      (supabase.from as any)("subject_audience_analyses").select("*").eq("subject_type", st).eq("subject_ref", sr).maybeSingle(),
+      (supabase.from as any)("subject_impact_analyses").select("*").eq("subject_type", st).eq("subject_ref", sr).order("generated_at", { ascending: false }).limit(10),
+    ]);
+    return { content: [{ type: "text" as const, text: JSON.stringify({ talking_points: tp.data || [], audience_analysis: aud.data, impact_analyses: imp.data || [] }, null, 2) }] };
+  },
+});
+
+
 
 const transport = new StreamableHttpTransport();
 const httpHandler = transport.bind(mcpServer);

@@ -11,7 +11,7 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-const ALLOWED_SUBJECTS = new Set(["district", "state_leg", "legislation"]);
+const ALLOWED_SUBJECTS = new Set(["district", "state_leg", "legislation", "polling", "country"]);
 const SECTIONS = ["polling", "intel", "legislation", "finance", "forecasts", "international", "demographics"] as const;
 type Section = typeof SECTIONS[number];
 
@@ -35,10 +35,30 @@ async function loadSubject(admin: SAdmin, subject_type: string, subject_ref: str
     if (data.policy_area) tags.push(String(data.policy_area));
     return { title: `${data.bill_id} — ${data.short_title || data.title}`, summary: data.latest_action_text || "", content: `Title: ${data.title}\nSponsor: ${data.sponsor_name}\nStatus: ${data.status}`, tags, state_abbr: null };
   }
+  if (subject_type === "polling") {
+    const { data } = await admin.from("polling_data").select("*").eq("id", subject_ref).maybeSingle();
+    if (!data) return null;
+    return {
+      title: `Poll — ${data.candidate_or_topic} (${data.source})`,
+      summary: `${data.poll_type} by ${data.source} on ${data.end_date || data.date_conducted}.`,
+      content: `Question: ${data.question}\nApprove: ${data.approve_pct ?? data.favor_pct}% Disapprove: ${data.disapprove_pct ?? data.oppose_pct}% Sample: ${data.sample_size}`,
+      tags: [data.candidate_or_topic, data.poll_type].filter(Boolean) as string[],
+      state_abbr: null,
+    };
+  }
+  if (subject_type === "country") {
+    const { data } = await admin.from("international_profiles").select("*").eq("country_code", subject_ref.toUpperCase()).maybeSingle();
+    if (!data) return null;
+    return {
+      title: `${data.country_name} — Country Profile`,
+      summary: `${data.government_type}. Head: ${data.head_of_state}. Pop ${data.population}.`,
+      content: JSON.stringify(data).slice(0, 10000),
+      tags: (data.major_industries || []).slice(0, 6),
+      state_abbr: null,
+    };
+  }
   return null;
 }
-
-async function buildContext(admin: SAdmin, subject: any, selected: Section[]) {
   const tags = (subject.tags || []).filter((t: string) => !["Democrat","Republican","Independent"].includes(t));
   const parts: string[] = [];
   if (selected.includes("polling")) {

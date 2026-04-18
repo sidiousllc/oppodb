@@ -251,9 +251,9 @@ Deno.serve(async (req) => {
     if (SUBJ_AI_ENDPOINTS.has(endpoint)) {
       const subject_type = url.searchParams.get("subject_type");
       const subject_ref = url.searchParams.get("subject_ref");
-      const ALLOWED = new Set(["district", "state_leg", "legislation"]);
+      const ALLOWED = new Set(["district", "state_leg", "legislation", "polling", "country"]);
       if (req.method === "GET" && (!subject_type || !subject_ref || !ALLOWED.has(subject_type))) {
-        return new Response(JSON.stringify({ error: "subject_type (district|state_leg|legislation) and subject_ref required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: "subject_type (district|state_leg|legislation|polling|country) and subject_ref required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (endpoint === "subject-ai-bundle") {
         const [tp, aud, imp] = await Promise.all([
