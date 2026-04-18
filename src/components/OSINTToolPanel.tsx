@@ -75,23 +75,31 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
     setResults(null);
     setAiOutput("");
     setAiTab(null);
+    setLoading(true);
 
-    if (tool.kind === "url" && tool.urlTemplate) {
-      const url = tool.urlTemplate.replace("{q}", encodeURIComponent(q));
-      window.open(url, "_blank", "noopener,noreferrer");
-      toast.success("Opened source in new tab");
-      // Synthesize a single result row so AI panels still work on the query string
-      setResults([{ query: q, source_url: url, kind: "external_link" }]);
-      return;
-    }
-
-    if (tool.kind === "edge" && tool.edgeAction) {
-      if (tool.apiKey && !hasKey) {
-        toast.error(`${tool.apiKey.label} required`);
+    try {
+      // url-kind: scrape upstream + AI-parse into structured rows, render in themed window
+      if (tool.kind === "url" && tool.urlTemplate) {
+        const url = tool.urlTemplate.replace("{q}", encodeURIComponent(q));
+        const { data, error: err } = await supabase.functions.invoke("osint-scrape-parse", {
+          body: { url, query: q, tool_label: tool.label, subject_type: tool.aiSubjectType },
+        });
+        if (err) throw err;
+        if (data?.error) throw new Error(typeof data.error === "string" ? data.error : "Scrape failed");
+        const arr = Array.isArray(data?.results) ? data.results : [];
+        setResults(arr);
+        setPopoutOpen(true);
+        if (!arr.length) toast.info("No results parsed from page");
+        else toast.success(`${arr.length} parsed result${arr.length === 1 ? "" : "s"}`);
         return;
       }
-      setLoading(true);
-      try {
+
+      // edge-kind: direct upstream API call
+      if (tool.kind === "edge" && tool.edgeAction) {
+        if (tool.apiKey && !hasKey) {
+          toast.error(`${tool.apiKey.label} required`);
+          return;
+        }
         const { data, error: err } = await supabase.functions.invoke("osint-search", {
           body: { action: tool.edgeAction, query: q },
         });
@@ -99,14 +107,15 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
         if (data?.error) throw new Error(data.error);
         const arr = Array.isArray(data?.results) ? data.results : (data?.results ? [data.results] : []);
         setResults(arr);
+        setPopoutOpen(true);
         if (!arr.length) toast.info("No results");
         else toast.success(`${arr.length} result${arr.length === 1 ? "" : "s"}`);
-      } catch (e: any) {
-        setError(e?.message ?? "Search failed");
-        toast.error(e?.message ?? "Search failed");
-      } finally {
-        setLoading(false);
       }
+    } catch (e: any) {
+      setError(e?.message ?? "Search failed");
+      toast.error(e?.message ?? "Search failed");
+    } finally {
+      setLoading(false);
     }
   }, [tool, query, hasKey, recent]);
 
