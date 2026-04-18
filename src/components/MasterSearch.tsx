@@ -8,6 +8,7 @@ import { searchLocalImpact } from "@/data/localImpact";
 import { searchNarrativeReports } from "@/data/narrativeReports";
 import { searchDistricts, type DistrictProfile } from "@/data/districtIntel";
 import { searchCountries } from "@/data/internationalCountries";
+import { OSINT_TOOLS } from "@/data/osintTools";
 
 interface MasterSearchProps {
   onNavigate: (section: string, slug?: string) => void;
@@ -175,6 +176,29 @@ export function MasterSearch({ onNavigate, districts }: MasterSearchProps) {
           title: `${c.flag} ${c.name}`,
           subtitle: `${c.continent} • ${c.region}`,
           slug: c.code,
+        })),
+      });
+    }
+
+    // OSINT research tools (registry match by label / description / tags)
+    const ql = q.toLowerCase();
+    const osintMatches = OSINT_TOOLS.filter((t) =>
+      t.label.toLowerCase().includes(ql) ||
+      t.description.toLowerCase().includes(ql) ||
+      t.source.toLowerCase().includes(ql) ||
+      t.tags.some((tag) => tag.toLowerCase().includes(ql))
+    ).slice(0, 8);
+    if (osintMatches.length > 0) {
+      groups.push({
+        key: "osint-tools",
+        label: "🔎 OSINT Research Tools",
+        icon: <Radar className="h-3.5 w-3.5" />,
+        section: "research-tools",
+        results: osintMatches.map((t) => ({
+          id: `osint:${t.id}`,
+          title: `${t.emoji} ${t.label}`,
+          subtitle: `${t.source} • ${t.description}`,
+          slug: `osint:${t.id}`,
         })),
       });
     }
