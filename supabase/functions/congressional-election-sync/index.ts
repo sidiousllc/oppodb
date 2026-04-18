@@ -232,7 +232,7 @@ async function fetchElectionFilesFromGitHub(
 
   let files = dedicatedFiles.length > 0 ? dedicatedFiles : combinedFiles;
   files.sort().reverse();
-  return { files: files.slice(0, 5), branch: usedBranch };
+  return { files, branch: usedBranch };
 }
 
 function extractElectionDate(filename: string): { date: string; year: number } | null {
@@ -475,7 +475,7 @@ Deno.serve(async (req) => {
 
     if (files.length > 0) {
       sources.push("openelections");
-      const filesToProcess = files.slice(0, 3);
+      const filesToProcess = files; // process ALL historical files
 
       for (const file of filesToProcess) {
         const electionInfo = extractElectionDate(file);
@@ -562,9 +562,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      for (const file of files.slice(3)) {
-        skippedFiles.push({ file, reason: "Exceeded per-invocation file limit (max 3)" });
-      }
+      // (no overflow — all files processed)
     }
 
     // ── Source 2: MIT Election Lab (Harvard Dataverse) ─────────────────────

@@ -27,7 +27,9 @@ const ALL_STATES = [
   "NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
 ];
 
-const STATES_PER_BATCH = 5;
+// All 50 states processed per cron run (was 5). With historical caps removed
+// downstream, each state may take longer — keep an eye on logs if timeouts appear.
+const STATES_PER_BATCH = 50;
 
 
 Deno.serve(async (req) => {
