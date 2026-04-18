@@ -27,6 +27,8 @@ import { GenericDetail } from "@/components/GenericDetail";
 import { DistrictDetail } from "@/components/DistrictDetail";
 import { AIHistoryWindow } from "@/components/AIHistoryWindow";
 import { TaskManagerWindow } from "@/components/TaskManagerWindow";
+import { AlertsHub } from "@/components/AlertsHub";
+import { Win98Notepad } from "@/components/Win98Notepad";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
@@ -323,6 +325,33 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     singleton: true,
     size: { width: 520, height: 480 },
     render: () => <TaskManagerWindow />,
+  },
+  alerts: {
+    id: "alerts",
+    title: "Alerts Hub",
+    icon: "🚨",
+    singleton: true,
+    render: () => <div className="p-3"><AlertsHub /></div>,
+  },
+  notepad: {
+    id: "notepad",
+    title: "Notepad",
+    icon: "📝",
+    size: { width: 480, height: 360 },
+    render: (_p, ctx) => <Win98Notepad onClose={ctx.close} embedded />,
+  },
+  "recycle-bin": {
+    id: "recycle-bin",
+    title: "Recycle Bin",
+    icon: "🗑️",
+    singleton: true,
+    size: { width: 420, height: 320 },
+    render: () => (
+      <div className="p-4 text-[11px] space-y-2">
+        <p className="font-bold">Recycle Bin</p>
+        <p className="text-[hsl(var(--muted-foreground))]">The Recycle Bin is empty.</p>
+      </div>
+    ),
   },
   warroom: {
     id: "warroom",
