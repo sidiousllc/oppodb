@@ -41,12 +41,15 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
     } catch (_) { /* noop */ }
 
     if (tool.apiKey) {
-      supabase.from("user_integrations" as any)
-        .select("id")
-        .eq("service", tool.apiKey.service)
-        .eq("is_active", true)
-        .maybeSingle()
-        .then(({ data }) => setHasKey(!!data));
+      (async () => {
+        const { data } = await supabase
+          .from("user_integrations" as any)
+          .select("id")
+          .eq("service", tool.apiKey!.service)
+          .eq("is_active", true)
+          .maybeSingle();
+        setHasKey(!!data);
+      })();
     } else {
       setHasKey(true);
     }
