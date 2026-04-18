@@ -28,7 +28,6 @@ import { DistrictDetail } from "@/components/DistrictDetail";
 import { AIHistoryWindow } from "@/components/AIHistoryWindow";
 import { TaskManagerWindow } from "@/components/TaskManagerWindow";
 import { AlertsHub } from "@/components/AlertsHub";
-import { Win98Notepad } from "@/components/Win98Notepad";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
@@ -333,13 +332,7 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     singleton: true,
     render: () => <div className="p-3"><AlertsHub /></div>,
   },
-  notepad: {
-    id: "notepad",
-    title: "Notepad",
-    icon: "📝",
-    size: { width: 480, height: 360 },
-    render: (_p, ctx) => <Win98Notepad onClose={ctx.close} embedded />,
-  },
+  // Notepad is rendered directly via Win98Notepad in Win98Desktop (it wraps its own window)
   "recycle-bin": {
     id: "recycle-bin",
     title: "Recycle Bin",
