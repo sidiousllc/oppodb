@@ -423,6 +423,7 @@ export default function Index() {
         <OppoHub
           search={search}
           filter={filter}
+          onFilterChange={setFilter}
           dataVersion={dataVersion}
           isAdmin={isAdmin}
           onSelectSlug={setSelectedSlug}
