@@ -467,12 +467,28 @@ Deno.serve(async (req) => {
     if (!auth?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    const token = auth.replace("Bearer ", "");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const isServiceCaller = token === serviceRoleKey;
 
-    const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
-    const { data: { user } } = await supa.auth.getUser(auth.replace("Bearer ", ""));
-    if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let userId: string | null = null;
+    const body = await req.json();
+    const { action, query, user_id: bodyUserId } = body ?? {};
 
-    const { action, query } = await req.json();
+    if (isServiceCaller) {
+      // Trusted internal caller (e.g. public-api proxy). Must specify user_id
+      // so we can resolve their stored API keys for keyed tools.
+      if (!bodyUserId || typeof bodyUserId !== "string") {
+        return new Response(JSON.stringify({ error: "user_id required when calling with service role" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      userId = bodyUserId;
+    } else {
+      const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
+      const { data: { user } } = await supa.auth.getUser(token);
+      if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      userId = user.id;
+    }
+
     if (!action || typeof query !== "string") {
       return new Response(JSON.stringify({ error: "action and query required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -487,8 +503,8 @@ Deno.serve(async (req) => {
     let key: string | null = null;
     const svcName = KEY_SERVICE[action];
     if (svcName) {
-      const service = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      key = await userKey(service, user.id, svcName);
+      const service = createClient(Deno.env.get("SUPABASE_URL")!, serviceRoleKey);
+      key = await userKey(service, userId!, svcName);
     }
 
     const out = await handler(query, key);

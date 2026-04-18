@@ -79,8 +79,11 @@ const VALID_ENDPOINTS = [
   "war-room-messages",            // GET ?room_id=&limit= | POST { room_id, body }
   "sync-status",                  // GET (latest run per source from sync_run_log)
   "sync-preferences",             // GET (caller prefs) | PUT { source, interval_minutes, enabled }
-  "international-elections",      // GET ?country_code=
-  "international-leaders",        // GET ?country_code=
+    "international-elections",      // GET ?country_code=
+    "international-leaders",        // GET ?country_code=
+    // OSINT Workbench (Phase 8)
+    "osint-tools",                  // GET — list all OSINT tools (registry)
+    "osint-search",                 // POST { tool_id, query } — execute an OSINT lookup (uses caller's stored API keys for keyed tools)
 ];
 
 async function hashKey(key: string): Promise<string> {
@@ -428,6 +431,47 @@ Deno.serve(async (req) => {
         supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 204 }).then(() => {});
         return new Response(null, { status: 204, headers: corsHeaders });
       }
+    }
+
+    // ─── OSINT Workbench ─────────────────────────────────────────────────
+    if (endpoint === "osint-tools") {
+      const { OSINT_CATALOG } = await import("../_shared/osint-catalog.ts");
+      supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+      return new Response(JSON.stringify({ data: OSINT_CATALOG, meta: { total: OSINT_CATALOG.length, endpoint } }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (endpoint === "osint-search") {
+      if (req.method !== "POST") {
+        return new Response(JSON.stringify({ error: "POST required: { tool_id, query }" }),
+          { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { getOsintCatalogEntry } = await import("../_shared/osint-catalog.ts");
+      const body = await req.json().catch(() => ({}));
+      const tool = getOsintCatalogEntry(String(body.tool_id || ""));
+      if (!tool) {
+        return new Response(JSON.stringify({ error: `Unknown tool_id: ${body.tool_id}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const queryStr = String(body.query || "").trim();
+      if (!queryStr) {
+        return new Response(JSON.stringify({ error: "query required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (tool.kind === "url") {
+        const target = tool.url_template?.replace("{q}", encodeURIComponent(queryStr)) ?? null;
+        return new Response(JSON.stringify({ data: { kind: "url", source: tool.source, source_url: target, query: queryStr } }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // edge — proxy to osint-search using service-role + caller user_id
+      const proxyResp = await fetch(`${supabaseUrl}/functions/v1/osint-search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseKey}` },
+        body: JSON.stringify({ action: tool.edge_action, query: queryStr, user_id: userId }),
+      });
+      const out = await proxyResp.json().catch(() => ({ error: "Proxy parse error" }));
+      supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: proxyResp.status }).then(() => {});
+      return new Response(JSON.stringify({ data: out, meta: { tool_id: tool.id, source: tool.source, endpoint } }),
+        { status: proxyResp.ok ? 200 : 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ─── Original GET-only switch for legacy endpoints ───────────────────

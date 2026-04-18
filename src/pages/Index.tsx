@@ -260,6 +260,24 @@ export default function Index() {
       setSelectedSlug(null);
       return true;
     }
+    // Live query passthrough from Master Search: "osint-run:{id}:{query}"
+    if (rawSlug.startsWith("osint-run:")) {
+      const rest = rawSlug.slice("osint-run:".length);
+      const sep = rest.indexOf(":");
+      const toolId = sep >= 0 ? rest.slice(0, sep) : rest;
+      const userQuery = sep >= 0 ? rest.slice(sep + 1) : "";
+      // Lazy-import the registry to avoid circular deps
+      import("@/data/osintTools").then(({ getOSINTToolById }) => {
+        const tool = getOSINTToolById(toolId);
+        if (tool?.kind === "url" && tool.urlTemplate && userQuery) {
+          window.open(tool.urlTemplate.replace("{q}", encodeURIComponent(userQuery)), "_blank", "noopener,noreferrer");
+        } else if (tool) {
+          setSection("research-tools");
+          setResearchSubsection(`osint:${toolId}`);
+        }
+      });
+      return true;
+    }
     const candidateMatch = getCandidateBySlug(slug);
     if (candidateMatch) { setSection("oppohub"); setSelectedSlug(candidateMatch.slug); return true; }
     const magaMatch = magaFiles.find(m => m.slug.toLowerCase() === slug);

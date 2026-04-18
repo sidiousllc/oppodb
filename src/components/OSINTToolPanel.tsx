@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
-import { ArrowLeft, Search, Loader2, ExternalLink, Info, KeyRound, Sparkles, ChevronRight } from "lucide-react";
+import { ArrowLeft, Search, Loader2, ExternalLink, Info, KeyRound, Sparkles, ChevronRight, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { getOSINTToolById, type OSINTTool } from "@/data/osintTools";
+import { OSINTResultWindow } from "@/components/OSINTResultWindow";
 
 interface OSINTToolPanelProps {
   toolId: string;
@@ -31,6 +32,7 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
   const [aiTab, setAiTab] = useState<"summary" | "talking" | "vuln" | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiOutput, setAiOutput] = useState<string>("");
+  const [popoutOpen, setPopoutOpen] = useState(false);
 
   // Load recent searches & key status
   useEffect(() => {
@@ -248,7 +250,16 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
       {/* Results */}
       {results && results.length > 0 && (
         <div className="win98-raised bg-[hsl(var(--win98-face))] p-2 mb-3">
-          <div className="text-[10px] font-bold mb-2">Results ({results.length})</div>
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <div className="text-[10px] font-bold">Results ({results.length})</div>
+            <button
+              onClick={() => setPopoutOpen(true)}
+              className="win98-button text-[9px] flex items-center gap-1"
+              title="Open full results in a draggable window"
+            >
+              <Maximize2 className="h-2.5 w-2.5" /> Open in window
+            </button>
+          </div>
           <div className="space-y-1.5">
             {results.map((r, i) => (
               <ResultRow key={i} row={r} />
@@ -314,6 +325,19 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
             ))}
           </div>
         </div>
+      )}
+
+      {popoutOpen && results && results.length > 0 && (
+        <OSINTResultWindow
+          tool={tool}
+          query={query}
+          results={results}
+          aiTab={aiTab}
+          aiLoading={aiLoading}
+          aiOutput={aiOutput}
+          onRunAI={(k) => runAI(k)}
+          onClose={() => setPopoutOpen(false)}
+        />
       )}
     </div>
   );
