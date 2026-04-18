@@ -442,6 +442,14 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
         )}
       </div>
 
+      {/* AI Intelligence Panel */}
+      <SubjectAIPanel
+        subjectType="polling"
+        subjectRef={p.id}
+        subjectTitle={`${p.candidate_or_topic} — ${src.name}`}
+        defaultScope="national"
+      />
+
       {/* Demographic Detail Window */}
       {demoDetailGroup && (
         <DemographicDetailWindow
@@ -584,6 +592,7 @@ function DemographicDetailWindow({
               </div>
             ))}
           </div>
+        </div>
       </div>
     </Win98Window>
   );
