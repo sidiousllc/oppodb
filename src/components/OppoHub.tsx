@@ -14,6 +14,7 @@ import { type FilterCategory } from "@/components/AppSidebar";
 interface OppoHubProps {
   search: string;
   filter: FilterCategory;
+  onFilterChange: (filter: FilterCategory) => void;
   dataVersion: number;
   isAdmin: boolean;
   onSelectSlug: (slug: string | null) => void;
