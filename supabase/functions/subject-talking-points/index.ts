@@ -19,7 +19,7 @@ const ALLOWED_MODELS = new Set([
   "google/gemini-3-flash-preview", "google/gemini-3.1-pro-preview",
   "openai/gpt-5", "openai/gpt-5-mini", "openai/gpt-5.2",
 ]);
-const ALLOWED_SUBJECTS = new Set(["district", "state_leg", "legislation"]);
+const ALLOWED_SUBJECTS = new Set(["district", "state_leg", "legislation", "polling", "country"]);
 const SECTIONS = ["polling", "intel", "legislation", "finance", "forecasts", "international", "demographics"] as const;
 type Section = typeof SECTIONS[number];
 
