@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { OfflineStatusIndicator } from "@/components/OfflineStatusIndicator";
+import { useWindowManager } from "@/contexts/WindowManagerContext";
 
 interface Win98TaskbarProps {
   minimizedWindow?: string;
@@ -13,6 +14,7 @@ export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarP
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { canManageContent, canAccessApi } = useUserRole();
+  const { windows, focusWindow, minimizeWindow } = useWindowManager();
   const [time, setTime] = useState("");
   const [startOpen, setStartOpen] = useState(false);
 
@@ -100,10 +102,10 @@ export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarP
 
         <div className="h-[20px] w-[2px] border-l border-l-[hsl(var(--win98-shadow))] border-r border-r-[hsl(var(--win98-highlight))]" />
 
-        {/* Active/minimized window button */}
+        {/* Main browser window button */}
         <button
           onClick={() => onRestoreWindow?.()}
-          className={`win98-button flex-1 max-w-[250px] text-left truncate text-[11px] h-[22px] ${
+          className={`win98-button max-w-[220px] text-left truncate text-[11px] h-[22px] ${
             minimizedWindow
               ? "font-normal"
               : "font-bold border-[hsl(var(--win98-dark-shadow))_hsl(var(--win98-highlight))_hsl(var(--win98-highlight))_hsl(var(--win98-dark-shadow))]"
@@ -111,6 +113,25 @@ export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarP
         >
           🌐 {minimizedWindow || "Opposition Research Database"}
         </button>
+
+        {/* One button per open floating window */}
+        <div className="flex items-center gap-1 overflow-x-auto flex-1 min-w-0">
+          {windows.map((w) => (
+            <button
+              key={w.id}
+              onClick={() => (w.minimized ? focusWindow(w.id) : minimizeWindow(w.id))}
+              className={`win98-button text-left truncate text-[11px] h-[22px] px-2 max-w-[180px] ${
+                w.minimized
+                  ? "font-normal"
+                  : "font-bold border-[hsl(var(--win98-dark-shadow))_hsl(var(--win98-highlight))_hsl(var(--win98-highlight))_hsl(var(--win98-dark-shadow))]"
+              }`}
+              title={w.title}
+            >
+              <span className="mr-1">{w.icon}</span>
+              {w.title}
+            </button>
+          ))}
+        </div>
 
         <div className="flex-1" />
 
