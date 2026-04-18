@@ -71,10 +71,44 @@ async function loadSubject(admin: SAdmin, subject_type: string, subject_ref: str
       district: null as string | null,
     };
   }
+  if (subject_type === "polling") {
+    const { data } = await admin.from("polling_data").select("*").eq("id", subject_ref).maybeSingle();
+    if (!data) return null;
+    const tags: string[] = [];
+    if (data.candidate_or_topic) tags.push(String(data.candidate_or_topic));
+    if (data.poll_type) tags.push(String(data.poll_type));
+    return {
+      title: `Poll — ${data.candidate_or_topic} (${data.source})`,
+      summary: `${data.poll_type} poll by ${data.source} on ${data.end_date || data.date_conducted}. Approve ${data.approve_pct ?? data.favor_pct ?? "—"}% / Disapprove ${data.disapprove_pct ?? data.oppose_pct ?? "—"}%.`,
+      content: [
+        `Question: ${data.question || ""}`,
+        `Source: ${data.source}`, `Type: ${data.poll_type}`,
+        `Sample: ${data.sample_size ?? "?"} (${data.sample_type ?? "?"})`,
+        `MoE: ±${data.margin_of_error ?? "?"}%`, `Methodology: ${data.methodology ?? "?"}`,
+        `Partisan lean: ${data.partisan_lean ?? "—"}`,
+        `Approve: ${data.approve_pct ?? data.favor_pct ?? "—"}% Disapprove: ${data.disapprove_pct ?? data.oppose_pct ?? "—"}% Margin: ${data.margin ?? "—"}`,
+      ].join("\n"),
+      tags,
+      state_abbr: null as string | null,
+      district: null as string | null,
+    };
+  }
+  if (subject_type === "country") {
+    const code = subject_ref.toUpperCase();
+    const { data } = await admin.from("international_profiles").select("*").eq("country_code", code).maybeSingle();
+    if (!data) return null;
+    return {
+      title: `${data.country_name} (${code}) — Country Profile`,
+      summary: `${data.government_type || ""}. Head of State: ${data.head_of_state || "—"}. Pop ${data.population ?? "—"}. GDP $${data.gdp ?? "—"}.`,
+      content: JSON.stringify(data).slice(0, 12000),
+      tags: (data.major_industries || []).slice(0, 6),
+      state_abbr: null as string | null,
+      district: null as string | null,
+      country_code: code,
+    } as any;
+  }
   return null;
 }
-
-async function buildSectionContext(admin: SAdmin, subject: any, selected: Section[]): Promise<string> {
   const tags = (subject.tags || []).filter((t: string) => !["Democrat","Republican","Independent"].includes(t));
   const orFilter = tags.length ? tags.map((t: string) => `title.ilike.%${t}%,summary.ilike.%${t}%`).join(",") : null;
   const parts: string[] = [];
