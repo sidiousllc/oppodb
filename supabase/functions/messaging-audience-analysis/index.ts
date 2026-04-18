@@ -135,6 +135,16 @@ serve(async (req) => {
       .single();
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    logAIGeneration(admin, {
+      feature: "messaging_audience_analysis",
+      subject_type: "messaging",
+      subject_ref: (row as any)?.messaging_slug ?? null,
+      model,
+      output: { effectiveness_score: parsed.effectiveness_score, audience_scores: parsed.audience_scores, segment_breakdown: parsed.segment_breakdown, resonance_factors: parsed.resonance_factors, risks: parsed.risks, summary: parsed.summary },
+      triggered_by: (typeof user !== "undefined" && (user as any)?.id) ? (user as any).id : null,
+      trigger_source: "user",
+    });
+
     return new Response(JSON.stringify({ cached: false, analysis: row }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);

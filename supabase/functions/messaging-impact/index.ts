@@ -147,6 +147,16 @@ serve(async (req) => {
       row = data;
     }
 
+    logAIGeneration(admin, {
+      feature: "messaging_impact",
+      subject_type: "messaging",
+      subject_ref: `${messaging_slug}|${scope}|${scope_ref ?? ""}`,
+      model,
+      output: { summary: parsed.summary, amplifies: parsed.amplifies, undermines: parsed.undermines, affected_groups: parsed.affected_groups, political_impact: parsed.political_impact, media_impact: parsed.media_impact, recommended_channels: parsed.recommended_channels },
+      triggered_by: (typeof user !== "undefined" && (user as any)?.id) ? (user as any).id : null,
+      trigger_source: "user",
+    });
+
     return new Response(JSON.stringify({ cached: false, analysis: row }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);

@@ -258,6 +258,15 @@ serve(async (req) => {
     } as never).select().single();
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    logAIGeneration(admin, {
+      feature: "subject_talking_points",
+      subject_type, subject_ref,
+      model: chosenModel,
+      output: { points: args.points || [], evidence: args.evidence || [], audience, angle },
+      triggered_by: user.id,
+      trigger_source: "user",
+    });
+
     return new Response(JSON.stringify({ talking_points: row }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);
