@@ -2,35 +2,49 @@
 
 ## Description
 
-OppoDB Search is the unified search interface that queries across all 15+ data categories simultaneously. It combines instant local/static search with auto-debounced database queries, delivering results in under 500ms for most searches.
+OppoDB Search is the unified search interface that queries across **48+ data categories** simultaneously. The same catalog is mirrored in the **public-api `/search` endpoint** and the **MCP `master_search` tool**, giving programmatic and AI-agent clients identical coverage to the in-app experience.
 
 ---
 
 ## Architecture
 
-### Component
-```
-src/components/MasterSearch.tsx
-```
-
-### Location
-Rendered on the Dashboard section only. Accessible globally via **Ctrl+K** (or **Cmd+K**) keyboard shortcut.
+### Surfaces
+| Surface | Entry point |
+|---|---|
+| In-app UI | `src/components/MasterSearch.tsx` (Dashboard, Ctrl/Cmd+K) |
+| REST API  | `GET /functions/v1/public-api/search?search=…&categories=…&limit=…` |
+| MCP tool  | `master_search({ search, categories?, limit? })` |
 
 ### Search Flow
 
 ```
 User types query (≥2 chars)
 ├── Instant: Local/static data search (candidates, districts, MAGA files, local impact, narratives)
-├── 400ms debounce: Auto-triggered database search (15 parallel Supabase queries)
+├── 400ms debounce: Auto-triggered database search (48 parallel Supabase queries)
 └── Results rendered in categorized cards with filter chips
 ```
 
-### Speed Optimizations
-1. **Parallel queries**: All 15 database queries execute via `Promise.all()` simultaneously
-2. **Auto-debounce**: DB search triggers automatically after 400ms of inactivity (no Enter required)
-3. **Local-first**: Static data results appear instantly while DB queries load
-4. **Limit capping**: Each query limited to 10 results to minimize payload size
-5. **Voter stats edge function**: Runs in parallel with direct DB queries
+### Speed & Resilience
+1. **Parallel queries**: All 48 category queries fire via `Promise.all()` simultaneously
+2. **Per-query isolation**: A `safe()` wrapper catches per-category failures so one bad table can't blank the result set
+3. **Auto-debounce**: DB search triggers automatically after 400ms of inactivity
+4. **Local-first**: Static data results appear instantly while DB queries load
+5. **Limit capping**: Each query limited to **20 results** (was 10) to balance coverage and payload size
+6. **RLS auto-scoping**: User-owned categories (notes, war rooms, reports, trackers, watchlist, stakeholders, AI caches) are silently filtered to what the caller can see — no extra auth code needed
+
+---
+
+## Categories (48 total)
+
+**Core records (23)** — candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats, mn_finance, prediction_markets, messaging_guidance, intel_briefings, tracked_bills, mit_elections, congress_committees, congress_votes, state_leg_elections, forecast_history, international_profiles
+
+**Public records & investigations (12)** — court_cases, fara_registrants, federal_spending, lobbying_disclosures, gov_contracts, ig_reports, congressional_record, district_profiles, election_night_streams, state_legislators, state_legislative_bills, polling_aggregates
+
+**International extras (4)** — international_elections, international_leaders, international_legislation, international_polling
+
+**Knowledge & collaboration (7, RLS-scoped)** — wiki_pages, war_rooms, stakeholders, entity_notes, reports, oppo_trackers, watchlist_items
+
+**AI cache (6)** — vulnerability_scores, talking_points, bill_impact_analyses, subject_impact_analyses, messaging_audience_analyses, messaging_impact_analyses
 
 ---
 
