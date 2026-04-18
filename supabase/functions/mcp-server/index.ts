@@ -1506,6 +1506,130 @@ mcpServer.tool("get_bill_impact", {
   },
 });
 
+// ─── Messaging AI Tools (Phase 7) ───────────────────────────────────────────
+
+mcpServer.tool("get_messaging_talking_points", {
+  description: "Get cached AI-generated talking points for a MessagingHub item (by slug).",
+  inputSchema: { type: "object" as const, properties: {
+    messaging_slug: { type: "string" as const }, audience: { type: "string" as const }, angle: { type: "string" as const },
+  }, required: ["messaging_slug"] },
+  handler: async (args: Record<string, unknown>) => {
+    let q = supabase.from("talking_points").select("*").eq("subject_type", "messaging").eq("subject_ref", String(args.messaging_slug)).order("created_at", { ascending: false }).limit(20);
+    if (args.audience) q = q.eq("audience", String(args.audience));
+    if (args.angle) q = q.eq("angle", String(args.angle));
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("generate_messaging_talking_points", {
+  description: "Generate fresh AI talking points for a MessagingHub item using cross-section context (polling, intel, legislation, finance, forecasts).",
+  inputSchema: { type: "object" as const, properties: {
+    messaging_slug: { type: "string" as const }, audience: { type: "string" as const }, angle: { type: "string" as const },
+    tone: { type: "string" as const }, model: { type: "string" as const },
+    include_sections: { type: "array" as const, items: { type: "string" as const } },
+  }, required: ["messaging_slug"] },
+  handler: async (args: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("messaging-talking-points", { body: args });
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_messaging_audience_analysis", {
+  description: "Get cached audience effectiveness analysis (resonance scores, segment breakdown, risks) for a MessagingHub item.",
+  inputSchema: { type: "object" as const, properties: { messaging_slug: { type: "string" as const } }, required: ["messaging_slug"] },
+  handler: async (args: Record<string, unknown>) => {
+    const { data, error } = await (supabase.from as any)("messaging_audience_analyses").select("*").eq("messaging_slug", String(args.messaging_slug)).maybeSingle();
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("generate_messaging_audience_analysis", {
+  description: "Generate fresh audience effectiveness analysis. Pass force_refresh=true to bypass 7-day cache.",
+  inputSchema: { type: "object" as const, properties: {
+    messaging_slug: { type: "string" as const }, force_refresh: { type: "boolean" as const },
+    model: { type: "string" as const }, include_sections: { type: "array" as const, items: { type: "string" as const } },
+  }, required: ["messaging_slug"] },
+  handler: async (args: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("messaging-audience-analysis", { body: args });
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_messaging_impact", {
+  description: "Get cached AI impact analyses for a MessagingHub item (national/state/district scoped).",
+  inputSchema: { type: "object" as const, properties: {
+    messaging_slug: { type: "string" as const }, scope: { type: "string" as const }, scope_ref: { type: "string" as const },
+  }, required: ["messaging_slug"] },
+  handler: async (args: Record<string, unknown>) => {
+    let q = (supabase.from as any)("messaging_impact_analyses").select("*").eq("messaging_slug", String(args.messaging_slug)).order("generated_at", { ascending: false });
+    if (args.scope) q = q.eq("scope", String(args.scope));
+    if (args.scope_ref) q = q.eq("scope_ref", String(args.scope_ref));
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("generate_messaging_impact", {
+  description: "Generate fresh impact analysis for a MessagingHub item.",
+  inputSchema: { type: "object" as const, properties: {
+    messaging_slug: { type: "string" as const }, scope: { type: "string" as const }, scope_ref: { type: "string" as const },
+    model: { type: "string" as const }, include_sections: { type: "array" as const, items: { type: "string" as const } },
+  }, required: ["messaging_slug"] },
+  handler: async (args: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("messaging-impact", { body: args });
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("get_messaging_ai_bundle", {
+  description: "Get the full AI bundle for a MessagingHub item: messaging metadata + cached talking points + audience analysis + impact analyses.",
+  inputSchema: { type: "object" as const, properties: { messaging_slug: { type: "string" as const } }, required: ["messaging_slug"] },
+  handler: async (args: Record<string, unknown>) => {
+    const slug = String(args.messaging_slug);
+    const [tp, aud, imp, item] = await Promise.all([
+      supabase.from("talking_points").select("audience, angle, points, evidence, created_at").eq("subject_type", "messaging").eq("subject_ref", slug).order("created_at", { ascending: false }).limit(10),
+      (supabase.from as any)("messaging_audience_analyses").select("*").eq("messaging_slug", slug).maybeSingle(),
+      (supabase.from as any)("messaging_impact_analyses").select("*").eq("messaging_slug", slug).order("generated_at", { ascending: false }).limit(10),
+      supabase.from("messaging_guidance").select("title, slug, source, author, summary, issue_areas").eq("slug", slug).maybeSingle(),
+    ]);
+    return { content: [{ type: "text" as const, text: JSON.stringify({
+      item: item.data, talking_points: tp.data || [], audience_analysis: aud.data, impact_analyses: imp.data || [],
+    }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("admin_regenerate_messaging_ai", {
+  description: "[ADMIN] Force-regenerate any cached messaging AI artifact. type: 'talking_points' | 'audience' | 'impact'.",
+  inputSchema: { type: "object" as const, properties: {
+    type: { type: "string" as const }, messaging_slug: { type: "string" as const },
+    audience: { type: "string" as const }, angle: { type: "string" as const },
+    scope: { type: "string" as const }, scope_ref: { type: "string" as const },
+    model: { type: "string" as const }, include_sections: { type: "array" as const, items: { type: "string" as const } },
+  }, required: ["type", "messaging_slug"] },
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    if (!caller?.isAdmin) return { content: [{ type: "text" as const, text: "Admin role required" }] };
+    const fnMap: Record<string, string> = {
+      talking_points: "messaging-talking-points",
+      audience: "messaging-audience-analysis",
+      impact: "messaging-impact",
+    };
+    const fn = fnMap[String(args.type)];
+    if (!fn) return { content: [{ type: "text" as const, text: "type must be talking_points|audience|impact" }] };
+    const { type: _t, ...rest } = args as any;
+    const { data, error } = await supabase.functions.invoke(fn, { body: { ...rest, force_refresh: true, force: true } });
+    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
 mcpServer.tool("admin_dispatch_alerts", {
   description: "[ADMIN] Force-run the dispatch-alerts cron job immediately.",
   inputSchema: { type: "object" as const, properties: {} },
