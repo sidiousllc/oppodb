@@ -64,6 +64,11 @@ const VALID_ENDPOINTS = [
   "messaging-audience",           // GET (cached) | POST (generate)
   "messaging-impact",             // GET (cached) | POST (generate)
   "messaging-ai-bundle",          // GET ?slug= → { item, talking_points, audience, impact[] }
+  // Subject AI (district / state_leg / legislation)
+  "subject-talking-points",       // GET ?subject_type=&subject_ref= | POST { subject_type, subject_ref, ... }
+  "subject-audience",             // GET ?subject_type=&subject_ref= | POST
+  "subject-impact",               // GET ?subject_type=&subject_ref= | POST
+  "subject-ai-bundle",            // GET ?subject_type=&subject_ref= → { talking_points, audience, impact[] }
   // Admin-only operations
   "admin-dispatch-alerts",
   "admin-regenerate-ai",
@@ -241,7 +246,60 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const PHASE5_ENDPOINTS = new Set([
+    // ─── Subject AI endpoints (district / state_leg / legislation) ──────
+    const SUBJ_AI_ENDPOINTS = new Set(["subject-talking-points", "subject-audience", "subject-impact", "subject-ai-bundle"]);
+    if (SUBJ_AI_ENDPOINTS.has(endpoint)) {
+      const subject_type = url.searchParams.get("subject_type");
+      const subject_ref = url.searchParams.get("subject_ref");
+      const ALLOWED = new Set(["district", "state_leg", "legislation"]);
+      if (req.method === "GET" && (!subject_type || !subject_ref || !ALLOWED.has(subject_type))) {
+        return new Response(JSON.stringify({ error: "subject_type (district|state_leg|legislation) and subject_ref required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (endpoint === "subject-ai-bundle") {
+        const [tp, aud, imp] = await Promise.all([
+          supabase.from("talking_points").select("*").eq("subject_type", subject_type!).eq("subject_ref", subject_ref!).order("created_at", { ascending: false }).limit(10),
+          (supabase.from as any)("subject_audience_analyses").select("*").eq("subject_type", subject_type!).eq("subject_ref", subject_ref!).maybeSingle(),
+          (supabase.from as any)("subject_impact_analyses").select("*").eq("subject_type", subject_type!).eq("subject_ref", subject_ref!).order("generated_at", { ascending: false }).limit(10),
+        ]);
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify({ data: { talking_points: tp.data || [], audience_analysis: aud.data, impact_analyses: imp.data || [] } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const fnMap: Record<string, string> = {
+        "subject-talking-points": "subject-talking-points",
+        "subject-audience": "subject-audience-analysis",
+        "subject-impact": "subject-impact-analysis",
+      };
+      const tableMap: Record<string, string> = {
+        "subject-audience": "subject_audience_analyses",
+        "subject-impact": "subject_impact_analyses",
+      };
+      if (req.method === "GET") {
+        if (endpoint === "subject-talking-points") {
+          const { data, error } = await supabase.from("talking_points").select("*").eq("subject_type", subject_type!).eq("subject_ref", subject_ref!).order("created_at", { ascending: false }).limit(limit);
+          if (error) throw error;
+          supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+          return new Response(JSON.stringify({ data, count: data?.length ?? 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const tbl = tableMap[endpoint];
+        const { data, error } = await (supabase.from as any)(tbl).select("*").eq("subject_type", subject_type!).eq("subject_ref", subject_ref!).order("generated_at", { ascending: false }).limit(limit);
+        if (error) throw error;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify({ data, count: data?.length ?? 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (req.method === "POST") {
+        const body = await req.json().catch(() => ({}));
+        if (body?.force_refresh || body?.force) {
+          const { data: rolesData } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+          const isAdmin = (rolesData || []).some((r: { role: string }) => r.role === "admin");
+          if (!isAdmin) return new Response(JSON.stringify({ error: "Admin role required for force regenerate" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data, error } = await supabase.functions.invoke(fnMap[endpoint], { body });
+        if (error) throw error;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify({ data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
       "alert-rules", "alert-dispatch-log", "webhook-endpoints",
       "entity-activity", "entity-notes", "entity-relationships",
       "vulnerability-scores", "talking-points", "bill-impact",

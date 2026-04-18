@@ -4060,6 +4060,105 @@ export type Database = {
         }
         Relationships: []
       }
+      subject_audience_analyses: {
+        Row: {
+          audience_scores: Json
+          effectiveness_score: number
+          generated_at: string
+          id: string
+          model: string
+          resonance_factors: Json
+          risks: Json
+          segment_breakdown: Json
+          subject_ref: string
+          subject_type: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          audience_scores?: Json
+          effectiveness_score?: number
+          generated_at?: string
+          id?: string
+          model?: string
+          resonance_factors?: Json
+          risks?: Json
+          segment_breakdown?: Json
+          subject_ref: string
+          subject_type: string
+          summary?: string
+          updated_at?: string
+        }
+        Update: {
+          audience_scores?: Json
+          effectiveness_score?: number
+          generated_at?: string
+          id?: string
+          model?: string
+          resonance_factors?: Json
+          risks?: Json
+          segment_breakdown?: Json
+          subject_ref?: string
+          subject_type?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subject_impact_analyses: {
+        Row: {
+          affected_groups: Json
+          amplifies: Json
+          generated_at: string
+          id: string
+          media_impact: string | null
+          model: string
+          political_impact: string | null
+          recommended_channels: Json
+          scope: string
+          scope_ref: string | null
+          subject_ref: string
+          subject_type: string
+          summary: string
+          undermines: Json
+          updated_at: string
+        }
+        Insert: {
+          affected_groups?: Json
+          amplifies?: Json
+          generated_at?: string
+          id?: string
+          media_impact?: string | null
+          model?: string
+          political_impact?: string | null
+          recommended_channels?: Json
+          scope?: string
+          scope_ref?: string | null
+          subject_ref: string
+          subject_type: string
+          summary?: string
+          undermines?: Json
+          updated_at?: string
+        }
+        Update: {
+          affected_groups?: Json
+          amplifies?: Json
+          generated_at?: string
+          id?: string
+          media_impact?: string | null
+          model?: string
+          political_impact?: string | null
+          recommended_channels?: Json
+          scope?: string
+          scope_ref?: string | null
+          subject_ref?: string
+          subject_type?: string
+          summary?: string
+          undermines?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
