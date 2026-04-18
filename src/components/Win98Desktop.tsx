@@ -36,6 +36,23 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
     { label: "API Access", icon: "🔑", action: () => openApp("api") },
     { label: "Network\nNeighborhood", icon: "🌍", action: () => openApp("network-neighborhood") },
     { label: "Notepad", icon: "📝", action: () => setNotepadOpen(true) },
+    // Sidebar sections as desktop shortcuts
+    { label: "OppoHub", icon: "🎯", action: () => openApp("oppohub") },
+    { label: "LegHub", icon: "⚖️", action: () => openApp("leghub") },
+    { label: "DataHub", icon: "📊", action: () => openApp("polling") },
+    { label: "IntelHub", icon: "🕵️", action: () => openApp("intelhub") },
+    { label: "MessagingHub", icon: "📢", action: () => openApp("messaging") },
+    { label: "Research\nTools", icon: "🔬", action: () => openApp("research-tools") },
+    { label: "International\nHub", icon: "🌐", action: () => openApp("internationalhub") },
+    { label: "Live\nElections", icon: "🏛️", action: () => openApp("live-elections") },
+    { label: "ReportHub", icon: "📝", action: () => openApp("reports") },
+    { label: "War Room", icon: "🎖️", action: () => openApp("warroom") },
+    { label: "CRM", icon: "👥", action: () => openApp("crm") },
+    { label: "Alerts", icon: "🚨", action: () => openApp("alerts") },
+    { label: "Forecast", icon: "📈", action: () => openApp("forecast") },
+    { label: "Investigations", icon: "🔍", action: () => openApp("investigations") },
+    { label: "Graph", icon: "🕸️", action: () => openApp("graph") },
+    { label: "Documentation", icon: "📖", action: () => openApp("documentation") },
     { label: "Log Off", icon: "🔌", action: () => signOut() },
   ];
 
