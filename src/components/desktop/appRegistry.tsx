@@ -26,6 +26,7 @@ import { CandidateDetail } from "@/components/CandidateDetail";
 import { GenericDetail } from "@/components/GenericDetail";
 import { DistrictDetail } from "@/components/DistrictDetail";
 import { AIHistoryWindow } from "@/components/AIHistoryWindow";
+import { TaskManagerWindow } from "@/components/TaskManagerWindow";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
@@ -314,6 +315,14 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
         initialSubjectRef={payload?.subject_ref as string | undefined}
       />
     ),
+  },
+  "task-manager": {
+    id: "task-manager",
+    title: "Task Manager",
+    icon: "📋",
+    singleton: true,
+    size: { width: 520, height: 480 },
+    render: () => <TaskManagerWindow />,
   },
   warroom: {
     id: "warroom",

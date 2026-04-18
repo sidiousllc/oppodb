@@ -54,6 +54,7 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
     { label: "Graph", icon: "🕸️", action: () => openApp("graph") },
     { label: "Documentation", icon: "📖", action: () => openApp("documentation") },
     { label: "AI History", icon: "🧠", action: () => openApp("ai-history") },
+    { label: "Task\nManager", icon: "📋", action: () => openApp("task-manager") },
     { label: "Log Off", icon: "🔌", action: () => signOut() },
   ];
 
