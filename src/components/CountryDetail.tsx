@@ -398,6 +398,14 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
               </button>
             </div>
           )}
+
+          {/* AI Intelligence Panel */}
+          <SubjectAIPanel
+            subjectType="country"
+            subjectRef={countryCode}
+            subjectTitle={`${country.name} (${countryCode})`}
+            defaultScope="national"
+          />
         </div>
       )}
 
