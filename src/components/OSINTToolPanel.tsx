@@ -52,15 +52,8 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
     }
   }, [tool?.id]);
 
-  if (!tool) {
-    return (
-      <div className="p-4 text-[11px]">
-        Tool not found. <button onClick={onBack} className="underline">Back</button>
-      </div>
-    );
-  }
-
   const persistRecent = (q: string) => {
+    if (!tool) return;
     const next = [q, ...recent.filter((s) => s !== q)].slice(0, 8);
     setRecent(next);
     try { localStorage.setItem(`osint-recent-${tool.id}`, JSON.stringify(next)); } catch (_) { /* noop */ }
