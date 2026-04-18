@@ -1437,3 +1437,1017 @@
   box-shadow: 0 8px 32px hsl(0 0% 0% / 0.18), 0 0 0 1px hsl(0 0% 0% / 0.08);
 }
 
+
+
+/* =============================================
+   macOS Themes
+   ============================================= */
+
+/* -------- Mac OS 9 Platinum (classic) -------- */
+.theme-mac-classic {
+  --background: 0 0% 80%;
+  --foreground: 0 0% 0%;
+  --card: 0 0% 95%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 95%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 220 60% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 75%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 88%;
+  --muted-foreground: 0 0% 35%;
+  --accent: 220 30% 88%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 50%;
+  --input: 0 0% 100%;
+  --ring: 220 60% 45%;
+  --radius: 4px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 92%;
+  --win98-face: 0 0% 84%;
+  --win98-shadow: 0 0% 55%;
+  --win98-dark-shadow: 0 0% 30%;
+  --win98-titlebar: 0 0% 84%;
+  --win98-titlebar-inactive: 0 0% 70%;
+  --font-body: 'Charcoal', 'Geneva', 'Tahoma', sans-serif;
+  --font-display: 'Charcoal', 'Geneva', 'Tahoma', sans-serif;
+}
+.theme-mac-classic .win98-titlebar {
+  background: repeating-linear-gradient(0deg, hsl(0 0% 80%) 0px, hsl(0 0% 80%) 1px, hsl(0 0% 92%) 1px, hsl(0 0% 92%) 2px);
+  color: hsl(0 0% 0%);
+  border-bottom: 1px solid hsl(0 0% 50%);
+  padding: 3px 6px;
+  text-align: center;
+}
+.theme-mac-classic .win98-button {
+  border-radius: 8px;
+  background: linear-gradient(180deg, hsl(0 0% 98%), hsl(0 0% 82%));
+  border: 1px solid hsl(0 0% 50%);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100%);
+}
+
+/* -------- Mac OS X Aqua (Tiger/Panther blue pinstripe) -------- */
+.theme-mac-osx-aqua {
+  --background: 210 40% 92%;
+  --foreground: 0 0% 0%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 210 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 30% 85%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 210 25% 90%;
+  --muted-foreground: 0 0% 35%;
+  --accent: 210 80% 92%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 20% 70%;
+  --input: 0 0% 100%;
+  --ring: 210 100% 50%;
+  --radius: 6px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 210 30% 96%;
+  --win98-face: 210 30% 92%;
+  --win98-shadow: 210 20% 70%;
+  --win98-dark-shadow: 210 30% 40%;
+  --win98-titlebar: 210 30% 80%;
+  --win98-titlebar-inactive: 210 10% 80%;
+  --font-body: 'Lucida Grande', 'Helvetica Neue', sans-serif;
+  --font-display: 'Lucida Grande', 'Helvetica Neue', sans-serif;
+}
+.theme-mac-osx-aqua .win98-titlebar {
+  background: linear-gradient(180deg, hsl(210 30% 92%), hsl(210 25% 78%));
+  color: hsl(0 0% 0%);
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid hsl(210 20% 60%);
+  text-align: center;
+  padding: 4px 8px;
+}
+.theme-mac-osx-aqua .win98-button {
+  border-radius: 12px;
+  background: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 25% 88%));
+  border: 1px solid hsl(210 20% 65%);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100%);
+}
+.theme-mac-osx-aqua .win98-window,
+.theme-mac-osx-aqua .win98-raised {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* -------- OS X Leopard (dark unified titlebar) -------- */
+.theme-mac-leopard {
+  --background: 0 0% 35%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 95%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 95%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 215 90% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 30%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 40%;
+  --muted-foreground: 0 0% 80%;
+  --accent: 215 60% 30%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 25%;
+  --input: 0 0% 100%;
+  --ring: 215 90% 55%;
+  --radius: 6px;
+  --win98-highlight: 0 0% 60%;
+  --win98-light: 0 0% 50%;
+  --win98-face: 0 0% 40%;
+  --win98-shadow: 0 0% 20%;
+  --win98-dark-shadow: 0 0% 10%;
+  --win98-titlebar: 0 0% 30%;
+  --win98-titlebar-inactive: 0 0% 50%;
+  --font-body: 'Lucida Grande', 'Helvetica Neue', sans-serif;
+  --font-display: 'Lucida Grande', 'Helvetica Neue', sans-serif;
+}
+.theme-mac-leopard .win98-titlebar {
+  background: linear-gradient(180deg, hsl(0 0% 50%), hsl(0 0% 30%));
+  color: hsl(0 0% 100%);
+  border-radius: 6px 6px 0 0;
+  text-align: center;
+}
+
+/* -------- OS X Yosemite (flat, frosted) -------- */
+.theme-mac-yosemite {
+  --background: 0 0% 96%;
+  --foreground: 0 0% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 13%;
+  --primary: 210 100% 52%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 0 0% 13%;
+  --muted: 0 0% 94%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 210 100% 95%;
+  --accent-foreground: 0 0% 13%;
+  --destructive: 0 80% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 85%;
+  --input: 0 0% 100%;
+  --ring: 210 100% 52%;
+  --radius: 6px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 98%;
+  --win98-face: 0 0% 96%;
+  --win98-shadow: 0 0% 80%;
+  --win98-dark-shadow: 0 0% 65%;
+  --win98-titlebar: 0 0% 93%;
+  --win98-titlebar-inactive: 0 0% 88%;
+  --font-body: 'Helvetica Neue', 'Helvetica', sans-serif;
+  --font-display: 'Helvetica Neue', 'Helvetica', sans-serif;
+}
+.theme-mac-yosemite .win98-titlebar {
+  background: hsl(0 0% 93%);
+  color: hsl(0 0% 13%);
+  border-bottom: 1px solid hsl(0 0% 80%);
+  border-radius: 6px 6px 0 0;
+  text-align: center;
+  font-weight: 500;
+}
+.theme-mac-yosemite .win98-window,
+.theme-mac-yosemite .win98-raised {
+  border-radius: 6px;
+}
+
+/* -------- macOS Big Sur (rounded, translucent) -------- */
+.theme-mac-bigsur {
+  --background: 220 20% 96%;
+  --foreground: 0 0% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 13%;
+  --primary: 210 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 15% 92%;
+  --secondary-foreground: 0 0% 13%;
+  --muted: 220 15% 94%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 210 100% 96%;
+  --accent-foreground: 0 0% 13%;
+  --destructive: 5 85% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 15% 85%;
+  --input: 0 0% 100%;
+  --ring: 210 100% 50%;
+  --radius: 10px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 220 20% 98%;
+  --win98-face: 220 20% 96%;
+  --win98-shadow: 220 10% 78%;
+  --win98-dark-shadow: 220 10% 60%;
+  --win98-titlebar: 220 15% 94%;
+  --win98-titlebar-inactive: 220 10% 90%;
+  --font-body: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  --font-display: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+}
+.theme-mac-bigsur .win98-window,
+.theme-mac-bigsur .win98-raised {
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 10px 30px hsl(0 0% 0% / 0.15), 0 0 0 1px hsl(0 0% 0% / 0.05);
+}
+.theme-mac-bigsur .win98-titlebar {
+  background: hsl(220 15% 94% / 0.85);
+  backdrop-filter: blur(20px);
+  color: hsl(0 0% 13%);
+  border-bottom: 1px solid hsl(220 15% 88%);
+  border-radius: 10px 10px 0 0 !important;
+  text-align: center;
+  font-weight: 500;
+  padding: 8px 12px;
+}
+.theme-mac-bigsur .win98-button {
+  border-radius: 6px;
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(220 15% 80%);
+}
+
+/* -------- macOS Sonoma (latest) -------- */
+.theme-mac-sonoma {
+  --background: 220 25% 97%;
+  --foreground: 0 0% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 13%;
+  --primary: 215 95% 52%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 20% 93%;
+  --secondary-foreground: 0 0% 13%;
+  --muted: 220 20% 95%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 215 95% 96%;
+  --accent-foreground: 0 0% 13%;
+  --destructive: 5 85% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 15% 87%;
+  --input: 0 0% 100%;
+  --ring: 215 95% 52%;
+  --radius: 12px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 220 25% 99%;
+  --win98-face: 220 25% 97%;
+  --win98-shadow: 220 10% 80%;
+  --win98-dark-shadow: 220 10% 60%;
+  --win98-titlebar: 220 25% 96%;
+  --win98-titlebar-inactive: 220 15% 92%;
+  --font-body: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  --font-display: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+}
+.theme-mac-sonoma .win98-window,
+.theme-mac-sonoma .win98-raised {
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 14px 40px hsl(0 0% 0% / 0.18), 0 0 0 1px hsl(0 0% 0% / 0.06);
+}
+.theme-mac-sonoma .win98-titlebar {
+  background: hsl(220 25% 96% / 0.9);
+  backdrop-filter: blur(24px);
+  color: hsl(0 0% 13%);
+  border-radius: 12px 12px 0 0 !important;
+  text-align: center;
+  padding: 8px 12px;
+  font-weight: 500;
+}
+.theme-mac-sonoma .win98-button {
+  border-radius: 8px;
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(220 15% 82%);
+}
+
+/* =============================================
+   Linux Themes
+   ============================================= */
+
+/* -------- Ubuntu (GNOME / Yaru orange + aubergine) -------- */
+.theme-linux-ubuntu {
+  --background: 18 5% 18%;
+  --foreground: 0 0% 95%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 13%;
+  --primary: 18 88% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 285 30% 25%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 0 0% 25%;
+  --muted-foreground: 0 0% 70%;
+  --accent: 18 88% 95%;
+  --accent-foreground: 0 0% 13%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 30%;
+  --input: 0 0% 100%;
+  --ring: 18 88% 50%;
+  --radius: 6px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 98%;
+  --win98-face: 0 0% 96%;
+  --win98-shadow: 0 0% 75%;
+  --win98-dark-shadow: 0 0% 55%;
+  --win98-titlebar: 0 0% 22%;
+  --win98-titlebar-inactive: 0 0% 35%;
+  --font-body: 'Ubuntu', 'Noto Sans', sans-serif;
+  --font-display: 'Ubuntu', 'Noto Sans', sans-serif;
+}
+.theme-linux-ubuntu .win98-titlebar {
+  background: hsl(0 0% 22%);
+  color: hsl(0 0% 95%);
+  border-radius: 6px 6px 0 0;
+  text-align: center;
+  padding: 6px 10px;
+}
+.theme-linux-ubuntu .win98-window,
+.theme-linux-ubuntu .win98-raised {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* -------- Linux Mint (Cinnamon green) -------- */
+.theme-linux-mint {
+  --background: 0 0% 22%;
+  --foreground: 0 0% 95%;
+  --card: 0 0% 96%;
+  --card-foreground: 0 0% 13%;
+  --popover: 0 0% 96%;
+  --popover-foreground: 0 0% 13%;
+  --primary: 145 50% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 30%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 0 0% 28%;
+  --muted-foreground: 0 0% 70%;
+  --accent: 145 40% 90%;
+  --accent-foreground: 0 0% 13%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 35%;
+  --input: 0 0% 100%;
+  --ring: 145 50% 42%;
+  --radius: 4px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 98%;
+  --win98-face: 0 0% 95%;
+  --win98-shadow: 0 0% 70%;
+  --win98-dark-shadow: 0 0% 50%;
+  --win98-titlebar: 0 0% 18%;
+  --win98-titlebar-inactive: 0 0% 35%;
+  --font-body: 'Noto Sans', 'Ubuntu', sans-serif;
+  --font-display: 'Noto Sans', 'Ubuntu', sans-serif;
+}
+.theme-linux-mint .win98-titlebar {
+  background: hsl(0 0% 18%);
+  color: hsl(0 0% 95%);
+  padding: 5px 10px;
+}
+
+/* -------- Fedora (Workstation blue) -------- */
+.theme-linux-fedora {
+  --background: 215 60% 20%;
+  --foreground: 0 0% 95%;
+  --card: 0 0% 98%;
+  --card-foreground: 0 0% 13%;
+  --popover: 0 0% 98%;
+  --popover-foreground: 0 0% 13%;
+  --primary: 215 80% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 215 40% 30%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 215 30% 35%;
+  --muted-foreground: 0 0% 80%;
+  --accent: 215 60% 92%;
+  --accent-foreground: 0 0% 13%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 215 30% 40%;
+  --input: 0 0% 100%;
+  --ring: 215 80% 45%;
+  --radius: 6px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 99%;
+  --win98-face: 0 0% 97%;
+  --win98-shadow: 215 20% 75%;
+  --win98-dark-shadow: 215 30% 50%;
+  --win98-titlebar: 215 60% 25%;
+  --win98-titlebar-inactive: 215 20% 50%;
+  --font-body: 'Cantarell', 'Noto Sans', sans-serif;
+  --font-display: 'Cantarell', 'Noto Sans', sans-serif;
+}
+.theme-linux-fedora .win98-titlebar {
+  background: hsl(215 60% 25%);
+  color: hsl(0 0% 100%);
+  border-radius: 6px 6px 0 0;
+  text-align: center;
+}
+.theme-linux-fedora .win98-window,
+.theme-linux-fedora .win98-raised {
+  border-radius: 6px;
+}
+
+/* -------- Pop!_OS (System76 teal/orange) -------- */
+.theme-linux-popos {
+  --background: 195 40% 15%;
+  --foreground: 0 0% 95%;
+  --card: 195 15% 18%;
+  --card-foreground: 0 0% 95%;
+  --popover: 195 15% 18%;
+  --popover-foreground: 0 0% 95%;
+  --primary: 175 70% 45%;
+  --primary-foreground: 0 0% 10%;
+  --secondary: 28 90% 55%;
+  --secondary-foreground: 0 0% 10%;
+  --muted: 195 20% 25%;
+  --muted-foreground: 0 0% 75%;
+  --accent: 175 50% 25%;
+  --accent-foreground: 0 0% 95%;
+  --destructive: 0 80% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 195 20% 30%;
+  --input: 195 15% 22%;
+  --ring: 175 70% 45%;
+  --radius: 4px;
+  --win98-highlight: 195 20% 30%;
+  --win98-light: 195 18% 24%;
+  --win98-face: 195 15% 18%;
+  --win98-shadow: 195 30% 10%;
+  --win98-dark-shadow: 195 40% 5%;
+  --win98-titlebar: 195 40% 12%;
+  --win98-titlebar-inactive: 195 20% 25%;
+  --font-body: 'Fira Sans', 'Inter', sans-serif;
+  --font-display: 'Fira Sans', 'Inter', sans-serif;
+}
+.theme-linux-popos .win98-titlebar {
+  background: hsl(195 40% 12%);
+  color: hsl(175 70% 50%);
+  padding: 6px 10px;
+}
+
+/* -------- Kali Linux (hacker dark blue/cyan) -------- */
+.theme-linux-kali {
+  --background: 220 50% 8%;
+  --foreground: 180 80% 80%;
+  --card: 220 30% 12%;
+  --card-foreground: 180 80% 85%;
+  --popover: 220 30% 12%;
+  --popover-foreground: 180 80% 85%;
+  --primary: 180 100% 45%;
+  --primary-foreground: 220 50% 8%;
+  --secondary: 220 30% 18%;
+  --secondary-foreground: 180 80% 80%;
+  --muted: 220 25% 18%;
+  --muted-foreground: 180 30% 65%;
+  --accent: 280 80% 50%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 90% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 30% 22%;
+  --input: 220 30% 14%;
+  --ring: 180 100% 45%;
+  --radius: 2px;
+  --win98-highlight: 220 30% 25%;
+  --win98-light: 220 30% 18%;
+  --win98-face: 220 30% 12%;
+  --win98-shadow: 220 50% 5%;
+  --win98-dark-shadow: 220 60% 3%;
+  --win98-titlebar: 220 50% 10%;
+  --win98-titlebar-inactive: 220 30% 18%;
+  --font-body: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-display: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.theme-linux-kali .win98-titlebar {
+  background: hsl(220 50% 10%);
+  color: hsl(180 100% 50%);
+  border-bottom: 1px solid hsl(180 100% 45%);
+  font-family: 'JetBrains Mono', monospace;
+  padding: 4px 8px;
+}
+
+/* -------- Arch / KDE Plasma -------- */
+.theme-linux-arch {
+  --background: 210 30% 12%;
+  --foreground: 0 0% 95%;
+  --card: 210 20% 18%;
+  --card-foreground: 0 0% 95%;
+  --popover: 210 20% 18%;
+  --popover-foreground: 0 0% 95%;
+  --primary: 200 90% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 20% 25%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 210 15% 22%;
+  --muted-foreground: 0 0% 70%;
+  --accent: 200 70% 30%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 80% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 20% 28%;
+  --input: 210 20% 18%;
+  --ring: 200 90% 50%;
+  --radius: 4px;
+  --win98-highlight: 210 20% 30%;
+  --win98-light: 210 20% 22%;
+  --win98-face: 210 20% 18%;
+  --win98-shadow: 210 30% 8%;
+  --win98-dark-shadow: 210 40% 5%;
+  --win98-titlebar: 210 30% 14%;
+  --win98-titlebar-inactive: 210 20% 22%;
+  --font-body: 'Noto Sans', 'Inter', sans-serif;
+  --font-display: 'Noto Sans', 'Inter', sans-serif;
+}
+.theme-linux-arch .win98-titlebar {
+  background: hsl(210 30% 14%);
+  color: hsl(200 90% 60%);
+  padding: 6px 10px;
+}
+
+/* =============================================
+   iOS Themes (mobile-first chrome)
+   ============================================= */
+
+/* -------- iOS 6 (skeuomorphic) -------- */
+.theme-ios-6 {
+  --background: 220 30% 88%;
+  --foreground: 0 0% 0%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 210 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 15% 80%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 220 15% 90%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 210 80% 92%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 15% 70%;
+  --input: 0 0% 100%;
+  --ring: 210 100% 50%;
+  --radius: 8px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 98%;
+  --win98-face: 220 30% 92%;
+  --win98-shadow: 220 15% 65%;
+  --win98-dark-shadow: 220 25% 40%;
+  --win98-titlebar: 215 45% 50%;
+  --win98-titlebar-inactive: 220 15% 60%;
+  --font-body: 'Helvetica Neue', 'Helvetica', sans-serif;
+  --font-display: 'Helvetica Neue', 'Helvetica', sans-serif;
+}
+.theme-ios-6 .win98-titlebar {
+  background: linear-gradient(180deg, hsl(215 60% 65%), hsl(215 50% 40%));
+  color: hsl(0 0% 100%);
+  text-align: center;
+  text-shadow: 0 -1px 0 hsl(0 0% 0% / 0.3);
+  border-radius: 8px 8px 0 0;
+  padding: 8px;
+}
+.theme-ios-6 .win98-window,
+.theme-ios-6 .win98-raised {
+  border-radius: 8px;
+  overflow: hidden;
+}
+.theme-ios-6 .win98-button {
+  border-radius: 8px;
+  background: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 15% 85%));
+  border: 1px solid hsl(220 15% 65%);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100%);
+}
+
+/* -------- iOS 7 (flat introduction) -------- */
+.theme-ios-7 {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 0%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 210 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 95%;
+  --muted-foreground: 0 0% 50%;
+  --accent: 210 100% 95%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 100% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 88%;
+  --input: 0 0% 100%;
+  --ring: 210 100% 50%;
+  --radius: 4px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 99%;
+  --win98-face: 0 0% 97%;
+  --win98-shadow: 0 0% 88%;
+  --win98-dark-shadow: 0 0% 75%;
+  --win98-titlebar: 0 0% 98%;
+  --win98-titlebar-inactive: 0 0% 95%;
+  --font-body: -apple-system, 'Helvetica Neue', sans-serif;
+  --font-display: -apple-system, 'Helvetica Neue', sans-serif;
+}
+.theme-ios-7 .win98-titlebar {
+  background: hsl(0 0% 98% / 0.9);
+  backdrop-filter: blur(12px);
+  color: hsl(0 0% 0%);
+  border-bottom: 0.5px solid hsl(0 0% 85%);
+  text-align: center;
+  font-weight: 500;
+  padding: 8px;
+}
+.theme-ios-7 .win98-button {
+  border-radius: 4px;
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(0 0% 85%);
+  color: hsl(210 100% 50%);
+}
+
+/* -------- iOS 11 (bold titles, larger radii) -------- */
+.theme-ios-11 {
+  --background: 0 0% 95%;
+  --foreground: 0 0% 0%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 210 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 94%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 210 100% 95%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 4 100% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 88%;
+  --input: 0 0% 100%;
+  --ring: 210 100% 50%;
+  --radius: 10px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 99%;
+  --win98-face: 0 0% 97%;
+  --win98-shadow: 0 0% 85%;
+  --win98-dark-shadow: 0 0% 70%;
+  --win98-titlebar: 0 0% 98%;
+  --win98-titlebar-inactive: 0 0% 95%;
+  --font-body: -apple-system, 'SF Pro Display', sans-serif;
+  --font-display: -apple-system, 'SF Pro Display', sans-serif;
+}
+.theme-ios-11 .win98-titlebar {
+  background: hsl(0 0% 98%);
+  color: hsl(0 0% 0%);
+  border-bottom: 0.5px solid hsl(0 0% 85%);
+  text-align: left;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 10px 10px 0 0;
+}
+.theme-ios-11 .win98-window,
+.theme-ios-11 .win98-raised {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* -------- iOS 16 (Dynamic Island era) -------- */
+.theme-ios-16 {
+  --background: 0 0% 96%;
+  --foreground: 0 0% 0%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 210 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 93%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 95%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 210 100% 96%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 4 100% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 88%;
+  --input: 0 0% 100%;
+  --ring: 210 100% 50%;
+  --radius: 14px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 99%;
+  --win98-face: 0 0% 97%;
+  --win98-shadow: 0 0% 85%;
+  --win98-dark-shadow: 0 0% 70%;
+  --win98-titlebar: 0 0% 98%;
+  --win98-titlebar-inactive: 0 0% 95%;
+  --font-body: -apple-system, 'SF Pro Display', sans-serif;
+  --font-display: -apple-system, 'SF Pro Display', sans-serif;
+}
+.theme-ios-16 .win98-window,
+.theme-ios-16 .win98-raised {
+  border-radius: 14px;
+  overflow: hidden;
+}
+.theme-ios-16 .win98-titlebar {
+  background: hsl(0 0% 98% / 0.85);
+  backdrop-filter: blur(16px);
+  text-align: center;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 14px 14px 0 0;
+}
+
+/* -------- iOS 18 (latest, more glassy) -------- */
+.theme-ios-18 {
+  --background: 220 25% 97%;
+  --foreground: 0 0% 0%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 215 100% 52%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 20% 93%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 220 20% 95%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 215 100% 95%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 4 100% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 15% 88%;
+  --input: 0 0% 100%;
+  --ring: 215 100% 52%;
+  --radius: 18px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 220 25% 99%;
+  --win98-face: 220 25% 97%;
+  --win98-shadow: 220 10% 82%;
+  --win98-dark-shadow: 220 10% 65%;
+  --win98-titlebar: 220 25% 98%;
+  --win98-titlebar-inactive: 220 15% 94%;
+  --font-body: -apple-system, 'SF Pro Display', sans-serif;
+  --font-display: -apple-system, 'SF Pro Display', sans-serif;
+}
+.theme-ios-18 .win98-window,
+.theme-ios-18 .win98-raised {
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 12px 36px hsl(0 0% 0% / 0.15);
+}
+.theme-ios-18 .win98-titlebar {
+  background: hsl(220 25% 98% / 0.8);
+  backdrop-filter: blur(20px);
+  text-align: center;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 18px 18px 0 0;
+}
+
+/* =============================================
+   Android Themes
+   ============================================= */
+
+/* -------- Android Gingerbread (dark amber) -------- */
+.theme-android-gingerbread {
+  --background: 0 0% 5%;
+  --foreground: 35 100% 75%;
+  --card: 0 0% 10%;
+  --card-foreground: 35 100% 80%;
+  --popover: 0 0% 10%;
+  --popover-foreground: 35 100% 80%;
+  --primary: 35 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 35 100% 75%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 35 30% 60%;
+  --accent: 35 80% 30%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 80% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 35 50% 25%;
+  --input: 0 0% 12%;
+  --ring: 35 100% 50%;
+  --radius: 2px;
+  --win98-highlight: 35 100% 30%;
+  --win98-light: 0 0% 15%;
+  --win98-face: 0 0% 10%;
+  --win98-shadow: 0 0% 5%;
+  --win98-dark-shadow: 0 0% 0%;
+  --win98-titlebar: 0 0% 5%;
+  --win98-titlebar-inactive: 0 0% 15%;
+  --font-body: 'Droid Sans', 'Roboto', sans-serif;
+  --font-display: 'Droid Sans', 'Roboto', sans-serif;
+}
+.theme-android-gingerbread .win98-titlebar {
+  background: hsl(0 0% 5%);
+  color: hsl(35 100% 60%);
+  border-bottom: 2px solid hsl(35 100% 50%);
+  padding: 5px 10px;
+}
+
+/* -------- Android KitKat (clean white/blue) -------- */
+.theme-android-kitkat {
+  --background: 0 0% 96%;
+  --foreground: 0 0% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 13%;
+  --primary: 200 75% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 0 0% 13%;
+  --muted: 0 0% 94%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 200 60% 90%;
+  --accent-foreground: 0 0% 13%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 85%;
+  --input: 0 0% 100%;
+  --ring: 200 75% 45%;
+  --radius: 2px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 98%;
+  --win98-face: 0 0% 96%;
+  --win98-shadow: 0 0% 80%;
+  --win98-dark-shadow: 0 0% 60%;
+  --win98-titlebar: 0 0% 25%;
+  --win98-titlebar-inactive: 0 0% 50%;
+  --font-body: 'Roboto', 'Noto Sans', sans-serif;
+  --font-display: 'Roboto', 'Noto Sans', sans-serif;
+}
+.theme-android-kitkat .win98-titlebar {
+  background: hsl(0 0% 25%);
+  color: hsl(0 0% 100%);
+  padding: 6px 12px;
+  font-weight: 400;
+}
+
+/* -------- Android Lollipop (Material teal) -------- */
+.theme-android-lollipop {
+  --background: 0 0% 96%;
+  --foreground: 0 0% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 13%;
+  --primary: 174 100% 29%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 93%;
+  --secondary-foreground: 0 0% 13%;
+  --muted: 0 0% 95%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 174 60% 90%;
+  --accent-foreground: 0 0% 13%;
+  --destructive: 0 80% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 88%;
+  --input: 0 0% 100%;
+  --ring: 174 100% 29%;
+  --radius: 2px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 0 0% 99%;
+  --win98-face: 0 0% 97%;
+  --win98-shadow: 0 0% 80%;
+  --win98-dark-shadow: 0 0% 60%;
+  --win98-titlebar: 174 100% 29%;
+  --win98-titlebar-inactive: 174 30% 50%;
+  --font-body: 'Roboto', 'Noto Sans', sans-serif;
+  --font-display: 'Roboto Medium', 'Roboto', sans-serif;
+}
+.theme-android-lollipop .win98-titlebar {
+  background: hsl(174 100% 29%);
+  color: hsl(0 0% 100%);
+  padding: 8px 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px hsl(0 0% 0% / 0.2);
+}
+
+/* -------- Android 12 (Material You purple) -------- */
+.theme-android-12 {
+  --background: 280 25% 96%;
+  --foreground: 280 30% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 280 30% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 280 30% 15%;
+  --primary: 270 60% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 280 20% 92%;
+  --secondary-foreground: 280 30% 15%;
+  --muted: 280 20% 94%;
+  --muted-foreground: 280 15% 40%;
+  --accent: 270 60% 92%;
+  --accent-foreground: 280 30% 15%;
+  --destructive: 0 80% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 280 15% 86%;
+  --input: 0 0% 100%;
+  --ring: 270 60% 50%;
+  --radius: 16px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 280 25% 98%;
+  --win98-face: 280 25% 96%;
+  --win98-shadow: 280 15% 80%;
+  --win98-dark-shadow: 280 15% 60%;
+  --win98-titlebar: 280 25% 96%;
+  --win98-titlebar-inactive: 280 15% 92%;
+  --font-body: 'Google Sans', 'Roboto', sans-serif;
+  --font-display: 'Google Sans', 'Roboto', sans-serif;
+}
+.theme-android-12 .win98-window,
+.theme-android-12 .win98-raised {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.theme-android-12 .win98-titlebar {
+  background: hsl(280 25% 96%);
+  color: hsl(280 30% 15%);
+  text-align: center;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: 16px 16px 0 0;
+}
+.theme-android-12 .win98-button {
+  border-radius: 18px;
+  background: hsl(270 60% 50%);
+  color: hsl(0 0% 100%);
+  border: none;
+  padding: 6px 16px;
+}
+
+/* -------- Android 15 (latest, expressive) -------- */
+.theme-android-15 {
+  --background: 220 30% 97%;
+  --foreground: 220 25% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 25% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 25% 12%;
+  --primary: 215 90% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 25% 93%;
+  --secondary-foreground: 220 25% 12%;
+  --muted: 220 25% 95%;
+  --muted-foreground: 220 15% 40%;
+  --accent: 215 90% 95%;
+  --accent-foreground: 220 25% 12%;
+  --destructive: 0 80% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 15% 87%;
+  --input: 0 0% 100%;
+  --ring: 215 90% 50%;
+  --radius: 20px;
+  --win98-highlight: 0 0% 100%;
+  --win98-light: 220 30% 99%;
+  --win98-face: 220 30% 97%;
+  --win98-shadow: 220 15% 82%;
+  --win98-dark-shadow: 220 15% 60%;
+  --win98-titlebar: 220 30% 97%;
+  --win98-titlebar-inactive: 220 15% 93%;
+  --font-body: 'Google Sans', 'Roboto', sans-serif;
+  --font-display: 'Google Sans', 'Roboto', sans-serif;
+}
+.theme-android-15 .win98-window,
+.theme-android-15 .win98-raised {
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px hsl(0 0% 0% / 0.12);
+}
+.theme-android-15 .win98-titlebar {
+  background: hsl(220 30% 97%);
+  color: hsl(220 25% 12%);
+  text-align: center;
+  font-weight: 500;
+  padding: 12px 16px;
+  border-radius: 20px 20px 0 0;
+}
+.theme-android-15 .win98-button {
+  border-radius: 20px;
+  background: hsl(215 90% 50%);
+  color: hsl(0 0% 100%);
+  border: none;
+  padding: 8px 18px;
+}
