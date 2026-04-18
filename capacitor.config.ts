@@ -4,7 +4,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 const config: CapacitorConfig = {
   appId: 'app.lovable.ordb',
-  appName: 'ORDB',
+  appName: 'OppoDB',
   webDir: 'dist',
   plugins: {
     CapacitorCookies: {
