@@ -300,6 +300,8 @@ Deno.serve(async (req) => {
       }
       return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    const PHASE5_ENDPOINTS = new Set([
       "alert-rules", "alert-dispatch-log", "webhook-endpoints",
       "entity-activity", "entity-notes", "entity-relationships",
       "vulnerability-scores", "talking-points", "bill-impact",
