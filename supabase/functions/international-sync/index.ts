@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
 
     // Fetch country info from REST Countries API
     try {
-      const rcRes = await fetch(`https://restcountries.com/v3.1/alpha/${code}?fields=name,capital,currencies,languages,area,flag,government`);
+      const rcRes = await fetch(`https://restcountries.com/v3.1/alpha/${code}?fields=name,capital,currencies,languages,area,flag,government,region,subregion`);
       if (rcRes.ok) {
         const rc = await rcRes.json();
         profile.country_name = rc.name?.common || code;
