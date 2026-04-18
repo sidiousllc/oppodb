@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users, Filter, TrendingUp, Building2, History, Newspaper, Gavel, ArrowLeftRight } from "lucide-react";
+import { Search, X, User, AlertTriangle, Globe, FileText, MapPin, BarChart3, DollarSign, Landmark, Scale, Loader2, Bookmark, BookmarkCheck, Clock, Trash2, Download, FileDown, Vote, Receipt, Users, Filter, TrendingUp, Building2, History, Newspaper, Gavel, ArrowLeftRight, Briefcase, Mic, Flag, FileSearch, ShieldAlert, BookOpen, Swords, Handshake, StickyNote, ClipboardList, Brain, Target, Zap, Eye, Radar, MessageSquare } from "lucide-react";
 import { exportSearchCSV, exportSearchPDF } from "@/lib/masterSearchExport";
 import { supabase } from "@/integrations/supabase/client";
 import { searchCandidates } from "@/data/candidates";
