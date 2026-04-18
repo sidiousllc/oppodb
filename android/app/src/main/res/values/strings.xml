@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">ORDB</string>
-    <string name="title_activity_main">ORDB</string>
+    <string name="app_name">OppoDB</string>
+    <string name="title_activity_main">OppoDB</string>
     <string name="package_name">app.lovable.ordb</string>
     <string name="custom_url_scheme">app.lovable.ordb</string>
 </resources>
