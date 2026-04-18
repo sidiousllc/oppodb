@@ -32,6 +32,7 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
   const [aiTab, setAiTab] = useState<"summary" | "talking" | "vuln" | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiOutput, setAiOutput] = useState<string>("");
+  const [popoutOpen, setPopoutOpen] = useState(false);
 
   // Load recent searches & key status
   useEffect(() => {
