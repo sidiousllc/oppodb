@@ -11,18 +11,48 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+async function fetchWithRetry(url: string, init: RequestInit, attempts = 3, timeoutMs = 25000): Promise<Response> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...init, signal: ctrl.signal });
+      clearTimeout(t);
+      return res;
+    } catch (e) {
+      clearTimeout(t);
+      lastErr = e;
+      console.warn(`fetch attempt ${i + 1}/${attempts} failed for ${url}:`, (e as Error).message);
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
 async function syncFara(query: string): Promise<number> {
-  // DOJ FARA Active Registrants — public CSV-style endpoint via efile.fara.gov search.
-  // We use the official JSON listing endpoint.
   const url = `https://efile.fara.gov/api/v1/Registrants/json/active`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error(`FARA fetch failed: ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetchWithRetry(url, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Mozilla/5.0 (compatible; ORO-OppoDB/1.0; +https://ordb.lovable.app)",
+      },
+    });
+  } catch (e) {
+    console.warn("FARA upstream unreachable, returning 0:", (e as Error).message);
+    return 0;
+  }
+  if (!res.ok) {
+    await res.text().catch(() => {});
+    console.warn(`FARA fetch non-OK: ${res.status}`);
+    return 0;
+  }
   const json = await res.json();
   const items: any[] = json?.REGISTRANTS_ACTIVE?.ROW ?? json?.rows ?? [];
   const filtered = query && query !== "1"
-    ? items.filter((r) =>
-        JSON.stringify(r).toLowerCase().includes(query.toLowerCase())
-      )
+    ? items.filter((r) => JSON.stringify(r).toLowerCase().includes(query.toLowerCase()))
     : items;
   const rows = filtered.slice(0, 500).map((r: any) => ({
     registrant_name: r.Name ?? r.registrant_name ?? "Unknown",
