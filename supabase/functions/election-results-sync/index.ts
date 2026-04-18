@@ -264,9 +264,9 @@ async function fetchElectionFilesFromGitHub(
     ? dedicatedFiles
     : (combinedFiles.length > 0 ? combinedFiles : precinctFallbackFiles);
 
-  // Sort by date descending, take recent elections
+  // Sort by date descending — return ALL historical files (no cap)
   files.sort().reverse();
-  return { files: files.slice(0, 8), branch: usedBranch };
+  return { files, branch: usedBranch };
 }
 
 async function fetchCSVResponse(
