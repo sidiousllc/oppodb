@@ -345,9 +345,54 @@ async function renderBlock(doc: jsPDF, block: ReportBlock, y: number, depth = 0)
     }
 
     case "messaging": {
-      y = sectionTitle(doc, block.title ?? `📢 Messaging — ${block.refId}`, y);
       const s = (block as any).snapshot ?? {};
-      return writeText(doc, JSON.stringify(s, null, 2).slice(0, 1500), y, { size: 8 });
+      y = sectionTitle(doc, block.title ?? `📢 Messaging — ${s.title ?? block.refId}`, y);
+      y = kvTable(doc, [
+        ["Source", s.source ?? "—"],
+        ["Author", s.author ?? "—"],
+        ["Published", fmtDate(s.published_date)],
+        ["Tags", Array.isArray(s.issue_areas) ? s.issue_areas.join(", ") : "—"],
+      ], y);
+      if (s.summary) y = writeText(doc, s.summary, y, { size: 9 });
+      return y;
+    }
+
+    case "messaging_ai": {
+      const s = (block as any).snapshot ?? {};
+      const item = s.item ?? {};
+      y = sectionTitle(doc, block.title ?? `🧠 Messaging AI — ${item.title ?? block.refId}`, y, [80, 0, 120]);
+      const aud = s.audience_analysis;
+      if (aud) {
+        y = writeText(doc, `Effectiveness: ${Math.round(aud.effectiveness_score ?? 0)}/100`, y, { size: 10, bold: true });
+        if (aud.summary) y = writeText(doc, aud.summary, y, { size: 9 });
+        const segs = Array.isArray(aud.segment_breakdown) ? aud.segment_breakdown : [];
+        for (const seg of segs.slice(0, 8)) {
+          y = writeText(doc, `• ${seg.segment} — ${seg.score}/100`, y, { size: 9, bold: true });
+          if (seg.reasoning) y = writeText(doc, `   ${seg.reasoning}`, y, { size: 8 });
+        }
+        const risks = Array.isArray(aud.risks) ? aud.risks : [];
+        if (risks.length) {
+          y = writeText(doc, "Risks:", y, { size: 10, bold: true, color: [120, 0, 0] });
+          for (const r of risks.slice(0, 6)) y = writeText(doc, `  ⚠ [${r.severity}] ${r.headline} — ${r.summary ?? ""}`, y, { size: 8 });
+        }
+      }
+      const tp = Array.isArray(s.talking_points) ? s.talking_points : [];
+      if (tp.length) {
+        y = writeText(doc, "Talking Points:", y, { size: 10, bold: true });
+        for (const block of tp.slice(0, 3)) {
+          y = writeText(doc, `${block.audience} / ${block.angle}`, y, { size: 9, bold: true, color: [80, 80, 80] });
+          const pts = Array.isArray(block.points) ? block.points : [];
+          for (const [i, p] of pts.entries()) y = writeText(doc, `  ${i + 1}. ${p.message ?? ""}`, y, { size: 9 });
+        }
+      }
+      const imp = Array.isArray(s.impact_analyses) ? s.impact_analyses : [];
+      if (imp.length) {
+        y = writeText(doc, "Impact Analyses:", y, { size: 10, bold: true });
+        for (const a of imp.slice(0, 3)) {
+          y = writeText(doc, `[${a.scope}${a.scope_ref ? " " + a.scope_ref : ""}] ${a.summary ?? ""}`, y, { size: 9 });
+        }
+      }
+      return y;
     }
 
     // ─── New intelligence blocks ──────────────────────────────────────────

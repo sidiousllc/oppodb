@@ -707,6 +707,24 @@ curl -H "X-API-Key: KEY" "https://.../public-api/messaging-guidance?search=tarif
 curl -H "X-API-Key: KEY" "https://.../public-api/messaging-guidance?issue_area=Immigration"
 ```
 
+#### Messaging AI Endpoints (Phase 7)
+
+Cross-section AI for any MessagingHub item. All endpoints accept `?slug=<messaging_slug>` for GET; POST bodies use `messaging_slug`. `include_sections[]` accepts any of `polling`, `intel`, `legislation`, `finance`, `forecasts`, `international` to enrich the AI prompt with current data from those sections.
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/messaging-talking-points` | GET / POST | Cached or freshly generated AI talking points (audience, angle, tone, model selectable) |
+| `/messaging-audience` | GET / POST | Audience effectiveness scoring (base/swing/independents/press/donors/opposition) with segments, factors, risks. 7-day cache; `force_refresh=true` is admin-only |
+| `/messaging-impact` | GET / POST | National/state/district scoped impact analysis |
+| `/messaging-ai-bundle` | GET | One-shot bundle: `{ item, talking_points, audience_analysis, impact_analyses[] }`. Powers PDF export and the `messaging_ai` report block |
+
+```bash
+curl -H "X-API-Key: KEY" "https://.../public-api/messaging-ai-bundle?slug=navigator-tariff-impact"
+curl -X POST -H "X-API-Key: KEY" -H "Content-Type: application/json" \
+  -d '{"messaging_slug":"navigator-tariff-impact","include_sections":["polling","intel","finance"],"model":"google/gemini-2.5-pro"}' \
+  "https://.../public-api/messaging-audience"
+```
+
 ---
 
 ### 21. `/search` — Unified Master Search

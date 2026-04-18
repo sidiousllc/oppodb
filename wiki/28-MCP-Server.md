@@ -94,4 +94,16 @@ See also [API Access](API-Access) for the parallel REST surface.
 ### Sync observability
 - `get_sync_status({ source? })` — Latest 200 rows from `sync_run_log`. Surfaces the global 15-min cron's per-worker results so agents can detect stale data and decide whether to call `refresh_*` tools.
 
-Total tool count: **42+** across all groups.
+### Phase 7 — Messaging AI Suite
+Cross-section AI tools that resonate MessagingHub items against polling, intel, legislation, finance, forecasts, and international context.
+
+- `get_messaging_talking_points({ messaging_slug, audience?, angle? })` — Cached AI talking points filtered by audience/angle.
+- `generate_messaging_talking_points({ messaging_slug, audience?, angle?, tone?, model?, include_sections? })` — Generate fresh talking points. `include_sections` accepts any of `polling`, `intel`, `legislation`, `finance`, `forecasts`, `international`.
+- `get_messaging_audience_analysis({ messaging_slug })` — Cached effectiveness scoring (base/swing/independents/press/donors/opposition) with segment breakdown, resonance factors, and risks.
+- `generate_messaging_audience_analysis({ messaging_slug, force_refresh?, model?, include_sections? })` — Generate fresh analysis. 7-day cache unless `force_refresh=true`.
+- `get_messaging_impact({ messaging_slug, scope?, scope_ref? })` — Cached impact analyses (national/state/district scoped).
+- `generate_messaging_impact({ messaging_slug, scope?, scope_ref?, model?, include_sections? })` — Generate fresh impact analysis.
+- `get_messaging_ai_bundle({ messaging_slug })` — Combined item + talking points + audience + impact in one call. Powers PDF export and the `messaging_ai` report block.
+- `admin_regenerate_messaging_ai({ type, messaging_slug, ... })` — [ADMIN] Force-bust + regenerate. `type` ∈ `talking_points|audience|impact`.
+
+Total tool count: **52+** across all groups.

@@ -6,7 +6,7 @@ import type { ReportBlock, DataBlock } from "./types";
 
 const NEW_DATA_TYPES = new Set([
   "candidate","research","district","intel","polling","finance","election",
-  "international","legislation","messaging",
+  "international","legislation","messaging","messaging_ai",
   "talking_points","vulnerability","bill_impact","forecast",
   "prediction_market","investigations","war_room","entity_graph",
 ]);
@@ -97,7 +97,34 @@ export async function fetchSnapshot(block: DataBlock): Promise<Record<string, un
       return data as any;
     }
     case "messaging": {
-      return { ref: block.refId };
+      const { data } = await supabase
+        .from("messaging_guidance")
+        .select("title, slug, source, author, published_date, summary, issue_areas")
+        .eq("slug", block.refId)
+        .maybeSingle();
+      return (data as any) ?? { ref: block.refId };
+    }
+    case "messaging_ai": {
+      // refId = messaging slug; fetch cached talking points + audience + impact analyses
+      const [tp, aud, imp, item] = await Promise.all([
+        supabase.from("talking_points" as any)
+          .select("audience, angle, points, evidence, created_at")
+          .eq("subject_type", "messaging").eq("subject_ref", block.refId)
+          .order("created_at", { ascending: false }).limit(5),
+        supabase.from("messaging_audience_analyses" as any)
+          .select("*").eq("messaging_slug", block.refId).maybeSingle(),
+        supabase.from("messaging_impact_analyses" as any)
+          .select("*").eq("messaging_slug", block.refId)
+          .order("generated_at", { ascending: false }).limit(5),
+        supabase.from("messaging_guidance")
+          .select("title, source, author, issue_areas").eq("slug", block.refId).maybeSingle(),
+      ]);
+      return {
+        item: (item.data as any) ?? null,
+        talking_points: (tp.data as any) ?? [],
+        audience_analysis: (aud.data as any) ?? null,
+        impact_analyses: (imp.data as any) ?? [],
+      };
     }
 
     // ───── New blocks ─────────────────────────────────────────────────────────
