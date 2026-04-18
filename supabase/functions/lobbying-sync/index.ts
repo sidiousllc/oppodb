@@ -38,13 +38,24 @@ Deno.serve(async (req) => {
       let yTotal = 0;
 
       while (next && pages < maxPages) {
-        const resp = await fetch(next, {
-          headers: { Accept: "application/json", "User-Agent": "ORO-OppoDB/1.0" },
-        });
-        if (!resp.ok) {
-          console.error(`LDA ${year} page ${pages + 1} -> ${resp.status}`);
+        // Rate-limit-aware fetch with exponential backoff (LDA throttles aggressively)
+        let resp: Response | null = null;
+        for (let attempt = 0; attempt < 6; attempt++) {
+          resp = await fetch(next, {
+            headers: { Accept: "application/json", "User-Agent": "ORO-OppoDB/1.0" },
+          });
+          if (resp.status !== 429 && resp.status !== 503) break;
+          const retryAfter = Number(resp.headers.get("Retry-After")) || 0;
+          const wait = retryAfter > 0 ? retryAfter * 1000 : Math.min(30000, 1000 * 2 ** attempt);
+          console.warn(`LDA ${year} p${pages + 1} ${resp.status} → wait ${wait}ms (attempt ${attempt + 1})`);
+          await new Promise((r) => setTimeout(r, wait));
+        }
+        if (!resp || !resp.ok) {
+          console.error(`LDA ${year} page ${pages + 1} → ${resp?.status ?? "no-response"} (giving up year)`);
           break;
         }
+        // Gentle pacing between successful requests to stay under LDA limit
+        await new Promise((r) => setTimeout(r, 350));
         const data: { results?: any[]; next?: string | null } = await resp.json();
         const filings = data.results ?? [];
         yTotal += filings.length;
