@@ -47,6 +47,71 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_generation_history: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          feature: string
+          id: string
+          model: string | null
+          output: Json
+          prompt_summary: string | null
+          status: string
+          subject_ref: string | null
+          subject_type: string | null
+          supersedes: string | null
+          token_usage: Json | null
+          trigger_source: string
+          triggered_by: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          feature: string
+          id?: string
+          model?: string | null
+          output?: Json
+          prompt_summary?: string | null
+          status?: string
+          subject_ref?: string | null
+          subject_type?: string | null
+          supersedes?: string | null
+          token_usage?: Json | null
+          trigger_source?: string
+          triggered_by?: string | null
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          feature?: string
+          id?: string
+          model?: string | null
+          output?: Json
+          prompt_summary?: string | null
+          status?: string
+          subject_ref?: string | null
+          subject_type?: string | null
+          supersedes?: string | null
+          token_usage?: Json | null
+          trigger_source?: string
+          triggered_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_generation_history_supersedes_fkey"
+            columns: ["supersedes"]
+            isOneToOne: false
+            referencedRelation: "ai_generation_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_dispatch_log: {
         Row: {
           alert_rule_id: string | null

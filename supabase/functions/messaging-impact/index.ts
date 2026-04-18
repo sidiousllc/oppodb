@@ -2,6 +2,7 @@
 // state / district. Cached in messaging_impact_analyses.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAIGeneration } from "../_shared/ai-history.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -145,6 +146,16 @@ serve(async (req) => {
       if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       row = data;
     }
+
+    logAIGeneration(admin, {
+      feature: "messaging_impact",
+      subject_type: "messaging",
+      subject_ref: `${messaging_slug}|${scope}|${scope_ref ?? ""}`,
+      model,
+      output: { summary: parsed.summary, amplifies: parsed.amplifies, undermines: parsed.undermines, affected_groups: parsed.affected_groups, political_impact: parsed.political_impact, media_impact: parsed.media_impact, recommended_channels: parsed.recommended_channels },
+      triggered_by: (typeof user !== "undefined" && (user as any)?.id) ? (user as any).id : null,
+      trigger_source: "user",
+    });
 
     return new Response(JSON.stringify({ cached: false, analysis: row }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {

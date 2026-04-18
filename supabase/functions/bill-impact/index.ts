@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAIGeneration } from "../_shared/ai-history.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -104,6 +105,16 @@ serve(async (req) => {
       .select()
       .single();
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    logAIGeneration(admin, {
+      feature: "bill_impact",
+      subject_type: "bill",
+      subject_ref: `${bill_id}|${scope}|${scope_ref ?? ""}`,
+      model: "google/gemini-2.5-pro",
+      output: { summary: args.summary, winners: args.winners, losers: args.losers, fiscal_impact: args.fiscal_impact, political_impact: args.political_impact, affected_groups: args.affected_groups },
+      triggered_by: user.id,
+      trigger_source: "user",
+    });
 
     return new Response(JSON.stringify({ cached: false, analysis: row }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {

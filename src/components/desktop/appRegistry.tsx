@@ -25,6 +25,7 @@ import { OSINTToolPanel } from "@/components/OSINTToolPanel";
 import { CandidateDetail } from "@/components/CandidateDetail";
 import { GenericDetail } from "@/components/GenericDetail";
 import { DistrictDetail } from "@/components/DistrictDetail";
+import { AIHistoryWindow } from "@/components/AIHistoryWindow";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
@@ -300,6 +301,19 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     icon: "📖",
     singleton: true,
     render: () => <div className="p-3"><DocumentationSection /></div>,
+  },
+  "ai-history": {
+    id: "ai-history",
+    title: "AI Generation History",
+    icon: "🧠",
+    singleton: true,
+    render: (payload) => (
+      <AIHistoryWindow
+        initialFeature={payload?.feature as string | undefined}
+        initialSubjectType={payload?.subject_type as string | undefined}
+        initialSubjectRef={payload?.subject_ref as string | undefined}
+      />
+    ),
   },
   warroom: {
     id: "warroom",

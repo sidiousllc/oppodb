@@ -3,6 +3,7 @@
 // international). Stores rows in `talking_points` with subject_type='messaging'.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAIGeneration } from "../_shared/ai-history.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -191,6 +192,17 @@ serve(async (req) => {
       .select()
       .single();
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    // Log to unified AI generation history (fire-and-forget)
+    logAIGeneration(admin, {
+      feature: "messaging_talking_points",
+      subject_type: "messaging",
+      subject_ref: messaging_slug,
+      model: chosenModel,
+      output: { points: (row as any)?.points, evidence: (row as any)?.evidence, audience, angle },
+      triggered_by: user.id,
+      trigger_source: "user",
+    });
 
     return new Response(JSON.stringify({ talking_points: row }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {

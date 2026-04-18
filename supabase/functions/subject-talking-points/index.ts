@@ -4,6 +4,7 @@
 // {district_id, state_leg row id, congress_bills.bill_id}.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAIGeneration } from "../_shared/ai-history.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -256,6 +257,15 @@ serve(async (req) => {
       model: chosenModel, generated_by: user.id,
     } as never).select().single();
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    logAIGeneration(admin, {
+      feature: "subject_talking_points",
+      subject_type, subject_ref,
+      model: chosenModel,
+      output: { points: args.points || [], evidence: args.evidence || [], audience, angle },
+      triggered_by: user.id,
+      trigger_source: "user",
+    });
 
     return new Response(JSON.stringify({ talking_points: row }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
