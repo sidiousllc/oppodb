@@ -296,8 +296,8 @@ export default function ProfilePage() {
         {/* ============== APPEARANCE ============== */}
         <TabsContent value="appearance" className="space-y-3 mt-0">
           <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] font-bold flex items-center gap-1">🎨 Desktop Theme</p>
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+              <p className="text-[11px] font-bold flex items-center gap-1">🎨 Theme Picker</p>
               <button
                 onClick={() => setDarkMode(!darkMode)}
                 className="win98-button text-[10px] flex items-center gap-1 px-2 py-1"
@@ -306,36 +306,78 @@ export default function ProfilePage() {
                 {darkMode ? "Light Mode" : "Dark Mode"}
               </button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {(Object.entries(THEME_LABELS) as [WindowsTheme, string][]).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setTheme(key)}
-                  className={`win98-button text-[10px] p-1.5 text-left flex flex-col items-center gap-1 ${
-                    theme === key ? "font-bold" : ""
-                  }`}
-                  style={theme === key ? {
-                    borderColor: "hsl(var(--primary))",
-                    background: "hsl(var(--accent))",
-                    boxShadow: "0 0 0 2px hsl(var(--primary) / 0.3)",
-                  } : {}}
-                >
-                  <img
-                    src={THEME_THUMBNAILS[key]}
-                    alt={label}
-                    loading="lazy"
-                    width={512}
-                    height={512}
-                    className="w-full aspect-square object-cover"
-                    style={{ borderRadius: "1px", border: theme === key ? "2px solid hsl(var(--primary))" : "1px solid hsl(var(--win98-shadow))" }}
-                  />
-                  <div className="text-center w-full">
-                    <div className="truncate">{label}</div>
-                    {theme === key && <div className="text-[8px] text-[hsl(var(--primary))]">✓ Active</div>}
-                  </div>
-                </button>
-              ))}
-            </div>
+            <p className="text-[10px] text-[hsl(var(--muted-foreground))] mb-2">
+              Choose a theme by category. Mobile categories (iOS / Android) are best suited for phones; Desktop
+              categories (Windows / macOS / Linux) for larger screens.
+            </p>
+
+            <Tabs defaultValue={CATEGORY_ORDER.find(c => THEME_CATEGORIES[c].themes.includes(theme)) ?? "windows"}>
+              <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto bg-[hsl(var(--win98-face))] mb-3">
+                {CATEGORY_ORDER.map((cat) => {
+                  const meta = THEME_CATEGORIES[cat];
+                  const activeInCat = meta.themes.includes(theme);
+                  return (
+                    <TabsTrigger
+                      key={cat}
+                      value={cat}
+                      className="text-[10px] py-1.5 flex flex-col items-center gap-0"
+                    >
+                      <span>{meta.icon} {meta.label}</span>
+                      <span className="text-[8px] text-[hsl(var(--muted-foreground))]">
+                        {meta.kind} {activeInCat ? "• ✓" : ""}
+                      </span>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+
+              {CATEGORY_ORDER.map((cat) => {
+                const meta = THEME_CATEGORIES[cat];
+                return (
+                  <TabsContent key={cat} value={cat} className="mt-0">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {meta.themes.map((key) => {
+                        const label = THEME_LABELS[key];
+                        const isActive = theme === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => setTheme(key)}
+                            className={`win98-button text-[10px] p-1.5 text-left flex flex-col items-center gap-1 ${
+                              isActive ? "font-bold" : ""
+                            }`}
+                            style={isActive ? {
+                              borderColor: "hsl(var(--primary))",
+                              background: "hsl(var(--accent))",
+                              boxShadow: "0 0 0 2px hsl(var(--primary) / 0.3)",
+                            } : {}}
+                          >
+                            <img
+                              src={THEME_THUMBNAILS[key]}
+                              alt={label}
+                              loading="lazy"
+                              width={512}
+                              height={512}
+                              className="w-full aspect-square object-cover"
+                              style={{
+                                borderRadius: "1px",
+                                border: isActive
+                                  ? "2px solid hsl(var(--primary))"
+                                  : "1px solid hsl(var(--win98-shadow))",
+                              }}
+                            />
+                            <div className="text-center w-full">
+                              <div className="truncate">{label}</div>
+                              {isActive && <div className="text-[8px] text-[hsl(var(--primary))]">✓ Active</div>}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
           </div>
 
           {/* News Ticker */}
