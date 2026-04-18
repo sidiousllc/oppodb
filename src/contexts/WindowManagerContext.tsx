@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useRef, useState, ReactNode } from "react";
+import { createContext, useContext, useCallback, useEffect, useRef, useState, ReactNode } from "react";
 
 export interface OpenWindow {
   /** Unique instance id (random per open) */
@@ -82,12 +82,22 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
       resultId = id;
       zCounterRef.current += 1;
       const z = BASE_Z + zCounterRef.current;
+      // Available area (account for taskbar ~28px)
+      const TASKBAR = 28;
+      const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
+      const vh = (typeof window !== "undefined" ? window.innerHeight : 768) - TASKBAR;
+      // Clamp size to viewport, with reasonable minimums
+      const desiredW = size?.width ?? Math.min(900, Math.max(320, vw - 40));
+      const desiredH = size?.height ?? Math.min(640, Math.max(240, vh - 40));
+      const winW = Math.min(desiredW, Math.max(280, vw - 16));
+      const winH = Math.min(desiredH, Math.max(200, vh - 16));
       // Cascade position so multiple windows don't overlap exactly
       const idx = openIndexRef.current++;
-      const baseX = 60 + (idx % 8) * 28;
-      const baseY = 50 + (idx % 8) * 24;
-      const winW = size?.width ?? Math.min(900, Math.max(560, window.innerWidth - 280));
-      const winH = size?.height ?? Math.min(640, Math.max(420, window.innerHeight - 160));
+      const baseX = 20 + (idx % 8) * 28;
+      const baseY = 20 + (idx % 8) * 24;
+      // Clamp position so window fits fully onscreen
+      const x = Math.max(0, Math.min(baseX, vw - winW));
+      const y = Math.max(0, Math.min(baseY, vh - winH));
       return [
         ...prev,
         {
@@ -98,7 +108,7 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
           icon,
           zIndex: z,
           minimized: false,
-          position: { x: Math.max(8, baseX), y: Math.max(8, baseY) },
+          position: { x, y },
           size: { width: winW, height: winH },
         },
       ];
@@ -120,6 +130,29 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
     setWindows((prev) =>
       prev.map((w) => (w.id === id ? { ...w, zIndex: z, minimized: false } : w))
     );
+  }, []);
+
+  // Re-clamp all windows when viewport resizes so nothing is stuck offscreen
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => {
+      const TASKBAR = 28;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight - TASKBAR;
+      setWindows((prev) =>
+        prev.map((w) => {
+          const width = Math.min(w.size.width, Math.max(280, vw - 16));
+          const height = Math.min(w.size.height, Math.max(200, vh - 16));
+          const x = Math.max(0, Math.min(w.position.x, vw - width));
+          const y = Math.max(0, Math.min(w.position.y, vh - height));
+          if (width === w.size.width && height === w.size.height && x === w.position.x && y === w.position.y) return w;
+          return { ...w, size: { width, height }, position: { x, y } };
+        })
+      );
+    };
+    window.addEventListener("resize", onResize);
+    onResize();
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   return (
