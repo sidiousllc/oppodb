@@ -461,7 +461,7 @@ async function parseRSS(url: string, sourceName: string, scope: string): Promise
     // Also try Atom entries
     if (items.length === 0) {
       const entryRegex = /<entry[^>]*>([\s\S]*?)<\/entry>/gi;
-      while ((match = entryRegex.exec(xml)) !== null && items.length < 10) {
+      while ((match = entryRegex.exec(xml)) !== null && items.length < 50) {
         const block = match[1];
         const titleMatch = block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
         const linkMatch = block.match(/<link[^>]*href="([^"]*)"[^>]*\/?>/i);
