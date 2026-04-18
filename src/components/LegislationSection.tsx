@@ -713,6 +713,7 @@ function BillDetailView({
 
       <h2 className="font-display text-lg font-bold text-foreground mb-1">{bill.title}</h2>
       {bill.description && <p className="text-sm text-muted-foreground mb-2">{bill.description}</p>}
+      <SubjectAIPanel subjectType="legislation" subjectRef={String(bill.bill_id)} subjectTitle={bill.bill_number} />
 
       {/* Status & dates */}
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-3">
