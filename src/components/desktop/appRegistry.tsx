@@ -137,9 +137,9 @@ function OppoHubWindow({ initialSlug, openApp }: { initialSlug?: string; openApp
       />
     );
   }
-  if (maga) return <GenericDetail title={maga.name} content={maga.content} onBack={() => setSelectedSlug(null)} onNavigateSlug={(s) => { setSelectedSlug(s); return true; }} />;
-  if (local) return <GenericDetail title={`${local.state} — Local Impact`} content={local.content} onBack={() => setSelectedSlug(null)} onNavigateSlug={(s) => { setSelectedSlug(s); return true; }} />;
-  if (narrative) return <GenericDetail title={narrative.name} content={narrative.content} onBack={() => setSelectedSlug(null)} onNavigateSlug={(s) => { setSelectedSlug(s); return true; }} />;
+  if (maga) return <GenericDetail icon="📁" title={maga.name} content={maga.content} onBack={() => setSelectedSlug(null)} onNavigateSlug={(s) => { setSelectedSlug(s); return true; }} />;
+  if (local) return <GenericDetail icon="📍" title={`${local.state} — Local Impact`} content={local.content} onBack={() => setSelectedSlug(null)} onNavigateSlug={(s) => { setSelectedSlug(s); return true; }} />;
+  if (narrative) return <GenericDetail icon="📰" title={narrative.name} content={narrative.content} onBack={() => setSelectedSlug(null)} onNavigateSlug={(s) => { setSelectedSlug(s); return true; }} />;
 
   return (
     <OppoHub
