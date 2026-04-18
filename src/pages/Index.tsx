@@ -245,8 +245,12 @@ export default function Index() {
     refreshCandidates();
   }, [refreshCandidates]);
 
-  const handleSectionChange = useCallback((newSection: Section) => {
-    setSection(newSection);
+  // Sidebar clicks now open floating windows via useOpenApp() in AppSidebar.
+  // The main browser window stays on the Dashboard so it remains a stable
+  // "home base" beneath the floating window stack.
+  const handleSectionChange = useCallback((_newSection: Section) => {
+    // Keep main view pinned to dashboard. Floating window handles the rest.
+    setSection("dashboard");
     setSelectedSlug(null);
     setSearch("");
     setResearchSubsection(null);
