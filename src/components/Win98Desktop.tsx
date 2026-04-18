@@ -31,7 +31,7 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
     { label: "Opposition\nResearch DB", icon: "🌐", action: () => { onOpenWindow?.(); openApp("dashboard"); } },
     { label: "My Computer", icon: "🖥️", action: () => openApp("my-computer") },
     { label: "My Profile", icon: "👤", action: () => openApp("profile") },
-    { label: "Recycle Bin", icon: "🗑️", action: () => {} },
+    { label: "Recycle Bin", icon: "🗑️", action: () => openApp("recycle-bin") },
     { label: "Admin Panel", icon: "🛡️", action: () => openApp("admin") },
     { label: "API Access", icon: "🔑", action: () => openApp("api") },
     { label: "Network\nNeighborhood", icon: "🌍", action: () => openApp("network-neighborhood") },
@@ -89,6 +89,7 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
           {icons.map((item) => (
             <button
               key={item.label}
+              onClick={item.action}
               onDoubleClick={item.action}
               onContextMenu={(e) => e.stopPropagation()}
               className="group flex flex-col items-center w-[72px] p-1 rounded-none focus:outline-none"
