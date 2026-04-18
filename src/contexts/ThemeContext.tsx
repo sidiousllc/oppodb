@@ -3,8 +3,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type WindowsTheme =
+  // Windows
   | "win98" | "winxp" | "vista" | "win7" | "win8" | "win10" | "win11"
-  | "palm-classic" | "palm-v" | "palm-m505" | "palm-treo";
+  // Palm (retro)
+  | "palm-classic" | "palm-v" | "palm-m505" | "palm-treo"
+  // macOS desktop
+  | "mac-classic" | "mac-osx-aqua" | "mac-leopard" | "mac-yosemite" | "mac-bigsur" | "mac-sonoma"
+  // Linux desktop
+  | "linux-ubuntu" | "linux-mint" | "linux-fedora" | "linux-popos" | "linux-kali" | "linux-arch"
+  // iOS mobile
+  | "ios-6" | "ios-7" | "ios-11" | "ios-16" | "ios-18"
+  // Android mobile
+  | "android-gingerbread" | "android-kitkat" | "android-lollipop" | "android-12" | "android-15";
 
 export const THEME_LABELS: Record<WindowsTheme, string> = {
   win98: "Windows 98",
@@ -18,6 +28,74 @@ export const THEME_LABELS: Record<WindowsTheme, string> = {
   "palm-v": "Palm V (Silver)",
   "palm-m505": "Palm m505 (Color)",
   "palm-treo": "Palm Treo",
+  "mac-classic": "Mac OS 9 (Platinum)",
+  "mac-osx-aqua": "Mac OS X Aqua",
+  "mac-leopard": "OS X Leopard",
+  "mac-yosemite": "OS X Yosemite",
+  "mac-bigsur": "macOS Big Sur",
+  "mac-sonoma": "macOS Sonoma",
+  "linux-ubuntu": "Ubuntu (GNOME)",
+  "linux-mint": "Linux Mint (Cinnamon)",
+  "linux-fedora": "Fedora Workstation",
+  "linux-popos": "Pop!_OS",
+  "linux-kali": "Kali Linux",
+  "linux-arch": "Arch / KDE Plasma",
+  "ios-6": "iOS 6 (Skeuomorphic)",
+  "ios-7": "iOS 7 (Flat)",
+  "ios-11": "iOS 11",
+  "ios-16": "iOS 16",
+  "ios-18": "iOS 18",
+  "android-gingerbread": "Android Gingerbread",
+  "android-kitkat": "Android KitKat",
+  "android-lollipop": "Android Lollipop",
+  "android-12": "Android 12 (Material You)",
+  "android-15": "Android 15",
+};
+
+export type ThemeCategory = "windows" | "macos" | "linux" | "ios" | "android" | "palm";
+
+export const THEME_CATEGORIES: Record<ThemeCategory, {
+  label: string;
+  icon: string;
+  kind: "desktop" | "mobile" | "retro";
+  themes: WindowsTheme[];
+}> = {
+  windows: {
+    label: "Windows",
+    icon: "🪟",
+    kind: "desktop",
+    themes: ["win98", "winxp", "vista", "win7", "win8", "win10", "win11"],
+  },
+  macos: {
+    label: "macOS",
+    icon: "",
+    kind: "desktop",
+    themes: ["mac-classic", "mac-osx-aqua", "mac-leopard", "mac-yosemite", "mac-bigsur", "mac-sonoma"],
+  },
+  linux: {
+    label: "Linux",
+    icon: "🐧",
+    kind: "desktop",
+    themes: ["linux-ubuntu", "linux-mint", "linux-fedora", "linux-popos", "linux-kali", "linux-arch"],
+  },
+  ios: {
+    label: "iOS",
+    icon: "📱",
+    kind: "mobile",
+    themes: ["ios-6", "ios-7", "ios-11", "ios-16", "ios-18"],
+  },
+  android: {
+    label: "Android",
+    icon: "🤖",
+    kind: "mobile",
+    themes: ["android-gingerbread", "android-kitkat", "android-lollipop", "android-12", "android-15"],
+  },
+  palm: {
+    label: "Palm OS",
+    icon: "🖐️",
+    kind: "retro",
+    themes: ["palm-classic", "palm-v", "palm-m505", "palm-treo"],
+  },
 };
 
 interface ThemeContextType {
