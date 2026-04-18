@@ -101,7 +101,7 @@ export function AIHistoryWindow({ initialFeature, initialSubjectType, initialSub
               <Loader2 className="h-3 w-3 animate-spin" /> Loading history…
             </div>
           )}
-          {error && <div className="p-3 text-red-700">Error: {error}</div>}
+          {error && <div className="p-3 text-destructive">Error: {error}</div>}
           {!loading && !error && filtered.length === 0 && (
             <div className="p-3 text-muted-foreground italic">
               No AI generations recorded yet for this filter. Generations will appear here automatically the next time an AI tool is run.
