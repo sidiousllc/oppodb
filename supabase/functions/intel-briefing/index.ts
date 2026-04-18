@@ -417,7 +417,8 @@ async function parseRSS(url: string, sourceName: string, scope: string): Promise
     const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>/gi;
     let match;
     let count = 0;
-    while ((match = itemRegex.exec(xml)) !== null && count < 10) {
+    const PER_FEED_CAP = 50; // was 10 — now pulls full feed depth
+    while ((match = itemRegex.exec(xml)) !== null && count < PER_FEED_CAP) {
       const block = match[1];
       const titleMatch = block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
       const linkMatch = block.match(/<link[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i);
