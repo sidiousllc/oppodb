@@ -94,6 +94,9 @@ Deno.serve(async (req) => {
       console.error("REST Countries error:", e);
     }
 
+    // Ensure NOT NULL continent always has a value
+    if (!profile.continent) profile.continent = "Unknown";
+
     // Upsert profile
     const { error: profileError } = await supabase
       .from("international_profiles")
