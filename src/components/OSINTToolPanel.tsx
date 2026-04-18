@@ -326,6 +326,19 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
           </div>
         </div>
       )}
+
+      {popoutOpen && results && results.length > 0 && (
+        <OSINTResultWindow
+          tool={tool}
+          query={query}
+          results={results}
+          aiTab={aiTab}
+          aiLoading={aiLoading}
+          aiOutput={aiOutput}
+          onRunAI={(k) => runAI(k)}
+          onClose={() => setPopoutOpen(false)}
+        />
+      )}
     </div>
   );
 }
