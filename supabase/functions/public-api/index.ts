@@ -1279,6 +1279,20 @@ Deno.serve(async (req) => {
           "intel_briefings", "tracked_bills", "mit_elections",
           "congress_committees", "congress_votes", "state_leg_elections",
           "forecast_history", "international_profiles",
+          // NEW — public records & investigations
+          "court_cases", "fara_registrants", "federal_spending", "lobbying_disclosures",
+          "gov_contracts", "ig_reports", "congressional_record", "district_profiles",
+          "election_night_streams", "state_legislators", "state_legislative_bills",
+          "polling_aggregates",
+          // NEW — international extras
+          "international_elections", "international_leaders", "international_legislation",
+          "international_polling",
+          // NEW — knowledge & collab (RLS-scoped to caller)
+          "wiki_pages", "war_rooms", "stakeholders", "entity_notes", "reports",
+          "oppo_trackers", "watchlist_items",
+          // NEW — AI cache
+          "vulnerability_scores", "talking_points", "bill_impact_analyses",
+          "subject_impact_analyses", "messaging_audience_analyses", "messaging_impact_analyses",
         ];
 
         const categoriesParam = url.searchParams.get("categories");
@@ -1442,6 +1456,207 @@ Deno.serve(async (req) => {
             .or(`country_name.ilike.${likeQ},country_code.ilike.${likeQ},continent.ilike.${likeQ}`)
             .order("country_name").limit(perCategoryLimit)
             .then(r => ({ data: r.data || [], label: "International Profiles" }));
+        }
+
+        // ─── NEW categories ─────────────────────────────────────────────
+        if (activeCategories.includes("court_cases")) {
+          categoryQueries.court_cases = supabase.from("court_cases")
+            .select("id,case_name,case_number,court,judge,status,filed_date,docket_url")
+            .or(`case_name.ilike.${likeQ},case_number.ilike.${likeQ},judge.ilike.${likeQ},court.ilike.${likeQ}`)
+            .order("filed_date", { ascending: false, nullsFirst: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Court Cases" }));
+        }
+        if (activeCategories.includes("fara_registrants")) {
+          categoryQueries.fara_registrants = supabase.from("fara_registrants")
+            .select("id,registrant_name,country,status,registration_date,registration_number")
+            .or(`registrant_name.ilike.${likeQ},country.ilike.${likeQ},registration_number.ilike.${likeQ}`)
+            .order("registration_date", { ascending: false, nullsFirst: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "FARA Registrants" }));
+        }
+        if (activeCategories.includes("federal_spending")) {
+          categoryQueries.federal_spending = supabase.from("federal_spending")
+            .select("id,recipient_name,recipient_state,awarding_agency,description,award_amount,fiscal_year,award_type")
+            .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ},recipient_state.ilike.${likeQ}`)
+            .order("award_amount", { ascending: false, nullsFirst: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Federal Spending" }));
+        }
+        if (activeCategories.includes("lobbying_disclosures")) {
+          categoryQueries.lobbying_disclosures = supabase.from("lobbying_disclosures")
+            .select("id,registrant_name,client_name,filing_year,amount,filing_period")
+            .or(`registrant_name.ilike.${likeQ},client_name.ilike.${likeQ}`)
+            .order("filing_year", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Lobbying Disclosures" }));
+        }
+        if (activeCategories.includes("gov_contracts")) {
+          categoryQueries.gov_contracts = supabase.from("gov_contracts")
+            .select("id,recipient_name,awarding_agency,description,award_amount,recipient_state,fiscal_year")
+            .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ}`)
+            .order("award_amount", { ascending: false, nullsFirst: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Government Contracts" }));
+        }
+        if (activeCategories.includes("ig_reports")) {
+          categoryQueries.ig_reports = supabase.from("ig_reports")
+            .select("id,title,agency_name,summary,topic,published_on,url")
+            .or(`title.ilike.${likeQ},agency_name.ilike.${likeQ},summary.ilike.${likeQ},topic.ilike.${likeQ}`)
+            .order("published_on", { ascending: false, nullsFirst: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "IG Reports" }));
+        }
+        if (activeCategories.includes("congressional_record")) {
+          categoryQueries.congressional_record = supabase.from("congressional_record")
+            .select("id,speaker_name,title,chamber,date,category")
+            .or(`speaker_name.ilike.${likeQ},title.ilike.${likeQ},content.ilike.${likeQ}`)
+            .order("date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Congressional Record" }));
+        }
+        if (activeCategories.includes("district_profiles")) {
+          categoryQueries.district_profiles = supabase.from("district_profiles")
+            .select("id,district_id,state,population,median_income,median_age")
+            .or(`district_id.ilike.${likeQ},state.ilike.${likeQ}`).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "District Profiles" }));
+        }
+        if (activeCategories.includes("election_night_streams")) {
+          categoryQueries.election_night_streams = supabase.from("election_night_streams")
+            .select("id,candidate_name,state_abbr,district,party,votes,vote_pct,precincts_reporting_pct,is_called,race_type,election_date")
+            .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+            .order("election_date", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Election Night Streams" }));
+        }
+        if (activeCategories.includes("state_legislators")) {
+          categoryQueries.state_legislators = supabase.from("state_legislators")
+            .select("id,name,state_abbr,chamber,district,party,email")
+            .or(`name.ilike.${likeQ},state_abbr.ilike.${likeQ},party.ilike.${likeQ}`).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "State Legislators" }));
+        }
+        if (activeCategories.includes("state_legislative_bills")) {
+          categoryQueries.state_legislative_bills = supabase.from("state_legislative_bills")
+            .select("id,identifier,title,state_abbr,sponsor_name,status,latest_action_date")
+            .or(`title.ilike.${likeQ},identifier.ilike.${likeQ},sponsor_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+            .order("latest_action_date", { ascending: false, nullsFirst: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "State Legislative Bills" }));
+        }
+        if (activeCategories.includes("polling_aggregates")) {
+          categoryQueries.polling_aggregates = supabase.from("polling_aggregates")
+            .select("id,race_type,state_abbr,district,candidate_a,candidate_b,margin,candidate_a_pct,candidate_b_pct,last_poll_date")
+            .or(`candidate_a.ilike.${likeQ},candidate_b.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+            .order("last_poll_date", { ascending: false, nullsFirst: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Polling Aggregates" }));
+        }
+        if (activeCategories.includes("international_elections")) {
+          categoryQueries.international_elections = supabase.from("international_elections")
+            .select("id,country_code,election_year,election_type,winner_name,winner_party,election_date,turnout_pct")
+            .or(`country_code.ilike.${likeQ},winner_name.ilike.${likeQ},winner_party.ilike.${likeQ},election_type.ilike.${likeQ}`)
+            .order("election_date", { ascending: false, nullsFirst: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Elections" }));
+        }
+        if (activeCategories.includes("international_leaders")) {
+          categoryQueries.international_leaders = supabase.from("international_leaders")
+            .select("id,country_code,name,title,party,in_office_since,term_ends")
+            .or(`name.ilike.${likeQ},country_code.ilike.${likeQ},party.ilike.${likeQ},title.ilike.${likeQ}`)
+            .limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Leaders" }));
+        }
+        if (activeCategories.includes("international_legislation")) {
+          categoryQueries.international_legislation = supabase.from("international_legislation")
+            .select("id,country_code,title,bill_number,status,sponsor,introduced_date,policy_area")
+            .or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},sponsor.ilike.${likeQ},country_code.ilike.${likeQ},policy_area.ilike.${likeQ}`)
+            .order("introduced_date", { ascending: false, nullsFirst: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Legislation" }));
+        }
+        if (activeCategories.includes("international_polling")) {
+          categoryQueries.international_polling = supabase.from("international_polling")
+            .select("id,country_code,poll_topic,question,source,date_conducted,approve_pct,key_finding")
+            .or(`poll_topic.ilike.${likeQ},question.ilike.${likeQ},country_code.ilike.${likeQ},source.ilike.${likeQ}`)
+            .order("date_conducted", { ascending: false, nullsFirst: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "International Polling" }));
+        }
+        if (activeCategories.includes("wiki_pages")) {
+          categoryQueries.wiki_pages = supabase.from("wiki_pages")
+            .select("id,slug,title").eq("published", true)
+            .or(`title.ilike.${likeQ},content.ilike.${likeQ}`).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Wiki Pages" }));
+        }
+        if (activeCategories.includes("war_rooms")) {
+          categoryQueries.war_rooms = supabase.from("war_rooms")
+            .select("id,name,description,race_scope,updated_at")
+            .or(`name.ilike.${likeQ},description.ilike.${likeQ}`)
+            .order("updated_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "War Rooms" }));
+        }
+        if (activeCategories.includes("stakeholders")) {
+          categoryQueries.stakeholders = supabase.from("stakeholders")
+            .select("id,name,type,organization,title,email,state_abbr,party")
+            .or(`name.ilike.${likeQ},organization.ilike.${likeQ},email.ilike.${likeQ},title.ilike.${likeQ}`)
+            .limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Stakeholders (CRM)" }));
+        }
+        if (activeCategories.includes("entity_notes")) {
+          categoryQueries.entity_notes = supabase.from("entity_notes")
+            .select("id,entity_type,entity_id,body,is_shared,created_at")
+            .ilike("body", likeQ).order("created_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Entity Notes" }));
+        }
+        if (activeCategories.includes("reports")) {
+          categoryQueries.reports = supabase.from("reports")
+            .select("id,title,description,is_public,updated_at")
+            .or(`title.ilike.${likeQ},description.ilike.${likeQ}`)
+            .order("updated_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Reports" }));
+        }
+        if (activeCategories.includes("oppo_trackers")) {
+          categoryQueries.oppo_trackers = supabase.from("oppo_trackers")
+            .select("id,name,description,scope,scope_ref,updated_at")
+            .or(`name.ilike.${likeQ},description.ilike.${likeQ}`)
+            .order("updated_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Oppo Trackers" }));
+        }
+        if (activeCategories.includes("watchlist_items")) {
+          categoryQueries.watchlist_items = supabase.from("watchlist_items")
+            .select("id,entity_type,entity_id,label,notes,created_at")
+            .or(`label.ilike.${likeQ},notes.ilike.${likeQ},entity_id.ilike.${likeQ}`)
+            .order("created_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Watchlist" }));
+        }
+        if (activeCategories.includes("vulnerability_scores")) {
+          categoryQueries.vulnerability_scores = supabase.from("vulnerability_scores")
+            .select("id,candidate_slug,overall_score,summary,generated_at")
+            .or(`candidate_slug.ilike.${likeQ},summary.ilike.${likeQ}`)
+            .order("generated_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Vulnerability Scores (AI)" }));
+        }
+        if (activeCategories.includes("talking_points")) {
+          categoryQueries.talking_points = supabase.from("talking_points")
+            .select("id,subject_type,subject_ref,audience,angle,generated_by,created_at")
+            .or(`subject_ref.ilike.${likeQ},audience.ilike.${likeQ},angle.ilike.${likeQ},subject_type.ilike.${likeQ}`)
+            .order("created_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Talking Points (AI)" }));
+        }
+        if (activeCategories.includes("bill_impact_analyses")) {
+          categoryQueries.bill_impact_analyses = supabase.from("bill_impact_analyses")
+            .select("id,bill_id,scope,scope_ref,summary,generated_at")
+            .or(`bill_id.ilike.${likeQ},summary.ilike.${likeQ},scope_ref.ilike.${likeQ}`)
+            .order("generated_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Bill Impact (AI)" }));
+        }
+        if (activeCategories.includes("subject_impact_analyses")) {
+          categoryQueries.subject_impact_analyses = supabase.from("subject_impact_analyses")
+            .select("id,subject_type,subject_ref,scope,scope_ref,summary,generated_at")
+            .or(`subject_ref.ilike.${likeQ},summary.ilike.${likeQ},subject_type.ilike.${likeQ}`)
+            .order("generated_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Subject Impact (AI)" }));
+        }
+        if (activeCategories.includes("messaging_audience_analyses")) {
+          categoryQueries.messaging_audience_analyses = supabase.from("messaging_audience_analyses")
+            .select("id,messaging_slug,effectiveness_score,summary,generated_at")
+            .or(`messaging_slug.ilike.${likeQ},summary.ilike.${likeQ}`)
+            .order("generated_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Messaging Audience (AI)" }));
+        }
+        if (activeCategories.includes("messaging_impact_analyses")) {
+          categoryQueries.messaging_impact_analyses = supabase.from("messaging_impact_analyses")
+            .select("id,messaging_slug,scope,scope_ref,summary,generated_at")
+            .or(`messaging_slug.ilike.${likeQ},summary.ilike.${likeQ},scope_ref.ilike.${likeQ}`)
+            .order("generated_at", { ascending: false }).limit(perCategoryLimit)
+            .then(r => ({ data: r.data || [], label: "Messaging Impact (AI)" }));
         }
 
         const entries = Object.entries(categoryQueries);

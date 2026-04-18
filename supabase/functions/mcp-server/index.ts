@@ -807,7 +807,7 @@ mcpServer.tool("get_forecast_history", {
 });
 
 mcpServer.tool("master_search", {
-  description: "Unified search across ALL 24 OppoDB databases simultaneously: candidates, congress members, bills, polling, campaign finance, election results, forecasts, MAGA files, narrative reports, local impacts, voter stats, prediction markets, messaging guidance, intel briefings, tracked bills, MIT elections, committees, votes, state leg elections, and forecast history. Returns results grouped by category.",
+  description: "Unified search across 50+ OppoDB databases simultaneously: candidates, congress members, bills, polling, campaign finance, election results, forecasts, MAGA files, narrative reports, local impacts, voter stats, prediction markets, messaging guidance, intel briefings, tracked bills, MIT elections, committees, votes, state leg elections, forecast history, international (profiles/elections/leaders/legislation/polling), public records (court cases, FARA, federal spending, lobbying, gov contracts, IG reports, congressional record), district profiles, election night streams, state legislators+bills, polling aggregates, knowledge & collab (wiki, war rooms, stakeholders, notes, reports, trackers, watchlist), and AI cache (vulnerability scores, talking points, bill/subject/messaging impact). Returns results grouped by category.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -815,7 +815,7 @@ mcpServer.tool("master_search", {
       categories: {
         type: "array" as const,
         items: { type: "string" as const },
-        description: "Optional list of categories to search. Available: candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats, mn_finance, prediction_markets, messaging_guidance, intel_briefings, tracked_bills, mit_elections, congress_committees, congress_votes, state_leg_elections, forecast_history. Defaults to all.",
+        description: "Optional list of categories to search. Available: candidates, congress_members, bills, polling, campaign_finance, state_finance, election_results, forecasts, maga_files, narrative_reports, local_impacts, voter_stats, mn_finance, prediction_markets, messaging_guidance, intel_briefings, tracked_bills, mit_elections, congress_committees, congress_votes, state_leg_elections, forecast_history, international_profiles, court_cases, fara_registrants, federal_spending, lobbying_disclosures, gov_contracts, ig_reports, congressional_record, district_profiles, election_night_streams, state_legislators, state_legislative_bills, polling_aggregates, international_elections, international_leaders, international_legislation, international_polling, wiki_pages, war_rooms, stakeholders, entity_notes, reports, oppo_trackers, watchlist_items, vulnerability_scores, talking_points, bill_impact_analyses, subject_impact_analyses, messaging_audience_analyses, messaging_impact_analyses. Defaults to all.",
       },
       limit: { type: "number" as const, description: "Max results per category (default 10, max 20)" },
     },
@@ -839,6 +839,16 @@ mcpServer.tool("master_search", {
       "intel_briefings", "tracked_bills", "mit_elections",
       "congress_committees", "congress_votes", "state_leg_elections",
       "forecast_history", "international_profiles",
+      "court_cases", "fara_registrants", "federal_spending", "lobbying_disclosures",
+      "gov_contracts", "ig_reports", "congressional_record", "district_profiles",
+      "election_night_streams", "state_legislators", "state_legislative_bills",
+      "polling_aggregates",
+      "international_elections", "international_leaders", "international_legislation",
+      "international_polling",
+      "wiki_pages", "war_rooms", "stakeholders", "entity_notes", "reports",
+      "oppo_trackers", "watchlist_items",
+      "vulnerability_scores", "talking_points", "bill_impact_analyses",
+      "subject_impact_analyses", "messaging_audience_analyses", "messaging_impact_analyses",
     ];
 
     const requestedCategories = args.categories as string[] | undefined;
@@ -1002,8 +1012,208 @@ mcpServer.tool("master_search", {
         .then(r => ({ label: "International Profiles", data: r.data || [] }));
     }
 
+    // ─── NEW categories ─────────────────────────────────────────────
+    if (activeCategories.includes("court_cases")) {
+      queries.court_cases = supabase.from("court_cases")
+        .select("case_name,case_number,court,judge,status,filed_date,docket_url")
+        .or(`case_name.ilike.${likeQ},case_number.ilike.${likeQ},judge.ilike.${likeQ},court.ilike.${likeQ}`)
+        .order("filed_date", { ascending: false, nullsFirst: false }).limit(perLimit)
+        .then(r => ({ label: "Court Cases", data: r.data || [] }));
+    }
+    if (activeCategories.includes("fara_registrants")) {
+      queries.fara_registrants = supabase.from("fara_registrants")
+        .select("registrant_name,country,status,registration_date,registration_number")
+        .or(`registrant_name.ilike.${likeQ},country.ilike.${likeQ},registration_number.ilike.${likeQ}`)
+        .order("registration_date", { ascending: false, nullsFirst: false }).limit(perLimit)
+        .then(r => ({ label: "FARA Registrants", data: r.data || [] }));
+    }
+    if (activeCategories.includes("federal_spending")) {
+      queries.federal_spending = supabase.from("federal_spending")
+        .select("recipient_name,recipient_state,awarding_agency,description,award_amount,fiscal_year,award_type")
+        .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ},recipient_state.ilike.${likeQ}`)
+        .order("award_amount", { ascending: false, nullsFirst: false }).limit(perLimit)
+        .then(r => ({ label: "Federal Spending", data: r.data || [] }));
+    }
+    if (activeCategories.includes("lobbying_disclosures")) {
+      queries.lobbying_disclosures = supabase.from("lobbying_disclosures")
+        .select("registrant_name,client_name,filing_year,amount,filing_period")
+        .or(`registrant_name.ilike.${likeQ},client_name.ilike.${likeQ}`)
+        .order("filing_year", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Lobbying Disclosures", data: r.data || [] }));
+    }
+    if (activeCategories.includes("gov_contracts")) {
+      queries.gov_contracts = supabase.from("gov_contracts")
+        .select("recipient_name,awarding_agency,description,award_amount,recipient_state,fiscal_year")
+        .or(`recipient_name.ilike.${likeQ},awarding_agency.ilike.${likeQ},description.ilike.${likeQ}`)
+        .order("award_amount", { ascending: false, nullsFirst: false }).limit(perLimit)
+        .then(r => ({ label: "Government Contracts", data: r.data || [] }));
+    }
+    if (activeCategories.includes("ig_reports")) {
+      queries.ig_reports = supabase.from("ig_reports")
+        .select("title,agency_name,summary,topic,published_on,url")
+        .or(`title.ilike.${likeQ},agency_name.ilike.${likeQ},summary.ilike.${likeQ},topic.ilike.${likeQ}`)
+        .order("published_on", { ascending: false, nullsFirst: false }).limit(perLimit)
+        .then(r => ({ label: "IG Reports", data: r.data || [] }));
+    }
+    if (activeCategories.includes("congressional_record")) {
+      queries.congressional_record = supabase.from("congressional_record")
+        .select("speaker_name,title,chamber,date,category")
+        .or(`speaker_name.ilike.${likeQ},title.ilike.${likeQ},content.ilike.${likeQ}`)
+        .order("date", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Congressional Record", data: r.data || [] }));
+    }
+    if (activeCategories.includes("district_profiles")) {
+      queries.district_profiles = supabase.from("district_profiles")
+        .select("district_id,state,population,median_income,median_age")
+        .or(`district_id.ilike.${likeQ},state.ilike.${likeQ}`).limit(perLimit)
+        .then(r => ({ label: "District Profiles", data: r.data || [] }));
+    }
+    if (activeCategories.includes("election_night_streams")) {
+      queries.election_night_streams = supabase.from("election_night_streams")
+        .select("candidate_name,state_abbr,district,party,votes,vote_pct,precincts_reporting_pct,is_called,race_type,election_date")
+        .or(`candidate_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+        .order("election_date", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Election Night Streams", data: r.data || [] }));
+    }
+    if (activeCategories.includes("state_legislators")) {
+      queries.state_legislators = supabase.from("state_legislators")
+        .select("name,state_abbr,chamber,district,party,email")
+        .or(`name.ilike.${likeQ},state_abbr.ilike.${likeQ},party.ilike.${likeQ}`).limit(perLimit)
+        .then(r => ({ label: "State Legislators", data: r.data || [] }));
+    }
+    if (activeCategories.includes("state_legislative_bills")) {
+      queries.state_legislative_bills = supabase.from("state_legislative_bills")
+        .select("identifier,title,state_abbr,sponsor_name,status,latest_action_date")
+        .or(`title.ilike.${likeQ},identifier.ilike.${likeQ},sponsor_name.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+        .order("latest_action_date", { ascending: false, nullsFirst: false }).limit(perLimit)
+        .then(r => ({ label: "State Legislative Bills", data: r.data || [] }));
+    }
+    if (activeCategories.includes("polling_aggregates")) {
+      queries.polling_aggregates = supabase.from("polling_aggregates")
+        .select("race_type,state_abbr,district,candidate_a,candidate_b,margin,candidate_a_pct,candidate_b_pct,last_poll_date")
+        .or(`candidate_a.ilike.${likeQ},candidate_b.ilike.${likeQ},state_abbr.ilike.${likeQ}`)
+        .order("last_poll_date", { ascending: false, nullsFirst: false }).limit(perLimit)
+        .then(r => ({ label: "Polling Aggregates", data: r.data || [] }));
+    }
+    if (activeCategories.includes("international_elections")) {
+      queries.international_elections = supabase.from("international_elections")
+        .select("country_code,election_year,election_type,winner_name,winner_party,election_date,turnout_pct")
+        .or(`country_code.ilike.${likeQ},winner_name.ilike.${likeQ},winner_party.ilike.${likeQ},election_type.ilike.${likeQ}`)
+        .order("election_date", { ascending: false, nullsFirst: false }).limit(perLimit)
+        .then(r => ({ label: "International Elections", data: r.data || [] }));
+    }
+    if (activeCategories.includes("international_leaders")) {
+      queries.international_leaders = supabase.from("international_leaders")
+        .select("country_code,name,title,party,in_office_since,term_ends")
+        .or(`name.ilike.${likeQ},country_code.ilike.${likeQ},party.ilike.${likeQ},title.ilike.${likeQ}`).limit(perLimit)
+        .then(r => ({ label: "International Leaders", data: r.data || [] }));
+    }
+    if (activeCategories.includes("international_legislation")) {
+      queries.international_legislation = supabase.from("international_legislation")
+        .select("country_code,title,bill_number,status,sponsor,introduced_date,policy_area")
+        .or(`title.ilike.${likeQ},bill_number.ilike.${likeQ},sponsor.ilike.${likeQ},country_code.ilike.${likeQ},policy_area.ilike.${likeQ}`)
+        .order("introduced_date", { ascending: false, nullsFirst: false }).limit(perLimit)
+        .then(r => ({ label: "International Legislation", data: r.data || [] }));
+    }
+    if (activeCategories.includes("international_polling")) {
+      queries.international_polling = supabase.from("international_polling")
+        .select("country_code,poll_topic,question,source,date_conducted,approve_pct,key_finding")
+        .or(`poll_topic.ilike.${likeQ},question.ilike.${likeQ},country_code.ilike.${likeQ},source.ilike.${likeQ}`)
+        .order("date_conducted", { ascending: false, nullsFirst: false }).limit(perLimit)
+        .then(r => ({ label: "International Polling", data: r.data || [] }));
+    }
+    if (activeCategories.includes("wiki_pages")) {
+      queries.wiki_pages = supabase.from("wiki_pages")
+        .select("slug,title").eq("published", true)
+        .or(`title.ilike.${likeQ},content.ilike.${likeQ}`).limit(perLimit)
+        .then(r => ({ label: "Wiki Pages", data: r.data || [] }));
+    }
+    if (activeCategories.includes("war_rooms")) {
+      queries.war_rooms = supabase.from("war_rooms")
+        .select("name,description,race_scope,updated_at")
+        .or(`name.ilike.${likeQ},description.ilike.${likeQ}`)
+        .order("updated_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "War Rooms", data: r.data || [] }));
+    }
+    if (activeCategories.includes("stakeholders")) {
+      queries.stakeholders = supabase.from("stakeholders")
+        .select("name,type,organization,title,email,state_abbr,party")
+        .or(`name.ilike.${likeQ},organization.ilike.${likeQ},email.ilike.${likeQ},title.ilike.${likeQ}`).limit(perLimit)
+        .then(r => ({ label: "Stakeholders", data: r.data || [] }));
+    }
+    if (activeCategories.includes("entity_notes")) {
+      queries.entity_notes = supabase.from("entity_notes")
+        .select("entity_type,entity_id,body,is_shared,created_at")
+        .ilike("body", likeQ).order("created_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Entity Notes", data: r.data || [] }));
+    }
+    if (activeCategories.includes("reports")) {
+      queries.reports = supabase.from("reports")
+        .select("id,title,description,is_public,updated_at")
+        .or(`title.ilike.${likeQ},description.ilike.${likeQ}`)
+        .order("updated_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Reports", data: r.data || [] }));
+    }
+    if (activeCategories.includes("oppo_trackers")) {
+      queries.oppo_trackers = supabase.from("oppo_trackers")
+        .select("name,description,scope,scope_ref,updated_at")
+        .or(`name.ilike.${likeQ},description.ilike.${likeQ}`)
+        .order("updated_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Oppo Trackers", data: r.data || [] }));
+    }
+    if (activeCategories.includes("watchlist_items")) {
+      queries.watchlist_items = supabase.from("watchlist_items")
+        .select("entity_type,entity_id,label,notes,created_at")
+        .or(`label.ilike.${likeQ},notes.ilike.${likeQ},entity_id.ilike.${likeQ}`)
+        .order("created_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Watchlist", data: r.data || [] }));
+    }
+    if (activeCategories.includes("vulnerability_scores")) {
+      queries.vulnerability_scores = supabase.from("vulnerability_scores")
+        .select("candidate_slug,overall_score,summary,generated_at")
+        .or(`candidate_slug.ilike.${likeQ},summary.ilike.${likeQ}`)
+        .order("generated_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Vulnerability Scores (AI)", data: r.data || [] }));
+    }
+    if (activeCategories.includes("talking_points")) {
+      queries.talking_points = supabase.from("talking_points")
+        .select("subject_type,subject_ref,audience,angle,generated_by,created_at")
+        .or(`subject_ref.ilike.${likeQ},audience.ilike.${likeQ},angle.ilike.${likeQ},subject_type.ilike.${likeQ}`)
+        .order("created_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Talking Points (AI)", data: r.data || [] }));
+    }
+    if (activeCategories.includes("bill_impact_analyses")) {
+      queries.bill_impact_analyses = supabase.from("bill_impact_analyses")
+        .select("bill_id,scope,scope_ref,summary,generated_at")
+        .or(`bill_id.ilike.${likeQ},summary.ilike.${likeQ},scope_ref.ilike.${likeQ}`)
+        .order("generated_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Bill Impact (AI)", data: r.data || [] }));
+    }
+    if (activeCategories.includes("subject_impact_analyses")) {
+      queries.subject_impact_analyses = supabase.from("subject_impact_analyses")
+        .select("subject_type,subject_ref,scope,scope_ref,summary,generated_at")
+        .or(`subject_ref.ilike.${likeQ},summary.ilike.${likeQ},subject_type.ilike.${likeQ}`)
+        .order("generated_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Subject Impact (AI)", data: r.data || [] }));
+    }
+    if (activeCategories.includes("messaging_audience_analyses")) {
+      queries.messaging_audience_analyses = supabase.from("messaging_audience_analyses")
+        .select("messaging_slug,effectiveness_score,summary,generated_at")
+        .or(`messaging_slug.ilike.${likeQ},summary.ilike.${likeQ}`)
+        .order("generated_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Messaging Audience (AI)", data: r.data || [] }));
+    }
+    if (activeCategories.includes("messaging_impact_analyses")) {
+      queries.messaging_impact_analyses = supabase.from("messaging_impact_analyses")
+        .select("messaging_slug,scope,scope_ref,summary,generated_at")
+        .or(`messaging_slug.ilike.${likeQ},summary.ilike.${likeQ},scope_ref.ilike.${likeQ}`)
+        .order("generated_at", { ascending: false }).limit(perLimit)
+        .then(r => ({ label: "Messaging Impact (AI)", data: r.data || [] }));
+    }
+
+    const entries = Object.entries(queries);
     const settled = await Promise.all(entries.map(async ([key, promise]) => {
-      const res = await promise;
+      const res = await promise.catch(() => ({ label: key, data: [] as unknown[] }));
       return { key, label: res.label, count: res.data.length, results: res.data };
     }));
 
