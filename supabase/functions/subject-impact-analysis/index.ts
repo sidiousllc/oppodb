@@ -178,6 +178,19 @@ serve(async (req) => {
       row = data;
     }
 
+    // Log to unified AI generation history (fire-and-forget)
+    try {
+      const mod = await import("../_shared/ai-history.ts");
+      mod.logAIGeneration(admin, {
+        feature: "subject_impact_analysis",
+        subject_type, subject_ref,
+        model,
+        output: fields,
+        triggered_by: user?.id ?? null,
+        trigger_source: "user",
+      });
+    } catch (_) { /* ignore */ }
+
     return new Response(JSON.stringify({ cached: false, analysis: row }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);
