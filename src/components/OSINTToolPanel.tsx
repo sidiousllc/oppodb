@@ -250,7 +250,16 @@ export function OSINTToolPanel({ toolId, onBack }: OSINTToolPanelProps) {
       {/* Results */}
       {results && results.length > 0 && (
         <div className="win98-raised bg-[hsl(var(--win98-face))] p-2 mb-3">
-          <div className="text-[10px] font-bold mb-2">Results ({results.length})</div>
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <div className="text-[10px] font-bold">Results ({results.length})</div>
+            <button
+              onClick={() => setPopoutOpen(true)}
+              className="win98-button text-[9px] flex items-center gap-1"
+              title="Open full results in a draggable window"
+            >
+              <Maximize2 className="h-2.5 w-2.5" /> Open in window
+            </button>
+          </div>
           <div className="space-y-1.5">
             {results.map((r, i) => (
               <ResultRow key={i} row={r} />
