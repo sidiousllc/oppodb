@@ -585,6 +585,14 @@ function DemographicDetailWindow({
             ))}
           </div>
         </div>
+
+        {/* AI Intelligence Panel — Talking points / Audience fit / Impact */}
+        <SubjectAIPanel
+          subjectType="polling"
+          subjectRef={p.id}
+          subjectTitle={`${p.candidate_or_topic} — ${src.name}`}
+          defaultScope="national"
+        />
       </div>
     </Win98Window>
   );
