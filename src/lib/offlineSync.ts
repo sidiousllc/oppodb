@@ -103,7 +103,8 @@ function isSoftSyncError(msg: string): boolean {
   );
 }
 
-/** Sync a single table from Supabase to encrypted IndexedDB */
+/** Sync a single table from Supabase to encrypted IndexedDB.
+ *  Uses range-based pagination on a stable orderBy column (id). */
 async function syncTable(
   tableName: string,
   select: string,
@@ -113,11 +114,16 @@ async function syncTable(
   let total = 0;
   let offset = 0;
 
-  while (true) {
+  // Hard cap to prevent infinite loops on misbehaving endpoints
+  const MAX_PAGES = 200;
+  let pages = 0;
+
+  while (pages < MAX_PAGES) {
+    pages++;
     const { data, error } = await (supabase as any)
       .from(tableName)
       .select(select)
-      .order(orderBy, { nullsFirst: false })
+      .order(orderBy, { ascending: true })
       .range(offset, offset + pageSize - 1);
 
     if (error) {
@@ -156,6 +162,7 @@ export async function syncAllTables(
 
   syncStatus.isSyncing = true;
   syncStatus.error = null;
+  syncStatus.tablesAvailable = []; // reset for a fresh full sync
   notify();
 
   let synced = 0;
@@ -171,6 +178,8 @@ export async function syncAllTables(
       if (!syncStatus.tablesAvailable.includes(table)) {
         syncStatus.tablesAvailable.push(table);
       }
+      // Notify per-table so the UI updates progress incrementally
+      notify();
     } catch (e: any) {
       const msg = e?.message || `Failed to sync ${table}`;
       errors.push(`${table}: ${msg}`);
@@ -180,6 +189,7 @@ export async function syncAllTables(
 
   syncStatus.isSyncing = false;
   syncStatus.lastSyncAt = Date.now();
+  syncStatus.error = errors.length > 0 ? errors[0] : null;
   await setSyncMeta("lastFullSync", Date.now());
   notify();
 
