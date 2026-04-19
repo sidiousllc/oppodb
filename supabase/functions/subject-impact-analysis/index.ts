@@ -120,7 +120,15 @@ serve(async (req) => {
     }
 
     const subject = await loadSubject(admin, subject_type, subject_ref);
-    if (!subject) return new Response(JSON.stringify({ error: "Subject not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!subject) {
+      // Return 200 with a soft error so the panel can show a friendly message
+      // instead of crashing the page with a 404 runtime error.
+      console.warn(`Subject not found: type=${subject_type} ref=${subject_ref}`);
+      return new Response(
+        JSON.stringify({ error: `No ${subject_type} record found for "${subject_ref}". The data may not be synced yet.` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const selected = (Array.isArray(include_sections) ? include_sections : SECTIONS).filter((s: string) => SECTIONS.includes(s as Section)) as Section[];
     const ctx = await buildContext(admin, subject, selected, scope, scope_ref);
