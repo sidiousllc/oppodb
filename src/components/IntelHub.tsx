@@ -129,7 +129,13 @@ export function IntelHub() {
     } else {
       setBriefings((data as Briefing[]) || []);
       if (data && data.length > 0) {
-        setLastUpdated(data[0].created_at);
+        // Use the most recent created_at (sync time), not the first row
+        // which is sorted by published_at and may be older.
+        const latest = (data as Briefing[]).reduce(
+          (max, b) => (b.created_at > max ? b.created_at : max),
+          (data as Briefing[])[0].created_at,
+        );
+        setLastUpdated(latest);
       }
     }
     setLoading(false);
