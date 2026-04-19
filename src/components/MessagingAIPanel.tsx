@@ -128,6 +128,55 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas, on
     finally { setImpactLoading(false); }
   }
 
+  const [savingKind, setSavingKind] = useState<string | null>(null);
+  function tpToMarkdown(t: any) {
+    const lines = [`### 🗣️ Talking Points — ${t.audience}/${t.angle} _(${t.model})_`];
+    (t.points || []).forEach((p: any, i: number) => {
+      lines.push(`${i + 1}. **${p.message}**`);
+      if (p.rationale) lines.push(`   - _Why:_ ${p.rationale}`);
+      if (p.delivery_tips) lines.push(`   - _Tip:_ ${p.delivery_tips}`);
+    });
+    if ((t.evidence || []).length) {
+      lines.push(`\n**Evidence**`);
+      t.evidence.forEach((e: any) => lines.push(`- ${e.claim}${e.source_hint ? ` — ${e.source_hint}` : ""}`));
+    }
+    return lines.join("\n");
+  }
+  function audToMarkdown(a: any) {
+    const lines = [`### 🎯 Audience Effectiveness — ${Math.round(a.effectiveness_score)}/100`];
+    if (a.summary) lines.push(a.summary);
+    if (a.audience_scores) {
+      lines.push(`\n**Audience scores:** ${Object.entries(a.audience_scores).map(([k, v]: any) => `${k} ${Math.round(v as number)}`).join(" · ")}`);
+    }
+    (a.segment_breakdown || []).forEach((s: any) => lines.push(`- **${s.segment}** (${s.score}/100): ${s.reasoning}`));
+    if ((a.risks || []).length) {
+      lines.push(`\n**Risks**`);
+      a.risks.forEach((r: any) => lines.push(`- _[${r.severity}]_ **${r.headline}** — ${r.summary}`));
+    }
+    return lines.join("\n");
+  }
+  function impactToMarkdown(im: any) {
+    const lines = [`### 📊 Impact — ${im.scope}${im.scope_ref ? ` · ${im.scope_ref}` : ""}`];
+    if (im.summary) lines.push(im.summary);
+    if ((im.amplifies || []).length) {
+      lines.push(`\n**Amplifies**`);
+      im.amplifies.forEach((a: any) => lines.push(`- **${a.group}** — ${a.why}`));
+    }
+    if ((im.undermines || []).length) {
+      lines.push(`\n**Undermines**`);
+      im.undermines.forEach((a: any) => lines.push(`- **${a.group}** — ${a.why}`));
+    }
+    if (im.political_impact) lines.push(`\n**Political:** ${im.political_impact}`);
+    if (im.media_impact) lines.push(`**Media:** ${im.media_impact}`);
+    return lines.join("\n");
+  }
+  async function handleSave(kind: "talking" | "audience" | "impact") {
+    if (!onSaveToItem) return;
+    const md = kind === "talking" ? tpToMarkdown(tp) : kind === "audience" ? audToMarkdown(audience_analysis) : impactToMarkdown(impact);
+    setSavingKind(kind);
+    try { await onSaveToItem(md, kind); } finally { setSavingKind(null); }
+  }
+
   return (
     <div className="win98-raised bg-[hsl(var(--win98-face))] p-2 mt-3">
       <div className="flex items-center justify-between mb-2">
