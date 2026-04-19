@@ -15,7 +15,8 @@ import {
 interface Props {
   cluster: StoryCluster<ClusterableArticle>;
   onClose: () => void;
-  onSavePDF?: (article: ClusterableArticle) => void;
+  /** Receives the active article plus its currently-loaded full content (if any). */
+  onSavePDF?: (article: ClusterableArticle, content: string | null) => void;
   /** Header label, e.g., "Intel Briefing" or "District News". */
   contextLabel?: string;
 }
@@ -196,7 +197,7 @@ export function GroundNewsDetailWindow({ cluster, onClose, onSavePDF, contextLab
                 )}
                 {onSavePDF && (
                   <button
-                    onClick={() => onSavePDF(active)}
+                    onClick={() => onSavePDF(active, content)}
                     className="px-2 py-1 text-[10px] bg-[#c0c0c0] border border-[#808080] hover:bg-[#d4d4d4] flex items-center gap-1"
                   >
                     <FileText size={10} /> Save PDF

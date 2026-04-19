@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, Clock, Search, Filter, X, Layers, AlertTriangle } from "lucide-react";
+import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, Clock, Search, Filter, X, Layers, AlertTriangle, CheckSquare, Square } from "lucide-react";
 import { format } from "date-fns";
-import jsPDF from "jspdf";
-import { applyPdfBranding } from "@/lib/pdfBranding";
+import { exportArticlePdf, exportArticlesPdf, type IntelArticleForPdf } from "@/lib/intelPdf";
 import { GroundNewsDetailWindow } from "@/components/GroundNewsDetailWindow";
 import { clusterArticles, classifyBias, BIAS_META, biasBarSegments, type StoryCluster, type ClusterableArticle } from "@/lib/newsBias";
 import { BlindspotFeed } from "@/components/intel/BlindspotFeed";
@@ -87,6 +86,19 @@ export function IntelHub() {
   const [partyLeaning, setPartyLeaning] = useState<PartyLeaning>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [groupMode, setGroupMode] = useState<"clusters" | "sources">("clusters");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [exporting, setExporting] = useState(false);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   // Track article read for "My Bias" history
   const trackRead = useCallback(async (cluster: StoryCluster<ClusterableArticle>) => {
@@ -181,54 +193,74 @@ export function IntelHub() {
     }
   };
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    const pw = doc.internal.pageSize.width;
-    let y = 18;
+  /** Fetch the full scraped article body for one briefing. */
+  const fetchFullContent = async (b: Briefing): Promise<string | null> => {
+    if (!b.source_url) return null;
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-article", {
+        body: { url: b.source_url },
+      });
+      if (error || !data?.success) return null;
+      return typeof data.markdown === "string" && data.markdown.trim().length > 0
+        ? data.markdown
+        : null;
+    } catch {
+      return null;
+    }
+  };
 
-    const scopeLabel = SCOPE_CONFIG[activeScope].label;
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Intelligence Briefing — ${scopeLabel}`, pw / 2, y, { align: "center" });
-    y += 8;
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Generated: ${format(new Date(), "PPpp")}`, pw / 2, y, { align: "center" });
-    y += 10;
+  const briefingToArticle = (b: Briefing, content: string | null): IntelArticleForPdf => ({
+    title: b.title,
+    source: b.source_name,
+    pubDate: b.published_at,
+    link: b.source_url,
+    summary: b.summary,
+    content,
+  });
 
-    for (const b of filteredBriefings) {
-      if (y > 260) {
-        doc.addPage();
-        y = 18;
-      }
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      const titleLines = doc.splitTextToSize(b.title, pw - 30);
-      doc.text(titleLines, 15, y);
-      y += titleLines.length * 5 + 2;
+  /** Export the currently-selected briefings (or all filtered if none selected). */
+  const exportPDF = async () => {
+    const targets = selectedIds.size > 0
+      ? filteredBriefings.filter((b) => selectedIds.has(b.id))
+      : filteredBriefings;
 
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "italic");
-      doc.setTextColor(100, 100, 100);
-      doc.text(`${b.source_name} • ${b.published_at ? format(new Date(b.published_at), "PPp") : "Unknown date"}`, 15, y);
-      y += 5;
-      doc.setTextColor(0, 0, 0);
-
-      if (b.summary) {
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "normal");
-        const summaryLines = doc.splitTextToSize(b.summary, pw - 30);
-        const linesToPrint = summaryLines.slice(0, 6);
-        doc.text(linesToPrint, 15, y);
-        y += linesToPrint.length * 4 + 6;
-      } else {
-        y += 4;
-      }
+    if (targets.length === 0) {
+      toast.error("Nothing to export");
+      return;
     }
 
-    applyPdfBranding(doc);
-    doc.save(`intel-briefing-${activeScope}-${format(new Date(), "yyyy-MM-dd")}.pdf`);
-    toast.success("PDF exported");
+    setExporting(true);
+    const label = targets.length === 1 ? "article" : `${targets.length} articles`;
+    const t = toast.loading(`Building PDF — fetching full content for ${label}…`);
+
+    try {
+      // Fetch full articles in parallel (cap concurrency to be polite).
+      const articles: IntelArticleForPdf[] = [];
+      const CHUNK = 4;
+      for (let i = 0; i < targets.length; i += CHUNK) {
+        const batch = targets.slice(i, i + CHUNK);
+        const results = await Promise.all(batch.map(async (b) => briefingToArticle(b, await fetchFullContent(b))));
+        articles.push(...results);
+      }
+
+      const filename = targets.length === 1
+        ? `intel-${activeScope}-${format(new Date(), "yyyy-MM-dd")}.pdf`
+        : `intel-briefings-${activeScope}-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+
+      if (articles.length === 1) {
+        exportArticlePdf(articles[0], filename);
+      } else {
+        exportArticlesPdf(articles, filename);
+      }
+      toast.success(`Exported ${articles.length} ${articles.length === 1 ? "article" : "articles"}`, { id: t });
+      clearSelection();
+      setSelectionMode(false);
+    } catch (e) {
+      console.error("Export error:", e);
+      toast.error("PDF export failed", { id: t });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const filteredBriefings = briefings.filter((b) => {
@@ -324,12 +356,37 @@ export function IntelHub() {
         </button>
 
         <button
+          onClick={() => {
+            setSelectionMode((s) => {
+              if (s) clearSelection();
+              return !s;
+            });
+          }}
+          className={`px-2 py-1 text-xs border flex items-center gap-1 ${
+            selectionMode
+              ? "bg-[#000080] text-white border-[#000080]"
+              : "bg-[#c0c0c0] text-black border-[#808080] hover:bg-[#d4d4d4]"
+          }`}
+          title="Toggle multi-select to pick specific articles to export"
+        >
+          {selectionMode ? <CheckSquare size={12} /> : <Square size={12} />}
+          {selectionMode ? `Selected ${selectedIds.size}` : "Select"}
+        </button>
+
+        <button
           onClick={exportPDF}
-          disabled={briefings.length === 0}
+          disabled={briefings.length === 0 || exporting}
           className="px-2 py-1 text-xs bg-[#c0c0c0] border border-[#808080] hover:bg-[#d4d4d4] flex items-center gap-1 disabled:opacity-50"
+          title={selectedIds.size > 0
+            ? `Export ${selectedIds.size} selected article${selectedIds.size === 1 ? "" : "s"} (full content)`
+            : "Export all filtered articles (full content)"}
         >
           <FileText size={12} />
-          Export PDF
+          {exporting
+            ? "Exporting…"
+            : selectedIds.size > 0
+              ? `Export PDF (${selectedIds.size})`
+              : "Export PDF (All)"}
         </button>
 
         <button
@@ -468,6 +525,27 @@ export function IntelHub() {
         );
       })()}
 
+      {/* Selection bar */}
+      {selectionMode && (
+        <div className="border border-[#808080] bg-[#fffbe6] px-2 py-1 text-[10px] flex items-center gap-2 flex-wrap">
+          <span className="font-bold">{selectedIds.size} selected</span>
+          <button
+            onClick={() => setSelectedIds(new Set(filteredBriefings.map((b) => b.id)))}
+            className="px-2 py-0.5 border border-[#808080] bg-[#c0c0c0] hover:bg-[#d4d4d4]"
+          >
+            Select all ({filteredBriefings.length})
+          </button>
+          <button
+            onClick={clearSelection}
+            disabled={selectedIds.size === 0}
+            className="px-2 py-0.5 border border-[#808080] bg-[#c0c0c0] hover:bg-[#d4d4d4] disabled:opacity-50"
+          >
+            Clear
+          </button>
+          <span className="ml-auto text-gray-600">Tip: tap a row to toggle, or use Export PDF to render full articles.</span>
+        </div>
+      )}
+
       {/* Briefing List */}
       {loading ? (
         <div className="text-xs text-gray-500 py-8 text-center">Loading intelligence briefings...</div>
@@ -482,42 +560,71 @@ export function IntelHub() {
           {clusters.map((c) => {
             const segs = biasBarSegments(c.bias);
             const uniqueSrc = new Set(c.articles.map(a => a.source)).size;
+            // Cluster maps to all underlying briefing ids (article.id is briefing.id)
+            const clusterBriefingIds = c.articles
+              .map((a) => (a as ClusterableArticle & { id?: string }).id)
+              .filter((x): x is string => !!x);
+            const allSelected = clusterBriefingIds.length > 0 && clusterBriefingIds.every((id) => selectedIds.has(id));
+            const someSelected = clusterBriefingIds.some((id) => selectedIds.has(id));
             return (
-              <button
+              <div
                 key={c.id}
-                onClick={() => openCluster(c)}
-                className="w-full text-left border border-[#808080] bg-white hover:bg-[#e8e8ff] transition-colors p-2 space-y-1"
+                className={`w-full border ${allSelected || someSelected ? "border-[#000080] bg-[#eef]" : "border-[#808080] bg-white"} hover:bg-[#e8e8ff] transition-colors`}
               >
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-[#000080] line-clamp-2">{c.lead.title}</div>
-                    {c.lead.summary && (
-                      <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{c.lead.summary}</div>
-                    )}
-                  </div>
-                  <span className="flex-shrink-0 text-[10px] font-bold bg-[#000080] text-white px-1.5 py-0.5 rounded-sm flex items-center gap-1">
-                    <Layers size={10} /> {uniqueSrc}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex h-1.5 flex-1 overflow-hidden rounded-sm border border-[#c0c0c0]">
-                    {segs.L > 0 && <div style={{ width: `${segs.L}%`, background: "#3b82f6" }} />}
-                    {segs.C > 0 && <div style={{ width: `${segs.C}%`, background: "#9333ea" }} />}
-                    {segs.R > 0 && <div style={{ width: `${segs.R}%`, background: "#dc2626" }} />}
-                    {segs.U > 0 && <div style={{ width: `${segs.U}%`, background: "#9ca3af" }} />}
-                  </div>
-                  <span className="text-[9px] text-gray-500">L{c.bias.L} C{c.bias.C} R{c.bias.R}</span>
-                  {c.blindspot && (
-                    <span className="text-[9px] font-bold text-amber-700 flex items-center gap-0.5">
-                      <AlertTriangle size={10} /> {c.blindspot} blindspot
-                    </span>
+                <div className="flex items-stretch">
+                  {selectionMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (allSelected) clusterBriefingIds.forEach((id) => next.delete(id));
+                          else clusterBriefingIds.forEach((id) => next.add(id));
+                          return next;
+                        });
+                      }}
+                      className="px-2 flex items-center justify-center border-r border-[#c0c0c0] hover:bg-[#d4d4d4]"
+                      title={allSelected ? "Deselect cluster" : "Select cluster"}
+                    >
+                      {allSelected ? <CheckSquare size={14} className="text-[#000080]" /> : someSelected ? <CheckSquare size={14} className="text-gray-400" /> : <Square size={14} className="text-gray-500" />}
+                    </button>
                   )}
+                  <button
+                    onClick={() => openCluster(c)}
+                    className="flex-1 text-left p-2 space-y-1"
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold text-[#000080] line-clamp-2">{c.lead.title}</div>
+                        {c.lead.summary && (
+                          <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{c.lead.summary}</div>
+                        )}
+                      </div>
+                      <span className="flex-shrink-0 text-[10px] font-bold bg-[#000080] text-white px-1.5 py-0.5 rounded-sm flex items-center gap-1">
+                        <Layers size={10} /> {uniqueSrc}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-1.5 flex-1 overflow-hidden rounded-sm border border-[#c0c0c0]">
+                        {segs.L > 0 && <div style={{ width: `${segs.L}%`, background: "#3b82f6" }} />}
+                        {segs.C > 0 && <div style={{ width: `${segs.C}%`, background: "#9333ea" }} />}
+                        {segs.R > 0 && <div style={{ width: `${segs.R}%`, background: "#dc2626" }} />}
+                        {segs.U > 0 && <div style={{ width: `${segs.U}%`, background: "#9ca3af" }} />}
+                      </div>
+                      <span className="text-[9px] text-gray-500">L{c.bias.L} C{c.bias.C} R{c.bias.R}</span>
+                      {c.blindspot && (
+                        <span className="text-[9px] font-bold text-amber-700 flex items-center gap-0.5">
+                          <AlertTriangle size={10} /> {c.blindspot} blindspot
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[9px] text-gray-400 flex items-center gap-1.5">
+                      <BiasChip source={c.lead.source} />
+                      <span>{c.lead.source} • {c.lead.pubDate ? format(new Date(c.lead.pubDate), "PPp") : ""}</span>
+                    </div>
+                  </button>
                 </div>
-                <div className="text-[9px] text-gray-400 flex items-center gap-1.5">
-                  <BiasChip source={c.lead.source} />
-                  <span>{c.lead.source} • {c.lead.pubDate ? format(new Date(c.lead.pubDate), "PPp") : ""}</span>
-                </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -531,32 +638,48 @@ export function IntelHub() {
                 <span className="ml-auto text-[10px] opacity-75">{items.length} items</span>
               </div>
               <div className="divide-y divide-[#c0c0c0]">
-                {items.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => {
-                      const found = clusters.find(c => c.articles.some(a => a.title === b.title && a.source === b.source_name));
-                      openCluster(found ?? {
-                        id: b.id,
-                        lead: { title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary },
-                        articles: [{ title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary }],
-                        bias: { L: 0, C: 0, R: 0, U: 0 }, blindspot: null,
-                      });
-                    }}
-                    className="w-full text-left px-2 py-1.5 hover:bg-[#e8e8ff] transition-colors"
-                  >
-                    <div className="text-xs font-bold text-[#000080] line-clamp-1 flex items-center gap-1">
-                      <BiasChip source={b.source_name} />
-                      <span className="truncate">{b.title}</span>
+                {items.map((b) => {
+                  const isSelected = selectedIds.has(b.id);
+                  return (
+                    <div key={b.id} className={`flex items-stretch ${isSelected ? "bg-[#eef]" : ""}`}>
+                      {selectionMode && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSelect(b.id);
+                          }}
+                          className="px-2 flex items-center justify-center border-r border-[#c0c0c0] hover:bg-[#d4d4d4]"
+                          title={isSelected ? "Deselect article" : "Select article"}
+                        >
+                          {isSelected ? <CheckSquare size={14} className="text-[#000080]" /> : <Square size={14} className="text-gray-500" />}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          const found = clusters.find(c => c.articles.some(a => a.title === b.title && a.source === b.source_name));
+                          openCluster(found ?? {
+                            id: b.id,
+                            lead: { title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary },
+                            articles: [{ title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary }],
+                            bias: { L: 0, C: 0, R: 0, U: 0 }, blindspot: null,
+                          });
+                        }}
+                        className="flex-1 text-left px-2 py-1.5 hover:bg-[#e8e8ff] transition-colors"
+                      >
+                        <div className="text-xs font-bold text-[#000080] line-clamp-1 flex items-center gap-1">
+                          <BiasChip source={b.source_name} />
+                          <span className="truncate">{b.title}</span>
+                        </div>
+                        {b.summary && (
+                          <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{b.summary}</div>
+                        )}
+                        <div className="text-[9px] text-gray-400 mt-0.5">
+                          {b.published_at ? format(new Date(b.published_at), "PPp") : ""}
+                        </div>
+                      </button>
                     </div>
-                    {b.summary && (
-                      <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{b.summary}</div>
-                    )}
-                    <div className="text-[9px] text-gray-400 mt-0.5">
-                      {b.published_at ? format(new Date(b.published_at), "PPp") : ""}
-                    </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -569,20 +692,15 @@ export function IntelHub() {
           cluster={selectedCluster}
           onClose={() => setSelectedCluster(null)}
           contextLabel={`Intel — ${SCOPE_CONFIG[activeScope].label}`}
-          onSavePDF={(article) => {
-            const doc = new jsPDF();
-            const pw = doc.internal.pageSize.width;
-            let y = 18;
-            doc.setFontSize(14); doc.setFont("helvetica", "bold");
-            const titleLines = doc.splitTextToSize(article.title, pw - 30);
-            doc.text(titleLines, 15, y); y += titleLines.length * 6 + 4;
-            doc.setFontSize(9); doc.setFont("helvetica", "italic");
-            doc.text(`${article.source} • ${article.pubDate ? format(new Date(article.pubDate), "PPp") : ""}`, 15, y); y += 8;
-            doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-            const lines = doc.splitTextToSize(article.summary || article.title, pw - 30);
-            doc.text(lines, 15, y);
-            applyPdfBranding(doc);
-            doc.save(`intel-brief.pdf`);
+          onSavePDF={(article, fullContent) => {
+            exportArticlePdf({
+              title: article.title,
+              source: article.source,
+              pubDate: article.pubDate,
+              link: article.link,
+              summary: article.summary,
+              content: fullContent,
+            }, `intel-brief-${format(new Date(), "yyyy-MM-dd")}.pdf`);
             toast.success("PDF exported");
           }}
         />
