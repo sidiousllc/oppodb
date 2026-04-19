@@ -125,42 +125,54 @@ serve(async (req) => {
     const selected = (Array.isArray(include_sections) ? include_sections : SECTIONS).filter((s: string) => SECTIONS.includes(s as Section)) as Section[];
     const ctx = await buildContext(admin, subject, selected, scope, scope_ref);
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: "You are a political impact analyst. Analyze the political and media impact of this subject at the requested scope using the polling, intel, legislation, and demographic context. Return via tool." },
-          { role: "user", content: `SUBJECT: ${subject.title}\nSummary: ${subject.summary}\nTags: ${(subject.tags || []).join(", ")}\nScope: ${scope} ${scope_ref || ""}\n\nDETAILS:\n${subject.content}\n\nCONTEXT:\n${ctx}` },
-        ],
-        tools: [{ type: "function", function: {
-          name: "analyze_subject_impact",
-          description: "Structured impact",
-          parameters: {
-            type: "object",
-            properties: {
-              summary: { type: "string" },
-              amplifies: { type: "array", items: { type: "object", properties: { group: { type: "string" }, why: { type: "string" } }, required: ["group", "why"] } },
-              undermines: { type: "array", items: { type: "object", properties: { group: { type: "string" }, why: { type: "string" } }, required: ["group", "why"] } },
-              affected_groups: { type: "array", items: { type: "string" } },
-              political_impact: { type: "string" },
-              media_impact: { type: "string" },
-              recommended_channels: { type: "array", items: { type: "object", properties: {
-                channel: { type: "string" }, rationale: { type: "string" },
-              }, required: ["channel", "rationale"] } },
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 110_000);
+    let aiResp: Response;
+    try {
+      aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        signal: ctrl.signal,
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: "You are a political impact analyst. Analyze the political and media impact of this subject at the requested scope using the polling, intel, legislation, and demographic context. Return via tool." },
+            { role: "user", content: `SUBJECT: ${subject.title}\nSummary: ${subject.summary}\nTags: ${(subject.tags || []).join(", ")}\nScope: ${scope} ${scope_ref || ""}\n\nDETAILS:\n${subject.content}\n\nCONTEXT:\n${ctx}` },
+          ],
+          tools: [{ type: "function", function: {
+            name: "analyze_subject_impact",
+            description: "Structured impact",
+            parameters: {
+              type: "object",
+              properties: {
+                summary: { type: "string" },
+                amplifies: { type: "array", items: { type: "object", properties: { group: { type: "string" }, why: { type: "string" } }, required: ["group", "why"] } },
+                undermines: { type: "array", items: { type: "object", properties: { group: { type: "string" }, why: { type: "string" } }, required: ["group", "why"] } },
+                affected_groups: { type: "array", items: { type: "string" } },
+                political_impact: { type: "string" },
+                media_impact: { type: "string" },
+                recommended_channels: { type: "array", items: { type: "object", properties: {
+                  channel: { type: "string" }, rationale: { type: "string" },
+                }, required: ["channel", "rationale"] } },
+              },
+              required: ["summary", "amplifies", "undermines", "affected_groups", "political_impact", "media_impact", "recommended_channels"],
             },
-            required: ["summary", "amplifies", "undermines", "affected_groups", "political_impact", "media_impact", "recommended_channels"],
-          },
-        } }],
-        tool_choice: { type: "function", function: { name: "analyze_subject_impact" } },
-      }),
-    });
+          } }],
+          tool_choice: { type: "function", function: { name: "analyze_subject_impact" } },
+        }),
+      });
+    } catch (fetchErr: any) {
+      clearTimeout(timer);
+      console.error("AI fetch failed:", fetchErr?.message || fetchErr);
+      return new Response(JSON.stringify({ error: fetchErr?.name === "AbortError" ? "AI request timed out — try a faster model (e.g. gemini-2.5-flash)" : "AI gateway unreachable" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    clearTimeout(timer);
     if (!aiResp.ok) {
-      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limit" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits depleted" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      console.error("AI error", aiResp.status, await aiResp.text());
-      return new Response(JSON.stringify({ error: "AI gateway error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const errText = await aiResp.text().catch(() => "");
+      console.error("AI error", aiResp.status, errText);
+      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limit — please retry in a moment" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits depleted" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: `AI gateway error (${aiResp.status})` }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const aiData = await aiResp.json();
     const parsed = JSON.parse(aiData.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments || "{}");
