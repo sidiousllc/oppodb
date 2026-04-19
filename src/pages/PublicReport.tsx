@@ -8,6 +8,7 @@ import { exportReportPdf } from "@/lib/reports/exporters";
 import type { Report, ReportBlock } from "@/lib/reports/types";
 import { Download, FileText, ExternalLink, Loader2 } from "lucide-react";
 import { ChartBlockView, TableBlockView, MapBlockView } from "@/components/reports/BlockViews";
+import { PdfStyleBlockView } from "@/components/reports/PdfStyleBlockView";
 
 export default function PublicReport() {
   const { id } = useParams<{ id: string }>();
@@ -91,56 +92,5 @@ export default function PublicReport() {
 }
 
 function PublicBlock({ block }: { block: ReportBlock }) {
-  switch (block.type) {
-    case "heading":
-      return <h2 className="text-2xl font-bold text-primary border-b border-border pb-1">{block.text}</h2>;
-    case "subheading":
-      return <h3 className="text-lg font-bold mt-3">{block.text}</h3>;
-    case "text":
-      return <p className="text-sm whitespace-pre-wrap leading-relaxed">{block.text}</p>;
-    case "image":
-      return (
-        <figure>
-          <img src={block.url} alt={block.caption ?? ""} className="max-w-full rounded border border-border" />
-          {block.caption && <figcaption className="text-[10px] text-muted-foreground mt-1 italic">{block.caption}</figcaption>}
-        </figure>
-      );
-    case "divider":
-      return <hr className="border-border my-4" />;
-    case "page_break":
-      return <div className="border-t border-dashed border-border my-6" />;
-    case "tabs":
-      return (
-        <div className="space-y-3">
-          {block.tabs.map((t) => (
-            <details key={t.id} className="border border-border rounded p-2" open>
-              <summary className="text-sm font-bold cursor-pointer">{t.label}</summary>
-              <div className="space-y-3 pt-2">
-                {t.blocks.map((b) => <PublicBlock key={b.id} block={b} />)}
-              </div>
-            </details>
-          ))}
-        </div>
-      );
-    case "chart": return <ChartBlockView block={block} />;
-    case "table": return <TableBlockView block={block} />;
-    case "map":   return <MapBlockView block={block} />;
-    default: {
-      const snap = (block as any).snapshot;
-      return (
-        <div className="border border-border rounded p-3 bg-card">
-          <div className="text-xs font-bold uppercase text-muted-foreground mb-1">
-            {block.type}{block.title ? ` — ${block.title}` : ""}
-          </div>
-          {snap ? (
-            <pre className="text-[10px] overflow-x-auto bg-muted p-2 rounded max-h-72">
-              {JSON.stringify(snap, null, 2)}
-            </pre>
-          ) : (
-            <div className="text-xs text-muted-foreground italic">(no cached data)</div>
-          )}
-        </div>
-      );
-    }
-  }
+  return <PdfStyleBlockView block={block} />;
 }
