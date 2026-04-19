@@ -87,6 +87,19 @@ export function IntelHub() {
   const [partyLeaning, setPartyLeaning] = useState<PartyLeaning>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [groupMode, setGroupMode] = useState<"clusters" | "sources">("clusters");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [exporting, setExporting] = useState(false);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   // Track article read for "My Bias" history
   const trackRead = useCallback(async (cluster: StoryCluster<ClusterableArticle>) => {
