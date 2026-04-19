@@ -2649,7 +2649,7 @@ export function PollingSection() {
       </div>
 
       {/* ─── Pollster Heatmap ─────────────────────────────────────────────── */}
-      <PollsterHeatmap polls={polls} />
+      <PollsterHeatmap polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
 
       {/* ─── Generic Ballot + Favorability ────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -2690,14 +2690,19 @@ export function PollingSection() {
                   <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Margin</th>
                   <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sample</th>
                   <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
-                  <th className="py-2.5 px-3"></th>
+                  <th className="py-2.5 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Details</th>
                 </tr>
               </thead>
               <tbody>
                 {latestBySource.map((poll) => {
                 const src = getSourceInfo(poll.source);
                 return (
-                  <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-[hsl(var(--win98-light))] transition-colors">
+                  <tr
+                    key={poll.id}
+                    onClick={() => setSelectedPoll(poll)}
+                    className="border-b border-border last:border-0 hover:bg-[hsl(var(--win98-light))] transition-colors cursor-pointer"
+                    title="Click to view full poll details"
+                  >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
@@ -2728,12 +2733,21 @@ export function PollingSection() {
                       <span> – {formatDate(poll.end_date)}</span>
                       }
                       </td>
-                      <td className="py-3 px-3">
-                        {poll.source_url &&
-                      <a href={poll.source_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                      }
+                      <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setSelectedPoll(poll)}
+                            className="win98-button text-[10px] px-2 py-0.5"
+                            title="View full poll details"
+                          >
+                            View
+                          </button>
+                          {poll.source_url &&
+                        <a href={poll.source_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors" title="Open original source">
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                        }
+                        </div>
                       </td>
                     </tr>);
 
