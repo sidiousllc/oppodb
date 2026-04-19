@@ -12,6 +12,7 @@ interface SubjectAIPanelProps {
   subjectTitle: string;
   defaultScope?: "national" | "state" | "district";
   defaultScopeRef?: string;
+  defaultTab?: SubTab;
 }
 
 const ALL_SECTIONS = [
@@ -32,8 +33,8 @@ const MODELS = [
 
 type SubTab = "talking" | "audience" | "impact";
 
-export function SubjectAIPanel({ subjectType, subjectRef, subjectTitle, defaultScope = "national", defaultScopeRef = "" }: SubjectAIPanelProps) {
-  const [tab, setTab] = useState<SubTab>("talking");
+export function SubjectAIPanel({ subjectType, subjectRef, subjectTitle, defaultScope = "national", defaultScopeRef = "", defaultTab = "talking" }: SubjectAIPanelProps) {
+  const [tab, setTab] = useState<SubTab>(defaultTab);
   const [model, setModel] = useState("google/gemini-2.5-pro");
   const [sections, setSections] = useState<string[]>(["polling", "intel", "legislation", "forecasts", "demographics"]);
   const [showSettings, setShowSettings] = useState(false);
