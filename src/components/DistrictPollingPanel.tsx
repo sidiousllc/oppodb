@@ -66,16 +66,23 @@ export function DistrictPollingPanel({ districtId }: { districtId: string }) {
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
       })();
 
+      // Zero-padded 2-digit form (e.g. "08")
+      const padded2 = districtNum.length === 1 ? `0${districtNum}` : districtNum;
+
       // District-name patterns we look for inside `candidate_or_topic` (case-insensitive).
       const patterns: string[] = [
-        districtId.toUpperCase(),                         // TX-12
-        `${stateAbbr}-${numNoPad}`,                       // TX-12 (unpadded)
-        `${stateAbbr} ${numNoPad}`,                       // TX 12
-        `${stateAbbr}${districtNum}`,                     // TX12
+        districtId.toUpperCase(),                         // CO-08 / TX-12
+        `${stateAbbr}-${numNoPad}`,                       // CO-8 / TX-12 (unpadded)
+        `${stateAbbr}-${padded2}`,                        // CO-08 (padded)
+        `${stateAbbr} ${numNoPad}`,                       // CO 8
+        `${stateAbbr} ${padded2}`,                        // CO 08
+        `${stateAbbr}${districtNum}`,                     // CO08 / TX12
+        `${stateAbbr}${numNoPad}`,                        // CO8
         ...(stateName ? [
-          `${stateName} ${numNoPad}`,                     // Texas 12
-          `${stateName}'s ${ordinal}`,                    // Texas's 12th
-          `${stateName} ${ordinal}`,                      // Texas 12th
+          `${stateName} ${numNoPad}`,                     // Colorado 8
+          `${stateName}-${numNoPad}`,                     // Colorado-8
+          `${stateName}'s ${ordinal}`,                    // Colorado's 8th
+          `${stateName} ${ordinal}`,                      // Colorado 8th
           `${stateName} ${ordinal} congressional`,
           `${stateName} ${ordinal} district`,
         ] : []),
