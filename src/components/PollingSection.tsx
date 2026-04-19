@@ -1548,30 +1548,52 @@ function PollsterHeatmap({ polls, onSelectPoll }: { polls: PollEntry[]; onSelect
   return (
     <AnimatedCard>
       <div ref={ref} className="candidate-card p-5">
-        <h3 className="font-display text-sm font-semibold text-foreground mb-1">
-          Pollster Approval Heatmap
-        </h3>
-        <p className="text-xs text-muted-foreground mb-3">
-          Monthly approval rating by source — darker green = higher approval, red = lower
-        </p>
+        <div className="flex items-start justify-between gap-3 mb-1 flex-wrap">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              Pollster Approval Heatmap
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Monthly approval by source — darker green = higher, red = lower. Hover or click a cell for details.
+            </p>
+          </div>
+          {availableTopics.length > 1 && (
+            <select
+              value={topicFilter}
+              onChange={(e) => setTopicFilter(e.target.value)}
+              className="win98-sunken text-[10px] bg-background text-foreground px-1.5 py-1"
+              title="Filter heatmap by approval topic"
+            >
+              <option value="all">All approval topics ({heatData.totalPolls})</option>
+              {availableTopics.map(([t, n]) => (
+                <option key={t} value={t}>{t} ({n})</option>
+              ))}
+            </select>
+          )}
+        </div>
         <div className="overflow-x-auto">
-          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 500, maxHeight: 500 }}>
-            {/* Month headers */}
-            {heatData.sortedMonths.map((m, i) => (
-              <text
-                key={m}
-                x={LEFT + i * cellW + cellW / 2}
-                y={TOP - 8}
-                textAnchor="middle"
-                fontSize={9}
-                fill="hsl(var(--muted-foreground))"
-              >
-                {new Date(m + "-01").toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
-              </text>
-            ))}
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 500, maxHeight: 600 }}>
+            {/* Month headers — show every Nth label if many months to avoid clutter */}
+            {heatData.sortedMonths.map((m, i) => {
+              const showLabel = heatData.sortedMonths.length <= 18 || i % Math.ceil(heatData.sortedMonths.length / 18) === 0;
+              if (!showLabel) return null;
+              return (
+                <text
+                  key={m}
+                  x={LEFT + i * cellW + cellW / 2}
+                  y={TOP - 8}
+                  textAnchor="middle"
+                  fontSize={9}
+                  fill="hsl(var(--muted-foreground))"
+                >
+                  {new Date(m + "-01").toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
+                </text>
+              );
+            })}
             {/* Rows */}
             {heatData.sortedSources.map((src, si) => {
               const srcInfo = getSourceInfo(src);
+              const srcCount = heatData.sourceCounts.get(src) ?? 0;
               return (
                 <g key={src}>
                   <text
@@ -1582,10 +1604,20 @@ function PollsterHeatmap({ polls, onSelectPoll }: { polls: PollEntry[]; onSelect
                     fontWeight={500}
                     fill="hsl(var(--foreground))"
                   >
+                    <title>{srcInfo.name} — {srcCount} polls</title>
                     {srcInfo.name.length > 16 ? srcInfo.name.slice(0, 15) + "…" : srcInfo.name}
                   </text>
                   {heatData.sortedMonths.map((m, mi) => {
-                    const val = heatData.map.get(`${src}|${m}`);
+                    const cellKey = `${src}|${m}`;
+                    const val = heatData.map.get(cellKey);
+                    const det = heatData.detail.get(cellKey);
+                    const monthLabel = new Date(m + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" });
+                    const handleClick = () => {
+                      if (det && det.polls.length > 0 && onSelectPoll) {
+                        const mostRecent = [...det.polls].sort((a, b) => b.date_conducted.localeCompare(a.date_conducted))[0];
+                        onSelectPoll(mostRecent);
+                      }
+                    };
                     return (
                       <g key={m}>
                         <rect
@@ -1596,8 +1628,18 @@ function PollsterHeatmap({ polls, onSelectPoll }: { polls: PollEntry[]; onSelect
                           rx={3}
                           fill={heatColor(val)}
                           opacity={inView ? 0.85 : 0}
-                          style={{ transition: `opacity 0.5s ease ${(si * heatData.sortedMonths.length + mi) * 20}ms` }}
-                        />
+                          style={{
+                            transition: `opacity 0.5s ease ${(si * heatData.sortedMonths.length + mi) * 20}ms`,
+                            cursor: det ? "pointer" : "default",
+                          }}
+                          onClick={handleClick}
+                        >
+                          {det && (
+                            <title>
+                              {`${srcInfo.name} · ${monthLabel}\nApprove: ${val!.toFixed(1)}%${det.disAvg != null ? `\nDisapprove: ${det.disAvg.toFixed(1)}%\nNet: ${(val! - det.disAvg) >= 0 ? "+" : ""}${(val! - det.disAvg).toFixed(1)}pt` : ""}\n${det.count} poll${det.count !== 1 ? "s" : ""} this month${onSelectPoll ? "\nClick for details" : ""}`}
+                            </title>
+                          )}
+                        </rect>
                         {val != null && (
                           <text
                             x={LEFT + mi * cellW + (cellW - 2) / 2}
@@ -1608,7 +1650,10 @@ function PollsterHeatmap({ polls, onSelectPoll }: { polls: PollEntry[]; onSelect
                             fontWeight={600}
                             fill={val >= 46 ? "white" : val <= 38 ? "white" : "hsl(var(--foreground))"}
                             opacity={inView ? 1 : 0}
-                            style={{ transition: `opacity 0.3s ease ${(si * heatData.sortedMonths.length + mi) * 20 + 200}ms` }}
+                            style={{
+                              transition: `opacity 0.3s ease ${(si * heatData.sortedMonths.length + mi) * 20 + 200}ms`,
+                              pointerEvents: "none",
+                            }}
                           >
                             {Math.round(val)}
                           </text>
@@ -1621,12 +1666,17 @@ function PollsterHeatmap({ polls, onSelectPoll }: { polls: PollEntry[]; onSelect
             })}
           </svg>
         </div>
-        <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground flex-wrap">
           <span className="flex items-center gap-1">
             <span className="inline-block h-3 w-8 rounded" style={{ background: "linear-gradient(90deg, hsl(0, 50%, 55%), hsl(45, 50%, 70%), hsl(150, 55%, 45%))" }} />
             Low → High approval
           </span>
-          <span className="ml-auto">{heatData.sortedSources.length} sources × {heatData.sortedMonths.length} months</span>
+          <span>·</span>
+          <span>{heatData.totalPolls.toLocaleString()} polls</span>
+          <span>·</span>
+          <span>{heatData.sortedSources.length} sources × {heatData.sortedMonths.length} months</span>
+          <span>·</span>
+          <span>{Math.round((heatData.detail.size / (heatData.sortedSources.length * heatData.sortedMonths.length)) * 100)}% coverage</span>
         </div>
       </div>
     </AnimatedCard>
