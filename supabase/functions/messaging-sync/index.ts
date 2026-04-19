@@ -172,12 +172,18 @@ async function firecrawlSearch(query: string, firecrawlKey: string, limit = 3): 
       return [];
     }
     const data = await res.json();
-    return (data?.data || []).map((r: any) => ({
+    const rawResults = (data?.data || []).map((r: any) => ({
       markdown: r.markdown || "",
       title: r.title || r.metadata?.title || "",
       url: r.url || "",
       description: r.description || "",
     }));
+    // Run AI cleanup sequentially per result to avoid bursting the AI gateway.
+    const cleaned: Array<{ markdown: string; title: string; url: string; description: string }> = [];
+    for (const r of rawResults) {
+      cleaned.push({ ...r, markdown: await cleanContent(r.markdown, r.url) });
+    }
+    return cleaned;
   } catch (e) {
     console.error(`Firecrawl search error:`, (e as Error)?.message || e);
     return [];
