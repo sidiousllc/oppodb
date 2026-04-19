@@ -217,24 +217,31 @@ export function GroundNewsDetailWindow({ cluster, onClose, onSavePDF, contextLab
                   </div>
                 )}
                 {content && !scraping && (
-                  <div className="prose-research prose-sm max-w-none text-xs leading-relaxed text-foreground">
-                    <ReactMarkdown
-                      components={{
-                        a: ({ href, children }) => (
-                          <a
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#000080] underline hover:text-blue-700"
-                          >
-                            {children}
-                          </a>
-                        ),
-                      }}
-                    >
-                      {content}
-                    </ReactMarkdown>
-                  </div>
+                  <>
+                    {aiCleaned && (
+                      <div className="mb-2 inline-flex items-center gap-1 text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 rounded-sm">
+                        ✨ AI-cleaned · ads, share bars, and related-content widgets stripped
+                      </div>
+                    )}
+                    <div className="prose-research prose-sm max-w-none text-xs leading-relaxed text-foreground">
+                      <ReactMarkdown
+                        components={{
+                          a: ({ href, children }) => (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#000080] underline hover:text-blue-700"
+                            >
+                              {children}
+                            </a>
+                          ),
+                        }}
+                      >
+                        {content}
+                      </ReactMarkdown>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
