@@ -479,7 +479,7 @@ export function IntelHub() {
             return (
               <button
                 key={c.id}
-                onClick={() => setSelectedCluster(c)}
+                onClick={() => openCluster(c)}
                 className="w-full text-left border border-[#808080] bg-white hover:bg-[#e8e8ff] transition-colors p-2 space-y-1"
               >
                 <div className="flex items-start gap-2">
@@ -530,7 +530,7 @@ export function IntelHub() {
                     key={b.id}
                     onClick={() => {
                       const found = clusters.find(c => c.articles.some(a => a.title === b.title && a.source === b.source_name));
-                      setSelectedCluster(found ?? {
+                      openCluster(found ?? {
                         id: b.id,
                         lead: { title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary },
                         articles: [{ title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary }],
