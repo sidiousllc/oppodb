@@ -194,54 +194,74 @@ export function IntelHub() {
     }
   };
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    const pw = doc.internal.pageSize.width;
-    let y = 18;
+  /** Fetch the full scraped article body for one briefing. */
+  const fetchFullContent = async (b: Briefing): Promise<string | null> => {
+    if (!b.source_url) return null;
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-article", {
+        body: { url: b.source_url },
+      });
+      if (error || !data?.success) return null;
+      return typeof data.markdown === "string" && data.markdown.trim().length > 0
+        ? data.markdown
+        : null;
+    } catch {
+      return null;
+    }
+  };
 
-    const scopeLabel = SCOPE_CONFIG[activeScope].label;
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Intelligence Briefing — ${scopeLabel}`, pw / 2, y, { align: "center" });
-    y += 8;
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Generated: ${format(new Date(), "PPpp")}`, pw / 2, y, { align: "center" });
-    y += 10;
+  const briefingToArticle = (b: Briefing, content: string | null): IntelArticleForPdf => ({
+    title: b.title,
+    source: b.source_name,
+    pubDate: b.published_at,
+    link: b.source_url,
+    summary: b.summary,
+    content,
+  });
 
-    for (const b of filteredBriefings) {
-      if (y > 260) {
-        doc.addPage();
-        y = 18;
-      }
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      const titleLines = doc.splitTextToSize(b.title, pw - 30);
-      doc.text(titleLines, 15, y);
-      y += titleLines.length * 5 + 2;
+  /** Export the currently-selected briefings (or all filtered if none selected). */
+  const exportPDF = async () => {
+    const targets = selectedIds.size > 0
+      ? filteredBriefings.filter((b) => selectedIds.has(b.id))
+      : filteredBriefings;
 
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "italic");
-      doc.setTextColor(100, 100, 100);
-      doc.text(`${b.source_name} • ${b.published_at ? format(new Date(b.published_at), "PPp") : "Unknown date"}`, 15, y);
-      y += 5;
-      doc.setTextColor(0, 0, 0);
-
-      if (b.summary) {
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "normal");
-        const summaryLines = doc.splitTextToSize(b.summary, pw - 30);
-        const linesToPrint = summaryLines.slice(0, 6);
-        doc.text(linesToPrint, 15, y);
-        y += linesToPrint.length * 4 + 6;
-      } else {
-        y += 4;
-      }
+    if (targets.length === 0) {
+      toast.error("Nothing to export");
+      return;
     }
 
-    applyPdfBranding(doc);
-    doc.save(`intel-briefing-${activeScope}-${format(new Date(), "yyyy-MM-dd")}.pdf`);
-    toast.success("PDF exported");
+    setExporting(true);
+    const label = targets.length === 1 ? "article" : `${targets.length} articles`;
+    const t = toast.loading(`Building PDF — fetching full content for ${label}…`);
+
+    try {
+      // Fetch full articles in parallel (cap concurrency to be polite).
+      const articles: IntelArticleForPdf[] = [];
+      const CHUNK = 4;
+      for (let i = 0; i < targets.length; i += CHUNK) {
+        const batch = targets.slice(i, i + CHUNK);
+        const results = await Promise.all(batch.map(async (b) => briefingToArticle(b, await fetchFullContent(b))));
+        articles.push(...results);
+      }
+
+      const filename = targets.length === 1
+        ? `intel-${activeScope}-${format(new Date(), "yyyy-MM-dd")}.pdf`
+        : `intel-briefings-${activeScope}-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+
+      if (articles.length === 1) {
+        exportArticlePdf(articles[0], filename);
+      } else {
+        exportArticlesPdf(articles, filename);
+      }
+      toast.success(`Exported ${articles.length} ${articles.length === 1 ? "article" : "articles"}`, { id: t });
+      clearSelection();
+      setSelectionMode(false);
+    } catch (e) {
+      console.error("Export error:", e);
+      toast.error("PDF export failed", { id: t });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const filteredBriefings = briefings.filter((b) => {
