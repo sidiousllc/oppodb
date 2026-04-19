@@ -1453,40 +1453,82 @@ function DemographicBreakdownChart({ polls, onSelectPoll }: { polls: PollEntry[]
 
 // ─── Pollster Consistency Heatmap ────────────────────────────────────────────
 
-function PollsterHeatmap({ polls }: { polls: PollEntry[] }) {
+function PollsterHeatmap({ polls, onSelectPoll }: { polls: PollEntry[]; onSelectPoll?: (p: PollEntry) => void }) {
   const { ref, inView } = useInView();
+  const [topicFilter, setTopicFilter] = useState<string>("all");
+
+  // Build the universe of approval-style topics available
+  const availableTopics = useMemo(() => {
+    const topics = new Map<string, number>();
+    polls.forEach((p) => {
+      if (p.poll_type === "approval" && p.approve_pct != null && p.candidate_or_topic) {
+        topics.set(p.candidate_or_topic, (topics.get(p.candidate_or_topic) ?? 0) + 1);
+      }
+    });
+    return Array.from(topics.entries()).sort((a, b) => b[1] - a[1]);
+  }, [polls]);
 
   const heatData = useMemo(() => {
-    // Group approval polls by source × month
+    // Include ALL approval polls (across topics) to maximize data density.
+    // Optionally filter to a single topic via the dropdown.
     const approval = polls.filter(
-      (p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval" && p.approve_pct != null
+      (p) =>
+        p.poll_type === "approval" &&
+        p.approve_pct != null &&
+        (topicFilter === "all" || p.candidate_or_topic === topicFilter),
     );
     const sources = new Set<string>();
     const months = new Set<string>();
-    const map = new Map<string, number>();
+    // Aggregate: store sum + count + samples for proper averaging & tooltips
+    const agg = new Map<string, { sum: number; count: number; sumDis: number; countDis: number; polls: PollEntry[] }>();
 
     approval.forEach((p) => {
       const d = new Date(p.date_conducted + "T00:00:00");
+      if (isNaN(d.getTime())) return;
       const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       sources.add(p.source);
       months.add(month);
       const key = `${p.source}|${month}`;
-      // Average if multiple in same month
-      const existing = map.get(key);
-      if (existing != null) {
-        map.set(key, (existing + (p.approve_pct ?? 0)) / 2);
-      } else {
-        map.set(key, p.approve_pct ?? 0);
+      const cur = agg.get(key) ?? { sum: 0, count: 0, sumDis: 0, countDis: 0, polls: [] };
+      cur.sum += p.approve_pct ?? 0;
+      cur.count += 1;
+      if (p.disapprove_pct != null) {
+        cur.sumDis += p.disapprove_pct;
+        cur.countDis += 1;
       }
+      cur.polls.push(p);
+      agg.set(key, cur);
+    });
+
+    // Flat avg map for color rendering
+    const map = new Map<string, number>();
+    const detail = new Map<string, { avg: number; disAvg: number | null; count: number; polls: PollEntry[] }>();
+    agg.forEach((v, k) => {
+      const avg = v.sum / v.count;
+      const disAvg = v.countDis > 0 ? v.sumDis / v.countDis : null;
+      map.set(k, avg);
+      detail.set(k, { avg, disAvg, count: v.count, polls: v.polls });
     });
 
     const sortedMonths = Array.from(months).sort();
-    const sortedSources = Array.from(sources).sort((a, b) =>
-      getSourceInfo(a).name.localeCompare(getSourceInfo(b).name)
-    );
+    // Sort sources by total poll count desc (most prolific first), tie-break by name
+    const sourceCounts = new Map<string, number>();
+    approval.forEach((p) => sourceCounts.set(p.source, (sourceCounts.get(p.source) ?? 0) + 1));
+    const sortedSources = Array.from(sources).sort((a, b) => {
+      const diff = (sourceCounts.get(b) ?? 0) - (sourceCounts.get(a) ?? 0);
+      if (diff !== 0) return diff;
+      return getSourceInfo(a).name.localeCompare(getSourceInfo(b).name);
+    });
 
-    return { sortedMonths, sortedSources, map };
-  }, [polls]);
+    return {
+      sortedMonths,
+      sortedSources,
+      map,
+      detail,
+      totalPolls: approval.length,
+      sourceCounts,
+    };
+  }, [polls, topicFilter]);
 
   if (heatData.sortedSources.length < 2 || heatData.sortedMonths.length < 2) return null;
 
@@ -1506,30 +1548,52 @@ function PollsterHeatmap({ polls }: { polls: PollEntry[] }) {
   return (
     <AnimatedCard>
       <div ref={ref} className="candidate-card p-5">
-        <h3 className="font-display text-sm font-semibold text-foreground mb-1">
-          Pollster Approval Heatmap
-        </h3>
-        <p className="text-xs text-muted-foreground mb-3">
-          Monthly approval rating by source — darker green = higher approval, red = lower
-        </p>
+        <div className="flex items-start justify-between gap-3 mb-1 flex-wrap">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              Pollster Approval Heatmap
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Monthly approval by source — darker green = higher, red = lower. Hover or click a cell for details.
+            </p>
+          </div>
+          {availableTopics.length > 1 && (
+            <select
+              value={topicFilter}
+              onChange={(e) => setTopicFilter(e.target.value)}
+              className="win98-sunken text-[10px] bg-background text-foreground px-1.5 py-1"
+              title="Filter heatmap by approval topic"
+            >
+              <option value="all">All approval topics ({heatData.totalPolls})</option>
+              {availableTopics.map(([t, n]) => (
+                <option key={t} value={t}>{t} ({n})</option>
+              ))}
+            </select>
+          )}
+        </div>
         <div className="overflow-x-auto">
-          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 500, maxHeight: 500 }}>
-            {/* Month headers */}
-            {heatData.sortedMonths.map((m, i) => (
-              <text
-                key={m}
-                x={LEFT + i * cellW + cellW / 2}
-                y={TOP - 8}
-                textAnchor="middle"
-                fontSize={9}
-                fill="hsl(var(--muted-foreground))"
-              >
-                {new Date(m + "-01").toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
-              </text>
-            ))}
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 500, maxHeight: 600 }}>
+            {/* Month headers — show every Nth label if many months to avoid clutter */}
+            {heatData.sortedMonths.map((m, i) => {
+              const showLabel = heatData.sortedMonths.length <= 18 || i % Math.ceil(heatData.sortedMonths.length / 18) === 0;
+              if (!showLabel) return null;
+              return (
+                <text
+                  key={m}
+                  x={LEFT + i * cellW + cellW / 2}
+                  y={TOP - 8}
+                  textAnchor="middle"
+                  fontSize={9}
+                  fill="hsl(var(--muted-foreground))"
+                >
+                  {new Date(m + "-01").toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
+                </text>
+              );
+            })}
             {/* Rows */}
             {heatData.sortedSources.map((src, si) => {
               const srcInfo = getSourceInfo(src);
+              const srcCount = heatData.sourceCounts.get(src) ?? 0;
               return (
                 <g key={src}>
                   <text
@@ -1540,10 +1604,20 @@ function PollsterHeatmap({ polls }: { polls: PollEntry[] }) {
                     fontWeight={500}
                     fill="hsl(var(--foreground))"
                   >
+                    <title>{srcInfo.name} — {srcCount} polls</title>
                     {srcInfo.name.length > 16 ? srcInfo.name.slice(0, 15) + "…" : srcInfo.name}
                   </text>
                   {heatData.sortedMonths.map((m, mi) => {
-                    const val = heatData.map.get(`${src}|${m}`);
+                    const cellKey = `${src}|${m}`;
+                    const val = heatData.map.get(cellKey);
+                    const det = heatData.detail.get(cellKey);
+                    const monthLabel = new Date(m + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" });
+                    const handleClick = () => {
+                      if (det && det.polls.length > 0 && onSelectPoll) {
+                        const mostRecent = [...det.polls].sort((a, b) => b.date_conducted.localeCompare(a.date_conducted))[0];
+                        onSelectPoll(mostRecent);
+                      }
+                    };
                     return (
                       <g key={m}>
                         <rect
@@ -1554,8 +1628,18 @@ function PollsterHeatmap({ polls }: { polls: PollEntry[] }) {
                           rx={3}
                           fill={heatColor(val)}
                           opacity={inView ? 0.85 : 0}
-                          style={{ transition: `opacity 0.5s ease ${(si * heatData.sortedMonths.length + mi) * 20}ms` }}
-                        />
+                          style={{
+                            transition: `opacity 0.5s ease ${(si * heatData.sortedMonths.length + mi) * 20}ms`,
+                            cursor: det ? "pointer" : "default",
+                          }}
+                          onClick={handleClick}
+                        >
+                          {det && (
+                            <title>
+                              {`${srcInfo.name} · ${monthLabel}\nApprove: ${val!.toFixed(1)}%${det.disAvg != null ? `\nDisapprove: ${det.disAvg.toFixed(1)}%\nNet: ${(val! - det.disAvg) >= 0 ? "+" : ""}${(val! - det.disAvg).toFixed(1)}pt` : ""}\n${det.count} poll${det.count !== 1 ? "s" : ""} this month${onSelectPoll ? "\nClick for details" : ""}`}
+                            </title>
+                          )}
+                        </rect>
                         {val != null && (
                           <text
                             x={LEFT + mi * cellW + (cellW - 2) / 2}
@@ -1566,7 +1650,10 @@ function PollsterHeatmap({ polls }: { polls: PollEntry[] }) {
                             fontWeight={600}
                             fill={val >= 46 ? "white" : val <= 38 ? "white" : "hsl(var(--foreground))"}
                             opacity={inView ? 1 : 0}
-                            style={{ transition: `opacity 0.3s ease ${(si * heatData.sortedMonths.length + mi) * 20 + 200}ms` }}
+                            style={{
+                              transition: `opacity 0.3s ease ${(si * heatData.sortedMonths.length + mi) * 20 + 200}ms`,
+                              pointerEvents: "none",
+                            }}
                           >
                             {Math.round(val)}
                           </text>
@@ -1579,12 +1666,17 @@ function PollsterHeatmap({ polls }: { polls: PollEntry[] }) {
             })}
           </svg>
         </div>
-        <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground flex-wrap">
           <span className="flex items-center gap-1">
             <span className="inline-block h-3 w-8 rounded" style={{ background: "linear-gradient(90deg, hsl(0, 50%, 55%), hsl(45, 50%, 70%), hsl(150, 55%, 45%))" }} />
             Low → High approval
           </span>
-          <span className="ml-auto">{heatData.sortedSources.length} sources × {heatData.sortedMonths.length} months</span>
+          <span>·</span>
+          <span>{heatData.totalPolls.toLocaleString()} polls</span>
+          <span>·</span>
+          <span>{heatData.sortedSources.length} sources × {heatData.sortedMonths.length} months</span>
+          <span>·</span>
+          <span>{Math.round((heatData.detail.size / (heatData.sortedSources.length * heatData.sortedMonths.length)) * 100)}% coverage</span>
         </div>
       </div>
     </AnimatedCard>
@@ -2557,7 +2649,7 @@ export function PollingSection() {
       </div>
 
       {/* ─── Pollster Heatmap ─────────────────────────────────────────────── */}
-      <PollsterHeatmap polls={polls} />
+      <PollsterHeatmap polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
 
       {/* ─── Generic Ballot + Favorability ────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -2598,14 +2690,19 @@ export function PollingSection() {
                   <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Margin</th>
                   <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sample</th>
                   <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
-                  <th className="py-2.5 px-3"></th>
+                  <th className="py-2.5 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Details</th>
                 </tr>
               </thead>
               <tbody>
                 {latestBySource.map((poll) => {
                 const src = getSourceInfo(poll.source);
                 return (
-                  <tr key={poll.id} className="border-b border-border last:border-0 hover:bg-[hsl(var(--win98-light))] transition-colors">
+                  <tr
+                    key={poll.id}
+                    onClick={() => setSelectedPoll(poll)}
+                    className="border-b border-border last:border-0 hover:bg-[hsl(var(--win98-light))] transition-colors cursor-pointer"
+                    title="Click to view full poll details"
+                  >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: `hsl(${src.color})` }} />
@@ -2636,12 +2733,21 @@ export function PollingSection() {
                       <span> – {formatDate(poll.end_date)}</span>
                       }
                       </td>
-                      <td className="py-3 px-3">
-                        {poll.source_url &&
-                      <a href={poll.source_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                      }
+                      <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setSelectedPoll(poll)}
+                            className="win98-button text-[10px] px-2 py-0.5"
+                            title="View full poll details"
+                          >
+                            View
+                          </button>
+                          {poll.source_url &&
+                        <a href={poll.source_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors" title="Open original source">
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                        }
+                        </div>
                       </td>
                     </tr>);
 
