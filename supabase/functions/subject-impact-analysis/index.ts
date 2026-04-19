@@ -12,6 +12,12 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const ALLOWED_SUBJECTS = new Set(["district", "state_leg", "legislation", "polling", "country"]);
+const ALLOWED_MODELS = new Set([
+  "google/gemini-2.5-pro", "google/gemini-2.5-flash", "google/gemini-2.5-flash-lite",
+  "google/gemini-3-flash-preview", "google/gemini-3.1-pro-preview",
+  "openai/gpt-5", "openai/gpt-5-mini", "openai/gpt-5.2",
+]);
+const DEFAULT_MODEL = "google/gemini-2.5-flash";
 const SECTIONS = ["polling", "intel", "legislation", "finance", "forecasts", "international", "demographics"] as const;
 type Section = typeof SECTIONS[number];
 
