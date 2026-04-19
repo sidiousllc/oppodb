@@ -165,6 +165,16 @@ export function DistrictPollingPanel({ districtId }: { districtId: string }) {
 
   const allApproval = useMemo(() => [...approvalPolls, ...historicalApproval], [approvalPolls, historicalApproval]);
 
+  // Any polls matched by district pattern not already rendered in the curated buckets above
+  const otherPolls = useMemo(() => {
+    const usedIds = new Set<string>([
+      ...allApproval.map(p => p.id),
+      ...ballotPolls.map(p => p.id),
+      ...candidatePolls.map(p => p.id),
+    ]);
+    return polls.filter(p => !usedIds.has(p.id));
+  }, [polls, allApproval, ballotPolls, candidatePolls]);
+
   if (loading) {
     return (
       <div className="candidate-card mb-3 animate-pulse">
