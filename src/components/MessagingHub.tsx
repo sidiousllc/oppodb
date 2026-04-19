@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { exportMessagingPDF } from "@/lib/messagingExport";
 import { Win98Window } from "@/components/Win98Window";
 import { MessagingAIPanel } from "@/components/MessagingAIPanel";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 interface MessagingGuidance {
   id: string;
