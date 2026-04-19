@@ -258,6 +258,29 @@ export function IntelHub() {
 
   return (
     <div className="space-y-3">
+      {/* Top-level Tabs */}
+      <div className="flex items-center gap-1 flex-wrap border-b border-[#808080] pb-2">
+        {TABS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setActiveTab(t.value)}
+            className={`px-3 py-1 text-xs font-bold border ${
+              activeTab === t.value
+                ? "bg-[#000080] text-white border-[#000080]"
+                : "bg-[#c0c0c0] text-black border-[#808080] hover:bg-[#d4d4d4]"
+            }`}
+          >
+            {t.emoji} {t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "blindspots" && <BlindspotFeed />}
+      {activeTab === "my-bias" && <MyNewsBias />}
+      {activeTab === "url-check" && <UrlBiasCheck />}
+      {activeTab === "preferences" && <NewsPreferences />}
+
+      {activeTab === "feed" && (<>
       {/* Scope Tabs */}
       <div className="flex items-center gap-1 flex-wrap">
         {(Object.keys(SCOPE_CONFIG) as Scope[]).map((scope) => (
