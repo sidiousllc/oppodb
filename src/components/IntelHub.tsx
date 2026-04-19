@@ -602,20 +602,15 @@ export function IntelHub() {
           cluster={selectedCluster}
           onClose={() => setSelectedCluster(null)}
           contextLabel={`Intel — ${SCOPE_CONFIG[activeScope].label}`}
-          onSavePDF={(article) => {
-            const doc = new jsPDF();
-            const pw = doc.internal.pageSize.width;
-            let y = 18;
-            doc.setFontSize(14); doc.setFont("helvetica", "bold");
-            const titleLines = doc.splitTextToSize(article.title, pw - 30);
-            doc.text(titleLines, 15, y); y += titleLines.length * 6 + 4;
-            doc.setFontSize(9); doc.setFont("helvetica", "italic");
-            doc.text(`${article.source} • ${article.pubDate ? format(new Date(article.pubDate), "PPp") : ""}`, 15, y); y += 8;
-            doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-            const lines = doc.splitTextToSize(article.summary || article.title, pw - 30);
-            doc.text(lines, 15, y);
-            applyPdfBranding(doc);
-            doc.save(`intel-brief.pdf`);
+          onSavePDF={(article, fullContent) => {
+            exportArticlePdf({
+              title: article.title,
+              source: article.source,
+              pubDate: article.pubDate,
+              link: article.link,
+              summary: article.summary,
+              content: fullContent,
+            }, `intel-brief-${format(new Date(), "yyyy-MM-dd")}.pdf`);
             toast.success("PDF exported");
           }}
         />
