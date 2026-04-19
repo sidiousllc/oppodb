@@ -1453,40 +1453,82 @@ function DemographicBreakdownChart({ polls, onSelectPoll }: { polls: PollEntry[]
 
 // ─── Pollster Consistency Heatmap ────────────────────────────────────────────
 
-function PollsterHeatmap({ polls }: { polls: PollEntry[] }) {
+function PollsterHeatmap({ polls, onSelectPoll }: { polls: PollEntry[]; onSelectPoll?: (p: PollEntry) => void }) {
   const { ref, inView } = useInView();
+  const [topicFilter, setTopicFilter] = useState<string>("all");
+
+  // Build the universe of approval-style topics available
+  const availableTopics = useMemo(() => {
+    const topics = new Map<string, number>();
+    polls.forEach((p) => {
+      if (p.poll_type === "approval" && p.approve_pct != null && p.candidate_or_topic) {
+        topics.set(p.candidate_or_topic, (topics.get(p.candidate_or_topic) ?? 0) + 1);
+      }
+    });
+    return Array.from(topics.entries()).sort((a, b) => b[1] - a[1]);
+  }, [polls]);
 
   const heatData = useMemo(() => {
-    // Group approval polls by source × month
+    // Include ALL approval polls (across topics) to maximize data density.
+    // Optionally filter to a single topic via the dropdown.
     const approval = polls.filter(
-      (p) => p.poll_type === "approval" && p.candidate_or_topic === "Trump Approval" && p.approve_pct != null
+      (p) =>
+        p.poll_type === "approval" &&
+        p.approve_pct != null &&
+        (topicFilter === "all" || p.candidate_or_topic === topicFilter),
     );
     const sources = new Set<string>();
     const months = new Set<string>();
-    const map = new Map<string, number>();
+    // Aggregate: store sum + count + samples for proper averaging & tooltips
+    const agg = new Map<string, { sum: number; count: number; sumDis: number; countDis: number; polls: PollEntry[] }>();
 
     approval.forEach((p) => {
       const d = new Date(p.date_conducted + "T00:00:00");
+      if (isNaN(d.getTime())) return;
       const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       sources.add(p.source);
       months.add(month);
       const key = `${p.source}|${month}`;
-      // Average if multiple in same month
-      const existing = map.get(key);
-      if (existing != null) {
-        map.set(key, (existing + (p.approve_pct ?? 0)) / 2);
-      } else {
-        map.set(key, p.approve_pct ?? 0);
+      const cur = agg.get(key) ?? { sum: 0, count: 0, sumDis: 0, countDis: 0, polls: [] };
+      cur.sum += p.approve_pct ?? 0;
+      cur.count += 1;
+      if (p.disapprove_pct != null) {
+        cur.sumDis += p.disapprove_pct;
+        cur.countDis += 1;
       }
+      cur.polls.push(p);
+      agg.set(key, cur);
+    });
+
+    // Flat avg map for color rendering
+    const map = new Map<string, number>();
+    const detail = new Map<string, { avg: number; disAvg: number | null; count: number; polls: PollEntry[] }>();
+    agg.forEach((v, k) => {
+      const avg = v.sum / v.count;
+      const disAvg = v.countDis > 0 ? v.sumDis / v.countDis : null;
+      map.set(k, avg);
+      detail.set(k, { avg, disAvg, count: v.count, polls: v.polls });
     });
 
     const sortedMonths = Array.from(months).sort();
-    const sortedSources = Array.from(sources).sort((a, b) =>
-      getSourceInfo(a).name.localeCompare(getSourceInfo(b).name)
-    );
+    // Sort sources by total poll count desc (most prolific first), tie-break by name
+    const sourceCounts = new Map<string, number>();
+    approval.forEach((p) => sourceCounts.set(p.source, (sourceCounts.get(p.source) ?? 0) + 1));
+    const sortedSources = Array.from(sources).sort((a, b) => {
+      const diff = (sourceCounts.get(b) ?? 0) - (sourceCounts.get(a) ?? 0);
+      if (diff !== 0) return diff;
+      return getSourceInfo(a).name.localeCompare(getSourceInfo(b).name);
+    });
 
-    return { sortedMonths, sortedSources, map };
-  }, [polls]);
+    return {
+      sortedMonths,
+      sortedSources,
+      map,
+      detail,
+      totalPolls: approval.length,
+      sourceCounts,
+    };
+  }, [polls, topicFilter]);
 
   if (heatData.sortedSources.length < 2 || heatData.sortedMonths.length < 2) return null;
 
