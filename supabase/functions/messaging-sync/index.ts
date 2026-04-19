@@ -85,7 +85,7 @@ function makeSourceSlug(source: string, title: string): string {
 }
 
 function makeSlug(title: string): string {
-  return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+  return (title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 }
 
 /* ── Issue area detection ─────────────────────────────────── */
