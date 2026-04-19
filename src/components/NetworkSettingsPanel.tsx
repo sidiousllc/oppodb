@@ -14,8 +14,10 @@ const SYNC_TABLE_LABELS: Record<string, string> = {
   congress_bills: "Congress Bills",
   congress_committees: "Committees",
   congress_votes: "Congress Votes",
+  congressional_record: "Congressional Record",
   election_forecasts: "Election Forecasts",
   election_forecast_history: "Forecast History",
+  election_night_streams: "Election Night Streams",
   campaign_finance: "Campaign Finance",
   polling_data: "Polling Data",
   congressional_election_results: "Election Results",
@@ -32,6 +34,17 @@ const SYNC_TABLE_LABELS: Record<string, string> = {
   prediction_markets: "Prediction Markets",
   district_news_cache: "District News",
   wiki_pages: "Wiki Pages",
+  section_permissions: "Section Permissions",
+  international_profiles: "International Profiles",
+  international_elections: "International Elections",
+  international_leaders: "International Leaders",
+  court_cases: "Court Cases",
+  federal_spending: "Federal Spending",
+  fara_registrants: "FARA Registrants",
+  entity_relationships: "Entity Graph",
+  bill_impact_analyses: "Bill Impact Analyses",
+  intel_briefings: "Intel Briefings",
+  reports: "Reports",
 };
 
 /**
