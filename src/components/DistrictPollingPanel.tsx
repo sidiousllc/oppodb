@@ -51,17 +51,89 @@ export function DistrictPollingPanel({ districtId }: { districtId: string }) {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      // Fetch all polling data that could be district-scoped
+
+      // Build matchers for the district based on its ID, e.g. "TX-12" or "TX-AL".
+      const parts = districtId.split("-");
+      const stateAbbr = parts[0]?.toUpperCase() ?? "";
+      const districtNum = parts[1] ?? "";
+      const stateName = stateAbbrToName[stateAbbr] ?? "";
+      const numNoPad = districtNum.replace(/^0+/, "") || districtNum;
+      const ordinal = (() => {
+        const n = parseInt(numNoPad, 10);
+        if (!isFinite(n)) return "";
+        const s = ["th", "st", "nd", "rd"];
+        const v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+      })();
+
+      // District-name patterns we look for inside `candidate_or_topic` (case-insensitive).
+      const patterns: string[] = [
+        districtId.toUpperCase(),                         // TX-12
+        `${stateAbbr}-${numNoPad}`,                       // TX-12 (unpadded)
+        `${stateAbbr} ${numNoPad}`,                       // TX 12
+        `${stateAbbr}${districtNum}`,                     // TX12
+        ...(stateName ? [
+          `${stateName} ${numNoPad}`,                     // Texas 12
+          `${stateName}'s ${ordinal}`,                    // Texas's 12th
+          `${stateName} ${ordinal}`,                      // Texas 12th
+          `${stateName} ${ordinal} congressional`,
+          `${stateName} ${ordinal} district`,
+        ] : []),
+      ].filter(Boolean);
+
+      // Candidate names tied to this district (head-to-head / favorability matches).
+      const candidateNames: string[] = [];
+      try {
+        const slugs = getCandidatesForDistrict(districtId) ?? [];
+        slugs.forEach((slug) => {
+          const c = getCandidateBySlug(slug);
+          if (c?.name) candidateNames.push(c.name);
+        });
+      } catch {
+        /* ignore */
+      }
+
+      // Fetch all polling data — we'll filter client-side using multiple strategies.
       const { data } = await supabase
         .from("polling_data")
         .select("id, source, poll_type, candidate_or_topic, date_conducted, approve_pct, disapprove_pct, favor_pct, oppose_pct, margin, sample_size, sample_type, methodology, raw_data")
         .order("date_conducted", { ascending: false });
 
+      const lowerPatterns = patterns.map((p) => p.toLowerCase());
+      const lowerCandidates = candidateNames.map((n) => n.toLowerCase());
+
       const filtered = (data ?? []).filter((p: any) => {
         const rd = p.raw_data as any;
-        return rd?.scope === "district" && rd?.district_id === districtId;
+
+        // 1) Explicit district scope match (original behavior)
+        if (rd?.scope === "district" && rd?.district_id === districtId) return true;
+
+        // 2) raw_data fields that may carry state + district numbers
+        const rdState = (rd?.state_abbr || rd?.state || "").toString().toUpperCase();
+        const rdDistrict = (rd?.district || rd?.district_number || "").toString().replace(/^0+/, "");
+        if (rdState === stateAbbr && rdDistrict && rdDistrict === numNoPad) return true;
+
+        // 3) Topic / question text mentions the district
+        const topic = (p.candidate_or_topic || "").toString().toLowerCase();
+        const question = (rd?.question || "").toString().toLowerCase();
+        const haystack = `${topic} ${question}`;
+        if (lowerPatterns.some((pat) => haystack.includes(pat))) return true;
+
+        // 4) Topic mentions a known candidate from this district (favorability/H2H)
+        if (lowerCandidates.length > 0 && lowerCandidates.some((c) => topic.includes(c))) return true;
+
+        return false;
       });
-      setPolls(filtered);
+
+      // De-duplicate by id (in case of overlapping match strategies)
+      const seen = new Set<string>();
+      const deduped = filtered.filter((p: any) => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      });
+
+      setPolls(deduped);
       setLoading(false);
     }
     load();
