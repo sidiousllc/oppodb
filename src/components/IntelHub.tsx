@@ -66,7 +66,16 @@ const SCOPE_CONFIG: Record<Scope, { label: string; icon: React.ReactNode; emoji:
   international: { label: "International", icon: <Globe size={14} />, emoji: "🌍" },
 };
 
+const TABS: { value: IntelTab; label: string; emoji: string }[] = [
+  { value: "feed", label: "Feed", emoji: "📰" },
+  { value: "blindspots", label: "Blindspots", emoji: "🕳️" },
+  { value: "my-bias", label: "My Bias", emoji: "📊" },
+  { value: "url-check", label: "URL Check", emoji: "🔍" },
+  { value: "preferences", label: "Preferences", emoji: "⚙️" },
+];
+
 export function IntelHub() {
+  const [activeTab, setActiveTab] = useState<IntelTab>("feed");
   const [activeScope, setActiveScope] = useState<Scope>("national");
   const [briefings, setBriefings] = useState<Briefing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +87,33 @@ export function IntelHub() {
   const [partyLeaning, setPartyLeaning] = useState<PartyLeaning>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [groupMode, setGroupMode] = useState<"clusters" | "sources">("clusters");
+
+  // Track article read for "My Bias" history
+  const trackRead = useCallback(async (cluster: StoryCluster<ClusterableArticle>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const lead = cluster.lead;
+      const biasKey = classifyBias(lead.source);
+      const biasMap: Record<string, string> = {
+        L: "left", LL: "lean-left", C: "center", LR: "lean-right", R: "right", U: "unknown",
+      };
+      await (supabase.from("user_bias_history" as any) as any).insert({
+        user_id: user.id,
+        source_name: lead.source,
+        bias: biasMap[biasKey] || "unknown",
+        article_title: lead.title,
+        article_url: lead.link || null,
+      });
+    } catch (e) {
+      // Silent fail – tracking shouldn't block UX
+    }
+  }, []);
+
+  const openCluster = useCallback((c: StoryCluster<ClusterableArticle>) => {
+    setSelectedCluster(c);
+    trackRead(c);
+  }, [trackRead]);
 
   const fetchBriefings = useCallback(async () => {
     setLoading(true);
