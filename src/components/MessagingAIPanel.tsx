@@ -374,6 +374,13 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas, on
           </div>
           {impact && (
             <div className="space-y-2 text-[10px]">
+              {canSaveToItem && onSaveToItem && (
+                <div className="flex justify-end">
+                  <button onClick={() => handleSave("impact")} disabled={savingKind === "impact"} className="win98-button text-[10px] px-2 py-0.5">
+                    {savingKind === "impact" ? <Loader2 className="h-3 w-3 animate-spin" /> : "💾 Save to item"}
+                  </button>
+                </div>
+              )}
               <div className="bg-white border border-[hsl(var(--win98-shadow))] p-2">
                 <div className="font-bold mb-1">{impact.scope}{impact.scope_ref ? ` · ${impact.scope_ref}` : ""}</div>
                 <p className="opacity-80">{impact.summary}</p>
