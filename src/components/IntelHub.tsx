@@ -7,6 +7,12 @@ import jsPDF from "jspdf";
 import { applyPdfBranding } from "@/lib/pdfBranding";
 import { GroundNewsDetailWindow } from "@/components/GroundNewsDetailWindow";
 import { clusterArticles, classifyBias, BIAS_META, biasBarSegments, type StoryCluster, type ClusterableArticle } from "@/lib/newsBias";
+import { BlindspotFeed } from "@/components/intel/BlindspotFeed";
+import { MyNewsBias } from "@/components/intel/MyNewsBias";
+import { UrlBiasCheck } from "@/components/intel/UrlBiasCheck";
+import { NewsPreferences } from "@/components/intel/NewsPreferences";
+
+type IntelTab = "feed" | "blindspots" | "my-bias" | "url-check" | "preferences";
 
 type Scope = "local" | "state" | "national" | "international";
 

@@ -2954,6 +2954,155 @@ export type Database = {
         }
         Relationships: []
       }
+      news_source_ratings: {
+        Row: {
+          bias: string
+          confidence: number | null
+          country: string | null
+          created_at: string
+          factuality: string
+          id: string
+          is_sponsored: boolean
+          notes: string | null
+          ownership: string | null
+          rating_source: string
+          source_domain: string | null
+          source_name: string
+          updated_at: string
+        }
+        Insert: {
+          bias: string
+          confidence?: number | null
+          country?: string | null
+          created_at?: string
+          factuality?: string
+          id?: string
+          is_sponsored?: boolean
+          notes?: string | null
+          ownership?: string | null
+          rating_source?: string
+          source_domain?: string | null
+          source_name: string
+          updated_at?: string
+        }
+        Update: {
+          bias?: string
+          confidence?: number | null
+          country?: string | null
+          created_at?: string
+          factuality?: string
+          id?: string
+          is_sponsored?: boolean
+          notes?: string | null
+          ownership?: string | null
+          rating_source?: string
+          source_domain?: string | null
+          source_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      news_stories: {
+        Row: {
+          article_count: number
+          blindspot_side: string | null
+          category: string | null
+          center_count: number
+          center_pct: number | null
+          created_at: string
+          first_seen_at: string
+          id: string
+          is_blindspot: boolean
+          last_updated_at: string
+          left_count: number
+          left_pct: number | null
+          right_count: number
+          right_pct: number | null
+          scope: string
+          summary: string | null
+          title: string
+          topic_keywords: string[] | null
+          unrated_count: number
+        }
+        Insert: {
+          article_count?: number
+          blindspot_side?: string | null
+          category?: string | null
+          center_count?: number
+          center_pct?: number | null
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          is_blindspot?: boolean
+          last_updated_at?: string
+          left_count?: number
+          left_pct?: number | null
+          right_count?: number
+          right_pct?: number | null
+          scope?: string
+          summary?: string | null
+          title: string
+          topic_keywords?: string[] | null
+          unrated_count?: number
+        }
+        Update: {
+          article_count?: number
+          blindspot_side?: string | null
+          category?: string | null
+          center_count?: number
+          center_pct?: number | null
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          is_blindspot?: boolean
+          last_updated_at?: string
+          left_count?: number
+          left_pct?: number | null
+          right_count?: number
+          right_pct?: number | null
+          scope?: string
+          summary?: string | null
+          title?: string
+          topic_keywords?: string[] | null
+          unrated_count?: number
+        }
+        Relationships: []
+      }
+      news_story_articles: {
+        Row: {
+          added_at: string
+          bias: string | null
+          briefing_id: string
+          id: string
+          source_name: string
+          story_id: string
+        }
+        Insert: {
+          added_at?: string
+          bias?: string | null
+          briefing_id: string
+          id?: string
+          source_name: string
+          story_id: string
+        }
+        Update: {
+          added_at?: string
+          bias?: string | null
+          briefing_id?: string
+          id?: string
+          source_name?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_story_articles_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "news_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string
@@ -4449,6 +4598,54 @@ export type Database = {
         }
         Relationships: []
       }
+      url_bias_checks: {
+        Row: {
+          ai_model: string | null
+          bias: string | null
+          checked_by: string | null
+          created_at: string
+          excerpt: string | null
+          expires_at: string | null
+          factuality: string | null
+          id: string
+          reasoning: string | null
+          source_name: string | null
+          title: string | null
+          url: string
+          url_hash: string
+        }
+        Insert: {
+          ai_model?: string | null
+          bias?: string | null
+          checked_by?: string | null
+          created_at?: string
+          excerpt?: string | null
+          expires_at?: string | null
+          factuality?: string | null
+          id?: string
+          reasoning?: string | null
+          source_name?: string | null
+          title?: string | null
+          url: string
+          url_hash: string
+        }
+        Update: {
+          ai_model?: string | null
+          bias?: string | null
+          checked_by?: string | null
+          created_at?: string
+          excerpt?: string | null
+          expires_at?: string | null
+          factuality?: string | null
+          id?: string
+          reasoning?: string | null
+          source_name?: string | null
+          title?: string | null
+          url?: string
+          url_hash?: string
+        }
+        Relationships: []
+      }
       user_activity_logs: {
         Row: {
           activity_type: string
@@ -4469,6 +4666,33 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_bias_history: {
+        Row: {
+          bias: string
+          briefing_id: string | null
+          id: string
+          read_at: string
+          source_name: string
+          user_id: string
+        }
+        Insert: {
+          bias: string
+          briefing_id?: string | null
+          id?: string
+          read_at?: string
+          source_name: string
+          user_id: string
+        }
+        Update: {
+          bias?: string
+          briefing_id?: string | null
+          id?: string
+          read_at?: string
+          source_name?: string
           user_id?: string
         }
         Relationships: []
@@ -4657,6 +4881,51 @@ export type Database = {
           is_active?: boolean
           label?: string
           platform?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_news_preferences: {
+        Row: {
+          blocked_sources: string[] | null
+          created_at: string
+          digest_frequency: string | null
+          digest_last_sent_at: string | null
+          followed_regions: string[] | null
+          followed_sources: string[] | null
+          followed_topics: string[] | null
+          hide_sponsored: boolean
+          min_factuality: string | null
+          preferred_bias_balance: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blocked_sources?: string[] | null
+          created_at?: string
+          digest_frequency?: string | null
+          digest_last_sent_at?: string | null
+          followed_regions?: string[] | null
+          followed_sources?: string[] | null
+          followed_topics?: string[] | null
+          hide_sponsored?: boolean
+          min_factuality?: string | null
+          preferred_bias_balance?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blocked_sources?: string[] | null
+          created_at?: string
+          digest_frequency?: string | null
+          digest_last_sent_at?: string | null
+          followed_regions?: string[] | null
+          followed_sources?: string[] | null
+          followed_topics?: string[] | null
+          hide_sponsored?: boolean
+          min_factuality?: string | null
+          preferred_bias_balance?: string | null
           updated_at?: string
           user_id?: string
         }
