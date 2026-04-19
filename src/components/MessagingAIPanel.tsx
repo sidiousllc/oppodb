@@ -62,6 +62,7 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas, on
   const [impactScope, setImpactScope] = useState("national");
   const [impactScopeRef, setImpactScopeRef] = useState("");
   const [impact, setImpact] = useState<any>(null);
+  const [savingKind, setSavingKind] = useState<string | null>(null);
 
   function toggleSection(key: string) {
     setSections((prev) => (prev.includes(key) ? prev.filter((s) => s !== key) : [...prev, key]));
@@ -128,7 +129,7 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas, on
     finally { setImpactLoading(false); }
   }
 
-  const [savingKind, setSavingKind] = useState<string | null>(null);
+  // savingKind hook moved up with other hooks
   function tpToMarkdown(t: any) {
     const lines = [`### 🗣️ Talking Points — ${t.audience}/${t.angle} _(${t.model})_`];
     (t.points || []).forEach((p: any, i: number) => {
