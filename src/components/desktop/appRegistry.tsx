@@ -164,15 +164,22 @@ function OppoHubWindow({ initialSlug, openApp }: { initialSlug?: string; openApp
 function LegHubWindow({ initialSlug, openApp }: { initialSlug?: string; openApp: AppRenderContext["openApp"] }) {
   const [districts, setDistricts] = useState<DistrictProfile[]>([]);
   const [stateLeg, setStateLeg] = useState<StateLegislativeProfile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [stateLegLoading, setStateLegLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(initialSlug ?? null);
 
+  // Fetch district intel and state-leg independently so district intel
+  // (maps + cards) renders immediately without waiting on the much larger
+  // 12k-row state legislative pagination.
   useEffect(() => {
     let c = false;
-    Promise.all([fetchAllDistricts(), fetchStateLegislativeDistricts()])
-      .then(([d, s]) => { if (!c) { setDistricts(d); setStateLeg(s); } })
-      .finally(() => !c && setLoading(false));
+    fetchAllDistricts()
+      .then(d => { if (!c) setDistricts(d); })
+      .catch(err => console.error("fetchAllDistricts failed:", err));
+    fetchStateLegislativeDistricts()
+      .then(s => { if (!c) setStateLeg(s); })
+      .catch(err => console.error("fetchStateLegislativeDistricts failed:", err))
+      .finally(() => { if (!c) setStateLegLoading(false); });
     return () => { c = true; };
   }, []);
 
@@ -188,7 +195,7 @@ function LegHubWindow({ initialSlug, openApp }: { initialSlug?: string; openApp:
   return (
     <LegHub
       stateLegDistricts={stateLeg}
-      stateLegLoading={loading}
+      stateLegLoading={stateLegLoading}
       onStateLegSync={handleSync}
       stateLegSyncing={syncing}
       districts={districts}
