@@ -480,9 +480,16 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     console.error("MIT Election Lab sync error:", err);
+    // Return 200 with fallback signal so the client can degrade gracefully
+    // instead of treating upstream/network failures as a hard crash.
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({
+        error: err instanceof Error ? err.message : "Unknown error",
+        fallback: true,
+        total_synced: 0,
+        total_errors: 1,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

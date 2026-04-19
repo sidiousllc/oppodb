@@ -226,6 +226,10 @@ export function MITElectionHistoryPanel({ districtId }: MITElectionHistoryPanelP
       );
       if (error) {
         toast.error("Sync failed: " + error.message);
+      } else if (data?.fallback) {
+        // Upstream (Harvard Dataverse) is temporarily unavailable — show existing cached data
+        toast.warning("Election history source temporarily unavailable. Showing cached data.");
+        fetchData();
       } else {
         toast.success(`Synced ${data?.total_synced || 0} House election records for ${stateAbbr}`);
         fetchData();
