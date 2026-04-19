@@ -33,7 +33,7 @@ const MODELS = [
 
 type SubTab = "talking" | "audience" | "impact";
 
-export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas }: MessagingAIPanelProps) {
+export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas, onSaveToItem, canSaveToItem }: MessagingAIPanelProps) {
   const [tab, setTab] = useState<SubTab>("talking");
 
   // Shared settings
