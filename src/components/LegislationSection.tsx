@@ -116,7 +116,10 @@ interface SponsoredBill {
   bill_id: number;
   bill_number: string;
   title: string;
+  description?: string;
   session?: { session_id: number; session_name: string };
+  url?: string;
+  state_link?: string;
 }
 
 interface SessionInfo {
@@ -439,7 +442,7 @@ function PersonDetailView({
   person: PersonDetail;
   sponsoredBills: SponsoredBill[];
   onBack: () => void;
-  onBillClick: (billId: number) => void;
+  onBillClick: (bill: SponsoredBill) => void;
 }) {
   return (
     <div className="animate-fade-in">
@@ -506,17 +509,31 @@ function PersonDetailView({
           <h3 className="font-display text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" /> Sponsored Bills ({sponsoredBills.length})
           </h3>
-          <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
-            {sponsoredBills.map((b) => (
-              <button
-                key={b.bill_id}
-                onClick={() => onBillClick(b.bill_id)}
-                className="w-full text-left flex items-start gap-2 text-xs border-b border-border/30 pb-1.5 hover:bg-muted/50 rounded px-1 transition-colors"
-              >
-                <span className="font-bold text-primary shrink-0">{b.bill_number}</span>
-                <span className="text-foreground line-clamp-1">{b.title}</span>
-              </button>
-            ))}
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {sponsoredBills.map((b) => {
+              const displayTitle = b.title && b.title !== "Untitled" ? b.title : (b.bill_number || `Bill #${b.bill_id}`);
+              const summary = b.description?.trim();
+              return (
+                <button
+                  key={b.bill_id}
+                  type="button"
+                  onClick={() => onBillClick(b)}
+                  className="w-full text-left flex items-start gap-3 text-xs border border-border/50 bg-background/70 hover:bg-muted/50 rounded-lg px-2 py-2 transition-colors"
+                  title={displayTitle}
+                >
+                  <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold border bg-primary/10 text-primary border-primary/25 shrink-0 mt-0.5">
+                    {b.bill_number || `#${b.bill_id}`}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-foreground font-medium leading-snug line-clamp-2">{displayTitle}</div>
+                    <div className="text-muted-foreground text-[10px] leading-snug mt-1 line-clamp-2">
+                      {summary || "Open bill details to view the summary, sponsors, status, and history."}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-1" />
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1059,6 +1076,7 @@ function SessionCard({ session, onClick }: { session: SessionInfo; onClick: () =
 
 export function LegislationSection() {
   const { user } = useAuth();
+  const { openWindow } = useWindowManager();
   const [tab, setTab] = useState<Tab>("bills");
   const [searchQuery, setSearchQuery] = useState("");
   const [stateFilter, setStateFilter] = useState("US");
@@ -1225,11 +1243,54 @@ export function LegislationSection() {
       ]);
       if (personData?.person) {
         setSelectedPerson(personData.person);
-        const sponsored = sponsoredData?.sponsoredbills?.bills || [];
-        // sponsoredData could also be a dict keyed by index
-        const billArr: SponsoredBill[] = Array.isArray(sponsored) ? sponsored :
-          Object.values(sponsored).filter((b: any) => b?.bill_id);
-        setSponsoredBills(billArr);
+        const sponsored = sponsoredData?.sponsoredbills?.bills || {};
+        const rawBills: any[] = Array.isArray(sponsored)
+          ? sponsored
+          : Object.values(sponsored).filter((b: any) => b?.bill_id);
+
+        const billsWithDetails: SponsoredBill[] = [];
+        const BATCH_SIZE = 10;
+        const toFetch = rawBills.slice(0, 100);
+
+        for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
+          const batch = toFetch.slice(i, i + BATCH_SIZE);
+          const details = await Promise.all(
+            batch.map((b) => callLegiScan({ op: "getBill", id: String(b.bill_id) }).catch(() => null))
+          );
+
+          for (let j = 0; j < batch.length; j++) {
+            const raw = batch[j];
+            const detail = details[j]?.bill;
+            billsWithDetails.push({
+              bill_id: raw.bill_id,
+              bill_number: detail?.bill_number || raw.number || raw.bill_number || "",
+              title: detail?.title || raw.title || raw.number || "Untitled",
+              description: detail?.description || raw.description || "",
+              session: detail?.session
+                ? { session_id: detail.session.session_id, session_name: detail.session.session_name }
+                : raw.session_id
+                  ? { session_id: raw.session_id, session_name: "" }
+                  : undefined,
+              url: detail?.url || raw.url,
+              state_link: detail?.state_link || raw.state_link,
+            });
+          }
+        }
+
+        for (let i = 100; i < rawBills.length; i++) {
+          const raw = rawBills[i];
+          billsWithDetails.push({
+            bill_id: raw.bill_id,
+            bill_number: raw.number || raw.bill_number || "",
+            title: raw.title || raw.number || "Untitled",
+            description: raw.description || "",
+            session: raw.session_id ? { session_id: raw.session_id, session_name: "" } : undefined,
+            url: raw.url,
+            state_link: raw.state_link,
+          });
+        }
+
+        setSponsoredBills(billsWithDetails);
         setSubView("person");
       }
     } catch (e) {
@@ -1313,7 +1374,16 @@ export function LegislationSection() {
         person={selectedPerson}
         sponsoredBills={sponsoredBills}
         onBack={() => setSubView(searchPerformed ? null : "bill")}
-        onBillClick={loadBill}
+        onBillClick={(bill) => {
+          const displayTitle = bill.title && bill.title !== "Untitled" ? bill.title : (bill.bill_number || `Bill #${bill.bill_id}`);
+          openWindow({
+            appId: "bill-detail",
+            title: `${bill.bill_number || "Bill"} — ${displayTitle.slice(0, 40)}`,
+            icon: "📜",
+            payload: { billId: bill.bill_id, billNumber: bill.bill_number, title: displayTitle },
+            size: { width: 560, height: 600 },
+          });
+        }}
       />
     );
   }
