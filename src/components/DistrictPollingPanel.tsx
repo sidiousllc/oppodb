@@ -56,7 +56,7 @@ export function DistrictPollingPanel({ districtId }: { districtId: string }) {
       const parts = districtId.split("-");
       const stateAbbr = parts[0]?.toUpperCase() ?? "";
       const districtNum = parts[1] ?? "";
-      const stateName = stateAbbrToName[stateAbbr] ?? "";
+      const stateName = stateAbbr ? stateAbbrToName(stateAbbr) : "";
       const numNoPad = districtNum.replace(/^0+/, "") || districtNum;
       const ordinal = (() => {
         const n = parseInt(numNoPad, 10);
