@@ -15,7 +15,8 @@ import {
 interface Props {
   cluster: StoryCluster<ClusterableArticle>;
   onClose: () => void;
-  onSavePDF?: (article: ClusterableArticle) => void;
+  /** Receives the active article plus its currently-loaded full content (if any). */
+  onSavePDF?: (article: ClusterableArticle, content: string | null) => void;
   /** Header label, e.g., "Intel Briefing" or "District News". */
   contextLabel?: string;
 }
