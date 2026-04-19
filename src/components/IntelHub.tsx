@@ -66,7 +66,16 @@ const SCOPE_CONFIG: Record<Scope, { label: string; icon: React.ReactNode; emoji:
   international: { label: "International", icon: <Globe size={14} />, emoji: "🌍" },
 };
 
+const TABS: { value: IntelTab; label: string; emoji: string }[] = [
+  { value: "feed", label: "Feed", emoji: "📰" },
+  { value: "blindspots", label: "Blindspots", emoji: "🕳️" },
+  { value: "my-bias", label: "My Bias", emoji: "📊" },
+  { value: "url-check", label: "URL Check", emoji: "🔍" },
+  { value: "preferences", label: "Preferences", emoji: "⚙️" },
+];
+
 export function IntelHub() {
+  const [activeTab, setActiveTab] = useState<IntelTab>("feed");
   const [activeScope, setActiveScope] = useState<Scope>("national");
   const [briefings, setBriefings] = useState<Briefing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +87,33 @@ export function IntelHub() {
   const [partyLeaning, setPartyLeaning] = useState<PartyLeaning>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [groupMode, setGroupMode] = useState<"clusters" | "sources">("clusters");
+
+  // Track article read for "My Bias" history
+  const trackRead = useCallback(async (cluster: StoryCluster<ClusterableArticle>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const lead = cluster.lead;
+      const biasKey = classifyBias(lead.source);
+      const biasMap: Record<string, string> = {
+        L: "left", LL: "lean-left", C: "center", LR: "lean-right", R: "right", U: "unknown",
+      };
+      await (supabase.from("user_bias_history" as any) as any).insert({
+        user_id: user.id,
+        source_name: lead.source,
+        bias: biasMap[biasKey] || "unknown",
+        article_title: lead.title,
+        article_url: lead.link || null,
+      });
+    } catch (e) {
+      // Silent fail – tracking shouldn't block UX
+    }
+  }, []);
+
+  const openCluster = useCallback((c: StoryCluster<ClusterableArticle>) => {
+    setSelectedCluster(c);
+    trackRead(c);
+  }, [trackRead]);
 
   const fetchBriefings = useCallback(async () => {
     setLoading(true);
@@ -222,6 +258,29 @@ export function IntelHub() {
 
   return (
     <div className="space-y-3">
+      {/* Top-level Tabs */}
+      <div className="flex items-center gap-1 flex-wrap border-b border-[#808080] pb-2">
+        {TABS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setActiveTab(t.value)}
+            className={`px-3 py-1 text-xs font-bold border ${
+              activeTab === t.value
+                ? "bg-[#000080] text-white border-[#000080]"
+                : "bg-[#c0c0c0] text-black border-[#808080] hover:bg-[#d4d4d4]"
+            }`}
+          >
+            {t.emoji} {t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "blindspots" && <BlindspotFeed />}
+      {activeTab === "my-bias" && <MyNewsBias />}
+      {activeTab === "url-check" && <UrlBiasCheck />}
+      {activeTab === "preferences" && <NewsPreferences />}
+
+      {activeTab === "feed" && (<>
       {/* Scope Tabs */}
       <div className="flex items-center gap-1 flex-wrap">
         {(Object.keys(SCOPE_CONFIG) as Scope[]).map((scope) => (
@@ -420,7 +479,7 @@ export function IntelHub() {
             return (
               <button
                 key={c.id}
-                onClick={() => setSelectedCluster(c)}
+                onClick={() => openCluster(c)}
                 className="w-full text-left border border-[#808080] bg-white hover:bg-[#e8e8ff] transition-colors p-2 space-y-1"
               >
                 <div className="flex items-start gap-2">
@@ -471,7 +530,7 @@ export function IntelHub() {
                     key={b.id}
                     onClick={() => {
                       const found = clusters.find(c => c.articles.some(a => a.title === b.title && a.source === b.source_name));
-                      setSelectedCluster(found ?? {
+                      openCluster(found ?? {
                         id: b.id,
                         lead: { title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary },
                         articles: [{ title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary }],
@@ -497,6 +556,7 @@ export function IntelHub() {
           ))}
         </div>
       )}
+      </>)}
 
       {selectedCluster && (
         <GroundNewsDetailWindow
@@ -524,6 +584,7 @@ export function IntelHub() {
     </div>
   );
 }
+
 
 // Tiny inline bias chip used on each card.
 function BiasChip({ source }: { source: string }) {
