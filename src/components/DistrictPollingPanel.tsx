@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp } from "lucide-react";
+import { stateAbbrToName } from "@/lib/stateAbbreviations";
+import { getCandidatesForDistrict } from "@/data/candidateDistricts";
+import { getCandidateBySlug } from "@/data/candidates";
 
 interface PollRow {
   id: string;
