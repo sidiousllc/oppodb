@@ -188,6 +188,14 @@ export function MessagingHub() {
             </div>
           </div>
 
+          <MessagingAIPanel
+            messagingSlug={selectedItem.slug}
+            messagingTitle={selectedItem.title}
+            issueAreas={selectedItem.issue_areas || []}
+            canSaveToItem={isAdmin}
+            onSaveToItem={(md, kind) => handleSaveAIToItem(selectedItem, md, kind)}
+          />
+
           <div className="border-t border-[hsl(var(--win98-shadow))] pt-3">
             {selectedItem.summary && (
               <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-3 italic">{selectedItem.summary}</p>
@@ -202,11 +210,6 @@ export function MessagingHub() {
               </p>
             )}
           </div>
-          <MessagingAIPanel
-            messagingSlug={selectedItem.slug}
-            messagingTitle={selectedItem.title}
-            issueAreas={selectedItem.issue_areas || []}
-          />
         </div>
       </Win98Window>
     );
