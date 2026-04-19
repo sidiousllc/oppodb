@@ -28,6 +28,7 @@ import { DistrictDetail } from "@/components/DistrictDetail";
 import { AIHistoryWindow } from "@/components/AIHistoryWindow";
 import { TaskManagerWindow } from "@/components/TaskManagerWindow";
 import { AlertsHub } from "@/components/AlertsHub";
+import { BillDetailWindow } from "@/components/BillDetailWindow";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
@@ -439,6 +440,21 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     icon: "🕸️",
     singleton: true,
     render: () => <div className="p-3"><GraphHub /></div>,
+  },
+
+  // ─── Bill detail (one window per bill) ──────────────────────────────────────
+  "bill-detail": {
+    id: "bill-detail",
+    title: "Bill Details",
+    icon: "📜",
+    size: { width: 560, height: 600 },
+    render: (payload) => (
+      <BillDetailWindow
+        billId={Number(payload?.billId)}
+        billNumber={payload?.billNumber as string | undefined}
+        fallbackTitle={payload?.title as string | undefined}
+      />
+    ),
   },
 
   // ─── OSINT tool launcher (one window per tool instance) ────────────────────
