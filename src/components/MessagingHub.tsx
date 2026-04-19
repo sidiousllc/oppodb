@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { exportMessagingPDF } from "@/lib/messagingExport";
 import { Win98Window } from "@/components/Win98Window";
 import { MessagingAIPanel } from "@/components/MessagingAIPanel";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 interface MessagingGuidance {
   id: string;
@@ -39,8 +40,23 @@ function getPartyBadge(areas: string[]): string | null {
 }
 
 export function MessagingHub() {
+  const { isAdmin } = useIsAdmin();
   const [items, setItems] = useState<MessagingGuidance[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleSaveAIToItem = useCallback(async (item: MessagingGuidance, markdown: string, kind: string) => {
+    const stamp = new Date().toLocaleString();
+    const heading = `\n\n---\n\n_Saved ${stamp} · AI ${kind}_\n\n${markdown}\n`;
+    const newContent = (item.content || "") + heading;
+    const { error } = await supabase
+      .from("messaging_guidance")
+      .update({ content: newContent })
+      .eq("id", item.id);
+    if (error) { toast.error(error.message); return; }
+    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, content: newContent } : i));
+    setSelectedItem((cur) => cur && cur.id === item.id ? { ...cur, content: newContent } : cur);
+    toast.success("Saved to messaging item");
+  }, []);
   const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -172,6 +188,14 @@ export function MessagingHub() {
             </div>
           </div>
 
+          <MessagingAIPanel
+            messagingSlug={selectedItem.slug}
+            messagingTitle={selectedItem.title}
+            issueAreas={selectedItem.issue_areas || []}
+            canSaveToItem={isAdmin}
+            onSaveToItem={(md, kind) => handleSaveAIToItem(selectedItem, md, kind)}
+          />
+
           <div className="border-t border-[hsl(var(--win98-shadow))] pt-3">
             {selectedItem.summary && (
               <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-3 italic">{selectedItem.summary}</p>
@@ -186,11 +210,6 @@ export function MessagingHub() {
               </p>
             )}
           </div>
-          <MessagingAIPanel
-            messagingSlug={selectedItem.slug}
-            messagingTitle={selectedItem.title}
-            issueAreas={selectedItem.issue_areas || []}
-          />
         </div>
       </Win98Window>
     );

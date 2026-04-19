@@ -7,6 +7,9 @@ interface MessagingAIPanelProps {
   messagingSlug: string;
   messagingTitle: string;
   issueAreas: string[];
+  /** When provided, renders "Save to item" buttons that append generated artifacts to the messaging item's content. */
+  onSaveToItem?: (markdown: string, kind: "talking" | "audience" | "impact") => Promise<void> | void;
+  canSaveToItem?: boolean;
 }
 
 const ALL_SECTIONS = [
@@ -30,7 +33,7 @@ const MODELS = [
 
 type SubTab = "talking" | "audience" | "impact";
 
-export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas }: MessagingAIPanelProps) {
+export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas, onSaveToItem, canSaveToItem }: MessagingAIPanelProps) {
   const [tab, setTab] = useState<SubTab>("talking");
 
   // Shared settings
@@ -59,6 +62,7 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas }: 
   const [impactScope, setImpactScope] = useState("national");
   const [impactScopeRef, setImpactScopeRef] = useState("");
   const [impact, setImpact] = useState<any>(null);
+  const [savingKind, setSavingKind] = useState<string | null>(null);
 
   function toggleSection(key: string) {
     setSections((prev) => (prev.includes(key) ? prev.filter((s) => s !== key) : [...prev, key]));
@@ -123,6 +127,55 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas }: 
       toast.success(data.cached ? "Loaded cached impact analysis" : "Impact analysis generated");
     } catch (e: any) { toast.error(e?.message || "Failed"); }
     finally { setImpactLoading(false); }
+  }
+
+  // savingKind hook moved up with other hooks
+  function tpToMarkdown(t: any) {
+    const lines = [`### 🗣️ Talking Points — ${t.audience}/${t.angle} _(${t.model})_`];
+    (t.points || []).forEach((p: any, i: number) => {
+      lines.push(`${i + 1}. **${p.message}**`);
+      if (p.rationale) lines.push(`   - _Why:_ ${p.rationale}`);
+      if (p.delivery_tips) lines.push(`   - _Tip:_ ${p.delivery_tips}`);
+    });
+    if ((t.evidence || []).length) {
+      lines.push(`\n**Evidence**`);
+      t.evidence.forEach((e: any) => lines.push(`- ${e.claim}${e.source_hint ? ` — ${e.source_hint}` : ""}`));
+    }
+    return lines.join("\n");
+  }
+  function audToMarkdown(a: any) {
+    const lines = [`### 🎯 Audience Effectiveness — ${Math.round(a.effectiveness_score)}/100`];
+    if (a.summary) lines.push(a.summary);
+    if (a.audience_scores) {
+      lines.push(`\n**Audience scores:** ${Object.entries(a.audience_scores).map(([k, v]: any) => `${k} ${Math.round(v as number)}`).join(" · ")}`);
+    }
+    (a.segment_breakdown || []).forEach((s: any) => lines.push(`- **${s.segment}** (${s.score}/100): ${s.reasoning}`));
+    if ((a.risks || []).length) {
+      lines.push(`\n**Risks**`);
+      a.risks.forEach((r: any) => lines.push(`- _[${r.severity}]_ **${r.headline}** — ${r.summary}`));
+    }
+    return lines.join("\n");
+  }
+  function impactToMarkdown(im: any) {
+    const lines = [`### 📊 Impact — ${im.scope}${im.scope_ref ? ` · ${im.scope_ref}` : ""}`];
+    if (im.summary) lines.push(im.summary);
+    if ((im.amplifies || []).length) {
+      lines.push(`\n**Amplifies**`);
+      im.amplifies.forEach((a: any) => lines.push(`- **${a.group}** — ${a.why}`));
+    }
+    if ((im.undermines || []).length) {
+      lines.push(`\n**Undermines**`);
+      im.undermines.forEach((a: any) => lines.push(`- **${a.group}** — ${a.why}`));
+    }
+    if (im.political_impact) lines.push(`\n**Political:** ${im.political_impact}`);
+    if (im.media_impact) lines.push(`**Media:** ${im.media_impact}`);
+    return lines.join("\n");
+  }
+  async function handleSave(kind: "talking" | "audience" | "impact") {
+    if (!onSaveToItem) return;
+    const md = kind === "talking" ? tpToMarkdown(tp) : kind === "audience" ? audToMarkdown(audience_analysis) : impactToMarkdown(impact);
+    setSavingKind(kind);
+    try { await onSaveToItem(md, kind); } finally { setSavingKind(null); }
   }
 
   return (
@@ -211,7 +264,14 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas }: 
           )}
           {tp && (
             <div className="space-y-1.5">
-              <div className="text-[10px] font-bold opacity-70">{tp.audience}/{tp.angle} · {tp.model}</div>
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-bold opacity-70">{tp.audience}/{tp.angle} · {tp.model}</div>
+                {canSaveToItem && onSaveToItem && (
+                  <button onClick={() => handleSave("talking")} disabled={savingKind === "talking"} className="win98-button text-[10px] px-2 py-0.5">
+                    {savingKind === "talking" ? <Loader2 className="h-3 w-3 animate-spin" /> : "💾 Save to item"}
+                  </button>
+                )}
+              </div>
               {(tp.points || []).map((p: any, i: number) => (
                 <div key={i} className="bg-white border border-[hsl(var(--win98-shadow))] p-1.5 text-[10px]">
                   <div className="font-bold">{i + 1}. {p.message}</div>
@@ -246,6 +306,13 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas }: 
           </div>
           {audience_analysis && (
             <div className="space-y-2 text-[10px]">
+              {canSaveToItem && onSaveToItem && (
+                <div className="flex justify-end">
+                  <button onClick={() => handleSave("audience")} disabled={savingKind === "audience"} className="win98-button text-[10px] px-2 py-0.5">
+                    {savingKind === "audience" ? <Loader2 className="h-3 w-3 animate-spin" /> : "💾 Save to item"}
+                  </button>
+                </div>
+              )}
               <div className="bg-white border border-[hsl(var(--win98-shadow))] p-2">
                 <div className="font-bold mb-1">Overall Effectiveness: {Math.round(audience_analysis.effectiveness_score)}/100</div>
                 <p className="opacity-80">{audience_analysis.summary}</p>
@@ -307,6 +374,13 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas }: 
           </div>
           {impact && (
             <div className="space-y-2 text-[10px]">
+              {canSaveToItem && onSaveToItem && (
+                <div className="flex justify-end">
+                  <button onClick={() => handleSave("impact")} disabled={savingKind === "impact"} className="win98-button text-[10px] px-2 py-0.5">
+                    {savingKind === "impact" ? <Loader2 className="h-3 w-3 animate-spin" /> : "💾 Save to item"}
+                  </button>
+                </div>
+              )}
               <div className="bg-white border border-[hsl(var(--win98-shadow))] p-2">
                 <div className="font-bold mb-1">{impact.scope}{impact.scope_ref ? ` · ${impact.scope_ref}` : ""}</div>
                 <p className="opacity-80">{impact.summary}</p>
