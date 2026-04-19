@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { FederalBillsTab } from "@/components/FederalBillsTab";
 import { SubjectAIPanel } from "@/components/SubjectAIPanel";
 
