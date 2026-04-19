@@ -337,6 +337,67 @@ export function DistrictPollingPanel({ districtId }: { districtId: string }) {
         </div>
       )}
 
+      {/* All other matched district polls (head-to-head, district-specific, etc.) */}
+      {otherPolls.length > 0 && (
+        <div className="mt-2">
+          <p className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] mb-1">
+            MATCHED DISTRICT POLLS ({otherPolls.length})
+          </p>
+          <div className="space-y-1 max-h-[260px] overflow-y-auto">
+            {otherPolls.map(p => {
+              const rd = p.raw_data as any;
+              const fav = p.favor_pct ?? p.approve_pct;
+              const opp = p.oppose_pct ?? p.disapprove_pct;
+              const favLabel = p.favor_pct != null ? "fav" : "app";
+              const oppLabel = p.oppose_pct != null ? "opp" : "dis";
+              return (
+                <div key={p.id} className="win98-sunken p-2 rounded">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold flex-1 truncate">{p.candidate_or_topic}</span>
+                    <MarginBadge margin={p.margin} />
+                  </div>
+                  {(fav != null || opp != null) && (
+                    <>
+                      <div className="flex items-center gap-2 mb-1">
+                        {fav != null && (
+                          <span className="text-xs font-bold" style={{ color: "hsl(150, 55%, 45%)" }}>
+                            {fav}% {favLabel}
+                          </span>
+                        )}
+                        {opp != null && (
+                          <>
+                            <span className="text-[9px] text-[hsl(var(--muted-foreground))]">/</span>
+                            <span className="text-xs font-bold" style={{ color: "hsl(0, 65%, 50%)" }}>
+                              {opp}% {oppLabel}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex h-[5px] w-full overflow-hidden win98-sunken">
+                        <div style={{ width: `${fav ?? 0}%`, background: "hsl(150, 55%, 45%)" }} />
+                        <div style={{ width: `${100 - (fav ?? 0) - (opp ?? 0)}%`, background: "hsl(var(--win98-light))" }} />
+                        <div style={{ width: `${opp ?? 0}%`, background: "hsl(0, 65%, 50%)" }} />
+                      </div>
+                    </>
+                  )}
+                  <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-1">
+                    {p.source} · {formatFullDate(p.date_conducted)}
+                    {p.sample_size ? ` · n=${p.sample_size.toLocaleString()}` : ""}
+                    {p.sample_type ? ` ${p.sample_type}` : ""}
+                    {p.poll_type ? ` · ${p.poll_type}` : ""}
+                  </p>
+                  {rd?.question && (
+                    <p className="text-[9px] text-[hsl(var(--muted-foreground))] italic mt-0.5 line-clamp-2">
+                      "{rd.question}"
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <p className="text-[9px] text-[hsl(var(--muted-foreground))] mt-2 pt-1 border-t border-[hsl(var(--border))]">
         Sources: Civiqs, Emerson College, NYT/Siena district-level tracking. Historical data 2012–present.
       </p>
