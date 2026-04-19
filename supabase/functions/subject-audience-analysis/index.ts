@@ -100,9 +100,10 @@ serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { subject_type, subject_ref, force_refresh, include_sections = SECTIONS, model = "google/gemini-2.5-pro" } = await req.json();
+    const { subject_type, subject_ref, force_refresh, include_sections = SECTIONS, model: rawModel } = await req.json();
     if (!ALLOWED_SUBJECTS.has(subject_type)) return new Response(JSON.stringify({ error: "Invalid subject_type" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!subject_ref) return new Response(JSON.stringify({ error: "subject_ref required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const model = rawModel && ALLOWED_MODELS.has(rawModel) ? rawModel : DEFAULT_MODEL;
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
