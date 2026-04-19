@@ -98,6 +98,12 @@ export function VoterDataSection() {
   const [expandedVoter, setExpandedVoter] = useState<string | null>(null);
   const [connectedServices, setConnectedServices] = useState<string[]>([]);
 
+  // Cross-reference filters (client-side, applied to results)
+  const [filterParty, setFilterParty] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterTag, setFilterTag] = useState<string>("");
+  const [filterContribTo, setFilterContribTo] = useState<string>("");
+
   // Check which integrations are connected
   useEffect(() => {
     async function checkIntegrations() {
