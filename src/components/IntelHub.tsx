@@ -526,6 +526,27 @@ export function IntelHub() {
         );
       })()}
 
+      {/* Selection bar */}
+      {selectionMode && (
+        <div className="border border-[#808080] bg-[#fffbe6] px-2 py-1 text-[10px] flex items-center gap-2 flex-wrap">
+          <span className="font-bold">{selectedIds.size} selected</span>
+          <button
+            onClick={() => setSelectedIds(new Set(filteredBriefings.map((b) => b.id)))}
+            className="px-2 py-0.5 border border-[#808080] bg-[#c0c0c0] hover:bg-[#d4d4d4]"
+          >
+            Select all ({filteredBriefings.length})
+          </button>
+          <button
+            onClick={clearSelection}
+            disabled={selectedIds.size === 0}
+            className="px-2 py-0.5 border border-[#808080] bg-[#c0c0c0] hover:bg-[#d4d4d4] disabled:opacity-50"
+          >
+            Clear
+          </button>
+          <span className="ml-auto text-gray-600">Tip: tap a row to toggle, or use Export PDF to render full articles.</span>
+        </div>
+      )}
+
       {/* Briefing List */}
       {loading ? (
         <div className="text-xs text-gray-500 py-8 text-center">Loading intelligence briefings...</div>
@@ -540,42 +561,71 @@ export function IntelHub() {
           {clusters.map((c) => {
             const segs = biasBarSegments(c.bias);
             const uniqueSrc = new Set(c.articles.map(a => a.source)).size;
+            // Cluster maps to all underlying briefing ids (article.id is briefing.id)
+            const clusterBriefingIds = c.articles
+              .map((a) => (a as ClusterableArticle & { id?: string }).id)
+              .filter((x): x is string => !!x);
+            const allSelected = clusterBriefingIds.length > 0 && clusterBriefingIds.every((id) => selectedIds.has(id));
+            const someSelected = clusterBriefingIds.some((id) => selectedIds.has(id));
             return (
-              <button
+              <div
                 key={c.id}
-                onClick={() => openCluster(c)}
-                className="w-full text-left border border-[#808080] bg-white hover:bg-[#e8e8ff] transition-colors p-2 space-y-1"
+                className={`w-full border ${allSelected || someSelected ? "border-[#000080] bg-[#eef]" : "border-[#808080] bg-white"} hover:bg-[#e8e8ff] transition-colors`}
               >
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-[#000080] line-clamp-2">{c.lead.title}</div>
-                    {c.lead.summary && (
-                      <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{c.lead.summary}</div>
-                    )}
-                  </div>
-                  <span className="flex-shrink-0 text-[10px] font-bold bg-[#000080] text-white px-1.5 py-0.5 rounded-sm flex items-center gap-1">
-                    <Layers size={10} /> {uniqueSrc}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex h-1.5 flex-1 overflow-hidden rounded-sm border border-[#c0c0c0]">
-                    {segs.L > 0 && <div style={{ width: `${segs.L}%`, background: "#3b82f6" }} />}
-                    {segs.C > 0 && <div style={{ width: `${segs.C}%`, background: "#9333ea" }} />}
-                    {segs.R > 0 && <div style={{ width: `${segs.R}%`, background: "#dc2626" }} />}
-                    {segs.U > 0 && <div style={{ width: `${segs.U}%`, background: "#9ca3af" }} />}
-                  </div>
-                  <span className="text-[9px] text-gray-500">L{c.bias.L} C{c.bias.C} R{c.bias.R}</span>
-                  {c.blindspot && (
-                    <span className="text-[9px] font-bold text-amber-700 flex items-center gap-0.5">
-                      <AlertTriangle size={10} /> {c.blindspot} blindspot
-                    </span>
+                <div className="flex items-stretch">
+                  {selectionMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (allSelected) clusterBriefingIds.forEach((id) => next.delete(id));
+                          else clusterBriefingIds.forEach((id) => next.add(id));
+                          return next;
+                        });
+                      }}
+                      className="px-2 flex items-center justify-center border-r border-[#c0c0c0] hover:bg-[#d4d4d4]"
+                      title={allSelected ? "Deselect cluster" : "Select cluster"}
+                    >
+                      {allSelected ? <CheckSquare size={14} className="text-[#000080]" /> : someSelected ? <CheckSquare size={14} className="text-gray-400" /> : <Square size={14} className="text-gray-500" />}
+                    </button>
                   )}
+                  <button
+                    onClick={() => openCluster(c)}
+                    className="flex-1 text-left p-2 space-y-1"
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold text-[#000080] line-clamp-2">{c.lead.title}</div>
+                        {c.lead.summary && (
+                          <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{c.lead.summary}</div>
+                        )}
+                      </div>
+                      <span className="flex-shrink-0 text-[10px] font-bold bg-[#000080] text-white px-1.5 py-0.5 rounded-sm flex items-center gap-1">
+                        <Layers size={10} /> {uniqueSrc}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-1.5 flex-1 overflow-hidden rounded-sm border border-[#c0c0c0]">
+                        {segs.L > 0 && <div style={{ width: `${segs.L}%`, background: "#3b82f6" }} />}
+                        {segs.C > 0 && <div style={{ width: `${segs.C}%`, background: "#9333ea" }} />}
+                        {segs.R > 0 && <div style={{ width: `${segs.R}%`, background: "#dc2626" }} />}
+                        {segs.U > 0 && <div style={{ width: `${segs.U}%`, background: "#9ca3af" }} />}
+                      </div>
+                      <span className="text-[9px] text-gray-500">L{c.bias.L} C{c.bias.C} R{c.bias.R}</span>
+                      {c.blindspot && (
+                        <span className="text-[9px] font-bold text-amber-700 flex items-center gap-0.5">
+                          <AlertTriangle size={10} /> {c.blindspot} blindspot
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[9px] text-gray-400 flex items-center gap-1.5">
+                      <BiasChip source={c.lead.source} />
+                      <span>{c.lead.source} • {c.lead.pubDate ? format(new Date(c.lead.pubDate), "PPp") : ""}</span>
+                    </div>
+                  </button>
                 </div>
-                <div className="text-[9px] text-gray-400 flex items-center gap-1.5">
-                  <BiasChip source={c.lead.source} />
-                  <span>{c.lead.source} • {c.lead.pubDate ? format(new Date(c.lead.pubDate), "PPp") : ""}</span>
-                </div>
-              </button>
+              </div>
             );
           })}
         </div>
