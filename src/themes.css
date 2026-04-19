@@ -2451,3 +2451,35 @@
   border: none;
   padding: 8px 18px;
 }
+
+/* =============================================
+   Mobile theme portrait framing
+   When an iOS / Android theme is active and the user is on a
+   landscape (wider than tall) viewport, frame the app inside
+   a portrait "phone" canvas centered on the screen. Real phones
+   and the Screen Orientation API handle rotation natively;
+   this is the desktop fallback so mobile themes always read
+   as portrait.
+   ============================================= */
+html.mobile-theme-active body {
+  background: #000;
+}
+
+@media (orientation: landscape) and (min-width: 768px) {
+  html.mobile-theme-active body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  html.mobile-theme-active #root {
+    width: 420px;
+    height: 90vh;
+    max-height: 900px;
+    overflow: auto;
+    box-shadow: 0 0 0 8px #1a1a1a, 0 20px 60px rgba(0,0,0,0.6);
+    border-radius: 32px;
+    background: hsl(var(--background));
+  }
+}
