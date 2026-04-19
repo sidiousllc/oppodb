@@ -7,6 +7,7 @@ import { CampaignFinanceSection } from "@/components/CampaignFinanceSection";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, ExternalLink, TrendingDown, TrendingUp, Minus, Filter, RefreshCw, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { exportPollingCSV, exportPollingPDF } from "@/lib/pollingExport";
+import { EditableLayout, type LayoutSection } from "@/components/layout/EditableLayout";
 import {
   ResponsiveContainer,
   AreaChart,
