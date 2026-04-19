@@ -183,7 +183,13 @@ serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const subject = await loadSubject(admin, subject_type, subject_ref);
-    if (!subject) return new Response(JSON.stringify({ error: "Subject not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!subject) {
+      console.warn(`Subject not found: type=${subject_type} ref=${subject_ref}`);
+      return new Response(
+        JSON.stringify({ error: `No ${subject_type} record found for "${subject_ref}". The data may not be synced yet.` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const sectionContext = await buildSectionContext(admin, subject, selected);
 
