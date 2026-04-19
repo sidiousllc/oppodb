@@ -148,8 +148,9 @@ async function firecrawlScrape(url: string, firecrawlKey: string): Promise<{ mar
       return null;
     }
     const data = await res.json();
+    const rawMd = data?.data?.markdown || data?.markdown || "";
     return {
-      markdown: data?.data?.markdown || data?.markdown || "",
+      markdown: await cleanContent(rawMd, url),
       title: data?.data?.metadata?.title || data?.metadata?.title || "",
       links: data?.data?.links || data?.links || [],
     };
