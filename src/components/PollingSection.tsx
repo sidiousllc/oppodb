@@ -512,16 +512,34 @@ function SourceDotPlot({ latestBySource }: {latestBySource: PollEntry[];}) {
   if (latestBySource.length === 0) return null;
 
   const sorted = [...latestBySource].sort((a, b) => (b.approve_pct ?? 0) - (a.approve_pct ?? 0));
-  const barH = 36;
-  const W = 500;
-  const H = sorted.length * barH + 40;
-  const LEFT = 130;
-  const RIGHT = 40;
+  const barH = 38;
+  const W = 560;
+  const TOP_PAD = 22;
+  const BOTTOM_PAD = 28;
+  const H = sorted.length * barH + TOP_PAD + BOTTOM_PAD;
+  const LEFT = 150;
+  const RIGHT = 70;
   const plotW = W - LEFT - RIGHT;
-  const minPct = 30;
-  const maxPct = 55;
-  const range = maxPct - minPct;
+
+  // Build a dynamic X-domain that hugs the actual data so every dot fits
+  // inside the plot area (no clipping) but stays readable.
+  const allPcts: number[] = [];
+  sorted.forEach((p) => {
+    if (p.approve_pct != null) allPcts.push(p.approve_pct);
+    if (p.disapprove_pct != null) allPcts.push(p.disapprove_pct);
+  });
+  const dataMin = allPcts.length ? Math.min(...allPcts) : 30;
+  const dataMax = allPcts.length ? Math.max(...allPcts) : 55;
+  // Snap to nearest 5, with 3pt padding on each side, clamped to [0,100]
+  const minPct = Math.max(0, Math.floor((dataMin - 3) / 5) * 5);
+  const maxPct = Math.min(100, Math.ceil((dataMax + 3) / 5) * 5);
+  const range = Math.max(1, maxPct - minPct);
   const pctToX = (v: number) => LEFT + (v - minPct) / range * plotW;
+
+  // Generate 4-6 evenly spaced gridlines based on the dynamic range
+  const gridLines: number[] = [];
+  const step = range <= 15 ? 5 : range <= 30 ? 5 : 10;
+  for (let v = minPct; v <= maxPct; v += step) gridLines.push(v);
 
   return (
     <div className="candidate-card p-4">
@@ -529,53 +547,83 @@ function SourceDotPlot({ latestBySource }: {latestBySource: PollEntry[];}) {
         Source-by-Source Approval Comparison
       </h3>
       <p className="text-xs text-muted-foreground mb-3">
-        Latest approval rating from each polling source (dot plot)
+        Latest approval rating from each polling source ({sorted.length} sources)
       </p>
-      <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[400px]">
+      <div className="w-full overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="xMidYMid meet"
+          className="w-full block"
+          style={{ minWidth: 380, maxHeight: Math.max(220, H) }}
+        >
           {/* Grid lines */}
-          {[35, 40, 45, 50].map((v) =>
-          <g key={v}>
-              <line x1={pctToX(v)} y1={15} x2={pctToX(v)} y2={H - 20} stroke="hsl(var(--border))" strokeWidth={0.5} />
-              <text x={pctToX(v)} y={H - 5} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
+          {gridLines.map((v) => (
+            <g key={v}>
+              <line x1={pctToX(v)} y1={TOP_PAD - 4} x2={pctToX(v)} y2={H - BOTTOM_PAD + 4} stroke="hsl(var(--border))" strokeWidth={0.5} />
+              <text x={pctToX(v)} y={H - BOTTOM_PAD + 18} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{v}%</text>
             </g>
+          ))}
+          {/* 50% reference line, only if it's in range */}
+          {minPct <= 50 && maxPct >= 50 && (
+            <line x1={pctToX(50)} y1={TOP_PAD - 4} x2={pctToX(50)} y2={H - BOTTOM_PAD + 4} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
           )}
-          {/* 50% line */}
-          <line x1={pctToX(50)} y1={15} x2={pctToX(50)} y2={H - 20} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
           {sorted.map((poll, i) => {
             const src = getSourceInfo(poll.source);
             const color = `hsl(${src.color})`;
-            const y = 15 + i * barH + barH / 2;
+            const y = TOP_PAD + i * barH + barH / 2;
             const approveX = pctToX(poll.approve_pct ?? 0);
             const disapproveX = pctToX(poll.disapprove_pct ?? 0);
+            // Truncate source name so it always fits in the left gutter
+            const displayName = src.name.length > 18 ? src.name.slice(0, 17) + "…" : src.name;
+            // Place value labels on the outside of each dot so they never overlap each other
+            const approveLeft = approveX <= disapproveX;
             return (
               <g key={poll.id}>
-                {/* Source label */}
-                <text x={LEFT - 8} y={y + 4} textAnchor="end" fontSize={11} fontWeight="500" fill="hsl(var(--foreground))">
-                  {src.name}
+                {/* Color indicator chip */}
+                <rect x={4} y={y - 5} width={10} height={10} rx={2} fill={color} />
+                {/* Source label (truncated) */}
+                <text x={LEFT - 8} y={y + 4} textAnchor="end" fontSize={11} fontWeight={500} fill="hsl(var(--foreground))">
+                  <title>{src.name}</title>
+                  {displayName}
                 </text>
                 {/* Connector line */}
                 <line x1={Math.min(approveX, disapproveX)} y1={y} x2={Math.max(approveX, disapproveX)} y2={y} stroke="hsl(var(--border))" strokeWidth={2} />
-                {/* Approve dot */}
+                {/* Approve dot + label */}
                 <circle cx={approveX} cy={y} r={6} fill="hsl(150, 55%, 45%)" stroke="hsl(var(--card))" strokeWidth={2} />
-                <text x={approveX} y={y - 10} textAnchor="middle" fontSize={9} fontWeight="700" fill="hsl(150, 55%, 45%)">
+                <text
+                  x={approveLeft ? approveX - 9 : approveX + 9}
+                  y={y + 3}
+                  textAnchor={approveLeft ? "end" : "start"}
+                  fontSize={9}
+                  fontWeight={700}
+                  fill="hsl(150, 55%, 45%)"
+                >
                   {poll.approve_pct}%
                 </text>
-                {/* Disapprove dot */}
+                {/* Disapprove dot + label */}
                 <circle cx={disapproveX} cy={y} r={6} fill="hsl(0, 65%, 50%)" stroke="hsl(var(--card))" strokeWidth={2} />
-                {/* Color indicator */}
-                <rect x={4} y={y - 5} width={10} height={10} rx={2} fill={color} />
-              </g>);
-
+                <text
+                  x={approveLeft ? disapproveX + 9 : disapproveX - 9}
+                  y={y + 3}
+                  textAnchor={approveLeft ? "start" : "end"}
+                  fontSize={9}
+                  fontWeight={700}
+                  fill="hsl(0, 65%, 50%)"
+                >
+                  {poll.disapprove_pct}%
+                </text>
+              </g>
+            );
           })}
         </svg>
       </div>
-      <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+      <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Approve</span>
         <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Disapprove</span>
+        <span className="ml-auto">Range: {minPct}–{maxPct}%</span>
       </div>
-    </div>);
-
+    </div>
+  );
 }
 
 // ─── Generic Ballot Comparison Chart ────────────────────────────────────────
