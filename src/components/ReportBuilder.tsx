@@ -12,6 +12,7 @@ import {
 import { fetchSnapshot, refreshAllSnapshots } from "@/lib/reports/snapshots";
 import { exportReportPdf, exportReportCsv } from "@/lib/reports/exporters";
 import { ChartBlockView, TableBlockView, MapBlockView } from "@/components/reports/BlockViews";
+import { PdfStyleBlockView } from "@/components/reports/PdfStyleBlockView";
 import { ReportSchedules } from "@/components/reports/ReportSchedules";
 
 interface Props {
@@ -383,40 +384,10 @@ export function ReportBuilder({ reportId, onBack }: Props) {
   );
 }
 
-// Inline preview rendered in the canvas
+// Inline preview rendered in the canvas — uses the same PDF-style renderer
+// that PublicReport uses, so the builder shows exactly what the PDF will look like.
 function BlockPreview({ block }: { block: ReportBlock }) {
-  switch (block.type) {
-    case "heading": return <div className="text-base font-bold text-primary">{block.text}</div>;
-    case "subheading": return <div className="text-sm font-bold">{block.text}</div>;
-    case "text": return <div className="text-xs whitespace-pre-wrap text-foreground">{block.text || <span className="text-muted-foreground italic">Empty text block</span>}</div>;
-    case "image": return block.url ? <img src={block.url} alt={block.caption ?? ""} className="max-h-48 rounded" /> : <div className="text-xs text-muted-foreground italic">No image URL</div>;
-    case "divider": return <hr className="border-border" />;
-    case "page_break": return <div className="text-[10px] text-muted-foreground italic text-center border-t border-dashed border-border py-1">— page break —</div>;
-    case "tabs": return <div className="text-xs text-muted-foreground">{block.tabs.length} tab(s): {block.tabs.map((t) => t.label).join(", ")}</div>;
-    case "admin_activity": {
-      const rows = (block as any).snapshot?.rows ?? [];
-      return <div className="text-xs text-muted-foreground">📋 Activity logs — {rows.length} rows cached</div>;
-    }
-    case "admin_locations": {
-      const rows = (block as any).snapshot?.rows ?? [];
-      return <div className="text-xs text-muted-foreground">📍 Locations — {rows.length} points cached</div>;
-    }
-    case "api_data": return <div className="text-xs text-muted-foreground">🔌 API: {(block as any).endpoint}</div>;
-    case "mcp_data": return <div className="text-xs text-muted-foreground">🤖 MCP: {(block as any).toolName}</div>;
-    case "chart": return <ChartBlockView block={block} />;
-    case "table": return <TableBlockView block={block} />;
-    case "map":   return <MapBlockView block={block} />;
-    default: {
-      const ref = (block as any).refId;
-      const snap = (block as any).snapshot;
-      return (
-        <div className="text-xs">
-          <span className="text-muted-foreground">ref:</span> {ref || <em className="text-destructive">unset</em>}
-          {snap && <span className="ml-2 text-success">✓ cached</span>}
-        </div>
-      );
-    }
-  }
+  return <PdfStyleBlockView block={block} />;
 }
 
 // Right-panel editor for the selected block
