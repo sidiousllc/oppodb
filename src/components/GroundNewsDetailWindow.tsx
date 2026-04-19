@@ -34,12 +34,14 @@ export function GroundNewsDetailWindow({ cluster, onClose, onSavePDF, contextLab
   const [content, setContent] = useState<string | null>(null);
   const [scraping, setScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
+  const [aiCleaned, setAiCleaned] = useState(false);
 
   // Fetch full article when active changes
   useEffect(() => {
     let cancelled = false;
     setContent(null);
     setScrapeError(null);
+    setAiCleaned(false);
     if (!active.link) {
       setScrapeError("No source URL available.");
       return;
@@ -57,6 +59,7 @@ export function GroundNewsDetailWindow({ cluster, onClose, onSavePDF, contextLab
               ? data.markdown
               : "Could not extract article content. Open the original link below.",
           );
+          setAiCleaned(!!data.aiCleaned);
         }
       })
       .catch(() => {
