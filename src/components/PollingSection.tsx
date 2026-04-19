@@ -2770,41 +2770,72 @@ export function PollingSection() {
         </div>
       }
 
-      {/* ─── Multi-Source Trend Chart ─────────────────────────────────────── */}
-      <MultiSourceTrendChart polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
-
-      {/* ─── Rolling Average Trend ────────────────────────────────────────── */}
-      <RollingAverageTrend polls={polls} />
-
-      {/* ─── Demographic Breakdown ───────────────────────────────────────── */}
-      <DemographicBreakdownChart polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
-
-      {/* ─── Charts Row: Dot Plot + Issue Butterfly ────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <SourceDotPlot latestBySource={latestBySource} />
-        <IssueButterflyChart polls={issuePolls} onSelectPoll={(p) => setSelectedPoll(p)} />
-      </div>
-
-      {/* ─── Pollster Heatmap ─────────────────────────────────────────────── */}
-      <PollsterHeatmap polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
-
-      {/* ─── Generic Ballot + Favorability ────────────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <GenericBallotChart polls={genericBallotPolls} />
-        <FavorabilityChart polls={polls} />
-      </div>
-
-      {/* ─── Generic Ballot Trend ─────────────────────────────────────────── */}
-      <GenericBallotTrendChart polls={genericBallotPolls} />
-
-      {/* ─── Pollster Variability + Methodology ───────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <PollsterSpreadChart polls={polls} />
-        <MethodologyBreakdown polls={polls} />
-      </div>
-
-      {/* ─── Issue Polling Deep Dive ──────────────────────────────────────── */}
-      <IssuePollingSection polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />
+      {/* ─── Rearrangeable subsections ───────────────────────────────────── */}
+      {(() => {
+        const layoutSections: LayoutSection[] = [
+          {
+            id: "multi-source-trend",
+            label: "Multi-Source Trend",
+            content: <MultiSourceTrendChart polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />,
+          },
+          {
+            id: "rolling-average",
+            label: "Rolling Average",
+            content: <RollingAverageTrend polls={polls} />,
+          },
+          {
+            id: "demographic-breakdown",
+            label: "Demographic Breakdown",
+            content: <DemographicBreakdownChart polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />,
+          },
+          {
+            id: "dotplot-and-issues",
+            label: "Source Dot Plot + Issue Butterfly",
+            content: (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <SourceDotPlot latestBySource={latestBySource} />
+                <IssueButterflyChart polls={issuePolls} onSelectPoll={(p) => setSelectedPoll(p)} />
+              </div>
+            ),
+          },
+          {
+            id: "pollster-heatmap",
+            label: "Pollster Heatmap",
+            content: <PollsterHeatmap polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />,
+          },
+          {
+            id: "ballot-and-favorability",
+            label: "Generic Ballot + Favorability",
+            content: (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <GenericBallotChart polls={genericBallotPolls} />
+                <FavorabilityChart polls={polls} />
+              </div>
+            ),
+          },
+          {
+            id: "generic-ballot-trend",
+            label: "Generic Ballot Trend",
+            content: <GenericBallotTrendChart polls={genericBallotPolls} />,
+          },
+          {
+            id: "spread-and-methodology",
+            label: "Pollster Variability + Methodology",
+            content: (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <PollsterSpreadChart polls={polls} />
+                <MethodologyBreakdown polls={polls} />
+              </div>
+            ),
+          },
+          {
+            id: "issue-deep-dive",
+            label: "Issue Polling Deep Dive",
+            content: <IssuePollingSection polls={polls} onSelectPoll={(p) => setSelectedPoll(p)} />,
+          },
+        ];
+        return <EditableLayout layoutKey="datahub.polling" sections={layoutSections} />;
+      })()}
 
       {/* ─── Source Comparison Table ──────────────────────────────────────── */}
       {latestBySource.length > 0 &&
