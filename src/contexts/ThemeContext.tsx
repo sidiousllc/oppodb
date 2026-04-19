@@ -93,7 +93,7 @@ export const THEME_CATEGORIES: Record<ThemeCategory, {
   palm: {
     label: "Palm OS",
     icon: "🖐️",
-    kind: "retro",
+    kind: "mobile",
     themes: ["palm-classic", "palm-v", "palm-m505", "palm-treo"],
   },
 };
