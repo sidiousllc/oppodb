@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RefreshCw, FileText, Globe, MapPin, Landmark, Building2, Clock, Search, Filter, X, Layers, AlertTriangle, CheckSquare, Square } from "lucide-react";
 import { format } from "date-fns";
-import { applyPdfBranding } from "@/lib/pdfBranding";
 import { exportArticlePdf, exportArticlesPdf, type IntelArticleForPdf } from "@/lib/intelPdf";
 import { GroundNewsDetailWindow } from "@/components/GroundNewsDetailWindow";
 import { clusterArticles, classifyBias, BIAS_META, biasBarSegments, type StoryCluster, type ClusterableArticle } from "@/lib/newsBias";
