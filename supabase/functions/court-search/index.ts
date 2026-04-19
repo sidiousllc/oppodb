@@ -52,9 +52,18 @@ Deno.serve(async (req) => {
         const headers: Record<string, string> = { Accept: "application/json", "User-Agent": "ORO-OppoDB/1.0" };
         const tok = Deno.env.get("COURTLISTENER_TOKEN");
         if (tok) headers.Authorization = `Token ${tok}`;
-        const r = await fetch(`https://www.courtlistener.com/api/rest/v4/dockets/${encodeURIComponent(detailId)}/`, { headers });
+      const r = await fetch(`https://www.courtlistener.com/api/rest/v4/dockets/${encodeURIComponent(detailId)}/`, { headers });
         if (!r.ok) {
-          return new Response(JSON.stringify({ error: `CourtListener ${r.status}` }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          const isAuth = r.status === 401 || r.status === 403;
+          return new Response(
+            JSON.stringify({
+              error: isAuth ? "COURTLISTENER_AUTH_REQUIRED" : `CourtListener ${r.status}`,
+              message: isAuth
+                ? "CourtListener requires a valid API token. Set the COURTLISTENER_TOKEN secret to enable federal case detail lookups."
+                : `Upstream error ${r.status}`,
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
         }
         const d = await r.json();
         // Try to fetch a few docket entries / documents
