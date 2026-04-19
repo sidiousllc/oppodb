@@ -216,37 +216,48 @@ serve(async (req) => {
       sectionContext || "(none requested)",
     ].join("\n");
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: chosenModel,
-        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userContent }],
-        tools: [{ type: "function", function: {
-          name: "generate_talking_points",
-          description: "Return structured talking points",
-          parameters: {
-            type: "object",
-            properties: {
-              points: { type: "array", items: { type: "object", properties: {
-                message: { type: "string" }, rationale: { type: "string" }, delivery_tips: { type: "string" },
-              }, required: ["message", "rationale"] } },
-              evidence: { type: "array", items: { type: "object", properties: {
-                claim: { type: "string" }, source_hint: { type: "string" },
-              }, required: ["claim"] } },
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 110_000);
+    let aiResp: Response;
+    try {
+      aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        signal: ctrl.signal,
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: chosenModel,
+          messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userContent }],
+          tools: [{ type: "function", function: {
+            name: "generate_talking_points",
+            description: "Return structured talking points",
+            parameters: {
+              type: "object",
+              properties: {
+                points: { type: "array", items: { type: "object", properties: {
+                  message: { type: "string" }, rationale: { type: "string" }, delivery_tips: { type: "string" },
+                }, required: ["message", "rationale"] } },
+                evidence: { type: "array", items: { type: "object", properties: {
+                  claim: { type: "string" }, source_hint: { type: "string" },
+                }, required: ["claim"] } },
+              },
+              required: ["points", "evidence"],
             },
-            required: ["points", "evidence"],
-          },
-        } }],
-        tool_choice: { type: "function", function: { name: "generate_talking_points" } },
-      }),
-    });
-
+          } }],
+          tool_choice: { type: "function", function: { name: "generate_talking_points" } },
+        }),
+      });
+    } catch (fetchErr: any) {
+      clearTimeout(timer);
+      console.error("AI fetch failed:", fetchErr?.message || fetchErr);
+      return new Response(JSON.stringify({ error: fetchErr?.name === "AbortError" ? "AI request timed out — try a faster model (e.g. gemini-2.5-flash)" : "AI gateway unreachable" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    clearTimeout(timer);
     if (!aiResp.ok) {
-      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limit" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits depleted" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      console.error("AI error", aiResp.status, await aiResp.text());
-      return new Response(JSON.stringify({ error: "AI gateway error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const errText = await aiResp.text().catch(() => "");
+      console.error("AI error", aiResp.status, errText);
+      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limit — please retry in a moment" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits depleted" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: `AI gateway error (${aiResp.status})` }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const aiData = await aiResp.json();
     const args = JSON.parse(aiData.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments || "{}");
