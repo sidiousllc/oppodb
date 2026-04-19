@@ -233,20 +233,30 @@ export function Win98Window({
         </div>
       </div>
 
-      {toolbar && !isMinimized && (
-        <div className="flex items-center gap-0 border-b border-b-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))] px-1 py-[2px]">
+      {/* Keep children mounted when minimized so in-window state (scroll, form
+          inputs, AI results, etc.) survives a minimize/restore cycle. We hide
+          via `display: none` instead of unmounting with `&&`. */}
+      {toolbar && (
+        <div
+          className="flex items-center gap-0 border-b border-b-[hsl(var(--win98-shadow))] bg-[hsl(var(--win98-face))] px-1 py-[2px]"
+          style={isMinimized ? { display: "none" } : undefined}
+        >
           {toolbar}
         </div>
       )}
 
-      {!isMinimized && (
-        <div className="flex-1 overflow-auto">
-          {children}
-        </div>
-      )}
+      <div
+        className="flex-1 overflow-auto"
+        style={isMinimized ? { display: "none" } : undefined}
+      >
+        {children}
+      </div>
 
-      {statusBar && !isMinimized && (
-        <div className="win98-sunken bg-[hsl(var(--win98-face))] px-2 py-[2px] text-[10px] flex items-center">
+      {statusBar && (
+        <div
+          className="win98-sunken bg-[hsl(var(--win98-face))] px-2 py-[2px] text-[10px] flex items-center"
+          style={isMinimized ? { display: "none" } : undefined}
+        >
           {statusBar}
         </div>
       )}
