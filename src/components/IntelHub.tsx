@@ -639,32 +639,48 @@ export function IntelHub() {
                 <span className="ml-auto text-[10px] opacity-75">{items.length} items</span>
               </div>
               <div className="divide-y divide-[#c0c0c0]">
-                {items.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => {
-                      const found = clusters.find(c => c.articles.some(a => a.title === b.title && a.source === b.source_name));
-                      openCluster(found ?? {
-                        id: b.id,
-                        lead: { title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary },
-                        articles: [{ title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary }],
-                        bias: { L: 0, C: 0, R: 0, U: 0 }, blindspot: null,
-                      });
-                    }}
-                    className="w-full text-left px-2 py-1.5 hover:bg-[#e8e8ff] transition-colors"
-                  >
-                    <div className="text-xs font-bold text-[#000080] line-clamp-1 flex items-center gap-1">
-                      <BiasChip source={b.source_name} />
-                      <span className="truncate">{b.title}</span>
+                {items.map((b) => {
+                  const isSelected = selectedIds.has(b.id);
+                  return (
+                    <div key={b.id} className={`flex items-stretch ${isSelected ? "bg-[#eef]" : ""}`}>
+                      {selectionMode && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSelect(b.id);
+                          }}
+                          className="px-2 flex items-center justify-center border-r border-[#c0c0c0] hover:bg-[#d4d4d4]"
+                          title={isSelected ? "Deselect article" : "Select article"}
+                        >
+                          {isSelected ? <CheckSquare size={14} className="text-[#000080]" /> : <Square size={14} className="text-gray-500" />}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          const found = clusters.find(c => c.articles.some(a => a.title === b.title && a.source === b.source_name));
+                          openCluster(found ?? {
+                            id: b.id,
+                            lead: { title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary },
+                            articles: [{ title: b.title, source: b.source_name, link: b.source_url, pubDate: b.published_at, summary: b.summary }],
+                            bias: { L: 0, C: 0, R: 0, U: 0 }, blindspot: null,
+                          });
+                        }}
+                        className="flex-1 text-left px-2 py-1.5 hover:bg-[#e8e8ff] transition-colors"
+                      >
+                        <div className="text-xs font-bold text-[#000080] line-clamp-1 flex items-center gap-1">
+                          <BiasChip source={b.source_name} />
+                          <span className="truncate">{b.title}</span>
+                        </div>
+                        {b.summary && (
+                          <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{b.summary}</div>
+                        )}
+                        <div className="text-[9px] text-gray-400 mt-0.5">
+                          {b.published_at ? format(new Date(b.published_at), "PPp") : ""}
+                        </div>
+                      </button>
                     </div>
-                    {b.summary && (
-                      <div className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{b.summary}</div>
-                    )}
-                    <div className="text-[9px] text-gray-400 mt-0.5">
-                      {b.published_at ? format(new Date(b.published_at), "PPp") : ""}
-                    </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
