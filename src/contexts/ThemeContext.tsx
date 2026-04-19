@@ -159,6 +159,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.classList.add(`theme-${theme}`);
   }, [theme]);
 
+  // Lock to portrait orientation when a mobile-kind theme (iOS / Android) is active
+  useEffect(() => {
+    const isMobileTheme = Object.values(THEME_CATEGORIES).some(
+      (cat) => cat.kind === "mobile" && (cat.themes as WindowsTheme[]).includes(theme)
+    );
+    const root = document.documentElement;
+    root.classList.toggle("mobile-theme-active", isMobileTheme);
+
+    // Try the Screen Orientation API (works on Android Chrome, Capacitor native, fullscreen PWAs)
+    const screenOrientation = (screen as any).orientation;
+    if (isMobileTheme && screenOrientation?.lock) {
+      screenOrientation.lock("portrait").catch(() => {
+        // Silently ignore — most desktop browsers reject this outside fullscreen.
+        // The CSS rotation fallback below handles the visual portrait framing.
+      });
+    } else if (!isMobileTheme && screenOrientation?.unlock) {
+      try { screenOrientation.unlock(); } catch { /* ignore */ }
+    }
+  }, [theme]);
+
   // Apply dark mode class
   useEffect(() => {
     const root = document.documentElement;
