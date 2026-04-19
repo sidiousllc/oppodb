@@ -2142,14 +2142,42 @@ export function PollingSection() {
   const [selectedPoll, setSelectedPoll] = useState<PollEntry | null>(null);
   const [activeTab, setActiveTab] = useState<"polling" | "markets" | "finance">("polling");
 
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
   useEffect(() => {
     loadPolls();
+
+    // Subscribe to realtime changes so favorability + all polling charts auto-update
+    const channel = supabase
+      .channel("polling_data_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "polling_data" },
+        () => {
+          // Debounced reload — multiple rows often arrive in bursts during a sync
+          if ((window as any).__pollingReloadTimer) clearTimeout((window as any).__pollingReloadTimer);
+          (window as any).__pollingReloadTimer = setTimeout(() => {
+            loadPolls();
+          }, 800);
+        }
+      )
+      .subscribe();
+
+    // Periodic background refresh (every 5 minutes) as a safety net for missed events
+    const interval = setInterval(() => loadPolls(), 5 * 60 * 1000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+      if ((window as any).__pollingReloadTimer) clearTimeout((window as any).__pollingReloadTimer);
+    };
   }, []);
 
   async function loadPolls() {
     setLoading(true);
     const data = await fetchPollingData();
     setPolls(data);
+    setLastUpdated(new Date());
     setLoading(false);
   }
 
