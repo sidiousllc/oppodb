@@ -21,13 +21,27 @@ interface ScrapedArticle {
 
 /* ── Firecrawl helpers ─────────────────────────────────────── */
 
+async function fetchWithTimeout(url: string, init: RequestInit, ms: number): Promise<Response> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 async function firecrawlScrape(url: string, firecrawlKey: string): Promise<{ markdown: string; title: string; links: string[] } | null> {
   try {
-    const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+    const res = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
       method: "POST",
       headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ url, formats: ["markdown", "links"], onlyMainContent: true }),
-    });
+    }, 45_000);
+    if (!res.ok) {
+      console.error(`Firecrawl scrape ${res.status} for ${url}`);
+      return null;
+    }
     const data = await res.json();
     return {
       markdown: data?.data?.markdown || data?.markdown || "",
@@ -35,18 +49,22 @@ async function firecrawlScrape(url: string, firecrawlKey: string): Promise<{ mar
       links: data?.data?.links || data?.links || [],
     };
   } catch (e) {
-    console.error(`Firecrawl scrape error for ${url}:`, e);
+    console.error(`Firecrawl scrape error for ${url}:`, (e as Error)?.message || e);
     return null;
   }
 }
 
 async function firecrawlSearch(query: string, firecrawlKey: string, limit = 3): Promise<Array<{ markdown: string; title: string; url: string; description: string }>> {
   try {
-    const res = await fetch("https://api.firecrawl.dev/v1/search", {
+    const res = await fetchWithTimeout("https://api.firecrawl.dev/v1/search", {
       method: "POST",
       headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ query, limit, scrapeOptions: { formats: ["markdown"] } }),
-    });
+    }, 60_000);
+    if (!res.ok) {
+      console.error(`Firecrawl search ${res.status} for ${query}`);
+      return [];
+    }
     const data = await res.json();
     return (data?.data || []).map((r: any) => ({
       markdown: r.markdown || "",
@@ -55,13 +73,19 @@ async function firecrawlSearch(query: string, firecrawlKey: string, limit = 3): 
       description: r.description || "",
     }));
   } catch (e) {
-    console.error(`Firecrawl search error:`, e);
+    console.error(`Firecrawl search error:`, (e as Error)?.message || e);
     return [];
   }
 }
 
+function makeSourceSlug(source: string, title: string): string {
+  const base = (title || "report").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const prefix = source.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `${prefix}-${base}`.slice(0, 100);
+}
+
 function makeSlug(title: string): string {
-  return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+  return (title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 }
 
 /* ── Issue area detection ─────────────────────────────────── */
@@ -150,7 +174,7 @@ function makeSearchScraper(
         if (result.markdown.length > 100) {
           articles.push({
             title: result.title || `${sourceName} Report`,
-            slug: makeSlug(result.title || `${sourceName}-report`),
+            slug: makeSourceSlug(sourceName, result.title || result.url || `${sourceName}-report`),
             source: sourceName,
             source_url: result.url,
             author: sourceName,
@@ -186,7 +210,7 @@ async function scrapeNavigator(firecrawlKey: string): Promise<ScrapedArticle[]> 
       const article = await firecrawlScrape(link, firecrawlKey);
       if (article && article.title && article.markdown.length > 100) {
         articles.push({
-          title: article.title, slug: makeSlug(article.title),
+          title: article.title, slug: makeSourceSlug("navigator", article.title || link),
           source: "Navigator Research", source_url: link, author: "Navigator Research",
           published_date: null, summary: article.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
           content: article.markdown, issue_areas: ["Democrat"], research_type: "message-guidance",
@@ -213,7 +237,7 @@ async function scrapeHeritage(firecrawlKey: string): Promise<ScrapedArticle[]> {
       if (article && article.title && article.markdown.length > 100) {
         articles.push({
           title: article.title.replace(" | The Heritage Foundation", ""),
-          slug: makeSlug(article.title), source: "Heritage Foundation", source_url: link,
+          slug: makeSourceSlug("heritage", article.title || link), source: "Heritage Foundation", source_url: link,
           author: "Heritage Foundation", published_date: null,
           summary: article.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
           content: article.markdown, issue_areas: detectIssueAreas(article.markdown, "Republican"),
@@ -365,43 +389,82 @@ Deno.serve(async (req) => {
 
     // Parse request
     const body = await req.json().catch(() => ({}));
-    const sources: string[] = body.sources || Object.keys(ALL_SOURCES);
+    const requested: string[] | undefined = body.sources;
+    const maxSources: number = Math.max(1, Math.min(Number(body.max_sources) || 8, 30));
+    const allKeys = Object.keys(ALL_SOURCES);
+    const scraperNames = (requested && requested.length > 0
+      ? requested.filter((s) => ALL_SOURCES[s])
+      : allKeys
+    ).slice(0, maxSources);
 
-    console.log("Syncing messaging from sources:", sources);
-
-    // Scrape sources in parallel (batch 4 at a time to avoid rate limits)
-    const allArticles: ScrapedArticle[] = [];
-    const scraperNames = sources.filter(s => ALL_SOURCES[s]);
-    
-    for (let i = 0; i < scraperNames.length; i += 4) {
-      const batch = scraperNames.slice(i, i + 4);
-      const results = await Promise.allSettled(batch.map(s => ALL_SOURCES[s](firecrawlKey)));
-      for (const result of results) {
-        if (result.status === "fulfilled") allArticles.push(...result.value);
-      }
-      if (i + 4 < scraperNames.length) await new Promise(r => setTimeout(r, 1000));
+    if (scraperNames.length === 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "No valid sources requested", available: allKeys }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    // Get existing slugs to avoid duplicates
-    const { data: existing } = await supabase.from("messaging_guidance").select("slug");
-    const existingSlugs = new Set((existing || []).map((e: any) => e.slug));
+    console.log("Syncing messaging from sources:", scraperNames);
 
-    // Insert new articles
-    const newArticles = allArticles.filter((a) => !existingSlugs.has(a.slug));
-    let inserted = 0;
+    // Scrape sources in parallel (batch 3 at a time to avoid rate limits / timeouts)
+    const allArticles: ScrapedArticle[] = [];
+    const perSource: Record<string, { ok: boolean; count: number; error?: string }> = {};
 
-    for (const article of newArticles) {
-      const { error } = await supabase.from("messaging_guidance").insert(article);
-      if (!error) inserted++;
-      else console.error("Insert error:", error.message);
+    for (let i = 0; i < scraperNames.length; i += 3) {
+      const batch = scraperNames.slice(i, i + 3);
+      const results = await Promise.allSettled(batch.map((s) => ALL_SOURCES[s](firecrawlKey)));
+      results.forEach((result, idx) => {
+        const name = batch[idx];
+        if (result.status === "fulfilled") {
+          allArticles.push(...result.value);
+          perSource[name] = { ok: true, count: result.value.length };
+        } else {
+          console.error(`Scraper ${name} failed:`, result.reason);
+          perSource[name] = { ok: false, count: 0, error: String(result.reason).slice(0, 200) };
+        }
+      });
+      if (i + 3 < scraperNames.length) await new Promise((r) => setTimeout(r, 800));
+    }
+
+    // Dedupe in-memory by slug (keep first occurrence)
+    const bySlug = new Map<string, ScrapedArticle>();
+    for (const a of allArticles) {
+      if (!a.slug) continue;
+      if (!bySlug.has(a.slug)) bySlug.set(a.slug, a);
+    }
+    const deduped = Array.from(bySlug.values());
+
+    // Upsert by slug — refresh existing rows and insert new ones
+    let upserted = 0;
+    let failed = 0;
+    const errors: string[] = [];
+    // Batch upserts in chunks of 50
+    for (let i = 0; i < deduped.length; i += 50) {
+      const chunk = deduped.slice(i, i + 50);
+      const { error, count } = await supabase
+        .from("messaging_guidance")
+        .upsert(chunk, { onConflict: "slug", count: "exact" });
+      if (error) {
+        failed += chunk.length;
+        errors.push(error.message);
+        console.error("Upsert error:", error.message);
+      } else {
+        upserted += count ?? chunk.length;
+      }
     }
 
     return new Response(
       JSON.stringify({
-        success: true, scraped: allArticles.length, new: inserted,
-        sources: scraperNames, message: `Found ${allArticles.length} articles, inserted ${inserted} new.`,
+        success: true,
+        scraped: allArticles.length,
+        deduped: deduped.length,
+        upserted,
+        failed,
+        per_source: perSource,
+        errors: errors.slice(0, 5),
+        message: `Scraped ${allArticles.length}, deduped ${deduped.length}, upserted ${upserted}${failed ? `, failed ${failed}` : ""}.`,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
     console.error("Messaging sync error:", error);
