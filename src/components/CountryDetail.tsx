@@ -202,6 +202,14 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
         ))}
       </div>
 
+      {/* AI Intelligence Panel — top */}
+      <SubjectAIPanel
+        subjectType="country"
+        subjectRef={countryCode}
+        subjectTitle={`${country.name} (${countryCode})`}
+        defaultScope="national"
+      />
+
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-5 w-5 animate-spin text-[hsl(var(--muted-foreground))]" />
@@ -399,13 +407,6 @@ export function CountryDetail({ countryCode, onBack }: CountryDetailProps) {
             </div>
           )}
 
-          {/* AI Intelligence Panel */}
-          <SubjectAIPanel
-            subjectType="country"
-            subjectRef={countryCode}
-            subjectTitle={`${country.name} (${countryCode})`}
-            defaultScope="national"
-          />
         </div>
       )}
 
