@@ -357,12 +357,37 @@ export function IntelHub() {
         </button>
 
         <button
+          onClick={() => {
+            setSelectionMode((s) => {
+              if (s) clearSelection();
+              return !s;
+            });
+          }}
+          className={`px-2 py-1 text-xs border flex items-center gap-1 ${
+            selectionMode
+              ? "bg-[#000080] text-white border-[#000080]"
+              : "bg-[#c0c0c0] text-black border-[#808080] hover:bg-[#d4d4d4]"
+          }`}
+          title="Toggle multi-select to pick specific articles to export"
+        >
+          {selectionMode ? <CheckSquare size={12} /> : <Square size={12} />}
+          {selectionMode ? `Selected ${selectedIds.size}` : "Select"}
+        </button>
+
+        <button
           onClick={exportPDF}
-          disabled={briefings.length === 0}
+          disabled={briefings.length === 0 || exporting}
           className="px-2 py-1 text-xs bg-[#c0c0c0] border border-[#808080] hover:bg-[#d4d4d4] flex items-center gap-1 disabled:opacity-50"
+          title={selectedIds.size > 0
+            ? `Export ${selectedIds.size} selected article${selectedIds.size === 1 ? "" : "s"} (full content)`
+            : "Export all filtered articles (full content)"}
         >
           <FileText size={12} />
-          Export PDF
+          {exporting
+            ? "Exporting…"
+            : selectedIds.size > 0
+              ? `Export PDF (${selectedIds.size})`
+              : "Export PDF (All)"}
         </button>
 
         <button
