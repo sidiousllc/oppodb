@@ -200,6 +200,14 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
           )}
         </div>
 
+        {/* AI Intelligence Panel — top */}
+        <SubjectAIPanel
+          subjectType="polling"
+          subjectRef={p.id}
+          subjectTitle={`${p.candidate_or_topic} — ${src.name}`}
+          defaultScope="national"
+        />
+
         {/* Result Bar */}
         <div className="candidate-card p-4">
           <div className="flex items-center justify-between mb-2">
@@ -442,13 +450,6 @@ export function PollDetailWindow({ poll, allPolls, onClose, onSelectPoll }: Prop
         )}
       </div>
 
-      {/* AI Intelligence Panel */}
-      <SubjectAIPanel
-        subjectType="polling"
-        subjectRef={p.id}
-        subjectTitle={`${p.candidate_or_topic} — ${src.name}`}
-        defaultScope="national"
-      />
 
       {/* Demographic Detail Window */}
       {demoDetailGroup && (

@@ -607,8 +607,8 @@ export function DistrictDetail({ district, onBack, onSelectCandidate }: District
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="mt-4">
-          <DistrictBoundaryMap districtId={district.district_id} stateName={district.state} />
           <SubjectAIPanel subjectType="district" subjectRef={district.district_id} subjectTitle={`District ${district.district_id}`} defaultScope="district" defaultScopeRef={district.district_id} />
+          <DistrictBoundaryMap districtId={district.district_id} stateName={district.state} />
           {cookRating && <CookRatingBanner rating={cookRating} />}
           {cookRating && <CookRatingHistory districtId={district.district_id} currentRating={cookRating} />}
           <CookPVIChart districtId={district.district_id} />
