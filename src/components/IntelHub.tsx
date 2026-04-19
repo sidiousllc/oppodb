@@ -556,6 +556,7 @@ export function IntelHub() {
           ))}
         </div>
       )}
+      </>)}
 
       {selectedCluster && (
         <GroundNewsDetailWindow
@@ -583,6 +584,7 @@ export function IntelHub() {
     </div>
   );
 }
+
 
 // Tiny inline bias chip used on each card.
 function BiasChip({ source }: { source: string }) {
