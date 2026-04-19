@@ -264,7 +264,14 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas, on
           )}
           {tp && (
             <div className="space-y-1.5">
-              <div className="text-[10px] font-bold opacity-70">{tp.audience}/{tp.angle} · {tp.model}</div>
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-bold opacity-70">{tp.audience}/{tp.angle} · {tp.model}</div>
+                {canSaveToItem && onSaveToItem && (
+                  <button onClick={() => handleSave("talking")} disabled={savingKind === "talking"} className="win98-button text-[10px] px-2 py-0.5">
+                    {savingKind === "talking" ? <Loader2 className="h-3 w-3 animate-spin" /> : "💾 Save to item"}
+                  </button>
+                )}
+              </div>
               {(tp.points || []).map((p: any, i: number) => (
                 <div key={i} className="bg-white border border-[hsl(var(--win98-shadow))] p-1.5 text-[10px]">
                   <div className="font-bold">{i + 1}. {p.message}</div>
@@ -299,6 +306,13 @@ export function MessagingAIPanel({ messagingSlug, messagingTitle, issueAreas, on
           </div>
           {audience_analysis && (
             <div className="space-y-2 text-[10px]">
+              {canSaveToItem && onSaveToItem && (
+                <div className="flex justify-end">
+                  <button onClick={() => handleSave("audience")} disabled={savingKind === "audience"} className="win98-button text-[10px] px-2 py-0.5">
+                    {savingKind === "audience" ? <Loader2 className="h-3 w-3 animate-spin" /> : "💾 Save to item"}
+                  </button>
+                </div>
+              )}
               <div className="bg-white border border-[hsl(var(--win98-shadow))] p-2">
                 <div className="font-bold mb-1">Overall Effectiveness: {Math.round(audience_analysis.effectiveness_score)}/100</div>
                 <p className="opacity-80">{audience_analysis.summary}</p>
