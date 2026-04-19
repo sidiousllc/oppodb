@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useWindowManager } from "@/contexts/WindowManagerContext";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -100,6 +101,7 @@ interface Props {
 
 export function CandidateVotingRecord({ candidateSlug, candidateName, candidateState }: Props) {
   const { canManageContent } = useUserRole();
+  const { openWindow } = useWindowManager();
   const [linkedPeopleId, setLinkedPeopleId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -482,17 +484,35 @@ export function CandidateVotingRecord({ candidateSlug, candidateName, candidateS
               {sponsoredBills.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 text-center">No sponsored bills found.</p>
               ) : (
-                sponsoredBills.map((b) => (
-                  <div key={b.bill_id} className="flex items-center gap-2 text-xs border-b border-border/30 pb-1.5 pt-1">
-                    <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold border bg-primary/10 text-primary border-primary/25 shrink-0">
-                      {b.bill_number}
-                    </span>
-                    <span className="text-foreground line-clamp-1 flex-1">{b.title}</span>
-                    {b.session?.session_name && (
-                      <span className="text-[9px] text-muted-foreground shrink-0">{b.session.session_name}</span>
-                    )}
-                  </div>
-                ))
+                sponsoredBills.map((b) => {
+                  const displayTitle = b.title && b.title !== "Untitled" ? b.title : (b.bill_number || `Bill #${b.bill_id}`);
+                  return (
+                    <button
+                      key={b.bill_id}
+                      type="button"
+                      onClick={() =>
+                        openWindow({
+                          appId: "bill-detail",
+                          title: `${b.bill_number || "Bill"} — ${displayTitle.slice(0, 40)}`,
+                          icon: "📜",
+                          payload: { billId: b.bill_id, billNumber: b.bill_number, title: displayTitle },
+                          size: { width: 560, height: 600 },
+                        })
+                      }
+                      className="w-full flex items-center gap-2 text-xs border-b border-border/30 pb-1.5 pt-1 hover:bg-accent/30 rounded px-1 text-left transition-colors"
+                      title={displayTitle}
+                    >
+                      <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold border bg-primary/10 text-primary border-primary/25 shrink-0">
+                        {b.bill_number || `#${b.bill_id}`}
+                      </span>
+                      <span className="text-foreground flex-1 truncate">{displayTitle}</span>
+                      {b.session?.session_name && (
+                        <span className="text-[9px] text-muted-foreground shrink-0">{b.session.session_name}</span>
+                      )}
+                      <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                    </button>
+                  );
+                })
               )}
             </div>
           )}
