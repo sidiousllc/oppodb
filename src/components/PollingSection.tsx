@@ -1020,9 +1020,26 @@ function ApprovalGauge({ approve, disapprove, margin }: {approve: number;disappr
 function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
   const { ref, inView } = useInView();
   const [zoomMonths, setZoomMonths] = useState<number>(0);
+  const [topicChoice, setTopicChoice] = useState<string>("all");
 
-  const favFilter = useCallback((p: PollEntry) => p.poll_type === "favorability", []);
+  const favFilter = useCallback(
+    (p: PollEntry) =>
+      p.poll_type === "favorability" &&
+      (topicChoice === "all" || p.candidate_or_topic === topicChoice),
+    [topicChoice]
+  );
   const picker = usePollPicker(polls, favFilter);
+
+  // Available favorability subjects (sorted by frequency)
+  const topicOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    polls
+      .filter((p) => p.poll_type === "favorability")
+      .forEach((p) => counts.set(p.candidate_or_topic, (counts.get(p.candidate_or_topic) ?? 0) + 1));
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([t, n]) => ({ topic: t, n }));
+  }, [polls]);
 
   const favPolls = picker.filteredPolls.filter((p) => p.poll_type === "favorability");
   if (favPolls.length < 2) return null;
@@ -1042,23 +1059,30 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
 
   const latest = sorted[sorted.length - 1];
 
-  // Build chart data — aggregate by date (average if multiple polls same day)
-  const byDate = new Map<string, { fav: number[]; unfav: number[]; sources: string[] }>();
+  // Build chart data — aggregate by date+topic so different subjects don't pollute each other
+  // When "all" is selected, group only by date (cross-topic average).
+  const byDate = new Map<string, { fav: number[]; unfav: number[]; sources: Set<string>; topics: Set<string> }>();
   sorted.forEach((p) => {
-    const entry = byDate.get(p.date_conducted) ?? { fav: [], unfav: [], sources: [] };
+    const key = p.date_conducted;
+    const entry = byDate.get(key) ?? { fav: [], unfav: [], sources: new Set<string>(), topics: new Set<string>() };
     if (p.favor_pct != null) entry.fav.push(p.favor_pct);
     if (p.oppose_pct != null) entry.unfav.push(p.oppose_pct);
-    entry.sources.push(getSourceInfo(p.source).name);
-    byDate.set(p.date_conducted, entry);
+    entry.sources.add(getSourceInfo(p.source).name);
+    entry.topics.add(p.candidate_or_topic);
+    byDate.set(key, entry);
   });
 
-  const chartData = Array.from(byDate.entries()).map(([date, v]) => ({
-    date,
-    dateLabel: new Date(date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
-    favorable: Math.round(v.fav.reduce((a, b) => a + b, 0) / v.fav.length * 10) / 10,
-    unfavorable: Math.round(v.unfav.reduce((a, b) => a + b, 0) / v.unfav.length * 10) / 10,
-    sources: v.sources.join(", "),
-  }));
+  const chartData = Array.from(byDate.entries())
+    .filter(([, v]) => v.fav.length > 0 && v.unfav.length > 0)
+    .map(([date, v]) => ({
+      date,
+      dateLabel: new Date(date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
+      favorable: Math.round((v.fav.reduce((a, b) => a + b, 0) / v.fav.length) * 10) / 10,
+      unfavorable: Math.round((v.unfav.reduce((a, b) => a + b, 0) / v.unfav.length) * 10) / 10,
+      sources: Array.from(v.sources).join(", "),
+      topics: Array.from(v.topics).join(", "),
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   const zoomOptions = [
     { label: "All", value: 0 },
@@ -1068,16 +1092,37 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
     { label: "2Y", value: 24 },
   ];
 
+  const lastUpdatedRel = (() => {
+    const d = new Date(absoluteMax + "T00:00:00");
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (days <= 0) return "today";
+    if (days === 1) return "1 day ago";
+    if (days < 30) return `${days} days ago`;
+    const months = Math.floor(days / 30);
+    return months === 1 ? "1 month ago" : `${months} months ago`;
+  })();
+
   return (
     <AnimatedCard>
       <div ref={ref} className="candidate-card p-5 text-left h-full">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
-            <h3 className="font-display text-sm font-semibold text-foreground">Favorability Tracking</h3>
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              Favorability Tracking
+              <span
+                className="ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-medium"
+                style={{ backgroundColor: "hsla(150, 55%, 45%, 0.12)", color: "hsl(150, 55%, 38%)" }}
+              >
+                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} />
+                LIVE
+              </span>
+            </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               {picker.isAll
-                ? `${sorted.length} data points from ${new Set(sorted.map((p) => p.source)).size} sources`
+                ? `${chartData.length} aggregated points · ${sorted.length} polls · ${new Set(sorted.map((p) => p.source)).size} sources`
                 : `${picker.selectedIds.size} poll${picker.selectedIds.size !== 1 ? "s" : ""} selected`}
+              {" · updated "}
+              {lastUpdatedRel}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1088,6 +1133,21 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
           </div>
         </div>
         <div className="flex items-center gap-1 flex-wrap mb-3">
+          {topicOptions.length > 1 && (
+            <select
+              value={topicChoice}
+              onChange={(e) => setTopicChoice(e.target.value)}
+              className="win98-button text-[10px] px-1.5 py-0.5 bg-card border border-border"
+              title="Filter by favorability subject"
+            >
+              <option value="all">All subjects ({topicOptions.reduce((s, t) => s + t.n, 0)})</option>
+              {topicOptions.map((t) => (
+                <option key={t.topic} value={t.topic}>
+                  {t.topic} ({t.n})
+                </option>
+              ))}
+            </select>
+          )}
           <PollPickerButton showPicker={picker.showPicker} setShowPicker={picker.setShowPicker} isAll={picker.isAll} count={picker.selectedIds.size} />
           {zoomOptions.map((opt) => (
             <button
@@ -1181,10 +1241,10 @@ function FavorabilityChart({ polls }: {polls: PollEntry[];}) {
             </AreaChart>
           </ResponsiveContainer>
         </div>
-        <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground flex-wrap">
           <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(150, 55%, 45%)" }} /> Favorable</span>
           <span className="flex items-center gap-1"><span className="inline-block h-2 w-6 rounded-sm" style={{ backgroundColor: "hsl(0, 65%, 50%)" }} /> Unfavorable</span>
-          <span className="ml-auto">{sorted.length} data points tracked</span>
+          <span className="ml-auto">{chartData.length} points · {sorted.length} polls</span>
         </div>
       </div>
     </AnimatedCard>
@@ -2142,14 +2202,42 @@ export function PollingSection() {
   const [selectedPoll, setSelectedPoll] = useState<PollEntry | null>(null);
   const [activeTab, setActiveTab] = useState<"polling" | "markets" | "finance">("polling");
 
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
   useEffect(() => {
     loadPolls();
+
+    // Subscribe to realtime changes so favorability + all polling charts auto-update
+    const channel = supabase
+      .channel("polling_data_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "polling_data" },
+        () => {
+          // Debounced reload — multiple rows often arrive in bursts during a sync
+          if ((window as any).__pollingReloadTimer) clearTimeout((window as any).__pollingReloadTimer);
+          (window as any).__pollingReloadTimer = setTimeout(() => {
+            loadPolls();
+          }, 800);
+        }
+      )
+      .subscribe();
+
+    // Periodic background refresh (every 5 minutes) as a safety net for missed events
+    const interval = setInterval(() => loadPolls(), 5 * 60 * 1000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+      if ((window as any).__pollingReloadTimer) clearTimeout((window as any).__pollingReloadTimer);
+    };
   }, []);
 
   async function loadPolls() {
     setLoading(true);
     const data = await fetchPollingData();
     setPolls(data);
+    setLastUpdated(new Date());
     setLoading(false);
   }
 
