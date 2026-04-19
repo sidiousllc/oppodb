@@ -31,6 +31,111 @@ async function fetchWithTimeout(url: string, init: RequestInit, ms: number): Pro
   }
 }
 
+/* ── Content cleanup (heuristic + AI) ─────────────────────── */
+
+/** Fast heuristic pre-pass: drop nav/footer/share/subscribe/related-article noise. */
+function cleanMarkdown(md: string): string {
+  if (!md) return "";
+  const lines = md.split("\n");
+  const cleaned: string[] = [];
+  const noisePatterns = [
+    /^#{1,3}\s*(menu|navigation|nav|footer|sidebar|advertisement|cookie|subscribe|newsletter|sign up|log in|search|follow us|share this|related|trending|most read|popular|comments|leave a reply|more from|read more|recommended|you may also like|editor.?s pick|donate|support our work|about (us|the author))/i,
+    /^\[?(menu|skip to|sign in|log in|subscribe|newsletter|cookie|accept|reject|privacy policy|terms of service|advertise|about us|contact us|careers|share on|tweet|email this|donate)\]?/i,
+    /^(advertisement|sponsored|ad|promo|©|copyright|\|.*\|.*\|)/i,
+    /^\s*(\*\s*){3,}/,
+  ];
+  let skipBlock = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (noisePatterns.some((p) => p.test(trimmed))) { skipBlock = true; continue; }
+    if (skipBlock && trimmed.startsWith("#")) skipBlock = false;
+    if (skipBlock && trimmed.length > 0 && trimmed.length < 60) continue;
+    if (skipBlock && trimmed.length === 0) { skipBlock = false; continue; }
+    cleaned.push(line);
+  }
+  while (cleaned.length > 0 && cleaned[cleaned.length - 1].trim().length < 30 && !cleaned[cleaned.length - 1].trim().startsWith("#")) {
+    cleaned.pop();
+  }
+  return cleaned.join("\n").trim();
+}
+
+/**
+ * AI second-pass extractor: returns ONLY the main report/article body.
+ * Strips related-articles widgets, share bars, subscribe boxes, comments,
+ * "more from this section", author bios, and ads that survived the heuristic.
+ * Returns null on any failure so callers fall back to the heuristic output.
+ */
+async function aiExtractMainArticle(rawMarkdown: string, sourceUrl: string): Promise<string | null> {
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!apiKey) return null;
+  const input = rawMarkdown.length > 18000 ? rawMarkdown.slice(0, 18000) + "\n\n[truncated]" : rawMarkdown;
+
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 25_000);
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content: [
+              "You extract the MAIN REPORT/ARTICLE BODY from scraped political messaging guidance, polling memos, or policy briefs.",
+              "Return ONLY the report via the tool. KEEP: headline, byline/dateline, all body paragraphs, blockquotes, inline lists, polling tables/findings, do/don't framing, recommended language, audience segments.",
+              "REMOVE: site navigation, breadcrumbs, share/social buttons, 'related research', 'more from this section', 'recommended for you', 'trending', author bios at the end, subscribe/newsletter/donate boxes, comments, ads, 'sign in to read more', cookie banners, copyright footers, repeated section labels, and any widget that is not part of the report narrative.",
+              "Do NOT summarize, rephrase, translate, or add commentary. Preserve original wording exactly.",
+              "Output clean markdown: '# Headline' on first line, then byline/date if present, then sections separated by blank lines.",
+            ].join(" "),
+          },
+          { role: "user", content: `Source URL: ${sourceUrl}\n\n--- SCRAPED CONTENT ---\n${input}` },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "return_article",
+            description: "Return the cleaned main report body in markdown",
+            parameters: {
+              type: "object",
+              properties: {
+                article_markdown: { type: "string", description: "The report body in clean markdown. Empty string if no real report was found." },
+                is_article: { type: "boolean", description: "False if the page is a paywall/login/404/listing page rather than an actual report." },
+              },
+              required: ["article_markdown", "is_article"],
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "return_article" } },
+      }),
+    }).finally(() => clearTimeout(t));
+
+    if (!resp.ok) {
+      console.log("AI extract failed:", resp.status);
+      return null;
+    }
+    const data = await resp.json();
+    const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    if (!args) return null;
+    const parsed = JSON.parse(args);
+    if (!parsed.is_article) return null;
+    const out = String(parsed.article_markdown || "").trim();
+    return out.length >= 100 ? out : null;
+  } catch (e) {
+    console.error("AI extract error:", (e as Error)?.message || e);
+    return null;
+  }
+}
+
+/** Two-pass cleanup: heuristic strip then AI extraction. Always returns usable markdown. */
+async function cleanContent(rawMarkdown: string, sourceUrl: string): Promise<string> {
+  const heuristic = cleanMarkdown(rawMarkdown);
+  if (heuristic.length < 200) return heuristic;
+  const aiOut = await aiExtractMainArticle(heuristic, sourceUrl);
+  return aiOut || heuristic;
+}
+
 async function firecrawlScrape(url: string, firecrawlKey: string): Promise<{ markdown: string; title: string; links: string[] } | null> {
   try {
     const res = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
@@ -43,8 +148,9 @@ async function firecrawlScrape(url: string, firecrawlKey: string): Promise<{ mar
       return null;
     }
     const data = await res.json();
+    const rawMd = data?.data?.markdown || data?.markdown || "";
     return {
-      markdown: data?.data?.markdown || data?.markdown || "",
+      markdown: await cleanContent(rawMd, url),
       title: data?.data?.metadata?.title || data?.metadata?.title || "",
       links: data?.data?.links || data?.links || [],
     };
@@ -66,12 +172,18 @@ async function firecrawlSearch(query: string, firecrawlKey: string, limit = 3): 
       return [];
     }
     const data = await res.json();
-    return (data?.data || []).map((r: any) => ({
+    const rawResults = (data?.data || []).map((r: any) => ({
       markdown: r.markdown || "",
       title: r.title || r.metadata?.title || "",
       url: r.url || "",
       description: r.description || "",
     }));
+    // Run AI cleanup sequentially per result to avoid bursting the AI gateway.
+    const cleaned: Array<{ markdown: string; title: string; url: string; description: string }> = [];
+    for (const r of rawResults) {
+      cleaned.push({ ...r, markdown: await cleanContent(r.markdown, r.url) });
+    }
+    return cleaned;
   } catch (e) {
     console.error(`Firecrawl search error:`, (e as Error)?.message || e);
     return [];
