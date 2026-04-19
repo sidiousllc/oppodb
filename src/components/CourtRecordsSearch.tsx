@@ -9,7 +9,7 @@ interface CourtRecordsSearchProps {
 
 interface CourtResult {
   id: string;
-  source: "courtlistener" | "judyrecords" | "cached";
+  source: "courtlistener" | "judyrecords" | "cached" | "juriscraper";
   case_name: string;
   case_number?: string | null;
   court?: string | null;
@@ -38,7 +38,8 @@ const STATES = [
 ];
 
 const SOURCE_LABEL: Record<string, string> = {
-  courtlistener: "Federal (CourtListener)",
+  courtlistener: "Federal Dockets (CourtListener)",
+  juriscraper: "Opinions (Juriscraper)",
   judyrecords: "State (JudyRecords)",
   cached: "Saved",
 };
@@ -122,7 +123,7 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
         <div className="flex items-center gap-2 text-[11px]">
           <Scale className="h-4 w-4" />
           <span className="font-bold">Court Records Search</span>
-          <span className="text-[hsl(var(--muted-foreground))]">— Federal (CourtListener) + State (JudyRecords)</span>
+          <span className="text-[hsl(var(--muted-foreground))]">— Federal Dockets + Opinions (Juriscraper) + State (JudyRecords)</span>
         </div>
       </div>
 
@@ -206,7 +207,7 @@ export function CourtRecordsSearch({ onBack }: CourtRecordsSearchProps) {
             <div className="text-[10px]">
               <p className="font-bold mb-1">In-app federal + state court search</p>
               <p className="text-[hsl(var(--muted-foreground))]">
-                Federal results come from CourtListener (RECAP). State results come from JudyRecords. Click any result to view full details and linked documents in a window.
+                Federal dockets via CourtListener (RECAP). Court opinions across 200+ state &amp; federal appellate courts via Free Law Project's <a href="https://github.com/freelawproject/juriscraper" target="_blank" rel="noopener noreferrer" className="underline">Juriscraper</a> pipeline. State case records via JudyRecords. Click any result to view details and linked documents.
               </p>
             </div>
           </div>
