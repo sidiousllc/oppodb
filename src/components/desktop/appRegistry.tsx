@@ -195,7 +195,7 @@ function LegHubWindow({ initialSlug, openApp }: { initialSlug?: string; openApp:
   return (
     <LegHub
       stateLegDistricts={stateLeg}
-      stateLegLoading={loading}
+      stateLegLoading={stateLegLoading}
       onStateLegSync={handleSync}
       stateLegSyncing={syncing}
       districts={districts}
