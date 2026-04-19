@@ -389,43 +389,82 @@ Deno.serve(async (req) => {
 
     // Parse request
     const body = await req.json().catch(() => ({}));
-    const sources: string[] = body.sources || Object.keys(ALL_SOURCES);
+    const requested: string[] | undefined = body.sources;
+    const maxSources: number = Math.max(1, Math.min(Number(body.max_sources) || 8, 30));
+    const allKeys = Object.keys(ALL_SOURCES);
+    const scraperNames = (requested && requested.length > 0
+      ? requested.filter((s) => ALL_SOURCES[s])
+      : allKeys
+    ).slice(0, maxSources);
 
-    console.log("Syncing messaging from sources:", sources);
-
-    // Scrape sources in parallel (batch 4 at a time to avoid rate limits)
-    const allArticles: ScrapedArticle[] = [];
-    const scraperNames = sources.filter(s => ALL_SOURCES[s]);
-    
-    for (let i = 0; i < scraperNames.length; i += 4) {
-      const batch = scraperNames.slice(i, i + 4);
-      const results = await Promise.allSettled(batch.map(s => ALL_SOURCES[s](firecrawlKey)));
-      for (const result of results) {
-        if (result.status === "fulfilled") allArticles.push(...result.value);
-      }
-      if (i + 4 < scraperNames.length) await new Promise(r => setTimeout(r, 1000));
+    if (scraperNames.length === 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "No valid sources requested", available: allKeys }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    // Get existing slugs to avoid duplicates
-    const { data: existing } = await supabase.from("messaging_guidance").select("slug");
-    const existingSlugs = new Set((existing || []).map((e: any) => e.slug));
+    console.log("Syncing messaging from sources:", scraperNames);
 
-    // Insert new articles
-    const newArticles = allArticles.filter((a) => !existingSlugs.has(a.slug));
-    let inserted = 0;
+    // Scrape sources in parallel (batch 3 at a time to avoid rate limits / timeouts)
+    const allArticles: ScrapedArticle[] = [];
+    const perSource: Record<string, { ok: boolean; count: number; error?: string }> = {};
 
-    for (const article of newArticles) {
-      const { error } = await supabase.from("messaging_guidance").insert(article);
-      if (!error) inserted++;
-      else console.error("Insert error:", error.message);
+    for (let i = 0; i < scraperNames.length; i += 3) {
+      const batch = scraperNames.slice(i, i + 3);
+      const results = await Promise.allSettled(batch.map((s) => ALL_SOURCES[s](firecrawlKey)));
+      results.forEach((result, idx) => {
+        const name = batch[idx];
+        if (result.status === "fulfilled") {
+          allArticles.push(...result.value);
+          perSource[name] = { ok: true, count: result.value.length };
+        } else {
+          console.error(`Scraper ${name} failed:`, result.reason);
+          perSource[name] = { ok: false, count: 0, error: String(result.reason).slice(0, 200) };
+        }
+      });
+      if (i + 3 < scraperNames.length) await new Promise((r) => setTimeout(r, 800));
+    }
+
+    // Dedupe in-memory by slug (keep first occurrence)
+    const bySlug = new Map<string, ScrapedArticle>();
+    for (const a of allArticles) {
+      if (!a.slug) continue;
+      if (!bySlug.has(a.slug)) bySlug.set(a.slug, a);
+    }
+    const deduped = Array.from(bySlug.values());
+
+    // Upsert by slug — refresh existing rows and insert new ones
+    let upserted = 0;
+    let failed = 0;
+    const errors: string[] = [];
+    // Batch upserts in chunks of 50
+    for (let i = 0; i < deduped.length; i += 50) {
+      const chunk = deduped.slice(i, i + 50);
+      const { error, count } = await supabase
+        .from("messaging_guidance")
+        .upsert(chunk, { onConflict: "slug", count: "exact" });
+      if (error) {
+        failed += chunk.length;
+        errors.push(error.message);
+        console.error("Upsert error:", error.message);
+      } else {
+        upserted += count ?? chunk.length;
+      }
     }
 
     return new Response(
       JSON.stringify({
-        success: true, scraped: allArticles.length, new: inserted,
-        sources: scraperNames, message: `Found ${allArticles.length} articles, inserted ${inserted} new.`,
+        success: true,
+        scraped: allArticles.length,
+        deduped: deduped.length,
+        upserted,
+        failed,
+        per_source: perSource,
+        errors: errors.slice(0, 5),
+        message: `Scraped ${allArticles.length}, deduped ${deduped.length}, upserted ${upserted}${failed ? `, failed ${failed}` : ""}.`,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
     console.error("Messaging sync error:", error);
