@@ -174,7 +174,7 @@ function makeSearchScraper(
         if (result.markdown.length > 100) {
           articles.push({
             title: result.title || `${sourceName} Report`,
-            slug: makeSlug(result.title || `${sourceName}-report`),
+            slug: makeSourceSlug(sourceName, result.title || result.url || `${sourceName}-report`),
             source: sourceName,
             source_url: result.url,
             author: sourceName,
@@ -210,7 +210,7 @@ async function scrapeNavigator(firecrawlKey: string): Promise<ScrapedArticle[]> 
       const article = await firecrawlScrape(link, firecrawlKey);
       if (article && article.title && article.markdown.length > 100) {
         articles.push({
-          title: article.title, slug: makeSlug(article.title),
+          title: article.title, slug: makeSourceSlug("navigator", article.title || link),
           source: "Navigator Research", source_url: link, author: "Navigator Research",
           published_date: null, summary: article.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
           content: article.markdown, issue_areas: ["Democrat"], research_type: "message-guidance",
@@ -237,7 +237,7 @@ async function scrapeHeritage(firecrawlKey: string): Promise<ScrapedArticle[]> {
       if (article && article.title && article.markdown.length > 100) {
         articles.push({
           title: article.title.replace(" | The Heritage Foundation", ""),
-          slug: makeSlug(article.title), source: "Heritage Foundation", source_url: link,
+          slug: makeSourceSlug("heritage", article.title || link), source: "Heritage Foundation", source_url: link,
           author: "Heritage Foundation", published_date: null,
           summary: article.markdown.slice(0, 300).replace(/[#*\n]/g, " ").trim(),
           content: article.markdown, issue_areas: detectIssueAreas(article.markdown, "Republican"),
