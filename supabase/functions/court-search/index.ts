@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface CourtResult {
   id: string;
-  source: "courtlistener" | "judyrecords" | "cached";
+  source: "courtlistener" | "judyrecords" | "cached" | "juriscraper";
   case_name: string;
   case_number?: string | null;
   court?: string | null;
@@ -184,6 +184,48 @@ Deno.serve(async (req) => {
         }
       } catch (e: any) {
         errors.push({ source: "courtlistener", message: e?.message ?? "fetch failed" });
+      }
+    }
+
+    // -------- Opinions: Juriscraper-sourced (via CourtListener Opinions API) --------
+    // Free Law Project's Juriscraper (https://github.com/freelawproject/juriscraper) populates
+    // CourtListener's opinion corpus across 200+ state and federal appellate courts.
+    // We query the opinions endpoint to surface that scraped content here.
+    if (scope === "all" || scope === "federal" || scope === "state") {
+      try {
+        const headers: Record<string, string> = { Accept: "application/json", "User-Agent": "ORO-OppoDB/1.0" };
+        const tok = Deno.env.get("COURTLISTENER_TOKEN");
+        if (tok) headers.Authorization = `Token ${tok}`;
+        const opUrl = `https://www.courtlistener.com/api/rest/v4/search/?type=o&q=${encodeURIComponent(q)}&order_by=dateFiled+desc`;
+        const r = await fetch(opUrl, { headers });
+        if (r.ok) {
+          const data = await r.json();
+          for (const item of (data.results ?? []).slice(0, 20)) {
+            const courtId: string = item.court_id || item.court || "";
+            const isStateCourt = courtId && !/^(ca\d|scotus|fed|dc|cit|cc|tax|bap|mc)/i.test(courtId);
+            const itemJurisdiction = isStateCourt ? "state" : "federal";
+            if (scope === "federal" && itemJurisdiction !== "federal") continue;
+            if (scope === "state" && itemJurisdiction !== "state") continue;
+            results.push({
+              id: String(item.cluster_id ?? item.id),
+              source: "juriscraper",
+              case_name: item.caseName ?? item.case_name ?? "Untitled Opinion",
+              case_number: item.docketNumber,
+              court: item.court ?? courtId ?? null,
+              jurisdiction: itemJurisdiction,
+              filed_date: item.dateFiled,
+              status: item.status,
+              snippet: item.snippet || (Array.isArray(item.text) ? item.text[0] : null),
+              docket_url: item.absolute_url ? `https://www.courtlistener.com${item.absolute_url}` : null,
+              documents: item.download_url ? [{ name: "Opinion PDF", url: item.download_url, type: "PDF" }] : undefined,
+              raw: item,
+            });
+          }
+        } else {
+          errors.push({ source: "juriscraper", message: `HTTP ${r.status}` });
+        }
+      } catch (e: any) {
+        errors.push({ source: "juriscraper", message: e?.message ?? "fetch failed" });
       }
     }
 
