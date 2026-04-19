@@ -120,48 +120,61 @@ serve(async (req) => {
     const selected = (Array.isArray(include_sections) ? include_sections : SECTIONS).filter((s: string) => SECTIONS.includes(s as Section)) as Section[];
     const ctx = await buildContext(admin, subject, selected);
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: "You are a political messaging effectiveness analyst. Score how messaging targeted at this subject would resonate with key audience segments. Return strict JSON via tool." },
-          { role: "user", content: `SUBJECT: ${subject.title}\nSummary: ${subject.summary}\nTags: ${(subject.tags || []).join(", ")}\n\nDETAILS:\n${subject.content}\n\nCONTEXT:\n${ctx}` },
-        ],
-        tools: [{ type: "function", function: {
-          name: "score_subject_audience",
-          description: "Audience effectiveness scoring",
-          parameters: {
-            type: "object",
-            properties: {
-              effectiveness_score: { type: "number" },
-              audience_scores: { type: "object", properties: {
-                base: { type: "number" }, swing: { type: "number" }, independents: { type: "number" },
-                press: { type: "number" }, donors: { type: "number" }, opposition: { type: "number" },
-              } },
-              segment_breakdown: { type: "array", items: { type: "object", properties: {
-                segment: { type: "string" }, score: { type: "number" }, reasoning: { type: "string" },
-              }, required: ["segment", "score", "reasoning"] } },
-              resonance_factors: { type: "array", items: { type: "object", properties: {
-                factor: { type: "string" }, impact: { type: "string", enum: ["positive","negative","neutral"] }, note: { type: "string" },
-              }, required: ["factor", "impact"] } },
-              risks: { type: "array", items: { type: "object", properties: {
-                headline: { type: "string" }, severity: { type: "string", enum: ["low","medium","high","critical"] }, summary: { type: "string" },
-              }, required: ["headline", "severity", "summary"] } },
-              summary: { type: "string" },
+    // Wrap AI call with timeout + structured error to avoid client-side "non-2xx" rejection
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 110_000);
+    let aiResp: Response;
+    try {
+      aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        signal: ctrl.signal,
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: "You are a political messaging effectiveness analyst. Score how messaging targeted at this subject would resonate with key audience segments. Return strict JSON via tool." },
+            { role: "user", content: `SUBJECT: ${subject.title}\nSummary: ${subject.summary}\nTags: ${(subject.tags || []).join(", ")}\n\nDETAILS:\n${subject.content}\n\nCONTEXT:\n${ctx}` },
+          ],
+          tools: [{ type: "function", function: {
+            name: "score_subject_audience",
+            description: "Audience effectiveness scoring",
+            parameters: {
+              type: "object",
+              properties: {
+                effectiveness_score: { type: "number" },
+                audience_scores: { type: "object", properties: {
+                  base: { type: "number" }, swing: { type: "number" }, independents: { type: "number" },
+                  press: { type: "number" }, donors: { type: "number" }, opposition: { type: "number" },
+                } },
+                segment_breakdown: { type: "array", items: { type: "object", properties: {
+                  segment: { type: "string" }, score: { type: "number" }, reasoning: { type: "string" },
+                }, required: ["segment", "score", "reasoning"] } },
+                resonance_factors: { type: "array", items: { type: "object", properties: {
+                  factor: { type: "string" }, impact: { type: "string", enum: ["positive","negative","neutral"] }, note: { type: "string" },
+                }, required: ["factor", "impact"] } },
+                risks: { type: "array", items: { type: "object", properties: {
+                  headline: { type: "string" }, severity: { type: "string", enum: ["low","medium","high","critical"] }, summary: { type: "string" },
+                }, required: ["headline", "severity", "summary"] } },
+                summary: { type: "string" },
+              },
+              required: ["effectiveness_score", "audience_scores", "segment_breakdown", "resonance_factors", "risks", "summary"],
             },
-            required: ["effectiveness_score", "audience_scores", "segment_breakdown", "resonance_factors", "risks", "summary"],
-          },
-        } }],
-        tool_choice: { type: "function", function: { name: "score_subject_audience" } },
-      }),
-    });
+          } }],
+          tool_choice: { type: "function", function: { name: "score_subject_audience" } },
+        }),
+      });
+    } catch (fetchErr: any) {
+      clearTimeout(timer);
+      console.error("AI fetch failed:", fetchErr?.message || fetchErr);
+      return new Response(JSON.stringify({ error: fetchErr?.name === "AbortError" ? "AI request timed out — try a faster model (e.g. gemini-2.5-flash)" : "AI gateway unreachable" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    clearTimeout(timer);
     if (!aiResp.ok) {
-      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limit" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits depleted" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      console.error("AI error", aiResp.status, await aiResp.text());
-      return new Response(JSON.stringify({ error: "AI gateway error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const errText = await aiResp.text().catch(() => "");
+      console.error("AI error", aiResp.status, errText);
+      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limit — please retry in a moment" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits depleted" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: `AI gateway error (${aiResp.status})` }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const aiData = await aiResp.json();
     const parsed = JSON.parse(aiData.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments || "{}");
