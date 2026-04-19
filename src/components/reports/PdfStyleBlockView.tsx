@@ -582,9 +582,10 @@ export function PdfStyleBlockView({ block }: { block: ReportBlock }) {
     }
 
     default: {
-      const snap: any = (block as any).snapshot;
+      const b: any = block as any;
+      const snap: any = b.snapshot;
       return (
-        <PdfFrame title={`${(block as any).type}${block.title ? " — " + block.title : ""}`} accent="muted">
+        <PdfFrame title={`${b.type}${b.title ? " — " + b.title : ""}`} accent="muted">
           {snap ? (
             <pre className="text-[10px] bg-muted p-2 rounded max-h-72 overflow-auto whitespace-pre-wrap">
               {JSON.stringify(snap, null, 2)}
