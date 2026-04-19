@@ -231,13 +231,13 @@ function StatLegDetail({
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="mt-4">
+          <SubjectAIPanel subjectType="state_leg" subjectRef={district.id} subjectTitle={`${district.state_abbr} ${label} ${district.district_number}`} defaultScope="state" defaultScopeRef={district.state_abbr} />
           <StateLegBoundaryMap
             stateAbbr={district.state_abbr}
             stateName={district.state}
             chamber={district.chamber as "house" | "senate"}
             districtNumber={district.district_number}
           />
-          <SubjectAIPanel subjectType="state_leg" subjectRef={district.id} subjectTitle={`${district.state_abbr} ${label} ${district.district_number}`} defaultScope="state" defaultScopeRef={district.state_abbr} />
 
           <div className="grid grid-cols-2 gap-3 mb-6 mt-6">
             {district.population != null && (
