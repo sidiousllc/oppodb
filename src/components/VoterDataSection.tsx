@@ -507,15 +507,78 @@ export function VoterDataSection() {
       )}
 
       {/* Voter Results */}
-      {searchType !== "races" && hasSearched && !loading && (
+      {searchType !== "races" && hasSearched && !loading && (() => {
+        const partyOptions = Array.from(new Set(results.map(r => r.party).filter(Boolean))).sort();
+        const statusOptions = Array.from(new Set(results.map(r => r.registration_status).filter(Boolean))).sort();
+        const tagOptions = Array.from(new Set(results.flatMap(r => r.tags || []).filter(Boolean))).sort();
+        const committeeOptions = Array.from(new Set(
+          results.flatMap(r => (r.contributions || []).map(c => c.committee).filter(Boolean))
+        )).sort();
+
+        const filteredResults = results.filter(r => {
+          if (filterParty && r.party !== filterParty) return false;
+          if (filterStatus && r.registration_status !== filterStatus) return false;
+          if (filterTag && !(r.tags || []).includes(filterTag)) return false;
+          if (filterContribTo && !(r.contributions || []).some(c => c.committee === filterContribTo)) return false;
+          return true;
+        });
+
+        const anyFilter = filterParty || filterStatus || filterTag || filterContribTo;
+
+        return (
         <div>
+          {/* Cross-reference filter bar */}
+          {results.length > 0 && (
+            <div className="win98-sunken bg-[hsl(var(--win98-light))] p-2 mb-2">
+              <div className="flex items-center gap-2 flex-wrap text-[10px]">
+                <span className="font-bold">🔀 Cross-reference:</span>
+                <label className="flex items-center gap-1">
+                  Party:
+                  <select value={filterParty} onChange={e => setFilterParty(e.target.value)} className="win98-input text-[10px] py-0">
+                    <option value="">All</option>
+                    {partyOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </label>
+                <label className="flex items-center gap-1">
+                  Status:
+                  <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="win98-input text-[10px] py-0">
+                    <option value="">All</option>
+                    {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+                <label className="flex items-center gap-1">
+                  Tags:
+                  <select value={filterTag} onChange={e => setFilterTag(e.target.value)} className="win98-input text-[10px] py-0" disabled={tagOptions.length === 0}>
+                    <option value="">All</option>
+                    {tagOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </label>
+                <label className="flex items-center gap-1">
+                  Contribution To:
+                  <select value={filterContribTo} onChange={e => setFilterContribTo(e.target.value)} className="win98-input text-[10px] py-0" disabled={committeeOptions.length === 0}>
+                    <option value="">All</option>
+                    {committeeOptions.map(c => <option key={c} value={c}>{c.length > 50 ? c.slice(0, 50) + "…" : c}</option>)}
+                  </select>
+                </label>
+                {anyFilter && (
+                  <button
+                    onClick={() => { setFilterParty(""); setFilterStatus(""); setFilterTag(""); setFilterContribTo(""); }}
+                    className="win98-button text-[9px]"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] text-[hsl(var(--muted-foreground))]">
-              {results.length} result{results.length !== 1 ? "s" : ""} found
+              {filteredResults.length} of {results.length} result{results.length !== 1 ? "s" : ""}{anyFilter ? " (filtered)" : ""}
             </span>
-            {results.length > 0 && (
+            {filteredResults.length > 0 && (
               <div className="flex gap-1 text-[9px]">
-                {Array.from(new Set(results.map(r => r.source))).map(src => (
+                {Array.from(new Set(filteredResults.map(r => r.source))).map(src => (
                   <span key={src} className="win98-raised px-1 py-0 text-[8px] font-bold" style={{
                     backgroundColor: SOURCE_COLORS[src] || "hsl(var(--win98-light))",
                   }}>
