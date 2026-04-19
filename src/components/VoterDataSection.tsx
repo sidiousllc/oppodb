@@ -589,7 +589,7 @@ export function VoterDataSection() {
             )}
           </div>
 
-          {results.length > 0 ? (
+          {filteredResults.length > 0 ? (
             <div className="win98-sunken bg-white">
               <table className="w-full text-[10px]">
                 <thead>
@@ -604,7 +604,7 @@ export function VoterDataSection() {
                   </tr>
                 </thead>
                 <tbody>
-                  {results.map((v, i) => {
+                  {filteredResults.map((v, i) => {
                     const key = `${v.source}-${v.voter_id || v.full_name}-${i}`;
                     const isExpanded = expandedVoter === key;
                     return (
@@ -684,11 +684,12 @@ export function VoterDataSection() {
           ) : (
             <div className="win98-sunken bg-white p-8 text-center text-[10px] text-[hsl(var(--muted-foreground))]">
               <Users className="h-6 w-6 mx-auto mb-2 opacity-40" />
-              No results found matching your search criteria.
+              {anyFilter ? "No results match the selected filters." : "No results found matching your search criteria."}
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* Empty state before search */}
       {searchType !== "races" && !hasSearched && (
