@@ -653,7 +653,7 @@ Deno.serve(async (req) => {
     // Parse request
     const body = await req.json().catch(() => ({}));
     const requested: string[] | undefined = body.sources;
-    const maxSources: number = Math.max(1, Math.min(Number(body.max_sources) || 8, 30));
+    const maxSources: number = Math.max(1, Math.min(Number(body.max_sources) || 8, 200));
     const allKeys = Object.keys(ALL_SOURCES);
     const scraperNames = (requested && requested.length > 0
       ? requested.filter((s) => ALL_SOURCES[s])
