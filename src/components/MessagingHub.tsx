@@ -40,8 +40,23 @@ function getPartyBadge(areas: string[]): string | null {
 }
 
 export function MessagingHub() {
+  const { isAdmin } = useIsAdmin();
   const [items, setItems] = useState<MessagingGuidance[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleSaveAIToItem = useCallback(async (item: MessagingGuidance, markdown: string, kind: string) => {
+    const stamp = new Date().toLocaleString();
+    const heading = `\n\n---\n\n_Saved ${stamp} · AI ${kind}_\n\n${markdown}\n`;
+    const newContent = (item.content || "") + heading;
+    const { error } = await supabase
+      .from("messaging_guidance")
+      .update({ content: newContent })
+      .eq("id", item.id);
+    if (error) { toast.error(error.message); return; }
+    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, content: newContent } : i));
+    setSelectedItem((cur) => cur && cur.id === item.id ? { ...cur, content: newContent } : cur);
+    toast.success("Saved to messaging item");
+  }, []);
   const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
