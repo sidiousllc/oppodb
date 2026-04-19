@@ -18,9 +18,12 @@ export function DesktopWindowHost() {
   return (
     <>
       {windows.map((w) => {
-        if (w.minimized) return null;
         const desc = APP_REGISTRY[w.appId];
         if (!desc) return null;
+        // IMPORTANT: keep minimized windows mounted (just hidden) so the user's
+        // in-window state — scroll position, form input, AI results, expanded
+        // panels, etc. — survives a minimize/restore cycle. Unmounting via
+        // `return null` would destroy all that state on every minimize.
         return (
           <div
             key={w.id}
@@ -29,7 +32,10 @@ export function DesktopWindowHost() {
               left: 0,
               top: 0,
               zIndex: w.zIndex,
+              display: w.minimized ? "none" : undefined,
+              visibility: w.minimized ? "hidden" : undefined,
             }}
+            aria-hidden={w.minimized || undefined}
             onMouseDownCapture={() => focusWindow(w.id)}
           >
             <Win98Window
