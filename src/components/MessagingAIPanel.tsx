@@ -7,6 +7,9 @@ interface MessagingAIPanelProps {
   messagingSlug: string;
   messagingTitle: string;
   issueAreas: string[];
+  /** When provided, renders "Save to item" buttons that append generated artifacts to the messaging item's content. */
+  onSaveToItem?: (markdown: string, kind: "talking" | "audience" | "impact") => Promise<void> | void;
+  canSaveToItem?: boolean;
 }
 
 const ALL_SECTIONS = [
