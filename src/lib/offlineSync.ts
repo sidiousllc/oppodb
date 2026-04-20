@@ -26,6 +26,13 @@ const PREFETCH_EDGE_FUNCTIONS: Array<{ fn: string; body?: Record<string, unknown
   { fn: "news-cluster-stories", body: {} },
   { fn: "polling-aggregator", body: {} },
   { fn: "auto-docs", body: {} },
+  // Geopolitics briefs for InternationalHub (cached per region)
+  { fn: "geopolitics-brief", body: { region: "global" } },
+  { fn: "geopolitics-brief", body: { region: "europe" } },
+  { fn: "geopolitics-brief", body: { region: "asia" } },
+  { fn: "geopolitics-brief", body: { region: "americas" } },
+  { fn: "geopolitics-brief", body: { region: "africa" } },
+  { fn: "geopolitics-brief", body: { region: "oceania" } },
 ];
 
 /** Tables to sync for offline use.
@@ -52,7 +59,7 @@ const SYNC_TABLES: Array<{ table: string; select: string; orderBy: string; pageS
   { table: "mit_election_results", select: "id,year,state,state_po,office,district,candidate,party,candidatevotes,totalvotes,stage,special,writein", orderBy: "id" },
   { table: "mn_cfb_candidates", select: "*", orderBy: "id" },
   { table: "state_cfb_candidates", select: "*", orderBy: "id" },
-  { table: "messaging_guidance", select: "id,slug,title,source,source_url,summary,issue_areas,research_type,published_date,author", orderBy: "id" },
+  { table: "messaging_guidance", select: "id,slug,title,source,source_url,summary,content,issue_areas,research_type,published_date,author,created_at,updated_at", orderBy: "id", pageSize: 200 },
   { table: "local_impacts", select: "*", orderBy: "id" },
   { table: "maga_files", select: "*", orderBy: "id" },
   { table: "narrative_reports", select: "*", orderBy: "id" },
