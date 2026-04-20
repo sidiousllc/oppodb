@@ -51,9 +51,9 @@ export default defineConfig(() => ({
         ],
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/~oauth/],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/auth\/v1/, /\/functions\/v1\//],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,json}"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -73,14 +73,60 @@ export default defineConfig(() => ({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          // Supabase PostgREST: read-through cache, 24h
           {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/.*/i,
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
             handler: "NetworkFirst",
+            method: "GET",
             options: {
-              cacheName: "supabase-api-cache",
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 },
+              cacheName: "supabase-rest-cache",
+              expiration: { maxEntries: 1000, maxAgeSeconds: 60 * 60 * 24 },
               cacheableResponse: { statuses: [0, 200] },
               networkTimeoutSeconds: 5,
+            },
+          },
+          // Supabase Edge Functions (read-only GETs): 24h
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/functions\/v1\/.*/i,
+            handler: "NetworkFirst",
+            method: "GET",
+            options: {
+              cacheName: "supabase-edge-cache",
+              expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 },
+              cacheableResponse: { statuses: [0, 200] },
+              networkTimeoutSeconds: 6,
+            },
+          },
+          // Supabase Storage objects (avatars, attachments, exports)
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/object\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "supabase-storage-cache",
+              expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          // OpenStreetMap tiles for the District / Country maps
+          {
+            urlPattern: /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "osm-tile-cache",
+              expiration: { maxEntries: 2000, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          // Lovable AI Gateway responses (read-only briefs, talking points)
+          {
+            urlPattern: /^https:\/\/ai\.gateway\.lovable\.dev\/.*/i,
+            handler: "NetworkFirst",
+            method: "GET",
+            options: {
+              cacheName: "lovable-ai-cache",
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 12 },
+              cacheableResponse: { statuses: [0, 200] },
+              networkTimeoutSeconds: 8,
             },
           },
         ],

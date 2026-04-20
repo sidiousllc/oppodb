@@ -6,9 +6,10 @@
 import { openDB, type IDBPDatabase } from "idb";
 
 const DB_NAME = "oppodb-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "encrypted_data";
 const KEY_STORE = "crypto_keys";
+const EDGE_CACHE_STORE = "edge_cache";
 
 interface EncryptedRecord {
   id: string;
@@ -21,7 +22,7 @@ interface EncryptedRecord {
 let dbPromise: Promise<IDBPDatabase> | null = null;
 let cryptoKey: CryptoKey | null = null;
 
-function getDB(): Promise<IDBPDatabase> {
+export function getDB(): Promise<IDBPDatabase> {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
       upgrade(db) {
@@ -39,6 +40,11 @@ function getDB(): Promise<IDBPDatabase> {
         }
         if (!db.objectStoreNames.contains("sync_meta")) {
           db.createObjectStore("sync_meta");
+        }
+        if (!db.objectStoreNames.contains(EDGE_CACHE_STORE)) {
+          const ec = db.createObjectStore(EDGE_CACHE_STORE, { keyPath: "key" });
+          ec.createIndex("fn", "fn", { unique: false });
+          ec.createIndex("cachedAt", "cachedAt", { unique: false });
         }
       },
     });
