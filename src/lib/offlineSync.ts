@@ -12,6 +12,21 @@ import {
   getSyncMeta,
   queueWrite,
 } from "./encryptedStore";
+import { ensurePersistentStorage, isReallyOnline, watchReachability } from "./iosOffline";
+import { prefetchEdgeFunctions } from "./edgeFunctionCache";
+
+/** Read-only edge functions to pre-warm during a full sync so the app
+ *  can serve their results offline. Mutating endpoints are intentionally
+ *  excluded — those are queued via `offlineWrite`. */
+const PREFETCH_EDGE_FUNCTIONS: Array<{ fn: string; body?: Record<string, unknown> }> = [
+  { fn: "intel-briefing", body: { scope: "national" } },
+  { fn: "intel-briefing", body: { scope: "international" } },
+  { fn: "intel-briefing", body: { scope: "state" } },
+  { fn: "intel-briefing", body: { scope: "local" } },
+  { fn: "news-cluster-stories", body: {} },
+  { fn: "polling-aggregator", body: {} },
+  { fn: "auto-docs", body: {} },
+];
 
 /** Tables to sync for offline use.
  * pageSize tuned per table to avoid timeouts on heavy JSON columns.
@@ -183,9 +198,14 @@ async function syncTable(
 export async function syncAllTables(
   onProgress?: (table: string, index: number, total: number) => void,
 ): Promise<{ synced: number; errors: string[] }> {
-  if (!navigator.onLine) {
+  // Use a real reachability probe — `navigator.onLine` lies on iOS.
+  const online = await isReallyOnline();
+  if (!online) {
     return { synced: 0, errors: ["Device is offline"] };
   }
+
+  // iOS evicts IndexedDB after ~7 days of non-use unless we ask for persistence.
+  await ensurePersistentStorage();
 
   const { data: sess } = await supabase.auth.getSession();
   if (!sess?.session) {
@@ -199,10 +219,11 @@ export async function syncAllTables(
 
   let synced = 0;
   const errors: string[] = [];
+  const totalSteps = SYNC_TABLES.length + PREFETCH_EDGE_FUNCTIONS.length;
 
   for (let i = 0; i < SYNC_TABLES.length; i++) {
     const { table, select, orderBy, pageSize } = SYNC_TABLES[i];
-    onProgress?.(table, i, SYNC_TABLES.length);
+    onProgress?.(table, i, totalSteps);
 
     try {
       const count = await syncTable(table, select, orderBy, pageSize);
@@ -219,6 +240,15 @@ export async function syncAllTables(
     }
   }
 
+  // Pre-warm edge function responses so read-only backend endpoints work offline.
+  try {
+    await prefetchEdgeFunctions(PREFETCH_EDGE_FUNCTIONS, (fn, i) => {
+      onProgress?.(`fn:${fn}`, SYNC_TABLES.length + i, totalSteps);
+    });
+  } catch (e: any) {
+    errors.push(`edge-prefetch: ${e?.message || "failed"}`);
+  }
+
   syncStatus.isSyncing = false;
   syncStatus.lastSyncAt = Date.now();
   syncStatus.error = errors.length > 0 ? errors[0] : null;
@@ -230,7 +260,8 @@ export async function syncAllTables(
 
 /** Replay pending writes to Supabase */
 export async function replayPendingWrites(): Promise<{ replayed: number; failed: number }> {
-  if (!navigator.onLine) return { replayed: 0, failed: 0 };
+  const online = await isReallyOnline();
+  if (!online) return { replayed: 0, failed: 0 };
 
   const pending = await getPendingWrites();
   let replayed = 0;
@@ -266,7 +297,8 @@ export async function replayPendingWrites(): Promise<{ replayed: number; failed:
 
 /** Get offline data for a table (falls back to encrypted store when offline) */
 export async function getOfflineData<T = Record<string, unknown>>(table: string): Promise<T[]> {
-  if (navigator.onLine) {
+  const online = await isReallyOnline();
+  if (online) {
     try {
       const config = SYNC_TABLES.find((t) => t.table === table);
       const selectStr = config?.select || "*";
@@ -302,7 +334,8 @@ export async function offlineWrite(
   operation: "insert" | "update" | "delete",
   data: Record<string, unknown>
 ): Promise<void> {
-  if (navigator.onLine) {
+  const online = await isReallyOnline();
+  if (online) {
     try {
       const sb = supabase as any;
       if (operation === "insert") {
@@ -326,21 +359,24 @@ export async function offlineWrite(
   notify();
 }
 
-/** Initialize offline sync - set up event listeners */
+/** Initialize offline sync — installs reachability watcher + persistent storage. */
 export function initOfflineSync(): () => void {
-  const handleOnline = async () => {
-    syncStatus.isOnline = true;
-    notify();
-    await replayPendingWrites();
-  };
+  // Request persistent storage early so iOS doesn't evict our encrypted DB.
+  void ensurePersistentStorage();
 
-  const handleOffline = () => {
-    syncStatus.isOnline = false;
+  const stopWatch = watchReachability(async (online) => {
+    syncStatus.isOnline = online;
     notify();
-  };
+    if (online) {
+      await replayPendingWrites();
+    }
+  });
 
-  window.addEventListener("online", handleOnline);
-  window.addEventListener("offline", handleOffline);
+  // Replay on visibility-change too — iOS PWAs commonly reopen after a while.
+  const onVisible = () => {
+    if (document.visibilityState === "visible") void replayPendingWrites();
+  };
+  document.addEventListener("visibilitychange", onVisible);
 
   // Load initial state
   (async () => {
@@ -348,11 +384,12 @@ export function initOfflineSync(): () => void {
     syncStatus.lastSyncAt = lastSync || null;
     const pending = await getPendingWrites();
     syncStatus.pendingWrites = pending.length;
+    syncStatus.isOnline = await isReallyOnline();
     notify();
   })();
 
   return () => {
-    window.removeEventListener("online", handleOnline);
-    window.removeEventListener("offline", handleOffline);
+    stopWatch();
+    document.removeEventListener("visibilitychange", onVisible);
   };
 }
