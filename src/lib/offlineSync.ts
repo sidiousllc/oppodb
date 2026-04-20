@@ -26,6 +26,13 @@ const PREFETCH_EDGE_FUNCTIONS: Array<{ fn: string; body?: Record<string, unknown
   { fn: "news-cluster-stories", body: {} },
   { fn: "polling-aggregator", body: {} },
   { fn: "auto-docs", body: {} },
+  // Geopolitics briefs for InternationalHub (cached per region)
+  { fn: "geopolitics-brief", body: { region: "global" } },
+  { fn: "geopolitics-brief", body: { region: "europe" } },
+  { fn: "geopolitics-brief", body: { region: "asia" } },
+  { fn: "geopolitics-brief", body: { region: "americas" } },
+  { fn: "geopolitics-brief", body: { region: "africa" } },
+  { fn: "geopolitics-brief", body: { region: "oceania" } },
 ];
 
 /** Tables to sync for offline use.
