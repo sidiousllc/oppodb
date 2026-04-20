@@ -15,6 +15,7 @@ import { syncElectionResults, hasSyncCheckpoint, clearSyncCheckpoint, type SyncR
 import { SyncResultsPanel } from "./SyncResultsPanel";
 import { exportStateLegPDF } from "@/lib/stateLegExport";
 import { StatePollingPanel } from "@/components/StatePollingPanel";
+import { DistrictPollingPanel } from "@/components/DistrictPollingPanel";
 import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 import { MNFinancePanel } from "@/components/MNFinancePanel";
 import { StateFinancePanel } from "@/components/StateFinancePanel";
@@ -356,6 +357,7 @@ function StatLegDetail({
 
         {/* Elections Tab */}
         <TabsContent value="elections" className="mt-4">
+          <DistrictPollingPanel districtId={district.district_id} />
           <StatePollingPanel stateAbbr={district.state_abbr} />
           <AreaFinancePanel stateAbbr={district.state_abbr} title={`Campaign Finance — ${district.state}`} />
           {district.state_abbr === "MN" && <MNFinancePanel />}
