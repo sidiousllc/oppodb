@@ -23,7 +23,14 @@ const PREFETCH_EDGE_FUNCTIONS: Array<{ fn: string; body?: Record<string, unknown
   { fn: "intel-briefing", body: { scope: "international" } },
   { fn: "intel-briefing", body: { scope: "state" } },
   { fn: "intel-briefing", body: { scope: "local" } },
+  // IntelHub feeds
+  { fn: "intel-briefing", body: { scope: "national", category: "blindspot" } },
+  { fn: "intel-briefing", body: { scope: "national", category: "left" } },
+  { fn: "intel-briefing", body: { scope: "national", category: "center" } },
+  { fn: "intel-briefing", body: { scope: "national", category: "right" } },
   { fn: "news-cluster-stories", body: {} },
+  { fn: "news-cluster-stories", body: { bias: "blindspot" } },
+  { fn: "news-source-rate", body: {} },
   { fn: "polling-aggregator", body: {} },
   { fn: "auto-docs", body: {} },
   // Geopolitics briefs for InternationalHub (cached per region)
