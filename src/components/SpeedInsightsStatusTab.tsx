@@ -146,8 +146,29 @@ export function SpeedInsightsStatusTab() {
           </a>
         </div>
 
+        {/* Session Replay (Amplitude) */}
+        {replay && (
+          <div className="win98-sunken bg-[hsl(var(--win98-light))] p-2 mt-3">
+            <div className="text-[10px] font-bold mb-2 flex items-center gap-1">
+              <Video className="h-3 w-3" />
+              Session Replay (Amplitude)
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <StatusBadge ok={replay.enabled} label={replay.enabled ? "Enabled" : "Disabled"} />
+              <span className="text-[10px] font-mono">
+                sample {Math.round(replay.sampleRate * 100)}%
+              </span>
+            </div>
+            <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
+              Sampling is tuned per environment to control storage costs while keeping debug
+              coverage. Override via <code className="font-mono">VITE_SESSION_REPLAY_ENABLED</code> /{" "}
+              <code className="font-mono">VITE_SESSION_REPLAY_SAMPLE</code>.
+            </p>
+          </div>
+        )}
+
         <div className="mt-3 text-[9px] text-[hsl(var(--muted-foreground))]">
-          Override defaults via <code className="font-mono">VITE_SPEED_INSIGHTS_ENABLED</code>,{" "}
+          Override Speed Insights via <code className="font-mono">VITE_SPEED_INSIGHTS_ENABLED</code>,{" "}
           <code className="font-mono">VITE_SPEED_INSIGHTS_SAMPLE</code>,{" "}
           <code className="font-mono">VITE_SPEED_INSIGHTS_DEBUG</code>.
         </div>
