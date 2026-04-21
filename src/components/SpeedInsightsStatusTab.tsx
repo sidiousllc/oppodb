@@ -13,14 +13,15 @@ import { getSessionReplayConfig, type SessionReplayConfig } from "@/lib/sessionR
  */
 export function SpeedInsightsStatusTab() {
   const [config, setConfig] = useState<SpeedInsightsConfig | null>(null);
+  const [replay, setReplay] = useState<SessionReplayConfig | null>(null);
   const [scriptLoaded, setScriptLoaded] = useState<boolean | null>(null);
   const [beaconStatus, setBeaconStatus] = useState<"idle" | "checking" | "ok" | "fail">("idle");
   const [beaconDetail, setBeaconDetail] = useState<string>("");
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
   const refresh = () => {
-    const cfg = getSpeedInsightsConfig();
-    setConfig(cfg);
+    setConfig(getSpeedInsightsConfig());
+    setReplay(getSessionReplayConfig());
 
     // Detect if the SpeedInsights component has injected its script tag.
     const hasScript = !!document.querySelector(
