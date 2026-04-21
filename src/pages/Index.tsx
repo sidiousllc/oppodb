@@ -256,7 +256,7 @@ export default function Index() {
     setResearchSubsection(null);
   }, []);
 
-  const navigateBySlug = useCallback((rawSlug: string) => {
+  const navigateBySlug = useCallback((rawSlug: string, parentHint?: string) => {
     const slug = rawSlug.trim().toLowerCase();
     if (!slug) return false;
     if (slug.startsWith("osint:")) {
@@ -271,7 +271,6 @@ export default function Index() {
       const sep = rest.indexOf(":");
       const toolId = sep >= 0 ? rest.slice(0, sep) : rest;
       const userQuery = sep >= 0 ? rest.slice(sep + 1) : "";
-      // Lazy-import the registry to avoid circular deps
       import("@/data/osintTools").then(({ getOSINTToolById }) => {
         const tool = getOSINTToolById(toolId);
         if (tool?.kind === "url" && tool.urlTemplate && userQuery) {
@@ -283,6 +282,15 @@ export default function Index() {
       });
       return true;
     }
+
+    // 1. If we have a parent hint (e.g. link was /parent/child), prefer the parent
+    if (parentHint) {
+      const parentSlug = parentHint.trim().toLowerCase();
+      const parent = getCandidateBySlug(parentSlug);
+      if (parent) { setSection("oppohub"); setSelectedSlug(parent.slug); return true; }
+    }
+
+    // 2. Top-level content matches (exact slug)
     const candidateMatch = getCandidateBySlug(slug);
     if (candidateMatch) { setSection("oppohub"); setSelectedSlug(candidateMatch.slug); return true; }
     const magaMatch = magaFiles.find(m => m.slug.toLowerCase() === slug);
@@ -294,17 +302,24 @@ export default function Index() {
     const districtMatch = districts.find(d => d.district_id.toLowerCase() === slug);
     if (districtMatch) { setSection("leghub"); setSelectedSlug(districtMatch.district_id); return true; }
 
-    // Check if this is a subpage slug — find its parent candidate
-    const parentCandidate = candidates.find(c => {
-      // Check if any known candidate has a subpage link containing this slug
-      return c.content.toLowerCase().includes(`/${slug}`) || c.content.toLowerCase().includes(`/${c.slug}/${slug}`);
-    });
-    if (parentCandidate) {
-      setSection("oppohub");
-      setSelectedSlug(parentCandidate.slug);
-      return true;
-    }
+    // 3. Strict subpage lookup in DB — find a subpage with this exact slug and route to its parent.
+    //    Async fire-and-forget; return true optimistically so callers don't open external URL.
+    let resolved = false;
+    supabase
+      .from("candidate_profiles")
+      .select("slug, parent_slug, is_subpage")
+      .eq("slug", slug)
+      .eq("is_subpage", true)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.parent_slug) {
+          const parent = getCandidateBySlug(data.parent_slug.toLowerCase());
+          if (parent) { setSection("oppohub"); setSelectedSlug(parent.slug); resolved = true; }
+        }
+      });
 
+    // Don't claim handled — let the caller decide whether to open as external if we didn't resolve synchronously.
     return false;
   }, [districts]);
 
