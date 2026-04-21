@@ -14,10 +14,11 @@ import { AdminUserWindow } from "@/components/AdminUserWindow";
 import { AdminRoleGroupWindow } from "@/components/AdminRoleGroupWindow";
 import { DeviceTrackingTab } from "@/components/DeviceTrackingTab";
 import { Phase5AdminTab } from "@/components/Phase5AdminTab";
+import { SpeedInsightsStatusTab } from "@/components/SpeedInsightsStatusTab";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "roles" | "access" | "permissions" | "logs" | "devices" | "intel-ops" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs" | "international";
+type Tab = "users" | "roles" | "access" | "permissions" | "logs" | "devices" | "intel-ops" | "speed-insights" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs" | "international";
 
 interface ContentItem {
   id: string;
@@ -64,6 +65,7 @@ export default function AdminPanel() {
     { id: "logs", label: "Activity Logs", emoji: "📊", adminOnly: true },
     { id: "devices", label: "Device Tracking", emoji: "📍", adminOnly: true },
     { id: "intel-ops", label: "Intel Ops", emoji: "🛰️", adminOnly: true },
+    { id: "speed-insights", label: "Speed Insights", emoji: "⚡", adminOnly: true },
     { id: "candidates", label: "Candidates", emoji: "📋" },
     { id: "maga", label: "MAGA Files", emoji: "⚠️" },
     { id: "local", label: "Local Impact", emoji: "🌐" },
@@ -115,6 +117,7 @@ export default function AdminPanel() {
         {tab === "logs" && isAdmin && <ActivityLogsTab />}
         {tab === "devices" && isAdmin && <DeviceTrackingTab />}
         {tab === "intel-ops" && isAdmin && <Phase5AdminTab />}
+        {tab === "speed-insights" && isAdmin && <SpeedInsightsStatusTab />}
         {tab === "candidates" && <CandidatesTab />}
         {tab === "maga" && <ContentTab table="maga_files" nameField="name" />}
         {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
