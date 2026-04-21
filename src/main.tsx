@@ -3,6 +3,7 @@ import * as amplitude from "@amplitude/unified";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import App from "./App.tsx";
 import { getSpeedInsightsConfig } from "@/lib/speedInsightsConfig";
+import { getSessionReplayConfig } from "@/lib/sessionReplayConfig";
 import "./index.css";
 import "./themes.css";
 
@@ -25,10 +26,11 @@ if (isPreviewHost || isInIframe) {
   });
 }
 
-// Initialize Amplitude Analytics and Session Replay
+// Initialize Amplitude Analytics and Session Replay (sampled by environment)
+const replay = getSessionReplayConfig();
 amplitude.initAll("e8159d2da0817143b5c1f636427f8c2e", {
   analytics: { autocapture: true },
-  sessionReplay: { sampleRate: 1 },
+  sessionReplay: { sampleRate: replay.enabled ? replay.sampleRate : 0 },
 });
 
 const speedInsights = getSpeedInsightsConfig();
