@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Activity, ExternalLink, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
+import { Activity, ExternalLink, CheckCircle2, XCircle, RefreshCw, Video } from "lucide-react";
 import { getSpeedInsightsConfig, type SpeedInsightsConfig } from "@/lib/speedInsightsConfig";
+import { getSessionReplayConfig, type SessionReplayConfig } from "@/lib/sessionReplayConfig";
 
 /**
  * Status panel for Vercel Speed Insights.
