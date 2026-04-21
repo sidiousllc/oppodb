@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import * as amplitude from "@amplitude/unified";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import App from "./App.tsx";
+import { getSpeedInsightsConfig } from "@/lib/speedInsightsConfig";
 import "./index.css";
 import "./themes.css";
 
@@ -30,9 +31,21 @@ amplitude.initAll("e8159d2da0817143b5c1f636427f8c2e", {
   sessionReplay: { sampleRate: 1 },
 });
 
+const speedInsights = getSpeedInsightsConfig();
+if (speedInsights.debug) {
+  // eslint-disable-next-line no-console
+  console.info("[SpeedInsights] config", speedInsights);
+}
+
 createRoot(document.getElementById("root")!).render(
   <>
     <App />
-    <SpeedInsights />
+    {speedInsights.enabled && (
+      <SpeedInsights
+        sampleRate={speedInsights.sampleRate}
+        debug={speedInsights.debug}
+      />
+    )}
   </>
 );
+
