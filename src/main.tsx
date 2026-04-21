@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import * as amplitude from "@amplitude/unified";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import App from "./App.tsx";
 import "./index.css";
 import "./themes.css";
@@ -29,4 +30,9 @@ amplitude.initAll("e8159d2da0817143b5c1f636427f8c2e", {
   sessionReplay: { sampleRate: 1 },
 });
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <>
+    <App />
+    <SpeedInsights />
+  </>
+);
