@@ -19,7 +19,7 @@ import { TalkingPointsPanel } from "@/components/TalkingPointsPanel";
 interface CandidateDetailProps {
   candidate: Candidate;
   onBack: () => void;
-  onNavigateSlug?: (slug: string) => boolean;
+  onNavigateSlug?: (slug: string, parentSlug?: string) => boolean;
   onEdit?: (slug: string) => void;
 }
 
@@ -39,19 +39,19 @@ function MarkdownContent({
   content: string;
   subpages: GitHubCandidate[];
   onNavigateSubpage: (sp: GitHubCandidate) => void;
-  onNavigateSlug?: (slug: string) => boolean;
+  onNavigateSlug?: (slug: string, parentSlug?: string) => boolean;
 }) {
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>, href: string | undefined, matchSlug: string | null, parentSlug: string | null) => {
       if (!matchSlug) return;
       e.preventDefault();
 
-      // Try to match a subpage first
+      // 1. Try to match a subpage of the CURRENT candidate first
       const match = subpages.find(
         (sp) =>
           sp.slug === matchSlug ||
-          sp.slug.endsWith(matchSlug) ||
-          sp.github_path.replace(".md", "").endsWith(matchSlug)
+          sp.slug.endsWith(`-${matchSlug}`) ||
+          sp.github_path.replace(/\.md$/i, "").endsWith(`/${matchSlug}`)
       );
 
       if (match) {
@@ -59,25 +59,18 @@ function MarkdownContent({
         return;
       }
 
-      // If the link had a parent slug (e.g. /andy-ogles/health-care), try parent + child
+      // 2. If link had a parent slug like /andy-ogles/health-care, route to that parent first
       if (parentSlug) {
-        const parentMatch = subpages.find(
-          (sp) =>
-            sp.slug.includes(parentSlug) && sp.slug.includes(matchSlug)
-        );
-        if (parentMatch) {
-          onNavigateSubpage(parentMatch);
-          return;
-        }
+        const handledParent = onNavigateSlug?.(parentSlug, parentSlug) ?? false;
+        if (handledParent) return;
       }
 
-      // Try top-level navigation
-      const handled = onNavigateSlug?.(matchSlug) ?? false;
-      if (!handled && parentSlug) {
-        // Try navigating to the parent slug instead
-        onNavigateSlug?.(parentSlug);
-      }
-      if (!handled && href && !isInternalHost(href) && (href.startsWith("http://") || href.startsWith("https://"))) {
+      // 3. Try top-level navigation by exact slug, passing parent hint for DB subpage lookup
+      const handled = onNavigateSlug?.(matchSlug, parentSlug ?? undefined) ?? false;
+      if (handled) return;
+
+      // 4. Fall back to opening external links in a new tab
+      if (href && !isInternalHost(href) && (href.startsWith("http://") || href.startsWith("https://"))) {
         window.open(href, "_blank", "noopener,noreferrer");
       }
     },
