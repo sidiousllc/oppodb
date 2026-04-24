@@ -224,6 +224,32 @@ export default function LocalFeedsValidation() {
           </div>
         )}
 
+        {/* Filter pills */}
+        <div className="flex items-center gap-2 mb-3 flex-wrap text-xs">
+          <span className="text-muted-foreground">Show:</span>
+          {([
+            ["all", `All (${rows.length})`],
+            ["zero", `Zero feeds (${stats.zero.length})`],
+            ["stale", `Stale (${stats.stale.length})`],
+            ["ok", `OK (${stats.ok.length})`],
+          ] as const).map(([key, label]) => {
+            const active = statusFilter === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setStatusFilter(key)}
+                className={`px-2.5 py-1 rounded-full border transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Table */}
         <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
@@ -246,8 +272,14 @@ export default function LocalFeedsValidation() {
                     Loading…
                   </td>
                 </tr>
+              ) : visibleRows.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground text-xs">
+                    No states match this filter.
+                  </td>
+                </tr>
               ) : (
-                rows.map((r) => {
+                visibleRows.map((r) => {
                   const zero = r.briefingCount === 0;
                   const stale = !zero && r.daysSince !== null && r.daysSince > STALE_DAYS;
                   const isRefreshing = refreshing.has(r.abbr);
