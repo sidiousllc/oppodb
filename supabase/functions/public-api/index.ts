@@ -2066,3 +2066,273 @@ function endpointDescription(endpoint: string): string {
   };
   return descs[endpoint] || "";
 }
+
+// ─── Self-documentation registry (Phase 9) ──────────────────────────────────
+// Static registry of every MCP tool, edge function, and known wiki section.
+// Kept in-sync manually — when adding new tools/functions, update these arrays.
+const MCP_TOOLS_REGISTRY: Array<{ name: string; description: string; category: string }> = [
+  { name: "search_candidates", description: "Search candidate profiles by name/state/party/tags", category: "candidates" },
+  { name: "get_candidate", description: "Fetch a single candidate profile by slug", category: "candidates" },
+  { name: "search_congressional_districts", description: "Search congressional district profiles", category: "districts" },
+  { name: "search_state_legislative", description: "Search state legislative district profiles", category: "state-leg" },
+  { name: "get_election_results", description: "State legislative election results", category: "elections" },
+  { name: "get_polling_data", description: "Polling data with approval/favorability", category: "polling" },
+  { name: "get_maga_files", description: "MAGA executive-branch vetting files", category: "research" },
+  { name: "get_narrative_reports", description: "Narrative policy impact reports", category: "research" },
+  { name: "get_local_impacts", description: "State-level Trump policy impacts", category: "research" },
+  { name: "get_voter_registration_stats", description: "State voter registration statistics", category: "voter-data" },
+  { name: "get_congress_members", description: "Current Congress members", category: "congress" },
+  { name: "get_congress_bills", description: "Federal legislation", category: "congress" },
+  { name: "get_campaign_finance", description: "FEC federal campaign finance", category: "finance" },
+  { name: "get_election_forecasts", description: "Cook/Sabato/Inside Elections ratings", category: "forecasts" },
+  { name: "get_congressional_elections", description: "Historical congressional results", category: "elections" },
+  { name: "get_state_finance", description: "Multi-state campaign finance", category: "finance" },
+  { name: "get_mn_finance", description: "Minnesota CFB candidate finance", category: "finance" },
+  { name: "get_prediction_markets", description: "Polymarket/Kalshi/Manifold/Metaculus prices", category: "markets" },
+  { name: "get_messaging_guidance", description: "Polling-based messaging research", category: "messaging" },
+  { name: "get_intel_briefings", description: "150+ source intel briefings", category: "intel" },
+  { name: "get_tracked_bills", description: "LegiScan tracked state legislation", category: "legislation" },
+  { name: "get_mit_elections", description: "MIT Election Lab historical results", category: "elections" },
+  { name: "get_congress_committees", description: "Committees with members/subcommittees", category: "congress" },
+  { name: "get_congress_votes", description: "Roll call votes with totals", category: "congress" },
+  { name: "get_state_leg_elections", description: "State legislative election results", category: "elections" },
+  { name: "get_forecast_history", description: "Historical rating change log", category: "forecasts" },
+  { name: "master_search", description: "Unified search across 50+ databases", category: "search" },
+  { name: "search_devices", description: "Admin: registered user devices", category: "admin" },
+  { name: "get_device_locations", description: "Admin: device location pings", category: "admin" },
+  { name: "get_user_locations", description: "Admin: latest position per user", category: "admin" },
+  { name: "get_news_ticker", description: "Latest cross-scope news headlines", category: "intel" },
+  { name: "list_reports", description: "User reports + shared + public", category: "reports" },
+  { name: "list_report_schedules", description: "User report email schedules", category: "reports" },
+  { name: "list_polling_alerts", description: "User polling alert subscriptions", category: "alerts" },
+  { name: "get_email_preferences", description: "User email notification prefs", category: "alerts" },
+  { name: "get_intel_clusters", description: "Topic-clustered intel briefings", category: "intel" },
+  { name: "get_international_profile", description: "Country profile by code", category: "international" },
+  { name: "list_alert_rules", description: "User alert rules", category: "alerts" },
+  { name: "create_alert_rule", description: "Create a new alert rule", category: "alerts" },
+  { name: "list_entity_activity", description: "Entity activity feed", category: "graph" },
+  { name: "list_entity_notes", description: "Entity notes (user + shared)", category: "graph" },
+  { name: "create_entity_note", description: "Create a note on an entity", category: "graph" },
+  { name: "get_entity_graph", description: "Entity relationship graph", category: "graph" },
+  { name: "get_vulnerability_score", description: "AI candidate vulnerability score", category: "ai" },
+  { name: "get_talking_points", description: "AI-generated talking points", category: "ai" },
+  { name: "get_bill_impact", description: "AI bill impact analysis", category: "ai" },
+  { name: "get_messaging_talking_points", description: "Cached messaging talking points", category: "messaging" },
+  { name: "generate_messaging_talking_points", description: "Generate messaging talking points", category: "messaging" },
+  { name: "get_messaging_audience_analysis", description: "Cached audience analysis", category: "messaging" },
+  { name: "generate_messaging_audience_analysis", description: "Generate audience analysis", category: "messaging" },
+  { name: "get_messaging_impact", description: "Cached messaging impact", category: "messaging" },
+  { name: "generate_messaging_impact", description: "Generate messaging impact", category: "messaging" },
+  { name: "get_messaging_ai_bundle", description: "Combined AI bundle for a message", category: "messaging" },
+  { name: "admin_regenerate_messaging_ai", description: "Admin: force-regenerate messaging AI", category: "admin" },
+  { name: "admin_dispatch_alerts", description: "Admin: trigger alert dispatcher", category: "admin" },
+  { name: "admin_delete_entity_note", description: "Admin: delete any entity note", category: "admin" },
+  { name: "admin_update_entity_note", description: "Admin: update any entity note", category: "admin" },
+  { name: "admin_create_graph_edge", description: "Admin: create relationship edge", category: "admin" },
+  { name: "admin_update_graph_edge", description: "Admin: update relationship edge", category: "admin" },
+  { name: "admin_delete_graph_edge", description: "Admin: delete relationship edge", category: "admin" },
+  { name: "admin_regenerate_ai", description: "Admin: regenerate any AI cache", category: "admin" },
+  { name: "get_country_geopolitics", description: "Country geopolitics brief", category: "international" },
+  { name: "refresh_country_geopolitics", description: "Force-refresh country brief", category: "international" },
+  { name: "list_international_elections", description: "International elections by country", category: "international" },
+  { name: "list_international_leaders", description: "International leaders by country", category: "international" },
+  { name: "list_war_rooms", description: "User war rooms", category: "war-rooms" },
+  { name: "get_war_room_messages", description: "War room chat history", category: "war-rooms" },
+  { name: "get_sync_status", description: "Latest sync run per source", category: "sync" },
+  { name: "get_subject_talking_points", description: "Cached subject talking points", category: "ai" },
+  { name: "generate_subject_talking_points", description: "Generate subject talking points", category: "ai" },
+  { name: "get_subject_audience_analysis", description: "Cached subject audience", category: "ai" },
+  { name: "generate_subject_audience_analysis", description: "Generate subject audience", category: "ai" },
+  { name: "get_subject_impact", description: "Cached subject impact", category: "ai" },
+  { name: "generate_subject_impact", description: "Generate subject impact", category: "ai" },
+  { name: "osint_list_tools", description: "List OSINT tool registry", category: "osint" },
+  { name: "osint_get_tool", description: "Get OSINT tool details", category: "osint" },
+  { name: "osint_search", description: "Execute OSINT lookup", category: "osint" },
+  { name: "get_subject_ai_bundle", description: "Combined AI bundle for a subject", category: "ai" },
+  { name: "docs_index", description: "[docs] Top-level docs index", category: "docs" },
+  { name: "docs_list_wiki_pages", description: "[docs] List all wiki pages", category: "docs" },
+  { name: "docs_get_wiki_page", description: "[docs] Get a wiki page by slug", category: "docs" },
+  { name: "docs_list_endpoints", description: "[docs] List every public-api endpoint", category: "docs" },
+  { name: "docs_list_tables", description: "[docs] List every offline-synced DB table", category: "docs" },
+  { name: "docs_list_edge_functions", description: "[docs] List every edge function", category: "docs" },
+  { name: "docs_list_mcp_tools", description: "[docs] List every MCP tool (this registry)", category: "docs" },
+];
+
+const EDGE_FUNCTIONS_REGISTRY: Array<{ name: string; purpose: string; auth: string }> = [
+  { name: "public-api", purpose: "Public REST API gateway (90+ endpoints)", auth: "X-API-Key" },
+  { name: "mcp-server", purpose: "Model Context Protocol server (80+ tools)", auth: "X-API-Key + premium/admin" },
+  { name: "research-chat", purpose: "Streaming AI research assistant (Lovable AI)", auth: "JWT" },
+  { name: "intel-briefing", purpose: "150+ source news aggregation + Local Feeds top-up", auth: "JWT" },
+  { name: "geopolitics-brief", purpose: "Per-country AI geopolitics briefs", auth: "JWT" },
+  { name: "polling-aggregator", purpose: "Pre-aggregates polling for charts", auth: "JWT" },
+  { name: "polling-sync", purpose: "Pulls polling from FiveThirtyEight/RealClearPolitics/etc.", auth: "service-role (cron)" },
+  { name: "polling-alerts-dispatch", purpose: "Sends polling alert emails", auth: "service-role (cron)" },
+  { name: "seed-polling", purpose: "Seeds historical polling data", auth: "service-role (admin)" },
+  { name: "congress-sync", purpose: "Syncs Congress.gov members/bills/committees/votes", auth: "service-role (cron)" },
+  { name: "congressional-election-sync", purpose: "Syncs federal election results", auth: "service-role (cron)" },
+  { name: "campaign-finance-sync", purpose: "Syncs FEC + multi-state campaign finance", auth: "service-role (cron)" },
+  { name: "opensecrets-sync", purpose: "Syncs OpenSecrets PAC/lobbying data", auth: "service-role (cron)" },
+  { name: "mn-cfb-finance", purpose: "Minnesota Campaign Finance Board scraper", auth: "JWT" },
+  { name: "state-cfb-finance", purpose: "State Campaign Finance Board aggregator", auth: "JWT" },
+  { name: "census-sync", purpose: "Syncs ACS demographic data per district", auth: "service-role (cron)" },
+  { name: "election-results-sync", purpose: "Live election results streaming", auth: "service-role" },
+  { name: "mit-election-sync", purpose: "MIT Election Lab historical (1976-2024)", auth: "service-role (cron)" },
+  { name: "forecast-sync", purpose: "Cook/Sabato/Inside Elections rating sync", auth: "service-role (cron)" },
+  { name: "forecast-scrape", purpose: "On-demand forecast scrape for one race", auth: "JWT" },
+  { name: "scenario-simulator", purpose: "Monte Carlo election scenario sim", auth: "JWT" },
+  { name: "legiscan", purpose: "LegiScan state legislation proxy", auth: "JWT" },
+  { name: "state-legislative-sync", purpose: "State legislators + bills sync", auth: "service-role (cron)" },
+  { name: "court-search", purpose: "CourtListener/PACER unified search", auth: "JWT" },
+  { name: "court-cases-sync", purpose: "Syncs federal court case dockets", auth: "service-role (cron)" },
+  { name: "investigations-sync", purpose: "IG/oversight reports sync", auth: "service-role (cron)" },
+  { name: "lobbying-sync", purpose: "Senate LDA + FARA sync", auth: "service-role (cron)" },
+  { name: "contracts-sync", purpose: "USAspending federal contracts sync", auth: "service-role (cron)" },
+  { name: "voter-file-sync", purpose: "State voter file ingestion", auth: "service-role (cron)" },
+  { name: "voter-lookup", purpose: "Per-voter lookup utility", auth: "JWT" },
+  { name: "voter-registration-stats", purpose: "Aggregated state registration stats", auth: "service-role (cron)" },
+  { name: "state-voter-portal-lookup", purpose: "Cross-state voter portal proxy", auth: "JWT" },
+  { name: "civic-api-proxy", purpose: "Google Civic API proxy", auth: "JWT" },
+  { name: "wiki-sync", purpose: "Sync wiki/*.md → wiki_pages table", auth: "service-role (cron)" },
+  { name: "auto-docs", purpose: "AI-generated wiki page updates from source diff", auth: "JWT (admin)" },
+  { name: "scrape-article", purpose: "URL → article text extraction (Firecrawl)", auth: "JWT" },
+  { name: "url-bias-check", purpose: "AdFontes media bias score for a URL", auth: "JWT" },
+  { name: "news-cluster-stories", purpose: "Cluster intel briefings into stories", auth: "JWT" },
+  { name: "news-source-rate", purpose: "Per-source bias/credibility ratings", auth: "JWT" },
+  { name: "candidate-scraper", purpose: "AI candidate profile generation", auth: "JWT" },
+  { name: "talking-points", purpose: "AI talking-point generator (cached)", auth: "JWT" },
+  { name: "bill-impact", purpose: "AI bill impact analysis (cached)", auth: "JWT" },
+  { name: "vulnerability-score", purpose: "AI candidate vulnerability scoring", auth: "JWT" },
+  { name: "messaging-talking-points", purpose: "AI messaging talking points (cached)", auth: "JWT" },
+  { name: "messaging-audience-analysis", purpose: "AI audience analysis (cached)", auth: "JWT" },
+  { name: "messaging-impact", purpose: "AI messaging impact (cached)", auth: "JWT" },
+  { name: "messaging-sync", purpose: "Sync polling-based messaging guidance", auth: "service-role (cron)" },
+  { name: "subject-talking-points", purpose: "Subject-scoped talking points", auth: "JWT" },
+  { name: "subject-audience-analysis", purpose: "Subject-scoped audience analysis", auth: "JWT" },
+  { name: "subject-impact-analysis", purpose: "Subject-scoped impact analysis", auth: "JWT" },
+  { name: "entity-graph", purpose: "Entity relationship graph builder", auth: "JWT" },
+  { name: "alert-rules", purpose: "Alert rule CRUD + dispatch", auth: "JWT" },
+  { name: "dispatch-alerts", purpose: "Alert dispatcher (multi-channel)", auth: "service-role (cron)" },
+  { name: "scheduled-sync", purpose: "Master orchestrator for daily 3:00 UTC sync", auth: "service-role (cron)" },
+  { name: "scheduled-report-email", purpose: "Sends scheduled report emails", auth: "service-role (cron)" },
+  { name: "send-transactional-email", purpose: "Resend transactional pipeline", auth: "service-role" },
+  { name: "process-email-queue", purpose: "Drains pgmq email queue", auth: "service-role (cron)" },
+  { name: "send-mail-notification", purpose: "In-app mail notification fanout", auth: "service-role" },
+  { name: "send-external-mail", purpose: "Outbound external mail", auth: "JWT" },
+  { name: "auth-email-hook", purpose: "Custom Supabase auth email templates", auth: "supabase-webhook" },
+  { name: "auth-handler", purpose: "Custom auth post-processing", auth: "JWT" },
+  { name: "handle-email-suppression", purpose: "Resend webhook → suppression list", auth: "webhook" },
+  { name: "handle-email-unsubscribe", purpose: "One-click unsubscribe handler", auth: "token" },
+  { name: "preview-transactional-email", purpose: "Render email template preview", auth: "JWT (admin)" },
+  { name: "admin-data-export", purpose: "Admin bulk data export", auth: "JWT (admin)" },
+  { name: "admin-users", purpose: "Admin user management", auth: "JWT (admin)" },
+  { name: "api-key-manager", purpose: "User API key CRUD", auth: "JWT" },
+  { name: "credential-vault", purpose: "Encrypted per-user credential storage", auth: "JWT" },
+  { name: "device-manager", purpose: "User device registration/tagging", auth: "JWT" },
+  { name: "location-tracking", purpose: "Device location ping ingestion", auth: "JWT" },
+  { name: "validate-serial", purpose: "App serial key validation", auth: "JWT" },
+  { name: "revoke-sessions", purpose: "User session revocation", auth: "JWT" },
+  { name: "winred-webhook", purpose: "WinRed donation webhook receiver", auth: "webhook" },
+  { name: "followthemoney", purpose: "FollowTheMoney state finance proxy", auth: "JWT" },
+  { name: "prediction-markets-sync", purpose: "Polymarket/Kalshi/Manifold/Metaculus sync", auth: "service-role (cron)" },
+  { name: "market-trading", purpose: "Live trading executor for prediction markets", auth: "JWT + credential" },
+  { name: "international-sync", purpose: "International elections/leaders/legislation sync", auth: "service-role (cron)" },
+  { name: "district-intel", purpose: "Per-district intel aggregator", auth: "JWT" },
+  { name: "district-news", purpose: "Per-district news cache", auth: "JWT" },
+  { name: "osint-search", purpose: "OSINT tool dispatcher (registry-driven)", auth: "JWT" },
+  { name: "osint-scrape-parse", purpose: "Generic OSINT scrape/parse helper", auth: "JWT" },
+  { name: "elevenlabs-sfx", purpose: "ElevenLabs sound effect generator", auth: "JWT" },
+  { name: "map-geojson", purpose: "GeoJSON tile/boundary serving", auth: "JWT" },
+  { name: "version-history", purpose: "GitHub commit history for candidate pages", auth: "JWT" },
+  { name: "sync-github", purpose: "Pull candidate research from GitHub", auth: "JWT" },
+  { name: "integration-proxy", purpose: "Generic external API proxy for connectors", auth: "JWT" },
+  { name: "dispatch-android-build", purpose: "Trigger Codemagic Android build", auth: "JWT (admin)" },
+  { name: "content-admin", purpose: "Content moderation/admin actions", auth: "JWT (admin)" },
+];
+
+// Tables exposed for offline sync (mirrors src/lib/offlineSync.ts SYNC_TABLES).
+const OFFLINE_TABLES_REGISTRY: string[] = [
+  "district_profiles", "candidate_profiles", "candidate_versions", "congress_members",
+  "congress_bills", "congress_committees", "congress_votes", "congressional_record",
+  "election_forecasts", "election_forecast_history", "election_night_streams",
+  "campaign_finance", "polling_data", "congressional_election_results",
+  "state_legislative_profiles", "state_leg_election_results", "state_voter_stats",
+  "mit_election_results", "mn_cfb_candidates", "state_cfb_candidates",
+  "messaging_guidance", "local_impacts", "maga_files", "narrative_reports",
+  "prediction_markets", "district_news_cache", "wiki_pages", "section_permissions",
+  "international_profiles", "international_elections", "international_leaders",
+  "court_cases", "federal_spending", "fara_registrants", "entity_relationships",
+  "bill_impact_analyses", "intel_briefings", "reports", "international_legislation",
+  "international_policy_issues", "international_polling", "state_legislative_bills",
+  "state_legislators", "gov_contracts", "lobbying_disclosures", "winred_donations",
+  "polling_aggregates", "forecast_scenarios", "forecast_simulations", "news_stories",
+  "news_story_articles", "news_source_ratings", "url_bias_checks", "vulnerability_scores",
+  "talking_points", "messaging_audience_analyses", "messaging_impact_analyses",
+  "subject_audience_analyses", "subject_impact_analyses", "graph_snapshots",
+  "ig_reports", "tracked_bills", "stakeholders", "stakeholder_interactions",
+  "oppo_trackers", "oppo_tracker_items", "watchlist_items", "saved_searches",
+  "wiki_changelog",
+];
+
+async function handleDocsEndpoint(
+  endpoint: string,
+  url: URL,
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+): Promise<Record<string, unknown>> {
+  if (endpoint === "docs") {
+    const { count: wikiCount } = await supabase
+      .from("wiki_pages").select("*", { count: "exact", head: true });
+    return {
+      message: "ORDB Self-Documentation Index",
+      version: "1.0",
+      summary: {
+        wiki_pages: wikiCount ?? 0,
+        public_endpoints: VALID_ENDPOINTS.length,
+        offline_tables: OFFLINE_TABLES_REGISTRY.length,
+        edge_functions: EDGE_FUNCTIONS_REGISTRY.length,
+        mcp_tools: MCP_TOOLS_REGISTRY.length,
+      },
+      links: {
+        wiki: "/public-api/docs-wiki  (?slug= for single page)",
+        endpoints: "/public-api/docs-endpoints",
+        tables: "/public-api/docs-tables",
+        edge_functions: "/public-api/docs-edge-functions",
+        mcp_tools: "/public-api/docs-mcp-tools",
+      },
+    };
+  }
+  if (endpoint === "docs-wiki") {
+    const slug = url.searchParams.get("slug");
+    if (slug) {
+      const { data, error } = await supabase
+        .from("wiki_pages").select("*").eq("slug", slug).maybeSingle();
+      if (error) throw error;
+      if (!data) return { error: `Wiki page not found: ${slug}` };
+      return { data };
+    }
+    const { data, error } = await supabase
+      .from("wiki_pages").select("slug,title,sort_order,updated_at").order("sort_order", { ascending: true });
+    if (error) throw error;
+    return { data, count: data?.length ?? 0 };
+  }
+  if (endpoint === "docs-endpoints") {
+    return {
+      data: VALID_ENDPOINTS.map((e) => ({
+        endpoint: e,
+        path: `/public-api/${e}`,
+        description: endpointDescription(e),
+      })),
+      count: VALID_ENDPOINTS.length,
+    };
+  }
+  if (endpoint === "docs-tables") {
+    return { data: OFFLINE_TABLES_REGISTRY.map((t) => ({ table: t })), count: OFFLINE_TABLES_REGISTRY.length };
+  }
+  if (endpoint === "docs-mcp-tools") {
+    return { data: MCP_TOOLS_REGISTRY, count: MCP_TOOLS_REGISTRY.length };
+  }
+  if (endpoint === "docs-edge-functions") {
+    return { data: EDGE_FUNCTIONS_REGISTRY, count: EDGE_FUNCTIONS_REGISTRY.length };
+  }
+  return { error: "Unknown docs endpoint" };
+}
