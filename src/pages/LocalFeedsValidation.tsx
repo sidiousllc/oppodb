@@ -234,7 +234,7 @@ export default function LocalFeedsValidation() {
                   return (
                     <tr
                       key={r.abbr}
-                      className={`border-t border-border ${zero ? "bg-destructive/5" : stale ? "bg-yellow-500/5" : ""}`}
+                      className={`border-t border-border ${zero ? "bg-destructive/5" : stale ? "bg-destructive/[0.03]" : ""}`}
                     >
                       <td className="px-3 py-2">
                         <span className="font-mono text-xs text-muted-foreground mr-2">{r.abbr}</span>
@@ -251,7 +251,7 @@ export default function LocalFeedsValidation() {
                       </td>
                       <td
                         className={`px-3 py-2 text-right tabular-nums ${
-                          stale ? "text-yellow-600 dark:text-yellow-500 font-semibold" : "text-muted-foreground"
+                          stale ? "text-destructive/80 font-semibold" : "text-muted-foreground"
                         }`}
                         title={r.latest ?? undefined}
                       >
@@ -264,7 +264,7 @@ export default function LocalFeedsValidation() {
                             Zero feeds
                           </span>
                         ) : stale ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-yellow-600 dark:text-yellow-500">
+                          <span className="inline-flex items-center gap-1 text-[11px] text-destructive/80">
                             <AlertTriangle className="h-3 w-3" />
                             Stale
                           </span>
