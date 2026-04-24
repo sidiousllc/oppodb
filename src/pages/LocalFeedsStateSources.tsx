@@ -190,7 +190,7 @@ export default function LocalFeedsStateSources() {
               <AlertTriangle className="h-4 w-4" />
               <strong>{failedCount}</strong> failed
             </span>
-            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-500">
+            <span className="inline-flex items-center gap-1 text-warning">
               <Clock className="h-4 w-4" />
               <strong>{staleCount}</strong> stale (&gt;{staleHours}h)
             </span>
