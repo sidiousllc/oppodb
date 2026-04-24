@@ -190,6 +190,7 @@ export default function LocalFeedsValidation() {
                 <th className="px-3 py-2 text-right font-semibold">Unique sources</th>
                 <th className="px-3 py-2 text-right font-semibold">Latest</th>
                 <th className="px-3 py-2 text-center font-semibold">Status</th>
+                <th className="px-3 py-2 text-right font-semibold">Action</th>
               </tr>
             </thead>
             <tbody>
