@@ -2009,8 +2009,8 @@ export type Database = {
           content: string
           created_at: string
           id: string
-          published_at: string | null
-          region: string | null
+          published_at: string
+          region: string
           scope: string
           source_name: string
           source_url: string | null
@@ -2023,8 +2023,8 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
-          published_at?: string | null
-          region?: string | null
+          published_at?: string
+          region?: string
           scope?: string
           source_name?: string
           source_url?: string | null
@@ -2037,8 +2037,8 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
-          published_at?: string | null
-          region?: string | null
+          published_at?: string
+          region?: string
           scope?: string
           source_name?: string
           source_url?: string | null
