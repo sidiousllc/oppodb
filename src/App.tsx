@@ -20,6 +20,7 @@ import UnsubscribePage from "./pages/UnsubscribePage.tsx";
 import PublicReport from "./pages/PublicReport.tsx";
 import LocalFeedsValidation from "./pages/LocalFeedsValidation.tsx";
 import LocalFeedsStateSources from "./pages/LocalFeedsStateSources.tsx";
+import LocalFeedsAudit from "./pages/LocalFeedsAudit.tsx";
 import { initOfflineSync } from "./lib/offlineSync";
 import { LocationTrackerInit } from "./hooks/useLocationTracker";
 
