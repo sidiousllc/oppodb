@@ -2270,6 +2270,97 @@ mcpServer.tool("get_subject_ai_bundle", {
 
 
 
+// ─── Self-documentation tools (Phase 9) ─────────────────────────────────
+// Proxy through public-api/docs* so the source-of-truth registry stays in one file.
+const PUBLIC_API_BASE = `${supabaseUrl}/functions/v1/public-api`;
+
+async function fetchDocs(path: string): Promise<unknown> {
+  // Use service-role to bypass API-key validation when calling sibling function.
+  const resp = await fetch(`${PUBLIC_API_BASE}/${path}`, {
+    headers: {
+      "Authorization": `Bearer ${supabaseKey}`,
+      "X-API-Key": Deno.env.get("MCP_INTERNAL_API_KEY") ?? "",
+    },
+  });
+  if (!resp.ok) {
+    // Fallback: return error payload so MCP clients still see something useful.
+    return { error: `docs fetch failed (${resp.status})`, status: resp.status };
+  }
+  return await resp.json();
+}
+
+mcpServer.tool("docs_index", {
+  description: "Top-level self-documentation index: counts of wiki pages, endpoints, tables, edge functions, and MCP tools.",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async () => {
+    const data = await fetchDocs("docs");
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("docs_list_wiki_pages", {
+  description: "List every wiki page (slug, title, sort order, updated_at).",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async () => {
+    const { data, error } = await supabase
+      .from("wiki_pages").select("slug,title,sort_order,updated_at").order("sort_order", { ascending: true });
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ data, count: data?.length ?? 0 }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("docs_get_wiki_page", {
+  description: "Fetch the full markdown content of a single wiki page by slug.",
+  inputSchema: {
+    type: "object" as const,
+    properties: { slug: { type: "string" as const, description: "Wiki page slug, e.g. '01-Overview'" } },
+    required: ["slug"],
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const slug = String(args.slug ?? "");
+    const { data, error } = await supabase.from("wiki_pages").select("*").eq("slug", slug).maybeSingle();
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    if (!data) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Not found: ${slug}` }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("docs_list_endpoints", {
+  description: "List every public-api REST endpoint with description and path.",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async () => {
+    const data = await fetchDocs("docs-endpoints");
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("docs_list_tables", {
+  description: "List every database table available for offline sync.",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async () => {
+    const data = await fetchDocs("docs-tables");
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("docs_list_edge_functions", {
+  description: "List every deployed edge function with purpose and auth requirement.",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async () => {
+    const data = await fetchDocs("docs-edge-functions");
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
+mcpServer.tool("docs_list_mcp_tools", {
+  description: "List every MCP tool registered on this server with category and description.",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async () => {
+    const data = await fetchDocs("docs-mcp-tools");
+    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  },
+});
+
 const transport = new StreamableHttpTransport();
 const httpHandler = transport.bind(mcpServer);
 
