@@ -463,6 +463,23 @@ export function IntelHub() {
                 ))}
               </select>
             </div>
+            {activeScope === "local" && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-bold text-gray-600 w-12">State:</span>
+                <select
+                  value={selectedState}
+                  onChange={(e) => setSelectedState(e.target.value)}
+                  className="text-xs border border-[#808080] bg-white px-1 py-0.5 focus:outline-none"
+                >
+                  <option value="all">All States ({availableStates.length})</option>
+                  {availableStates.map((abbr) => (
+                    <option key={abbr} value={abbr}>
+                      {STATE_ABBR_TO_NAME[abbr] ?? abbr} ({abbr})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-bold text-gray-600 w-12">Lean:</span>
               {(["all", "left", "center", "right"] as PartyLeaning[]).map((lean) => (
