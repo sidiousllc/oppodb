@@ -1971,6 +1971,16 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify(docsResp), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
+      case "offline-manifest":
+      case "offline-snapshot":
+      case "offline-mutate": {
+        const offlineResp = await handleOfflineEndpoint(endpoint, req, url, supabase, userId);
+        const status = (offlineResp as { _status?: number })._status ?? 200;
+        delete (offlineResp as { _status?: number })._status;
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: status }).then(() => {});
+        return new Response(JSON.stringify(offlineResp), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: "Unknown endpoint" }),
