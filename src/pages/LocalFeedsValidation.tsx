@@ -50,8 +50,47 @@ export default function LocalFeedsValidation() {
   const [refreshing, setRefreshing] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
+  // Progress state for per-state refreshes (elapsed + status message)
+  const [progress, setProgress] = useState<Record<string, { startedAt: number; phase: string; elapsed: number }>>({});
+
+  // Tick elapsed time for any in-flight refreshes (1Hz)
+  useEffect(() => {
+    if (Object.keys(progress).length === 0) return;
+    const id = setInterval(() => {
+      setProgress((prev) => {
+        const next: typeof prev = {};
+        for (const [k, v] of Object.entries(prev)) {
+          next[k] = { ...v, elapsed: Math.floor((Date.now() - v.startedAt) / 1000) };
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [progress]);
+
   const refreshState = async (abbr: string) => {
     setRefreshing((prev) => new Set(prev).add(abbr));
+    setProgress((prev) => ({
+      ...prev,
+      [abbr]: { startedAt: Date.now(), phase: "Fetching RSS feeds…", elapsed: 0 },
+    }));
+    // After a few seconds, update the phase message
+    const phaseTimers = [
+      setTimeout(() => {
+        setProgress((prev) =>
+          prev[abbr]
+            ? { ...prev, [abbr]: { ...prev[abbr], phase: "Parsing articles…" } }
+            : prev,
+        );
+      }, 4000),
+      setTimeout(() => {
+        setProgress((prev) =>
+          prev[abbr]
+            ? { ...prev, [abbr]: { ...prev[abbr], phase: "Saving to database…" } }
+            : prev,
+        );
+      }, 10000),
+    ];
     try {
       const { data, error: err } = await supabase.functions.invoke("intel-briefing", {
         body: { scopes: ["local"], state: abbr },
@@ -63,9 +102,15 @@ export default function LocalFeedsValidation() {
     } catch (e) {
       toast.error(`Failed to refresh ${abbr}: ${e instanceof Error ? e.message : "error"}`);
     } finally {
+      phaseTimers.forEach(clearTimeout);
       setRefreshing((prev) => {
         const next = new Set(prev);
         next.delete(abbr);
+        return next;
+      });
+      setProgress((prev) => {
+        const next = { ...prev };
+        delete next[abbr];
         return next;
       });
     }
