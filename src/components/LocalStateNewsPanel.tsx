@@ -291,6 +291,25 @@ export function LocalStateNewsPanel({
         )}
       </div>
 
+      {isFiltered && (
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+          <Filter className="h-3 w-3" />
+          <span className="text-muted-foreground">Filtering:</span>
+          <span className="capitalize">{chamber === "all" ? "All chambers" : chamber}</span>
+          <span className="text-muted-foreground">/</span>
+          <span>{districtNumber === "all" ? "All districts" : `District ${districtNumber}`}</span>
+          <span className="text-muted-foreground">·</span>
+          <span className="text-muted-foreground">{filtered.length} {filtered.length === 1 ? "result" : "results"}</span>
+          <button
+            onClick={() => { setChamber("all"); setDistrictNumber("all"); }}
+            className="ml-1 rounded-full hover:bg-primary/20 p-0.5"
+            aria-label="Clear filters"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+
       <p className="text-xs text-muted-foreground mb-4">
         Showing news from outlets located in {stateName}.
         {isFiltered
