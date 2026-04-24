@@ -1296,6 +1296,292 @@ async function parseRSS(url: string, sourceName: string, scope: string, state?: 
   return items;
 }
 
+// Vetted reserve pool of additional local RSS feeds, keyed by state abbreviation.
+// Used by the "top_up_local_sources" action to propose new feeds for low-coverage states.
+// Each candidate is probed live before being returned, so dead feeds are filtered out automatically.
+const LOCAL_RESERVE: Record<string, Array<{ name: string; rssUrl: string }>> = {
+  AL: [
+    { name: "AL.com", rssUrl: "https://www.al.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Alabama Reflector", rssUrl: "https://alabamareflector.com/feed/" },
+    { name: "Alabama Political Reporter", rssUrl: "https://www.alreporter.com/feed/" },
+    { name: "Birmingham Watch", rssUrl: "https://birminghamwatch.org/feed/" },
+  ],
+  AK: [
+    { name: "Anchorage Daily News", rssUrl: "https://www.adn.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Alaska Public Media", rssUrl: "https://alaskapublic.org/feed/" },
+    { name: "Alaska Beacon", rssUrl: "https://alaskabeacon.com/feed/" },
+  ],
+  AZ: [
+    { name: "Arizona Republic", rssUrl: "https://www.azcentral.com/arc/outboundfeeds/rss/category/news/?outputType=xml" },
+    { name: "Tucson Sentinel", rssUrl: "https://www.tucsonsentinel.com/rss/news.xml" },
+    { name: "AZ Mirror", rssUrl: "https://azmirror.com/feed/" },
+    { name: "Arizona Daily Star", rssUrl: "https://tucson.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc" },
+  ],
+  AR: [
+    { name: "Arkansas Times", rssUrl: "https://arktimes.com/feed" },
+    { name: "Arkansas Advocate", rssUrl: "https://arkansasadvocate.com/feed/" },
+    { name: "Talk Business & Politics", rssUrl: "https://talkbusiness.net/feed/" },
+  ],
+  CA: [
+    { name: "LA Times — California", rssUrl: "https://www.latimes.com/california/rss2.0.xml" },
+    { name: "SF Chronicle", rssUrl: "https://www.sfchronicle.com/rss/feed/Bay-Area-News-3.php" },
+    { name: "CalMatters", rssUrl: "https://calmatters.org/feed/" },
+    { name: "Voice of San Diego", rssUrl: "https://voiceofsandiego.org/feed/" },
+    { name: "Berkeleyside", rssUrl: "https://www.berkeleyside.org/feed" },
+  ],
+  CO: [
+    { name: "Denver Post", rssUrl: "https://www.denverpost.com/feed/" },
+    { name: "Colorado Sun", rssUrl: "https://coloradosun.com/feed/" },
+    { name: "Colorado Newsline", rssUrl: "https://coloradonewsline.com/feed/" },
+    { name: "Westword", rssUrl: "https://www.westword.com/api/v1/feed/news.rss" },
+  ],
+  CT: [
+    { name: "CT Mirror", rssUrl: "https://ctmirror.org/feed/" },
+    { name: "Hartford Courant", rssUrl: "https://www.courant.com/feed/" },
+    { name: "CT Insider", rssUrl: "https://www.ctinsider.com/rss/feed/News-13351.php" },
+  ],
+  DE: [
+    { name: "Delaware Online", rssUrl: "https://www.delawareonline.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Delaware Public Media", rssUrl: "https://www.delawarepublic.org/feed/" },
+    { name: "Spotlight Delaware", rssUrl: "https://spotlightdelaware.org/feed/" },
+  ],
+  FL: [
+    { name: "Miami Herald", rssUrl: "https://www.miamiherald.com/news/?widgetName=rssfeed&widgetContentId=712015&getXmlFeed=true" },
+    { name: "Tampa Bay Times", rssUrl: "https://www.tampabay.com/feed/" },
+    { name: "Florida Phoenix", rssUrl: "https://floridaphoenix.com/feed/" },
+    { name: "Orlando Sentinel", rssUrl: "https://www.orlandosentinel.com/feed/" },
+    { name: "WLRN Miami", rssUrl: "https://www.wlrn.org/news.rss" },
+  ],
+  GA: [
+    { name: "Atlanta Journal-Constitution", rssUrl: "https://www.ajc.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Georgia Recorder", rssUrl: "https://georgiarecorder.com/feed/" },
+    { name: "GPB News", rssUrl: "https://www.gpb.org/news.xml" },
+    { name: "Atlanta Civic Circle", rssUrl: "https://atlantaciviccircle.org/feed/" },
+  ],
+  HI: [
+    { name: "Honolulu Civil Beat", rssUrl: "https://www.civilbeat.org/feed/" },
+    { name: "Hawaii News Now", rssUrl: "https://www.hawaiinewsnow.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Star-Advertiser", rssUrl: "https://www.staradvertiser.com/feed/" },
+  ],
+  ID: [
+    { name: "Idaho Statesman", rssUrl: "https://www.idahostatesman.com/news/?widgetName=rssfeed&widgetContentId=712015&getXmlFeed=true" },
+    { name: "Idaho Capital Sun", rssUrl: "https://idahocapitalsun.com/feed/" },
+    { name: "Boise Dev", rssUrl: "https://boisedev.com/feed/" },
+  ],
+  IL: [
+    { name: "Chicago Sun-Times", rssUrl: "https://chicago.suntimes.com/rss" },
+    { name: "Block Club Chicago", rssUrl: "https://blockclubchicago.org/feed/" },
+    { name: "Capitol News Illinois", rssUrl: "https://capitolnewsillinois.com/feed" },
+    { name: "Illinois Answers Project", rssUrl: "https://illinoisanswers.org/feed/" },
+  ],
+  IN: [
+    { name: "IndyStar", rssUrl: "https://www.indystar.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Indiana Capital Chronicle", rssUrl: "https://indianacapitalchronicle.com/feed/" },
+    { name: "Mirror Indy", rssUrl: "https://mirrorindy.org/feed/" },
+  ],
+  IA: [
+    { name: "Des Moines Register", rssUrl: "https://www.desmoinesregister.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Iowa Capital Dispatch", rssUrl: "https://iowacapitaldispatch.com/feed/" },
+    { name: "Iowa Public Radio", rssUrl: "https://www.iowapublicradio.org/news.rss" },
+  ],
+  KS: [
+    { name: "Kansas Reflector", rssUrl: "https://kansasreflector.com/feed/" },
+    { name: "Kansas City Star", rssUrl: "https://www.kansascity.com/news/?widgetName=rssfeed&widgetContentId=712015&getXmlFeed=true" },
+    { name: "KCUR", rssUrl: "https://www.kcur.org/news.rss" },
+  ],
+  KY: [
+    { name: "Louisville Courier-Journal", rssUrl: "https://www.courier-journal.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Kentucky Lantern", rssUrl: "https://kentuckylantern.com/feed/" },
+    { name: "WFPL Louisville", rssUrl: "https://wfpl.org/feed/" },
+  ],
+  LA: [
+    { name: "NOLA.com", rssUrl: "https://www.nola.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc" },
+    { name: "Louisiana Illuminator", rssUrl: "https://lailluminator.com/feed/" },
+    { name: "The Advocate", rssUrl: "https://www.theadvocate.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc" },
+  ],
+  ME: [
+    { name: "Portland Press Herald", rssUrl: "https://www.pressherald.com/feed/" },
+    { name: "Bangor Daily News", rssUrl: "https://www.bangordailynews.com/feed/" },
+    { name: "Maine Morning Star", rssUrl: "https://mainemorningstar.com/feed/" },
+  ],
+  MD: [
+    { name: "Baltimore Banner", rssUrl: "https://www.thebaltimorebanner.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Baltimore Sun", rssUrl: "https://www.baltimoresun.com/feed/" },
+    { name: "Maryland Matters", rssUrl: "https://marylandmatters.org/feed/" },
+  ],
+  MA: [
+    { name: "Boston Globe", rssUrl: "https://www.bostonglobe.com/rss/bdc/news" },
+    { name: "WBUR", rssUrl: "https://www.wbur.org/feed" },
+    { name: "CommonWealth Beacon", rssUrl: "https://commonwealthbeacon.org/feed/" },
+    { name: "Boston.com", rssUrl: "https://www.boston.com/tag/local-news/feed/" },
+  ],
+  MI: [
+    { name: "Detroit Free Press", rssUrl: "https://www.freep.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Bridge Michigan", rssUrl: "https://www.bridgemi.com/rss.xml" },
+    { name: "Michigan Advance", rssUrl: "https://michiganadvance.com/feed/" },
+    { name: "MLive", rssUrl: "https://www.mlive.com/arc/outboundfeeds/rss/?outputType=xml" },
+  ],
+  MN: [
+    { name: "Star Tribune", rssUrl: "https://www.startribune.com/rss/?ns=/news" },
+    { name: "MinnPost", rssUrl: "https://www.minnpost.com/feed/" },
+    { name: "Sahan Journal", rssUrl: "https://sahanjournal.com/feed/" },
+    { name: "MPR News", rssUrl: "https://www.mprnews.org/feed" },
+  ],
+  MS: [
+    { name: "Mississippi Today", rssUrl: "https://mississippitoday.org/feed/" },
+    { name: "Clarion Ledger", rssUrl: "https://www.clarionledger.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Magnolia Tribune", rssUrl: "https://magnoliatribune.com/feed/" },
+  ],
+  MO: [
+    { name: "Missouri Independent", rssUrl: "https://missouriindependent.com/feed/" },
+    { name: "St. Louis Public Radio", rssUrl: "https://news.stlpublicradio.org/feed" },
+    { name: "Missourian", rssUrl: "https://www.columbiamissourian.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc" },
+  ],
+  MT: [
+    { name: "Montana Free Press", rssUrl: "https://montanafreepress.org/feed/" },
+    { name: "Daily Montanan", rssUrl: "https://dailymontanan.com/feed/" },
+    { name: "Billings Gazette", rssUrl: "https://billingsgazette.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc" },
+  ],
+  NE: [
+    { name: "Nebraska Examiner", rssUrl: "https://nebraskaexaminer.com/feed/" },
+    { name: "Omaha World-Herald", rssUrl: "https://omaha.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc" },
+    { name: "Flatwater Free Press", rssUrl: "https://flatwaterfreepress.org/feed/" },
+  ],
+  NV: [
+    { name: "Nevada Independent", rssUrl: "https://thenevadaindependent.com/feed" },
+    { name: "Las Vegas Sun", rssUrl: "https://lasvegassun.com/feeds/headlines/news/" },
+    { name: "Nevada Current", rssUrl: "https://nevadacurrent.com/feed/" },
+  ],
+  NH: [
+    { name: "NH Bulletin", rssUrl: "https://newhampshirebulletin.com/feed/" },
+    { name: "Concord Monitor", rssUrl: "https://www.concordmonitor.com/feed/RSS" },
+    { name: "NHPR", rssUrl: "https://www.nhpr.org/feed" },
+  ],
+  NJ: [
+    { name: "NJ Monitor", rssUrl: "https://newjerseymonitor.com/feed/" },
+    { name: "NJ Spotlight News", rssUrl: "https://www.njspotlightnews.org/feed/" },
+    { name: "NJ.com", rssUrl: "https://www.nj.com/arc/outboundfeeds/rss/?outputType=xml" },
+  ],
+  NM: [
+    { name: "Source NM", rssUrl: "https://sourcenm.com/feed/" },
+    { name: "Santa Fe New Mexican", rssUrl: "https://www.santafenewmexican.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc" },
+    { name: "Albuquerque Journal", rssUrl: "https://www.abqjournal.com/feed" },
+  ],
+  NY: [
+    { name: "THE CITY NYC", rssUrl: "https://www.thecity.nyc/rss/" },
+    { name: "Gothamist", rssUrl: "https://gothamist.com/feed" },
+    { name: "City & State NY", rssUrl: "https://www.cityandstateny.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "New York Focus", rssUrl: "https://nysfocus.com/feed" },
+    { name: "Spectrum News NY1", rssUrl: "https://www.ny1.com/nyc/all-boroughs/news.rss" },
+  ],
+  NC: [
+    { name: "News & Observer", rssUrl: "https://www.newsobserver.com/news/?widgetName=rssfeed&widgetContentId=712015&getXmlFeed=true" },
+    { name: "NC Newsline", rssUrl: "https://ncnewsline.com/feed/" },
+    { name: "Charlotte Observer", rssUrl: "https://www.charlotteobserver.com/news/?widgetName=rssfeed&widgetContentId=712015&getXmlFeed=true" },
+    { name: "WUNC", rssUrl: "https://www.wunc.org/feed" },
+  ],
+  ND: [
+    { name: "North Dakota Monitor", rssUrl: "https://northdakotamonitor.com/feed/" },
+    { name: "Bismarck Tribune", rssUrl: "https://bismarcktribune.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc" },
+    { name: "Forum of Fargo", rssUrl: "https://www.inforum.com/index.rss" },
+  ],
+  OH: [
+    { name: "Cleveland.com", rssUrl: "https://www.cleveland.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Ohio Capital Journal", rssUrl: "https://ohiocapitaljournal.com/feed/" },
+    { name: "Cincinnati Enquirer", rssUrl: "https://www.cincinnati.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Signal Cleveland", rssUrl: "https://signalcleveland.org/feed/" },
+  ],
+  OK: [
+    { name: "Oklahoma Voice", rssUrl: "https://oklahomavoice.com/feed/" },
+    { name: "The Oklahoman", rssUrl: "https://www.oklahoman.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Tulsa World", rssUrl: "https://tulsaworld.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc" },
+  ],
+  OR: [
+    { name: "Oregon Capital Chronicle", rssUrl: "https://oregoncapitalchronicle.com/feed/" },
+    { name: "OPB", rssUrl: "https://www.opb.org/feed/" },
+    { name: "Willamette Week", rssUrl: "https://www.wweek.com/feed/" },
+    { name: "Portland Mercury", rssUrl: "https://www.portlandmercury.com/Rss.xml" },
+  ],
+  PA: [
+    { name: "Philadelphia Inquirer", rssUrl: "https://www.inquirer.com/arc/outboundfeeds/rss/category/news/?outputType=xml" },
+    { name: "PA Capital-Star", rssUrl: "https://penncapital-star.com/feed/" },
+    { name: "Spotlight PA", rssUrl: "https://www.spotlightpa.org/feeds/articles.xml" },
+    { name: "PublicSource", rssUrl: "https://www.publicsource.org/feed/" },
+  ],
+  RI: [
+    { name: "Rhode Island Current", rssUrl: "https://rhodeislandcurrent.com/feed/" },
+    { name: "Providence Journal", rssUrl: "https://www.providencejournal.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Boston Globe — RI", rssUrl: "https://www.bostonglobe.com/rss/bdc/rhode-island" },
+  ],
+  SC: [
+    { name: "SC Daily Gazette", rssUrl: "https://scdailygazette.com/feed/" },
+    { name: "Post and Courier", rssUrl: "https://www.postandcourier.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc" },
+    { name: "The State (SC)", rssUrl: "https://www.thestate.com/news/?widgetName=rssfeed&widgetContentId=712015&getXmlFeed=true" },
+  ],
+  SD: [
+    { name: "SD Searchlight", rssUrl: "https://southdakotasearchlight.com/feed/" },
+    { name: "Argus Leader", rssUrl: "https://www.argusleader.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "SDPB", rssUrl: "https://www.sdpb.org/feed/" },
+  ],
+  TN: [
+    { name: "Tennessee Lookout", rssUrl: "https://tennesseelookout.com/feed/" },
+    { name: "Tennessean", rssUrl: "https://www.tennessean.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "MLK50", rssUrl: "https://mlk50.com/feed/" },
+    { name: "Daily Memphian", rssUrl: "https://dailymemphian.com/feed" },
+  ],
+  TX: [
+    { name: "Texas Tribune", rssUrl: "https://www.texastribune.org/feeds/" },
+    { name: "Houston Chronicle", rssUrl: "https://www.houstonchronicle.com/rss/feed/Houston-Chronicle-Local-News-3.php" },
+    { name: "Dallas Morning News", rssUrl: "https://www.dallasnews.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Austin American-Statesman", rssUrl: "https://www.statesman.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "San Antonio Report", rssUrl: "https://sanantonioreport.org/feed/" },
+  ],
+  UT: [
+    { name: "Utah News Dispatch", rssUrl: "https://utahnewsdispatch.com/feed/" },
+    { name: "Salt Lake Tribune", rssUrl: "https://www.sltrib.com/feed/" },
+    { name: "KUER", rssUrl: "https://www.kuer.org/feed" },
+  ],
+  VT: [
+    { name: "VTDigger", rssUrl: "https://vtdigger.org/feed/" },
+    { name: "Seven Days", rssUrl: "https://www.sevendaysvt.com/RSSFeeds.xml" },
+    { name: "Vermont Public", rssUrl: "https://www.vermontpublic.org/feed" },
+  ],
+  VA: [
+    { name: "Virginia Mercury", rssUrl: "https://virginiamercury.com/feed/" },
+    { name: "Richmond Times-Dispatch", rssUrl: "https://richmond.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc" },
+    { name: "Cardinal News", rssUrl: "https://cardinalnews.org/feed/" },
+    { name: "VPM", rssUrl: "https://www.vpm.org/feed/" },
+  ],
+  WA: [
+    { name: "Seattle Times", rssUrl: "https://www.seattletimes.com/feed/" },
+    { name: "Washington State Standard", rssUrl: "https://washingtonstatestandard.com/feed/" },
+    { name: "Crosscut", rssUrl: "https://crosscut.com/feeds/all.rss" },
+    { name: "South Seattle Emerald", rssUrl: "https://southseattleemerald.com/feed" },
+  ],
+  WV: [
+    { name: "Mountain State Spotlight", rssUrl: "https://mountainstatespotlight.org/feed/" },
+    { name: "West Virginia Watch", rssUrl: "https://westvirginiawatch.com/feed/" },
+    { name: "WV Public Broadcasting", rssUrl: "https://wvpublic.org/feed/" },
+  ],
+  WI: [
+    { name: "Milwaukee Journal Sentinel", rssUrl: "https://www.jsonline.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Wisconsin Watch", rssUrl: "https://wisconsinwatch.org/feed/" },
+    { name: "Wisconsin Examiner", rssUrl: "https://wisconsinexaminer.com/feed/" },
+    { name: "Urban Milwaukee", rssUrl: "https://urbanmilwaukee.com/feed/" },
+  ],
+  WY: [
+    { name: "WyoFile", rssUrl: "https://wyofile.com/feed/" },
+    { name: "Cowboy State Daily", rssUrl: "https://cowboystatedaily.com/feed/" },
+    { name: "Casper Star-Tribune", rssUrl: "https://trib.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc" },
+  ],
+  DC: [
+    { name: "DCist", rssUrl: "https://dcist.com/feed/" },
+    { name: "Washington City Paper", rssUrl: "https://washingtoncitypaper.com/feed/" },
+    { name: "DC News Now", rssUrl: "https://www.dcnewsnow.com/feed/" },
+    { name: "The 51st", rssUrl: "https://the51st.beehiiv.com/feed" },
+  ],
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
