@@ -53,6 +53,9 @@ export default function LocalFeedsAudit() {
   const [report, setReport] = useState<AuditResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lowCoverageOnly, setLowCoverageOnly] = useState(false);
+  const [lowCoverageThreshold, setLowCoverageThreshold] = useState(5);
+  const [coverageMetric, setCoverageMetric] = useState<"configured" | "healthy">("configured");
 
   const runAudit = async () => {
     setLoading(true);
