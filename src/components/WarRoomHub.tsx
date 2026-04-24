@@ -316,6 +316,7 @@ export function WarRoomHub() {
 
   return (
     <div className="space-y-3">
+      <div className="flex justify-end"><OfflineSectionStatus label="War Rooms" tables={["war_rooms","war_room_members","war_room_messages","entity_notes"]} /></div>
       <div className="flex items-center justify-between">
         <h3 className="text-[12px] font-bold flex items-center gap-1">
           <Users className="h-3 w-3" /> War Rooms
