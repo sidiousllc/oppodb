@@ -272,13 +272,18 @@ export default function LocalFeedsStateSources() {
               size="sm"
               onClick={runHealthCheck}
               disabled={probing || loading || sources.length === 0}
+              title={`Probe all ${sources.length} ${abbr} sources in parallel`}
             >
               {probing ? (
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
               ) : (
                 <RefreshCw className="h-3 w-3 mr-1" />
               )}
-              {Object.keys(health).length === 0 ? "Check feed health" : "Re-check health"}
+              {probing
+                ? `Refreshing ${sources.length}…`
+                : Object.keys(health).length === 0
+                  ? `Refresh all ${sources.length} sources`
+                  : `Re-check all ${sources.length}`}
             </Button>
           </div>
         </div>
