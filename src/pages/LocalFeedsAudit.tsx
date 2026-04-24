@@ -201,7 +201,117 @@ export default function LocalFeedsAudit() {
           )}
         </div>
 
-        {error && (
+        {/* Auto top-up controls */}
+        <div className="mb-6 p-4 rounded-lg border border-primary/30 bg-primary/5">
+          <div className="flex items-start gap-3 flex-wrap">
+            <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-[220px]">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                Auto top-up low-coverage states
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                Probes a vetted reserve pool of additional local RSS feeds and returns the next-best healthy candidates for any state below the threshold.
+                {report ? " Limited to states currently below the threshold in the latest audit." : " Run an audit first to narrow targets, or click below to evaluate every state in the reserve pool."}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-end gap-3 mt-3 flex-wrap">
+            <div>
+              <Label htmlFor="topup-min" className="text-xs">Top up to at least</Label>
+              <Input
+                id="topup-min"
+                type="number"
+                min={1}
+                max={20}
+                value={topUpThreshold}
+                onChange={(e) => setTopUpThreshold(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+                className="w-20 mt-1 h-9"
+              />
+            </div>
+            <div>
+              <Label htmlFor="topup-cap" className="text-xs">Max new feeds per state</Label>
+              <Input
+                id="topup-cap"
+                type="number"
+                min={1}
+                max={10}
+                value={topUpPerStateCap}
+                onChange={(e) => setTopUpPerStateCap(Math.max(1, Math.min(10, Number(e.target.value) || 1)))}
+                className="w-20 mt-1 h-9"
+              />
+            </div>
+            <Button onClick={runTopUp} disabled={topUpLoading} size="sm">
+              {topUpLoading ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <PlusCircle className="h-4 w-4 mr-1" />
+              )}
+              {topUpLoading ? "Probing reserves…" : "Run auto top-up"}
+            </Button>
+          </div>
+
+          {topUpResult && (
+            <div className="mt-4 space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                <Stat label="States evaluated" value={topUpResult.summary.statesEvaluated} />
+                <Stat label="Healthy added" value={topUpResult.summary.totalHealthyAdded} tone="ok" />
+                <Stat label="Now meeting min" value={topUpResult.summary.statesNowMeeting} tone="ok" />
+                <Stat
+                  label="Still below"
+                  value={topUpResult.summary.statesStillBelow}
+                  tone={topUpResult.summary.statesStillBelow > 0 ? "warn" : "ok"}
+                />
+              </div>
+
+              {Object.keys(topUpResult.additions).length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No healthy reserve feeds were found for the selected states. Try lowering the threshold or expanding the reserve pool.
+                </p>
+              ) : (
+                <div className="border border-border rounded-md overflow-hidden bg-background">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/50 uppercase tracking-wide text-muted-foreground">
+                      <tr>
+                        <th className="px-2 py-1.5 text-left font-semibold">State</th>
+                        <th className="px-2 py-1.5 text-left font-semibold">New feed</th>
+                        <th className="px-2 py-1.5 text-right font-semibold">Items</th>
+                        <th className="px-2 py-1.5 text-right font-semibold">Latency</th>
+                        <th className="px-2 py-1.5 text-right font-semibold">URL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(topUpResult.additions).flatMap(([st, adds]) =>
+                        adds.map((a) => (
+                          <tr key={`${st}-${a.rssUrl}`} className="border-t border-border">
+                            <td className="px-2 py-1.5 font-mono text-muted-foreground">{st}</td>
+                            <td className="px-2 py-1.5">{a.name}</td>
+                            <td className="px-2 py-1.5 text-right tabular-nums">{a.items}</td>
+                            <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">{a.ms}ms</td>
+                            <td className="px-2 py-1.5 text-right">
+                              <a
+                                href={a.rssUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-primary hover:underline"
+                              >
+                                Open <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </td>
+                          </tr>
+                        )),
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <p className="text-[11px] text-muted-foreground italic">
+                {topUpResult.note}
+              </p>
+            </div>
+          )}
+        </div>
+
           <div className="mb-4 p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
             {error}
           </div>
