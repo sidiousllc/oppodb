@@ -95,6 +95,7 @@ export default function LocalFeedsStateSources() {
 
   const runHealthCheck = async () => {
     setProbing(true);
+    const toastId = toast.loading(`Refreshing all ${sources.length} ${abbr} sources…`);
     try {
       const { data, error: err } = await supabase.functions.invoke("intel-briefing", {
         body: { action: "probe_local_sources", state: abbr },
@@ -106,11 +107,16 @@ export default function LocalFeedsStateSources() {
       }
       setHealth(map);
       setCheckedAt(data?.checkedAt ?? new Date().toISOString());
+      const healthy = data?.healthy ?? 0;
+      const failed = data?.failed ?? 0;
+      const total = healthy + failed;
+      const stale = Object.values(map).filter((h) => h.ok && isStale(h.lastItemAt)).length;
       toast.success(
-        `${abbr}: ${data?.healthy ?? 0} healthy, ${data?.failed ?? 0} failed`,
+        `${abbr}: ${healthy}/${total} healthy${stale ? `, ${stale} stale` : ""}${failed ? `, ${failed} failed` : ""}`,
+        { id: toastId },
       );
     } catch (e) {
-      toast.error(`Health check failed: ${e instanceof Error ? e.message : "error"}`);
+      toast.error(`Bulk refresh failed: ${e instanceof Error ? e.message : "error"}`, { id: toastId });
     } finally {
       setProbing(false);
     }
