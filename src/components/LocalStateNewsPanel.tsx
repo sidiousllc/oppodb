@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Newspaper, ExternalLink, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,19 +19,33 @@ interface Props {
   stateName: string;
   /** Optional context label (e.g. "MN House 15A") shown in header */
   districtLabel?: string;
+  /** Default chamber to preselect ("house" | "senate") */
+  defaultChamber?: "house" | "senate";
+  /** Default district number to preselect (e.g. "15A", "14") */
+  defaultDistrictNumber?: string;
 }
 
+type ChamberFilter = "all" | "house" | "senate";
+
 /**
- * Shows local news briefings sourced from RSS feeds whose publishers are
- * located within the given state. Uses the `intel_briefings` table,
- * filtered to scope='local' AND region=stateAbbr — guaranteeing every
- * source is in-state (i.e. within the district's geography).
+ * Shows local news briefings from in-state RSS publishers, with optional
+ * chamber + district-number filters that match articles whose title/summary
+ * mentions the specific legislative district.
  */
-export function LocalStateNewsPanel({ stateAbbr, stateName, districtLabel }: Props) {
+export function LocalStateNewsPanel({
+  stateAbbr,
+  stateName,
+  districtLabel,
+  defaultChamber,
+  defaultDistrictNumber,
+}: Props) {
   const [briefings, setBriefings] = useState<Briefing[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [chamber, setChamber] = useState<ChamberFilter>(defaultChamber ?? "all");
+  const [districtNumber, setDistrictNumber] = useState<string>(defaultDistrictNumber ?? "all");
 
   const load = async () => {
     setLoading(true);
@@ -56,7 +70,6 @@ export function LocalStateNewsPanel({ stateAbbr, stateName, districtLabel }: Pro
   const refresh = async () => {
     setRefreshing(true);
     try {
-      // Trigger a fresh sync for this state's local feeds
       await supabase.functions.invoke("intel-briefing", {
         body: { scope: "local", state: stateAbbr.toUpperCase() },
       });
@@ -73,6 +86,60 @@ export function LocalStateNewsPanel({ stateAbbr, stateName, districtLabel }: Pro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateAbbr]);
 
+  // Reset filters when the district context changes
+  useEffect(() => {
+    setChamber(defaultChamber ?? "all");
+    setDistrictNumber(defaultDistrictNumber ?? "all");
+  }, [defaultChamber, defaultDistrictNumber]);
+
+  // Build a set of district numbers detected in current briefings (for the dropdown).
+  // We look for patterns like "District 15", "HD 15A", "SD 14", "House 15A", "Senate 14".
+  const detectedDistricts = useMemo(() => {
+    const found = new Set<string>();
+    const re = /\b(?:district|hd|sd|house|senate)\s*#?\s*(\d{1,3}[A-Za-z]?)\b/gi;
+    for (const b of briefings) {
+      const text = `${b.title} ${b.summary ?? ""}`;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text)) !== null) {
+        found.add(m[1].toUpperCase());
+      }
+    }
+    // Always include the default so the user can select it even if no article currently mentions it
+    if (defaultDistrictNumber) found.add(defaultDistrictNumber.toUpperCase());
+    return Array.from(found).sort((a, b) => {
+      const na = parseInt(a, 10);
+      const nb = parseInt(b, 10);
+      if (na !== nb) return na - nb;
+      return a.localeCompare(b);
+    });
+  }, [briefings, defaultDistrictNumber]);
+
+  const filtered = useMemo(() => {
+    if (chamber === "all" && districtNumber === "all") return briefings;
+    return briefings.filter((b) => {
+      const text = `${b.title} ${b.summary ?? ""}`.toLowerCase();
+
+      if (chamber !== "all") {
+        const chamberMatch =
+          chamber === "house"
+            ? /\b(house|hd|state house|assembly)\b/.test(text)
+            : /\b(senate|sd|state senate)\b/.test(text);
+        if (!chamberMatch) return false;
+      }
+
+      if (districtNumber !== "all") {
+        const dn = districtNumber.toLowerCase();
+        const dnRe = new RegExp(
+          `\\b(?:district|hd|sd|house|senate)\\s*#?\\s*${dn}\\b`,
+          "i",
+        );
+        if (!dnRe.test(text)) return false;
+      }
+
+      return true;
+    });
+  }, [briefings, chamber, districtNumber]);
+
   const formatDate = (raw: string | null) => {
     if (!raw) return "";
     try {
@@ -85,6 +152,8 @@ export function LocalStateNewsPanel({ stateAbbr, stateName, districtLabel }: Pro
       return raw;
     }
   };
+
+  const isFiltered = chamber !== "all" || districtNumber !== "all";
 
   return (
     <div className="bg-card rounded-xl border border-border p-6">
@@ -110,10 +179,61 @@ export function LocalStateNewsPanel({ stateAbbr, stateName, districtLabel }: Pro
         </Button>
       </div>
 
+      {/* Chamber + district number filters */}
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <div className="flex flex-col">
+          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+            Chamber
+          </label>
+          <select
+            value={chamber}
+            onChange={(e) => setChamber(e.target.value as ChamberFilter)}
+            className="text-xs bg-background border border-border rounded px-2 py-1 text-foreground"
+          >
+            <option value="all">All chambers</option>
+            <option value="house">House</option>
+            <option value="senate">Senate</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+            District #
+          </label>
+          <select
+            value={districtNumber}
+            onChange={(e) => setDistrictNumber(e.target.value)}
+            className="text-xs bg-background border border-border rounded px-2 py-1 text-foreground"
+          >
+            <option value="all">All districts</option>
+            {detectedDistricts.map((dn) => (
+              <option key={dn} value={dn}>
+                {dn}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {isFiltered && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => {
+              setChamber("all");
+              setDistrictNumber("all");
+            }}
+          >
+            Clear filters
+          </Button>
+        )}
+      </div>
+
       <p className="text-xs text-muted-foreground mb-4">
-        Showing news from outlets located in {stateName}. All sources are
-        verified to publish within the state, so coverage is geographically
-        relevant to this district.
+        Showing news from outlets located in {stateName}.
+        {isFiltered
+          ? " Filtered to articles that mention the selected chamber and/or district number."
+          : " All sources are verified to publish within the state, so coverage is geographically relevant to this district."}
       </p>
 
       {loading ? (
@@ -126,14 +246,17 @@ export function LocalStateNewsPanel({ stateAbbr, stateName, districtLabel }: Pro
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <div>{error}</div>
         </div>
-      ) : briefings.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-sm text-muted-foreground">
-          No local briefings cached yet for {stateName}. Click Refresh to fetch
-          the latest articles from in-state outlets.
+          {isFiltered
+            ? `No in-state articles match the selected ${chamber !== "all" ? chamber : ""}${
+                chamber !== "all" && districtNumber !== "all" ? " / " : ""
+              }${districtNumber !== "all" ? `district ${districtNumber}` : ""} filter.`
+            : `No local briefings cached yet for ${stateName}. Click Refresh to fetch the latest articles from in-state outlets.`}
         </div>
       ) : (
         <div className="space-y-3">
-          {briefings.map((b) => (
+          {filtered.map((b) => (
             <a
               key={b.id}
               href={b.source_url}
