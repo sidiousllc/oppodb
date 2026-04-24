@@ -1315,7 +1315,14 @@ Deno.serve(async (req) => {
 
     // Fetch from all requested scopes in parallel (batch 10 at a time to avoid overwhelming)
     for (const scope of requestedScopes) {
-      const sources = SOURCES[scope] || [];
+      let sources = SOURCES[scope] || [];
+      // When a specific state is requested for local scope, only fetch sources tagged for it
+      if (scope === "local" && requestedState) {
+        sources = sources.filter((s) => {
+          const st = (s as { state?: string }).state;
+          return st && st.toUpperCase() === requestedState;
+        });
+      }
       sourcesByScope[scope] = sources.length;
       if (scope === "local") {
         for (const s of sources) {
