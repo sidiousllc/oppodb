@@ -229,7 +229,14 @@ export default function LocalFeedsStateSources() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sources.map((s) => {
+                  {filteredSources.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                        No sources match “{query}”.
+                      </td>
+                    </tr>
+                  )}
+                  {filteredSources.map((s) => {
                     const h = health[s.rssUrl];
                     const checked = !!h;
                     const ok = h?.ok;
