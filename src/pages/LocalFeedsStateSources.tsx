@@ -227,6 +227,33 @@ export default function LocalFeedsStateSources() {
                 {Object.keys(health).length === 0 && !query && " — click \"Check feed health\" to probe each feed"}
               </p>
             </div>
+
+            {availableScopes.length > 0 && (
+              <div className="flex items-center gap-1.5 mb-3 flex-wrap text-xs">
+                <span className="text-muted-foreground mr-1">Scope:</span>
+                {(["all", ...availableScopes] as string[]).map((scope) => {
+                  const isActive = scopeFilter === scope;
+                  const count =
+                    scope === "all"
+                      ? sources.length
+                      : sources.filter((s) => (s.scope || "local") === scope).length;
+                  return (
+                    <button
+                      key={scope}
+                      type="button"
+                      onClick={() => setScopeFilter(scope)}
+                      className={`px-2 py-0.5 rounded-full border transition-colors capitalize ${
+                        isActive
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                      }`}
+                    >
+                      {scope} <span className="opacity-70">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
