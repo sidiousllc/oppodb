@@ -359,6 +359,62 @@ export function LocalStateNewsPanel({
           : " All sources are verified to publish within the state, so coverage is geographically relevant to this district."}
       </p>
 
+      {/* Sources powering this feed */}
+      {!loading && !error && sourcesUsed.length > 0 && (
+        <div className="mb-4 rounded-lg border border-border bg-muted/30">
+          <button
+            type="button"
+            onClick={() => setShowSources((v) => !v)}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/60 transition-colors"
+            aria-expanded={showSources}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Rss className="h-3.5 w-3.5 text-primary" />
+              Sources powering this feed
+              <span className="text-muted-foreground font-normal">({sourcesUsed.length})</span>
+            </span>
+            {showSources ? (
+              <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </button>
+          {showSources && (
+            <div className="border-t border-border max-h-72 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-1.5 text-left font-semibold">Outlet</th>
+                    <th className="px-3 py-1.5 text-left font-semibold">Domain</th>
+                    <th className="px-3 py-1.5 text-right font-semibold">Articles</th>
+                    <th className="px-3 py-1.5 text-right font-semibold">Last updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sourcesUsed.map((s) => (
+                    <tr key={s.name} className="border-t border-border">
+                      <td className="px-3 py-1.5 font-medium text-foreground">{s.name}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground font-mono">
+                        {s.host || "—"}
+                      </td>
+                      <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">
+                        {s.count}
+                      </td>
+                      <td
+                        className="px-3 py-1.5 text-right tabular-nums text-muted-foreground"
+                        title={s.latest ?? undefined}
+                      >
+                        {formatRelative(s.latest)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-12 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin mr-2" />
