@@ -260,6 +260,7 @@ export default function LocalFeedsStateSources() {
                   <tr>
                     <th className="px-3 py-2 text-left font-semibold">Source</th>
                     <th className="px-3 py-2 text-left font-semibold">Domain</th>
+                    <th className="px-3 py-2 text-left font-semibold">Scope</th>
                     <th className="px-3 py-2 text-center font-semibold">Status</th>
                     <th className="px-3 py-2 text-right font-semibold">HTTP</th>
                     <th className="px-3 py-2 text-right font-semibold">Items</th>
