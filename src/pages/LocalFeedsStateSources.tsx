@@ -26,6 +26,7 @@ interface HealthRow {
   ms: number;
   items: number;
   error: string | null;
+  lastItemAt: string | null;
 }
 
 const formatRelative = (iso: string | null): string => {
