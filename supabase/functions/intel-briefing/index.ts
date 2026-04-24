@@ -1684,6 +1684,7 @@ Deno.serve(async (req) => {
         count: allItems.length,
         fetched: allItems.length,
         deduped: dedupedCount,
+        skipped_db_duplicate: skippedDbDuplicate,
         inserted,
         inserted_local: insertedLocal,
         sources_by_scope: sourcesByScope,
