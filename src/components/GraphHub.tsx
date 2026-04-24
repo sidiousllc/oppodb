@@ -161,6 +161,7 @@ export function GraphHub() {
 
   return (
       <div className="space-y-3">
+        <div className="flex justify-end"><OfflineSectionStatus label="Graph" tables={["entity_relationships","graph_snapshots"]} /></div>
         <div className="win98-raised bg-[hsl(var(--win98-face))]">
           <div className="px-2 py-1 text-[11px] font-bold border-b border-b-[hsl(var(--win98-shadow))]">🕸️ Build & Explore</div>
           <div className="p-3 space-y-2">
