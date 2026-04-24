@@ -266,6 +266,7 @@ export default function LocalFeedsStateSources() {
                     <th className="px-3 py-2 text-right font-semibold">HTTP</th>
                     <th className="px-3 py-2 text-right font-semibold">Items</th>
                     <th className="px-3 py-2 text-right font-semibold">Latency</th>
+                    <th className="px-3 py-2 text-right font-semibold">Last imported</th>
                     <th className="px-3 py-2 text-right font-semibold">Last checked</th>
                     <th className="px-3 py-2 text-right font-semibold">Feed</th>
                   </tr>
