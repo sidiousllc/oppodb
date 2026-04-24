@@ -2346,20 +2346,23 @@ async function handleDocsEndpoint(
     return { data, count: data?.length ?? 0 };
   }
   if (endpoint === "docs-endpoints") {
+    const slug = url.searchParams.get("endpoint");
+    if (slug) {
+      const spec = ENDPOINT_SPEC_BY_NAME[slug];
+      if (!spec) return { error: `Unknown endpoint: ${slug}` };
+      return { data: spec };
+    }
     return {
-      data: VALID_ENDPOINTS.map((e) => ({
-        endpoint: e,
-        path: `/public-api/${e}`,
-        description: endpointDescription(e),
-      })),
-      count: VALID_ENDPOINTS.length,
+      sections: SECTIONS,
+      data: ENDPOINT_SPECS.map((e) => ({ ...e, path: `/public-api/${e.endpoint}` })),
+      count: ENDPOINT_SPECS.length,
     };
   }
   if (endpoint === "docs-tables") {
     return { data: OFFLINE_TABLES_REGISTRY.map((t) => ({ table: t })), count: OFFLINE_TABLES_REGISTRY.length };
   }
   if (endpoint === "docs-mcp-tools") {
-    return { data: MCP_TOOLS_REGISTRY, count: MCP_TOOLS_REGISTRY.length };
+    return { sections: SECTIONS, data: MCP_TOOL_SPECS, count: MCP_TOOL_SPECS.length };
   }
   if (endpoint === "docs-edge-functions") {
     return { data: EDGE_FUNCTIONS_REGISTRY, count: EDGE_FUNCTIONS_REGISTRY.length };
