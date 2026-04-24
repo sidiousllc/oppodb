@@ -2460,11 +2460,56 @@ mcpServer.tool("offline_mutate", {
   },
 });
 
+import { MCP_TOOL_SPEC_BY_NAME, SECTIONS } from "../_shared/docs-registry.ts";
+
 const transport = new StreamableHttpTransport();
 const httpHandler = transport.bind(mcpServer);
 
+// Enrich `tools/list` responses with rich descriptions + section/subsection
+// annotations from the shared docs registry. Avoids touching every tool
+// registration above.
+async function enrichToolsList(res: Response): Promise<Response> {
+  const ct = res.headers.get("content-type") ?? "";
+  if (!ct.includes("application/json")) return res;
+  try {
+    const body = await res.clone().json();
+    const result = body?.result;
+    if (!result?.tools || !Array.isArray(result.tools)) return res;
+    result.tools = result.tools.map((t: Record<string, unknown>) => {
+      const spec = MCP_TOOL_SPEC_BY_NAME[t.name as string];
+      if (!spec) return t;
+      return {
+        ...t,
+        description: spec.description,
+        annotations: {
+          ...(t.annotations as Record<string, unknown> ?? {}),
+          category: spec.section,
+          categoryLabel: SECTIONS[spec.section]?.label,
+          subsection: spec.subsection,
+          adminOnly: spec.adminOnly ?? false,
+        },
+      };
+    });
+    return new Response(JSON.stringify(body), {
+      status: res.status,
+      headers: res.headers,
+    });
+  } catch {
+    return res;
+  }
+}
+
 app.all("/*", async (c) => {
-  return await httpHandler(c.req.raw);
+  const raw = c.req.raw.clone();
+  let isToolsList = false;
+  if (raw.method === "POST") {
+    try {
+      const peek = await raw.json();
+      isToolsList = peek?.method === "tools/list";
+    } catch { /* not JSON */ }
+  }
+  const res = await httpHandler(c.req.raw);
+  return isToolsList ? await enrichToolsList(res) : res;
 });
 
 Deno.serve(app.fetch);
