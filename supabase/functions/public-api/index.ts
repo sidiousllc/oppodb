@@ -84,6 +84,13 @@ const VALID_ENDPOINTS = [
     // OSINT Workbench (Phase 8)
     "osint-tools",                  // GET — list all OSINT tools (registry)
     "osint-search",                 // POST { tool_id, query } — execute an OSINT lookup (uses caller's stored API keys for keyed tools)
+    // Self-documentation (Phase 9) — discover everything the system exposes
+    "docs",                         // GET — top-level docs index (sections, endpoints, tables, mcp_tools counts + links)
+    "docs-wiki",                    // GET — list all wiki pages | ?slug= for full content of one page
+    "docs-endpoints",               // GET — list every public-api endpoint with description, methods, params
+    "docs-tables",                  // GET — list every offline-synced table with row count + columns
+    "docs-mcp-tools",               // GET — list every MCP tool name + description (mirrors mcp-server registry)
+    "docs-edge-functions",          // GET — list every deployed edge function with purpose + auth requirement
 ];
 
 async function hashKey(key: string): Promise<string> {
