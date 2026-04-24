@@ -312,6 +312,7 @@ export default function LocalFeedsAudit() {
           )}
         </div>
 
+        {error && (
           <div className="mb-4 p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
             {error}
           </div>
