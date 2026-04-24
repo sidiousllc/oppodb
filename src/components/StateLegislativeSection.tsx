@@ -380,6 +380,8 @@ function StatLegDetail({
             stateAbbr={district.state_abbr}
             stateName={district.state}
             districtLabel={`${district.state_abbr} ${label} ${district.district_number}`}
+            defaultChamber={district.chamber}
+            defaultDistrictNumber={district.district_number}
           />
         </TabsContent>
       </Tabs>
