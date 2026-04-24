@@ -85,7 +85,31 @@ export function IntelHub() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all");
   const [partyLeaning, setPartyLeaning] = useState<PartyLeaning>("all");
-  const [selectedState, setSelectedState] = useState<string>("all");
+  const [selectedState, setSelectedState] = useState<string>(() => {
+    if (typeof window === "undefined") return "all";
+    return localStorage.getItem("intelhub.local.selectedState") || "all";
+  });
+
+  // Persist the selected state (local scope only) per browser
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (selectedState === "all") {
+      localStorage.removeItem("intelhub.local.selectedState");
+    } else {
+      localStorage.setItem("intelhub.local.selectedState", selectedState);
+    }
+  }, [selectedState]);
+
+  // Reset state filter automatically when leaving the local scope; restore last
+  // remembered state when returning to local.
+  useEffect(() => {
+    if (activeScope !== "local") {
+      setSelectedState("all");
+    } else if (typeof window !== "undefined") {
+      const remembered = localStorage.getItem("intelhub.local.selectedState");
+      if (remembered) setSelectedState(remembered);
+    }
+  }, [activeScope]);
   const [showFilters, setShowFilters] = useState(false);
   const [groupMode, setGroupMode] = useState<"clusters" | "sources">("clusters");
   const [selectionMode, setSelectionMode] = useState(false);
