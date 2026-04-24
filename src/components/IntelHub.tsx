@@ -115,6 +115,15 @@ export function IntelHub() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
+  const [lastSyncStats, setLastSyncStats] = useState<{
+    scope: Scope | "all";
+    fetched: number;
+    inserted: number;
+    insertedLocal: number;
+    stateTaggedSources: number;
+    sourcesByScope: Record<string, number>;
+    at: string;
+  } | null>(null);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
