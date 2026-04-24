@@ -151,6 +151,56 @@ export default function LocalFeedsStateSources() {
     }
   };
 
+  const exportCsv = () => {
+    const headers = [
+      "Name", "Domain", "URL", "State", "Scope",
+      "Status", "HTTP", "Items", "Latency (ms)",
+      "Last imported (ISO)", "Last imported (relative)",
+      "Last checked (ISO)", "Stale", "Error",
+    ];
+    const escape = (v: unknown): string => {
+      if (v === null || v === undefined) return "";
+      const s = String(v);
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = filteredSources.map((s) => {
+      const h = health[s.rssUrl];
+      const checked = !!h;
+      const ok = h?.ok;
+      const stale = checked && ok && isStale(h?.lastItemAt);
+      const status = !checked ? "unchecked" : ok ? (stale ? "stale" : "ok") : "failed";
+      return [
+        s.name,
+        hostOf(s.rssUrl),
+        s.rssUrl,
+        s.state ?? "",
+        s.scope || "local",
+        status,
+        checked ? h.status : "",
+        checked ? h.items : "",
+        checked ? h.ms : "",
+        h?.lastItemAt ?? "",
+        h?.lastItemAt ? formatRelative(h.lastItemAt) : "",
+        checkedAt ?? "",
+        stale ? "yes" : "no",
+        h?.error ?? "",
+      ].map(escape).join(",");
+    });
+    const csv = [headers.join(","), ...rows].join("\r\n");
+    // BOM so Excel detects UTF-8 correctly
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const ts = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `local-sources-${abbr}-${ts}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filteredSources.length} source${filteredSources.length === 1 ? "" : "s"}`);
+  };
+
   const hostOf = (url: string) => {
     try { return new URL(url).hostname.replace(/^www\./, ""); }
     catch { return url; }
