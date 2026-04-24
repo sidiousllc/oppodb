@@ -20,6 +20,7 @@ import { AreaFinancePanel } from "@/components/AreaFinancePanel";
 import { MNFinancePanel } from "@/components/MNFinancePanel";
 import { StateFinancePanel } from "@/components/StateFinancePanel";
 import { SubjectAIPanel } from "@/components/SubjectAIPanel";
+import { LocalStateNewsPanel } from "@/components/LocalStateNewsPanel";
 
 // ─── Card ───────────────────────────────────────────────────────────────────
 
@@ -228,6 +229,10 @@ function StatLegDetail({
             <Vote className="h-3 w-3" />
             Elections
           </TabsTrigger>
+          <TabsTrigger value="news" className="flex items-center gap-1 text-xs">
+            <Newspaper className="h-3 w-3" />
+            Local News
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -366,6 +371,15 @@ function StatLegDetail({
             stateAbbr={district.state_abbr}
             chamber={district.chamber}
             districtNumber={district.district_number}
+          />
+        </TabsContent>
+
+        {/* Local News Tab — sources guaranteed to be located within the state */}
+        <TabsContent value="news" className="mt-4">
+          <LocalStateNewsPanel
+            stateAbbr={district.state_abbr}
+            stateName={district.state}
+            districtLabel={`${district.state_abbr} ${label} ${district.district_number}`}
           />
         </TabsContent>
       </Tabs>
