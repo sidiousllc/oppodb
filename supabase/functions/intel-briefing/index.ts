@@ -1135,10 +1135,27 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     // Wyoming
     { name: "WyoFile", rssUrl: "https://wyofile.com/feed/", scope: "local", state: "WY" },
     { name: "Wyoming Public Media", rssUrl: "https://www.wyomingpublicmedia.org/feed", scope: "local", state: "WY" },
+    { name: "Wyoming Tribune Eagle", rssUrl: "https://www.wyomingnews.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc", scope: "local", state: "WY" },
+    { name: "Sheridan Press", rssUrl: "https://www.thesheridanpress.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc", scope: "local", state: "WY" },
+    { name: "Jackson Hole News & Guide", rssUrl: "https://www.jhnewsandguide.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc", scope: "local", state: "WY" },
+    { name: "Gillette News Record", rssUrl: "https://www.gillettenewsrecord.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc", scope: "local", state: "WY" },
     // District of Columbia
     { name: "Washington Informer", rssUrl: "https://www.washingtoninformer.com/feed/", scope: "local", state: "DC" },
     { name: "Greater Greater Washington", rssUrl: "https://ggwash.org/atom.xml", scope: "local", state: "DC" },
     { name: "The DC Line", rssUrl: "https://thedcline.org/feed/", scope: "local", state: "DC" },
+    { name: "DCist", rssUrl: "https://dcist.com/feed/", scope: "local", state: "DC" },
+    { name: "Washington City Paper", rssUrl: "https://washingtoncitypaper.com/feed/", scope: "local", state: "DC" },
+    { name: "Street Sense Media", rssUrl: "https://www.streetsensemedia.org/feed/", scope: "local", state: "DC" },
+    // Delaware (additional)
+    { name: "Coastal Point (DE)", rssUrl: "https://www.coastalpoint.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc", scope: "local", state: "DE" },
+    { name: "Cape Gazette (DE)", rssUrl: "https://www.capegazette.com/rss.xml", scope: "local", state: "DE" },
+    { name: "Town Square Delaware", rssUrl: "https://townsquaredelaware.com/feed/", scope: "local", state: "DE" },
+    // Hawaii (additional)
+    { name: "Big Island Now", rssUrl: "https://bigislandnow.com/feed/", scope: "local", state: "HI" },
+    { name: "Maui Now", rssUrl: "https://mauinow.com/feed/", scope: "local", state: "HI" },
+    { name: "Kauai Now", rssUrl: "https://kauainow.com/feed/", scope: "local", state: "HI" },
+    { name: "Garden Island (Kauai)", rssUrl: "https://www.thegardenisland.com/feed/", scope: "local", state: "HI" },
+    { name: "West Hawaii Today", rssUrl: "https://www.westhawaiitoday.com/feed/", scope: "local", state: "HI" },
   ],
 };
 
