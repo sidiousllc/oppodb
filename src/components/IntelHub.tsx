@@ -358,6 +358,7 @@ export function IntelHub() {
 
   return (
     <div className="space-y-3">
+      <div className="flex justify-end"><OfflineSectionStatus label="Intel Hub" tables={["intel_briefings","news_stories","news_story_articles","news_source_ratings","url_bias_checks","user_news_preferences","user_bias_history"]} /></div>
       {/* Top-level Tabs */}
       <div className="flex items-center gap-1 flex-wrap border-b border-[#808080] pb-2">
         {TABS.map((t) => (
