@@ -230,7 +230,7 @@ function SummaryCard({
     tone === "warn"
       ? "border-destructive/40 bg-destructive/5"
       : tone === "ok"
-      ? "border-emerald-500/40 bg-emerald-500/5"
+      ? "border-primary/40 bg-primary/5"
       : "border-border bg-card";
   return (
     <div className={`rounded-lg border p-3 ${toneClass}`}>
