@@ -2271,30 +2271,35 @@ mcpServer.tool("get_subject_ai_bundle", {
 
 
 // ─── Self-documentation tools (Phase 9) ─────────────────────────────────
-// Proxy through public-api/docs* so the source-of-truth registry stays in one file.
-const PUBLIC_API_BASE = `${supabaseUrl}/functions/v1/public-api`;
-
-async function fetchDocs(path: string): Promise<unknown> {
-  // Use service-role to bypass API-key validation when calling sibling function.
-  const resp = await fetch(`${PUBLIC_API_BASE}/${path}`, {
-    headers: {
-      "Authorization": `Bearer ${supabaseKey}`,
-      "X-API-Key": Deno.env.get("MCP_INTERNAL_API_KEY") ?? "",
-    },
-  });
-  if (!resp.ok) {
-    // Fallback: return error payload so MCP clients still see something useful.
-    return { error: `docs fetch failed (${resp.status})`, status: resp.status };
-  }
-  return await resp.json();
-}
+// Wiki content lives in the `wiki_pages` DB table; structural registries
+// (endpoints/tables/edge-functions) are mirrored from public-api/docs-*.
+// To avoid duplicating large registries, we point clients at the REST docs
+// endpoints for the full lists and serve wiki content directly from the DB.
+const DOCS_ENDPOINTS = [
+  "/public-api/docs",
+  "/public-api/docs-wiki",
+  "/public-api/docs-endpoints",
+  "/public-api/docs-tables",
+  "/public-api/docs-edge-functions",
+  "/public-api/docs-mcp-tools",
+];
 
 mcpServer.tool("docs_index", {
-  description: "Top-level self-documentation index: counts of wiki pages, endpoints, tables, edge functions, and MCP tools.",
+  description: "Top-level self-documentation index: wiki page count + pointers to detailed REST docs endpoints.",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async () => {
-    const data = await fetchDocs("docs");
-    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+    const { count: wikiCount } = await supabase
+      .from("wiki_pages").select("*", { count: "exact", head: true });
+    const payload = {
+      message: "ORDB MCP self-documentation",
+      wiki_pages: wikiCount ?? 0,
+      rest_docs_endpoints: DOCS_ENDPOINTS,
+      mcp_docs_tools: [
+        "docs_index", "docs_list_wiki_pages", "docs_get_wiki_page",
+        "docs_list_endpoints", "docs_list_tables", "docs_list_edge_functions", "docs_list_mcp_tools",
+      ],
+    };
+    return { content: [{ type: "text" as const, text: JSON.stringify(payload, null, 2) }] };
   },
 });
 
@@ -2325,40 +2330,33 @@ mcpServer.tool("docs_get_wiki_page", {
   },
 });
 
+const DOCS_POINTER = (rest: string) => ({
+  message: `Full registry available via REST: ${rest}`,
+  hint: "Call public-api with X-API-Key to retrieve the complete list.",
+});
+
 mcpServer.tool("docs_list_endpoints", {
-  description: "List every public-api REST endpoint with description and path.",
+  description: "Pointer to the full REST endpoint registry (served by public-api/docs-endpoints).",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async () => {
-    const data = await fetchDocs("docs-endpoints");
-    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-  },
+  handler: async () => ({ content: [{ type: "text" as const, text: JSON.stringify(DOCS_POINTER("/public-api/docs-endpoints"), null, 2) }] }),
 });
 
 mcpServer.tool("docs_list_tables", {
-  description: "List every database table available for offline sync.",
+  description: "Pointer to the offline-synced table registry (public-api/docs-tables).",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async () => {
-    const data = await fetchDocs("docs-tables");
-    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-  },
+  handler: async () => ({ content: [{ type: "text" as const, text: JSON.stringify(DOCS_POINTER("/public-api/docs-tables"), null, 2) }] }),
 });
 
 mcpServer.tool("docs_list_edge_functions", {
-  description: "List every deployed edge function with purpose and auth requirement.",
+  description: "Pointer to the edge function registry (public-api/docs-edge-functions).",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async () => {
-    const data = await fetchDocs("docs-edge-functions");
-    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-  },
+  handler: async () => ({ content: [{ type: "text" as const, text: JSON.stringify(DOCS_POINTER("/public-api/docs-edge-functions"), null, 2) }] }),
 });
 
 mcpServer.tool("docs_list_mcp_tools", {
-  description: "List every MCP tool registered on this server with category and description.",
+  description: "Pointer to the MCP tool registry (public-api/docs-mcp-tools).",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async () => {
-    const data = await fetchDocs("docs-mcp-tools");
-    return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-  },
+  handler: async () => ({ content: [{ type: "text" as const, text: JSON.stringify(DOCS_POINTER("/public-api/docs-mcp-tools"), null, 2) }] }),
 });
 
 const transport = new StreamableHttpTransport();
