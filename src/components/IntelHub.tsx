@@ -11,6 +11,7 @@ import { BlindspotFeed } from "@/components/intel/BlindspotFeed";
 import { MyNewsBias } from "@/components/intel/MyNewsBias";
 import { UrlBiasCheck } from "@/components/intel/UrlBiasCheck";
 import { NewsPreferences } from "@/components/intel/NewsPreferences";
+import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
 
 type IntelTab = "feed" | "blindspots" | "my-bias" | "url-check" | "preferences";
 
