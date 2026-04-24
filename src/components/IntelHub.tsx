@@ -499,9 +499,9 @@ export function IntelHub() {
                 </button>
               ))}
             </div>
-            {(selectedCategory !== "all" || partyLeaning !== "all") && (
+            {(selectedCategory !== "all" || partyLeaning !== "all" || selectedState !== "all") && (
               <button
-                onClick={() => { setSelectedCategory("all"); setPartyLeaning("all"); }}
+                onClick={() => { setSelectedCategory("all"); setPartyLeaning("all"); setSelectedState("all"); }}
                 className="text-[10px] text-[#000080] underline hover:text-blue-700"
               >
                 Clear all filters
