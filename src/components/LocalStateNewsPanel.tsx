@@ -203,6 +203,33 @@ export function LocalStateNewsPanel({
     });
   }, [briefings, chamber, districtNumber]);
 
+  // Aggregate the unique outlets powering this state's feed, with the most
+  // recent published_at per outlet (so we can show "last updated").
+  const sourcesUsed = useMemo(() => {
+    const map = new Map<string, { name: string; host: string; latest: string | null; count: number }>();
+    for (const b of briefings) {
+      if (!b.source_name) continue;
+      const key = b.source_name;
+      let host = "";
+      try { host = new URL(b.source_url).hostname.replace(/^www\./, ""); } catch { /* ignore */ }
+      const existing = map.get(key);
+      if (existing) {
+        existing.count += 1;
+        if (b.published_at && (!existing.latest || b.published_at > existing.latest)) {
+          existing.latest = b.published_at;
+        }
+      } else {
+        map.set(key, { name: b.source_name, host, latest: b.published_at, count: 1 });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => {
+      const at = a.latest ? Date.parse(a.latest) : 0;
+      const bt = b.latest ? Date.parse(b.latest) : 0;
+      if (bt !== at) return bt - at;
+      return a.name.localeCompare(b.name);
+    });
+  }, [briefings]);
+
   const formatDate = (raw: string | null) => {
     if (!raw) return "";
     try {
@@ -214,6 +241,20 @@ export function LocalStateNewsPanel({
     } catch {
       return raw;
     }
+  };
+
+  const formatRelative = (raw: string | null): string => {
+    if (!raw) return "Never";
+    const t = new Date(raw).getTime();
+    if (Number.isNaN(t)) return "—";
+    const sec = Math.floor((Date.now() - t) / 1000);
+    if (sec < 60) return "just now";
+    if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+    if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
+    const days = Math.floor(sec / 86400);
+    if (days < 30) return `${days}d ago`;
+    if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+    return `${Math.floor(days / 365)}y ago`;
   };
 
   const isFiltered = chamber !== "all" || districtNumber !== "all";
