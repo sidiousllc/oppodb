@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Newspaper, ExternalLink, Loader2, AlertCircle, RefreshCw, Filter, X } from "lucide-react";
+import { Newspaper, ExternalLink, Loader2, AlertCircle, RefreshCw, Filter, X, Rss, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Briefing {
