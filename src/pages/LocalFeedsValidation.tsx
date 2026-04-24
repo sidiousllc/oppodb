@@ -238,7 +238,12 @@ export default function LocalFeedsValidation() {
                     >
                       <td className="px-3 py-2">
                         <span className="font-mono text-xs text-muted-foreground mr-2">{r.abbr}</span>
-                        <span className={zero ? "text-destructive font-semibold" : ""}>{r.name}</span>
+                        <Link
+                          to={`/admin/local-feeds/${r.abbr}`}
+                          className={`hover:underline ${zero ? "text-destructive font-semibold" : "text-primary"}`}
+                        >
+                          {r.name}
+                        </Link>
                       </td>
                       <td className={`px-3 py-2 text-right tabular-nums ${zero ? "text-destructive font-bold" : ""}`}>
                         {r.briefingCount}
