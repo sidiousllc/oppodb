@@ -1307,10 +1307,19 @@ Deno.serve(async (req) => {
     console.log("Intel briefing sync starting for scopes:", requestedScopes);
 
     const allItems: any[] = [];
+    const sourcesByScope: Record<string, number> = {};
+    const stateTaggedSources = new Set<string>();
 
     // Fetch from all requested scopes in parallel (batch 10 at a time to avoid overwhelming)
     for (const scope of requestedScopes) {
       const sources = SOURCES[scope] || [];
+      sourcesByScope[scope] = sources.length;
+      if (scope === "local") {
+        for (const s of sources) {
+          const st = (s as { state?: string }).state;
+          if (st) stateTaggedSources.add(`${st}|${s.name}`);
+        }
+      }
       const batchSize = 10;
       for (let i = 0; i < sources.length; i += batchSize) {
         const batch = sources.slice(i, i + batchSize);
@@ -1327,10 +1336,13 @@ Deno.serve(async (req) => {
 
     console.log(`Fetched ${allItems.length} total items from ${requestedScopes.length} scopes`);
 
+    let inserted = 0;
+    let insertedLocal = 0;
+    let dedupedCount = 0;
+
     if (allItems.length > 0) {
       // Retention: keep all articles indefinitely. No date-based cleanup.
-      // Dedupe in-memory by (title, source_name) before upsert to avoid
-      // "ON CONFLICT … cannot affect row a second time" errors when a feed repeats a headline
+      // Dedupe in-memory by (title, source_name, region, published_at)
       const seen = new Set<string>();
       const deduped = allItems.filter((it) => {
         const key = [
@@ -1343,12 +1355,12 @@ Deno.serve(async (req) => {
         seen.add(key);
         return true;
       });
+      dedupedCount = deduped.length;
 
       const batchSize = 50;
-      let upserted = 0;
       for (let i = 0; i < deduped.length; i += batchSize) {
         const batch = deduped.slice(i, i + batchSize);
-        const { error } = await supabase.from("intel_briefings").upsert(
+        const { data, error } = await supabase.from("intel_briefings").upsert(
           batch.map((item) => ({
             title: item.title,
             summary: item.summary,
@@ -1361,18 +1373,28 @@ Deno.serve(async (req) => {
             region: item.region ?? "",
           })),
           { onConflict: "title,source_name,region,published_at", ignoreDuplicates: true }
-        );
+        ).select("id,scope");
         if (error) {
           console.error("Upsert error:", error.message);
-        } else {
-          upserted += batch.length;
+        } else if (data) {
+          inserted += data.length;
+          insertedLocal += data.filter((r: any) => r.scope === "local").length;
         }
       }
-      console.log(`Upserted ${upserted} of ${deduped.length} unique briefings (from ${allItems.length} fetched)`);
+      console.log(`Inserted ${inserted} new briefings (${insertedLocal} local) of ${deduped.length} unique (from ${allItems.length} fetched)`);
     }
 
     return new Response(
-      JSON.stringify({ success: true, count: allItems.length }),
+      JSON.stringify({
+        success: true,
+        count: allItems.length,
+        fetched: allItems.length,
+        deduped: dedupedCount,
+        inserted,
+        inserted_local: insertedLocal,
+        sources_by_scope: sourcesByScope,
+        state_tagged_sources: stateTaggedSources.size,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
