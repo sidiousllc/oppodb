@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { STATE_ABBR_TO_NAME } from "@/lib/stateAbbreviations";
 import {
   ArrowLeft, Loader2, Play, AlertTriangle, CheckCircle2,
-  XCircle, ExternalLink, ShieldCheck,
+  XCircle, ExternalLink, ShieldCheck, Sparkles, PlusCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface FailedSource {
   name: string;
