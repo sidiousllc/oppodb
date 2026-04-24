@@ -186,10 +186,34 @@ export default function LocalFeedsStateSources() {
 
         {!loading && sources.length > 0 && (
           <>
-            <p className="text-xs text-muted-foreground mb-3">
-              {sources.length} source{sources.length === 1 ? "" : "s"} configured
-              {Object.keys(health).length === 0 && " — click \"Check feed health\" to probe each feed"}
-            </p>
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <div className="relative flex-1 min-w-[200px] max-w-md">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by name, domain, or URL…"
+                  className="pl-7 pr-8 h-8 text-sm"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {query
+                  ? `${filteredSources.length} of ${sources.length} shown`
+                  : `${sources.length} source${sources.length === 1 ? "" : "s"} configured`}
+                {Object.keys(health).length === 0 && !query && " — click \"Check feed health\" to probe each feed"}
+              </p>
+            </div>
             <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
