@@ -2310,26 +2310,61 @@ async function handleDocsEndpoint(
   supabase: any,
 ): Promise<Record<string, unknown>> {
   if (endpoint === "docs") {
+    // Self-documenting discovery endpoint.
+    // Default: index + counts + links to drill-down endpoints.
+    // ?include=all (or any combo of: wiki,endpoints,tables,edge_functions,mcp_tools,sections)
+    //   embeds the full payloads inline so a single GET returns everything.
+    const include = (url.searchParams.get("include") ?? "").toLowerCase();
+    const want = (key: string) => include === "all" || include.split(",").map(s => s.trim()).includes(key);
+
     const { count: wikiCount } = await supabase
       .from("wiki_pages").select("*", { count: "exact", head: true });
-    return {
+
+    const base: Record<string, unknown> = {
       message: "ORDB Self-Documentation Index",
-      version: "1.0",
+      version: "1.1",
+      generated_at: new Date().toISOString(),
       summary: {
         wiki_pages: wikiCount ?? 0,
-        public_endpoints: VALID_ENDPOINTS.length,
+        public_endpoints: ENDPOINT_SPECS.length,
         offline_tables: OFFLINE_TABLES_REGISTRY.length,
         edge_functions: EDGE_FUNCTIONS_REGISTRY.length,
-        mcp_tools: MCP_TOOLS_REGISTRY.length,
+        mcp_tools: MCP_TOOL_SPECS.length,
+        sections: Object.keys(SECTIONS).length,
       },
       links: {
         wiki: "/public-api/docs-wiki  (?slug= for single page)",
-        endpoints: "/public-api/docs-endpoints",
+        endpoints: "/public-api/docs-endpoints  (?endpoint= for single spec)",
         tables: "/public-api/docs-tables",
         edge_functions: "/public-api/docs-edge-functions",
         mcp_tools: "/public-api/docs-mcp-tools",
+        full_dump: "/public-api/docs?include=all",
       },
+      sections: SECTIONS,
     };
+
+    if (!include) return base;
+
+    if (want("wiki")) {
+      const { data: wikiPages } = await supabase
+        .from("wiki_pages")
+        .select("slug,title,content,sort_order,published,updated_at")
+        .order("sort_order", { ascending: true });
+      base.wiki_pages = wikiPages ?? [];
+    }
+    if (want("endpoints")) {
+      base.endpoints = ENDPOINT_SPECS.map((e) => ({ ...e, path: `/public-api/${e.endpoint}` }));
+    }
+    if (want("tables")) {
+      base.offline_tables = OFFLINE_TABLES_REGISTRY.map((t) => ({ table: t }));
+    }
+    if (want("edge_functions")) {
+      base.edge_functions = EDGE_FUNCTIONS_REGISTRY;
+    }
+    if (want("mcp_tools")) {
+      base.mcp_tools = MCP_TOOL_SPECS;
+    }
+    return base;
   }
   if (endpoint === "docs-wiki") {
     const slug = url.searchParams.get("slug");
