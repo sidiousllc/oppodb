@@ -74,4 +74,49 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Performance Monitoring (Vercel Speed Insights)
+
+The app integrates [Vercel Speed Insights](https://vercel.com/docs/speed-insights) to track Core Web Vitals (LCP, FCP, CLS, INP, TTFB). Sampling and toggles are environment-aware so we don't pay for noisy dev traffic.
+
+### Setup
+
+1. Install the SDK (already in `package.json`):
+   ```sh
+   npm install @vercel/speed-insights
+   ```
+2. The `<SpeedInsights />` component is mounted in `src/main.tsx` and reads its config from `src/lib/speedInsightsConfig.ts`.
+3. When deployed on Vercel, the `/_vercel/insights/script.js` beacon is served automatically — no extra config required.
+4. View aggregated metrics in the [Vercel Dashboard](https://vercel.com/dashboard) → your project → **Speed Insights**.
+5. Admins can verify local availability and beacon health from **Admin Panel → Speed Insights** tab.
+
+### Environment defaults
+
+| Environment   | Enabled | Sample rate | Debug |
+| ------------- | ------- | ----------- | ----- |
+| development   | false   | 0           | true  |
+| preview       | true    | 0.5         | true  |
+| production    | true    | 1.0         | false |
+
+Preview is detected by hostname (`*.vercel.app`, `*.lovable.app`, `*.lovableproject.com`, `id-preview--*`). Everything else served outside `import.meta.env.DEV` is treated as production.
+
+### Speed Insights env vars (optional overrides)
+
+| Variable                        | Type            | Purpose                                  |
+| ------------------------------- | --------------- | ---------------------------------------- |
+| `VITE_SPEED_INSIGHTS_ENABLED`   | `true` / `false`| Force-enable or disable the beacon       |
+| `VITE_SPEED_INSIGHTS_SAMPLE`    | `0`–`1`         | Override sample rate                     |
+| `VITE_SPEED_INSIGHTS_DEBUG`     | `true` / `false`| Toggle SDK debug logging                 |
+
+### Session Replay env vars (Amplitude)
+
+Session replay is provided by Amplitude (initialized in `src/main.tsx`) and configured via `src/lib/sessionReplayConfig.ts`. Defaults: dev `0%`, preview `50%`, production `10%` (cost-controlled).
+
+| Variable                        | Type            | Purpose                                  |
+| ------------------------------- | --------------- | ---------------------------------------- |
+| `VITE_SESSION_REPLAY_ENABLED`   | `true` / `false`| Force-enable or disable session replay   |
+| `VITE_SESSION_REPLAY_SAMPLE`    | `0`–`1`         | Override sample rate                     |
+
+Set overrides in your Vercel project (Settings → Environment Variables) per environment, or in a local `.env.local` file when developing.
+
 #ALWAYS REMEMBER TO LEAVE A NOTE
