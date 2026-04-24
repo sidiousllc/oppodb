@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Trash2, Bell, Webhook } from "lucide-react";
 import { toast } from "sonner";
+import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
 
 interface Rule {
   id: string;
