@@ -2422,11 +2422,18 @@ mcpServer.tool("offline_mutate", {
     },
     required: ["table","operation","data"],
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerUser(ctx?.request || ctx);
+    const callerId = caller?.userId;
     const table = String(args.table ?? "");
     const operation = String(args.operation ?? "");
     const data = (args.data ?? {}) as Record<string, unknown>;
     if (!OFFLINE_MUTABLE.has(table)) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Table not mutable: ${table}` }) }] };
+    }
+    if (!["insert","update","delete"].includes(operation)) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: "operation must be insert|update|delete" }) }] };
+    }
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Table not mutable: ${table}` }) }] };
     }
     if (!["insert","update","delete"].includes(operation)) {
