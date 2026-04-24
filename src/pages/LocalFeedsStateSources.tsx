@@ -250,19 +250,31 @@ export default function LocalFeedsStateSources() {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={runHealthCheck}
-            disabled={probing || loading || sources.length === 0}
-          >
-            {probing ? (
-              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3 w-3 mr-1" />
-            )}
-            {Object.keys(health).length === 0 ? "Check feed health" : "Re-check health"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportCsv}
+              disabled={loading || sources.length === 0}
+              title="Download the current (filtered) table as CSV"
+            >
+              <Download className="h-3 w-3 mr-1" />
+              Export CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={runHealthCheck}
+              disabled={probing || loading || sources.length === 0}
+            >
+              {probing ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3 mr-1" />
+              )}
+              {Object.keys(health).length === 0 ? "Check feed health" : "Re-check health"}
+            </Button>
+          </div>
         </div>
 
         {/* Health summary banner */}
