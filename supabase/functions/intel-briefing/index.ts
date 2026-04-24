@@ -1550,26 +1550,110 @@ Deno.serve(async (req) => {
     let insertedLocal = 0;
     let dedupedCount = 0;
 
+    let skippedDbDuplicate = 0;
     if (allItems.length > 0) {
-      // Retention: keep all articles indefinitely. No date-based cleanup.
-      // Dedupe in-memory by (title, source_name, region, published_at)
-      const seen = new Set<string>();
+      // Normalize a URL for comparison (strip query params + trailing slash + lowercase host).
+      const normalizeUrl = (raw: string): string => {
+        if (!raw) return "";
+        try {
+          const u = new URL(raw);
+          return `${u.hostname.replace(/^www\./, "").toLowerCase()}${u.pathname.replace(/\/$/, "").toLowerCase()}`;
+        } catch {
+          return raw.trim().toLowerCase();
+        }
+      };
+      const normalizeTitle = (t: string) => (t || "").trim().toLowerCase().replace(/\s+/g, " ");
+      const normalizeName = (n: string) => (n || "").trim().toLowerCase();
+      const normalizeRegion = (r: string | null | undefined) => (r || "").trim().toUpperCase();
+
+      // In-memory dedup within this batch:
+      //   - same normalized RSS URL within a region (state) → one only
+      //   - same outlet name + normalized title within a region → one only
+      const seenUrl = new Set<string>();
+      const seenNameTitle = new Set<string>();
       const deduped = allItems.filter((it) => {
-        const key = [
-          (it.title || "").trim().toLowerCase(),
-          (it.source_name || "").toLowerCase(),
-          (it.region || "").toLowerCase(),
-          it.published_at || "",
-        ].join("|");
-        if (seen.has(key)) return false;
-        seen.add(key);
+        const region = normalizeRegion(it.region);
+        const urlKey = `${normalizeUrl(it.source_url)}|${region}`;
+        const nameTitleKey = `${normalizeName(it.source_name)}|${normalizeTitle(it.title)}|${region}`;
+        if (urlKey && seenUrl.has(urlKey)) return false;
+        if (seenNameTitle.has(nameTitleKey)) return false;
+        if (urlKey) seenUrl.add(urlKey);
+        seenNameTitle.add(nameTitleKey);
         return true;
       });
       dedupedCount = deduped.length;
 
+      // Pre-check the DB for existing (source_url, region) and (source_name, title, region)
+      // matches so we never reinsert the same article a second time.
+      // Group lookups by region to keep queries small.
+      const byRegion = new Map<string, typeof deduped>();
+      for (const it of deduped) {
+        const region = normalizeRegion(it.region);
+        if (!byRegion.has(region)) byRegion.set(region, []);
+        byRegion.get(region)!.push(it);
+      }
+
+      const existingUrlSet = new Set<string>();      // normalized url|region
+      const existingNameTitleSet = new Set<string>(); // name|title|region
+
+      for (const [region, items] of byRegion.entries()) {
+        const urls = Array.from(new Set(items.map((i) => i.source_url).filter(Boolean)));
+        const names = Array.from(new Set(items.map((i) => i.source_name).filter(Boolean)));
+
+        if (urls.length > 0) {
+          // Chunk in 200s to stay under URL-length limits
+          for (let i = 0; i < urls.length; i += 200) {
+            const slice = urls.slice(i, i + 200);
+            const { data: existing } = await supabase
+              .from("intel_briefings")
+              .select("source_url")
+              .eq("region", region)
+              .in("source_url", slice);
+            for (const r of existing || []) {
+              existingUrlSet.add(`${normalizeUrl(r.source_url)}|${region}`);
+            }
+          }
+        }
+
+        if (names.length > 0) {
+          for (let i = 0; i < names.length; i += 100) {
+            const slice = names.slice(i, i + 100);
+            const { data: existing } = await supabase
+              .from("intel_briefings")
+              .select("source_name,title")
+              .eq("region", region)
+              .in("source_name", slice);
+            for (const r of existing || []) {
+              existingNameTitleSet.add(
+                `${normalizeName(r.source_name)}|${normalizeTitle(r.title)}|${region}`,
+              );
+            }
+          }
+        }
+      }
+
+      const filtered = deduped.filter((it) => {
+        const region = normalizeRegion(it.region);
+        const urlKey = `${normalizeUrl(it.source_url)}|${region}`;
+        const nameTitleKey = `${normalizeName(it.source_name)}|${normalizeTitle(it.title)}|${region}`;
+        if (urlKey && existingUrlSet.has(urlKey)) {
+          skippedDbDuplicate += 1;
+          return false;
+        }
+        if (existingNameTitleSet.has(nameTitleKey)) {
+          skippedDbDuplicate += 1;
+          return false;
+        }
+        return true;
+      });
+
+      console.log(
+        `Dedup: ${allItems.length} fetched → ${deduped.length} unique in-batch → ${filtered.length} new (skipped ${skippedDbDuplicate} already in DB)`,
+      );
+
       const batchSize = 50;
-      for (let i = 0; i < deduped.length; i += batchSize) {
-        const batch = deduped.slice(i, i + batchSize);
+      for (let i = 0; i < filtered.length; i += batchSize) {
+        const batch = filtered.slice(i, i + batchSize);
         const { data, error } = await supabase.from("intel_briefings").upsert(
           batch.map((item) => ({
             title: item.title,
@@ -1591,7 +1675,7 @@ Deno.serve(async (req) => {
           insertedLocal += data.filter((r: any) => r.scope === "local").length;
         }
       }
-      console.log(`Inserted ${inserted} new briefings (${insertedLocal} local) of ${deduped.length} unique (from ${allItems.length} fetched)`);
+      console.log(`Inserted ${inserted} new briefings (${insertedLocal} local)`);
     }
 
     return new Response(
