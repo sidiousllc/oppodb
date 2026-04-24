@@ -93,18 +93,30 @@ export function LocalStateNewsPanel({
   }, [defaultChamber, defaultDistrictNumber]);
 
   // Build a set of district numbers detected in current briefings (for the dropdown).
-  // We look for patterns like "District 15", "HD 15A", "SD 14", "House 15A", "Senate 14".
+  // Supports: "District 15", "District No. 15", "Dist. 15", "House District 15A",
+  // "Senate District 14", "HD 15A", "HD-15A", "SD-14", "House 15A", "Senate 14",
+  // "Assembly District 12", "AD-12".
+  // Group 1 (optional) captures the chamber prefix (house/senate/assembly/hd/sd/ad).
+  // Group 2 captures the district number (with optional letter suffix, e.g. "15A").
+  const DISTRICT_REGEX =
+    /\b(house|senate|assembly|state\s+house|state\s+senate|hd|sd|ad)?[\s-]*(?:district|dist\.?|d)?[\s.\-]*(?:no\.?|number|#)?[\s.\-]*(\d{1,3}[A-Za-z]?)\b/gi;
+
+  // Stricter version: requires *some* district-y prefix to avoid matching
+  // arbitrary numbers in article text.
+  const STRICT_DISTRICT_REGEX =
+    /\b(?:(house|senate|assembly|state\s+house|state\s+senate|hd|sd|ad)[\s.\-]*(?:district|dist\.?)?[\s.\-]*(?:no\.?|number|#)?[\s.\-]*(\d{1,3}[A-Za-z]?)|(?:district|dist\.?)[\s.\-]*(?:no\.?|number|#)?[\s.\-]*(\d{1,3}[A-Za-z]?))\b/gi;
+
   const detectedDistricts = useMemo(() => {
     const found = new Set<string>();
-    const re = /\b(?:district|hd|sd|house|senate)\s*#?\s*(\d{1,3}[A-Za-z]?)\b/gi;
     for (const b of briefings) {
       const text = `${b.title} ${b.summary ?? ""}`;
       let m: RegExpExecArray | null;
+      const re = new RegExp(STRICT_DISTRICT_REGEX.source, "gi");
       while ((m = re.exec(text)) !== null) {
-        found.add(m[1].toUpperCase());
+        const num = (m[2] || m[3] || "").toUpperCase();
+        if (num) found.add(num);
       }
     }
-    // Always include the default so the user can select it even if no article currently mentions it
     if (defaultDistrictNumber) found.add(defaultDistrictNumber.toUpperCase());
     return Array.from(found).sort((a, b) => {
       const na = parseInt(a, 10);
@@ -112,25 +124,33 @@ export function LocalStateNewsPanel({
       if (na !== nb) return na - nb;
       return a.localeCompare(b);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [briefings, defaultDistrictNumber]);
 
   const filtered = useMemo(() => {
     if (chamber === "all" && districtNumber === "all") return briefings;
     return briefings.filter((b) => {
-      const text = `${b.title} ${b.summary ?? ""}`.toLowerCase();
+      const text = `${b.title} ${b.summary ?? ""}`;
 
       if (chamber !== "all") {
         const chamberMatch =
           chamber === "house"
-            ? /\b(house|hd|state house|assembly)\b/.test(text)
-            : /\b(senate|sd|state senate)\b/.test(text);
+            ? /\b(house|hd|state\s+house|assembly|ad)\b/i.test(text)
+            : /\b(senate|sd|state\s+senate)\b/i.test(text);
         if (!chamberMatch) return false;
       }
 
       if (districtNumber !== "all") {
-        const dn = districtNumber.toLowerCase();
+        const dn = districtNumber.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        // Match the requested district number after any supported prefix:
+        // "District 15", "District No. 15", "Dist. 15", "HD 15A", "HD-15A",
+        // "House District 15A", "Senate District 14", "Assembly 12", "AD-12".
         const dnRe = new RegExp(
-          `\\b(?:district|hd|sd|house|senate)\\s*#?\\s*${dn}\\b`,
+          // chamber-prefixed forms
+          `\\b(?:house|senate|assembly|state\\s+house|state\\s+senate|hd|sd|ad)` +
+            `(?:[\\s.\\-]*(?:district|dist\\.?))?` +
+            `[\\s.\\-]*(?:no\\.?|number|#)?[\\s.\\-]*${dn}\\b` +
+            `|\\b(?:district|dist\\.?)[\\s.\\-]*(?:no\\.?|number|#)?[\\s.\\-]*${dn}\\b`,
           "i",
         );
         if (!dnRe.test(text)) return false;
