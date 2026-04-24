@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { STATE_ABBR_TO_NAME } from "@/lib/stateAbbreviations";
 import {
   ArrowLeft, ExternalLink, Loader2, Rss, RefreshCw,
-  CheckCircle2, AlertTriangle, Clock,
+  CheckCircle2, AlertTriangle, Clock, Search, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 interface SourceRow {
