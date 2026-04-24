@@ -196,7 +196,7 @@ export default function LocalFeedsValidation() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
                     Loading…
                   </td>
@@ -204,6 +204,7 @@ export default function LocalFeedsValidation() {
               ) : (
                 rows.map((r) => {
                   const zero = r.briefingCount === 0;
+                  const isRefreshing = refreshing.has(r.abbr);
                   return (
                     <tr
                       key={r.abbr}
@@ -234,6 +235,22 @@ export default function LocalFeedsValidation() {
                             OK
                           </span>
                         )}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          disabled={isRefreshing}
+                          onClick={() => refreshState(r.abbr)}
+                        >
+                          {isRefreshing ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                          )}
+                          Refresh
+                        </Button>
                       </td>
                     </tr>
                   );
