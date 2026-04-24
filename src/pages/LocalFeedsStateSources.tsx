@@ -103,6 +103,16 @@ export default function LocalFeedsStateSources() {
   const healthyCount = Object.values(health).filter((h) => h.ok).length;
   const failedCount = Object.values(health).filter((h) => !h.ok).length;
 
+  const filteredSources = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return sources;
+    return sources.filter((s) =>
+      s.name.toLowerCase().includes(q) ||
+      s.rssUrl.toLowerCase().includes(q) ||
+      hostOf(s.rssUrl).toLowerCase().includes(q)
+    );
+  }, [sources, query]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-5xl mx-auto px-4 py-8">
