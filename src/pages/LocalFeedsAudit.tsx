@@ -206,58 +206,111 @@ export default function LocalFeedsAudit() {
             )}
 
             {/* Per-state results */}
-            <div className="border border-border rounded-lg overflow-hidden mb-6">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-semibold">State</th>
-                    <th className="px-3 py-2 text-right font-semibold">Configured</th>
-                    <th className="px-3 py-2 text-right font-semibold">Healthy</th>
-                    <th className="px-3 py-2 text-right font-semibold">Failed</th>
-                    <th className="px-3 py-2 text-center font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.states.map((s) => (
-                    <tr
-                      key={s.state}
-                      className={`border-t border-border ${!s.meetsThreshold ? "bg-destructive/5" : ""}`}
+            {(() => {
+              const filteredStates = lowCoverageOnly
+                ? report.states.filter((s) =>
+                    (coverageMetric === "healthy" ? s.healthy : s.configured) < lowCoverageThreshold,
+                  )
+                : report.states;
+              return (
+                <>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap text-xs p-2 rounded-md border border-border bg-muted/20">
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={lowCoverageOnly}
+                        onChange={(e) => setLowCoverageOnly(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
+                      />
+                      <span className="font-medium">Show only states with fewer than</span>
+                    </label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={lowCoverageThreshold}
+                      onChange={(e) =>
+                        setLowCoverageThreshold(Math.max(1, Math.min(50, Number(e.target.value) || 1)))
+                      }
+                      disabled={!lowCoverageOnly}
+                      className="h-7 w-16 text-xs px-1.5"
+                    />
+                    <select
+                      value={coverageMetric}
+                      onChange={(e) => setCoverageMetric(e.target.value as "configured" | "healthy")}
+                      disabled={!lowCoverageOnly}
+                      className="h-7 text-xs rounded-md border border-border bg-background px-2 disabled:opacity-50"
                     >
-                      <td className="px-3 py-2">
-                        <span className="font-mono text-xs text-muted-foreground mr-2">{s.state}</span>
-                        <Link
-                          to={`/admin/local-feeds/${s.state}`}
-                          className="text-primary hover:underline"
-                        >
-                          {STATE_ABBR_TO_NAME[s.state] ?? s.state}
-                        </Link>
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                        {s.configured}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{s.healthy}</td>
-                      <td className={`px-3 py-2 text-right tabular-nums ${s.failed > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                        {s.failed}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        {s.meetsThreshold ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-primary">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Pass
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-destructive">
-                            <AlertTriangle className="h-3 w-3" />
-                            Below {report.minPerState}
-                          </span>
+                      <option value="configured">configured sources</option>
+                      <option value="healthy">healthy sources</option>
+                    </select>
+                    <span className="text-muted-foreground ml-auto">
+                      {lowCoverageOnly
+                        ? `${filteredStates.length} of ${report.states.length} state${report.states.length === 1 ? "" : "s"} match`
+                        : `${report.states.length} state${report.states.length === 1 ? "" : "s"} total`}
+                    </span>
+                  </div>
+                  <div className="border border-border rounded-lg overflow-hidden mb-6">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-semibold">State</th>
+                          <th className="px-3 py-2 text-right font-semibold">Configured</th>
+                          <th className="px-3 py-2 text-right font-semibold">Healthy</th>
+                          <th className="px-3 py-2 text-right font-semibold">Failed</th>
+                          <th className="px-3 py-2 text-center font-semibold">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredStates.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                              No states have fewer than {lowCoverageThreshold} {coverageMetric} source{lowCoverageThreshold === 1 ? "" : "s"}.
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
+                        {filteredStates.map((s) => (
+                          <tr
+                            key={s.state}
+                            className={`border-t border-border ${!s.meetsThreshold ? "bg-destructive/5" : ""}`}
+                          >
+                            <td className="px-3 py-2">
+                              <span className="font-mono text-xs text-muted-foreground mr-2">{s.state}</span>
+                              <Link
+                                to={`/admin/local-feeds/${s.state}`}
+                                className="text-primary hover:underline"
+                              >
+                                {STATE_ABBR_TO_NAME[s.state] ?? s.state}
+                              </Link>
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                              {s.configured}
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums">{s.healthy}</td>
+                            <td className={`px-3 py-2 text-right tabular-nums ${s.failed > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                              {s.failed}
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {s.meetsThreshold ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] text-primary">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Pass
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[11px] text-destructive">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Below {report.minPerState}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
             {/* Failed sources detail */}
             {report.summary.totalFailed > 0 && (
               <>
