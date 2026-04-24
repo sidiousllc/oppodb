@@ -289,37 +289,52 @@ export default function LocalFeedsStateSources() {
         </div>
 
         {/* Health summary banner */}
-        {Object.keys(health).length > 0 && (
-          <div className="mb-4 p-3 rounded-lg border border-border bg-muted/30 flex items-center gap-4 flex-wrap text-sm">
-            <span className="inline-flex items-center gap-1 text-primary">
-              <CheckCircle2 className="h-4 w-4" />
-              <strong>{healthyCount}</strong> healthy
-            </span>
-            <span className="inline-flex items-center gap-1 text-destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <strong>{failedCount}</strong> failed
-            </span>
-            <span className="inline-flex items-center gap-1 text-warning">
-              <Clock className="h-4 w-4" />
-              <strong>{staleCount}</strong> stale (&gt;{staleHours}h)
-            </span>
-            <label className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              Stale after
-              <Input
-                type="number"
-                min={1}
-                value={staleHours}
-                onChange={(e) => setStaleHours(Math.max(1, Number(e.target.value) || 48))}
-                className="h-6 w-16 text-xs px-1.5"
-              />
-              hours
-            </label>
-            <span className="inline-flex items-center gap-1 text-muted-foreground text-xs ml-auto">
-              <Clock className="h-3 w-3" />
-              Last checked {formatRelative(checkedAt)}
-            </span>
-          </div>
-        )}
+        {Object.keys(health).length > 0 && (() => {
+          const totalChecked = Object.keys(health).length;
+          const healthPct = totalChecked > 0 ? Math.round((healthyCount / totalChecked) * 100) : 0;
+          const barColor =
+            healthPct >= 90 ? "bg-primary" : healthPct >= 60 ? "bg-warning" : "bg-destructive";
+          return (
+            <div className="mb-4 p-3 rounded-lg border border-border bg-muted/30 text-sm">
+              <div className="flex items-center gap-4 flex-wrap mb-2">
+                <span className="font-semibold">
+                  Overall health: <span className={healthPct >= 90 ? "text-primary" : healthPct >= 60 ? "text-warning" : "text-destructive"}>{healthPct}%</span>
+                  <span className="text-muted-foreground font-normal ml-1">({healthyCount}/{totalChecked})</span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-primary">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <strong>{healthyCount}</strong> healthy
+                </span>
+                <span className="inline-flex items-center gap-1 text-destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <strong>{failedCount}</strong> failed
+                </span>
+                <span className="inline-flex items-center gap-1 text-warning">
+                  <Clock className="h-4 w-4" />
+                  <strong>{staleCount}</strong> stale (&gt;{staleHours}h)
+                </span>
+                <label className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  Stale after
+                  <Input
+                    type="number"
+                    min={1}
+                    value={staleHours}
+                    onChange={(e) => setStaleHours(Math.max(1, Number(e.target.value) || 48))}
+                    className="h-6 w-16 text-xs px-1.5"
+                  />
+                  hours
+                </label>
+                <span className="inline-flex items-center gap-1 text-muted-foreground text-xs ml-auto">
+                  <Clock className="h-3 w-3" />
+                  Last checked {formatRelative(checkedAt)}
+                </span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden" role="progressbar" aria-valuenow={healthPct} aria-valuemin={0} aria-valuemax={100}>
+                <div className={`h-full ${barColor} transition-all`} style={{ width: `${healthPct}%` }} />
+              </div>
+            </div>
+          );
+        })()}
 
         {loading && (
           <div className="flex items-center gap-2 text-muted-foreground text-sm py-12 justify-center">
