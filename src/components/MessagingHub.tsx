@@ -221,6 +221,7 @@ export function MessagingHub() {
     <>
     {detailWindow}
     <div className="space-y-3">
+      <div className="flex justify-end"><OfflineSectionStatus label="Messaging Hub" tables={["messaging_guidance","messaging_audience_analyses","messaging_impact_analyses","talking_points"]} /></div>
       <div className="win98-sunken bg-[hsl(var(--win98-light))] px-3 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-[11px]">
