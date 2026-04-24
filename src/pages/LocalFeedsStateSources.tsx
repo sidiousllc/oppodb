@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { STATE_ABBR_TO_NAME } from "@/lib/stateAbbreviations";
 import {
   ArrowLeft, ExternalLink, Loader2, Rss, RefreshCw,
-  CheckCircle2, AlertTriangle, Clock, Search, X,
+  CheckCircle2, AlertTriangle, Clock, Search, X, Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
