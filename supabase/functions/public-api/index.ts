@@ -91,6 +91,10 @@ const VALID_ENDPOINTS = [
     "docs-tables",                  // GET — list every offline-synced table with row count + columns
     "docs-mcp-tools",               // GET — list every MCP tool name + description (mirrors mcp-server registry)
     "docs-edge-functions",          // GET — list every deployed edge function with purpose + auth requirement
+    // Offline parity (Phase 10) — read snapshots + replay queued writes via REST
+    "offline-manifest",              // GET — list of all offline-synced tables with select hints (matches src/lib/offlineSync SYNC_TABLES)
+    "offline-snapshot",              // GET ?table=&page=&page_size=&order_by= — paginated table read for offline mirror
+    "offline-mutate",                // POST { table, operation:'insert'|'update'|'delete', data } — replay a queued offline write
 ];
 
 async function hashKey(key: string): Promise<string> {
