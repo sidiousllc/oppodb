@@ -192,6 +192,19 @@ export function IntelHub() {
     fetchBriefings();
   }, [fetchBriefings]);
 
+  const recordSyncStats = (data: any, scope: Scope | "all") => {
+    if (!data) return;
+    setLastSyncStats({
+      scope,
+      fetched: data.fetched ?? data.count ?? 0,
+      inserted: data.inserted ?? 0,
+      insertedLocal: data.inserted_local ?? 0,
+      stateTaggedSources: data.state_tagged_sources ?? 0,
+      sourcesByScope: data.sources_by_scope ?? {},
+      at: new Date().toISOString(),
+    });
+  };
+
   const handleSync = async () => {
     setSyncing(true);
     toast.info("Syncing intelligence briefings...");
@@ -200,7 +213,9 @@ export function IntelHub() {
         body: { scopes: [activeScope] },
       });
       if (error) throw error;
-      toast.success(`Synced ${data?.count || 0} briefings`);
+      recordSyncStats(data, activeScope);
+      const newCount = data?.inserted ?? 0;
+      toast.success(`Synced ${data?.fetched ?? data?.count ?? 0} fetched · ${newCount} new`);
       await fetchBriefings();
     } catch (e) {
       console.error("Sync error:", e);
@@ -218,7 +233,8 @@ export function IntelHub() {
         body: { scopes: ["local", "state", "national", "international"] },
       });
       if (error) throw error;
-      toast.success(`Synced ${data?.count || 0} total briefings`);
+      recordSyncStats(data, "all");
+      toast.success(`Synced ${data?.fetched ?? data?.count ?? 0} fetched · ${data?.inserted ?? 0} new`);
       await fetchBriefings();
     } catch (e) {
       console.error("Sync error:", e);
