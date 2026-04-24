@@ -78,6 +78,7 @@ const App = () => {
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/api" element={<ProtectedRoute><ApiPage /></ProtectedRoute>} />
                 <Route path="/admin/local-feeds" element={<ProtectedRoute><LocalFeedsValidation /></ProtectedRoute>} />
+                <Route path="/admin/local-feeds/audit" element={<ProtectedRoute><LocalFeedsAudit /></ProtectedRoute>} />
                 <Route path="/admin/local-feeds/:abbr" element={<ProtectedRoute><LocalFeedsStateSources /></ProtectedRoute>} />
                 <Route path="/unsubscribe" element={<UnsubscribePage />} />
                 <Route path="/r/:id" element={<PublicReport />} />
