@@ -2063,6 +2063,12 @@ function endpointDescription(endpoint: string): string {
     "messaging-ai-bundle": "[READ] Combined AI bundle (item + talking points + audience + impact). Required: ?slug=",
     "admin-dispatch-alerts": "[ADMIN POST] Force-run the dispatch-alerts cron job.",
     "admin-regenerate-ai": "[ADMIN POST] Regenerate AI cache. Body: {type:'vulnerability|talking_points|bill_impact', payload:{...}}",
+    "docs": "Self-documentation index — counts and links to wiki/endpoints/tables/edge-functions/mcp-tools",
+    "docs-wiki": "Wiki pages registry. List all (no params) or fetch one with ?slug=",
+    "docs-endpoints": "Every public-api endpoint with description and path",
+    "docs-tables": "Every offline-synced database table",
+    "docs-mcp-tools": "Every MCP server tool with description (mirrors mcp-server registry)",
+    "docs-edge-functions": "Every deployed edge function with purpose and auth requirement",
   };
   return descs[endpoint] || "";
 }
