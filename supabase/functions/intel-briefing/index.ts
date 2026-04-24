@@ -1912,6 +1912,146 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Top-up: for each low-coverage state, probe vetted reserve feeds and return
+    // the next-best healthy candidates that aren't already configured.
+    if (body.action === "top_up_local_sources") {
+      const minPerState: number = Number.isFinite(body.minPerState) && body.minPerState > 0
+        ? Math.min(20, Math.floor(body.minPerState))
+        : 5;
+      const perStateCap: number = Number.isFinite(body.perStateCap) && body.perStateCap > 0
+        ? Math.min(10, Math.floor(body.perStateCap))
+        : 3;
+      const onlyStates: string[] | null = Array.isArray(body.states) && body.states.length > 0
+        ? body.states.map((s: unknown) => String(s).toUpperCase())
+        : null;
+
+      const localSources = (SOURCES.local || []) as Array<{ name: string; rssUrl: string; scope: string; state?: string }>;
+      const configuredByState = new Map<string, Set<string>>();
+      for (const s of localSources) {
+        const st = (s.state || "").toUpperCase();
+        if (!st) continue;
+        if (!configuredByState.has(st)) configuredByState.set(st, new Set());
+        configuredByState.get(st)!.add(s.rssUrl);
+      }
+
+      // Determine which states need top-up
+      const targetStates = (onlyStates ?? Object.keys(LOCAL_RESERVE)).filter((st) => {
+        const have = configuredByState.get(st)?.size ?? 0;
+        return have < minPerState;
+      });
+
+      const probe = async (s: { name: string; rssUrl: string; state: string }) => {
+        const start = Date.now();
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 12000);
+          const res = await fetch(s.rssUrl, {
+            signal: ctrl.signal,
+            redirect: "follow",
+            headers: {
+              "User-Agent": "Mozilla/5.0 (compatible; OppoDB-Audit/1.0)",
+              "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8",
+            },
+          });
+          clearTimeout(timer);
+          const ms = Date.now() - start;
+          if (!res.ok) return { ok: false, status: res.status, ms, items: 0, error: `HTTP ${res.status}` };
+          const text = await res.text();
+          const itemMatches = text.match(/<(item|entry)\b/gi);
+          const items = itemMatches ? itemMatches.length : 0;
+          if (items === 0) return { ok: false, status: res.status, ms, items, error: "No <item>/<entry> elements" };
+          return { ok: true, status: res.status, ms, items, error: null as string | null };
+        } catch (e) {
+          const ms = Date.now() - start;
+          const msg = e instanceof Error ? e.message : String(e);
+          return { ok: false, status: 0, ms, items: 0, error: msg.slice(0, 200) };
+        }
+      };
+
+      // Build candidate list: reserve feeds not already configured
+      const candidates: Array<{ state: string; name: string; rssUrl: string }> = [];
+      for (const st of targetStates) {
+        const reserve = LOCAL_RESERVE[st] ?? [];
+        const haveSet = configuredByState.get(st) ?? new Set<string>();
+        for (const c of reserve) {
+          if (!haveSet.has(c.rssUrl)) candidates.push({ state: st, ...c });
+        }
+      }
+
+      // Probe in batches
+      const probed: Array<{
+        state: string; name: string; rssUrl: string;
+        ok: boolean; status: number; ms: number; items: number; error: string | null;
+      }> = [];
+      const BATCH = 10;
+      for (let i = 0; i < candidates.length; i += BATCH) {
+        const slice = candidates.slice(i, i + BATCH);
+        const out = await Promise.all(slice.map(async (c) => {
+          const r = await probe(c);
+          return { state: c.state, name: c.name, rssUrl: c.rssUrl, ...r };
+        }));
+        probed.push(...out);
+      }
+
+      // Group healthy results by state, capped
+      const additions: Record<string, Array<{ name: string; rssUrl: string; items: number; status: number; ms: number }>> = {};
+      const skipped: Record<string, Array<{ name: string; rssUrl: string; error: string | null; status: number }>> = {};
+      const summaryByState: Array<{
+        state: string; previousConfigured: number; healthyAdded: number; newTotal: number; meetsThreshold: boolean;
+      }> = [];
+
+      for (const st of targetStates) {
+        const okOnes = probed.filter((p) => p.state === st && p.ok).slice(0, perStateCap);
+        const failed = probed.filter((p) => p.state === st && !p.ok);
+        if (okOnes.length > 0) {
+          additions[st] = okOnes.map((p) => ({
+            name: p.name, rssUrl: p.rssUrl, items: p.items, status: p.status, ms: p.ms,
+          }));
+        }
+        if (failed.length > 0) {
+          skipped[st] = failed.map((p) => ({
+            name: p.name, rssUrl: p.rssUrl, error: p.error, status: p.status,
+          }));
+        }
+        const previous = configuredByState.get(st)?.size ?? 0;
+        const newTotal = previous + okOnes.length;
+        summaryByState.push({
+          state: st,
+          previousConfigured: previous,
+          healthyAdded: okOnes.length,
+          newTotal,
+          meetsThreshold: newTotal >= minPerState,
+        });
+      }
+
+      const totalAdded = Object.values(additions).reduce((sum, arr) => sum + arr.length, 0);
+      const statesImproved = summaryByState.filter((s) => s.healthyAdded > 0).length;
+      const statesNowMeeting = summaryByState.filter((s) => s.meetsThreshold).length;
+      const statesStillBelow = summaryByState.filter((s) => !s.meetsThreshold).length;
+
+      return new Response(
+        JSON.stringify({
+          checkedAt: new Date().toISOString(),
+          minPerState,
+          perStateCap,
+          targetStates,
+          summary: {
+            statesEvaluated: targetStates.length,
+            statesImproved,
+            statesNowMeeting,
+            statesStillBelow,
+            candidatesProbed: probed.length,
+            totalHealthyAdded: totalAdded,
+          },
+          perState: summaryByState,
+          additions,
+          skipped,
+          note: "Healthy candidates were probed live from a vetted reserve pool. To persist them, add the entries under additions to SOURCES.local in supabase/functions/intel-briefing/index.ts.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // Accept either `scopes` (array) or `scope` (single string) from callers.
     let requestedScopes: string[];
     if (Array.isArray(body.scopes) && body.scopes.length > 0) {
