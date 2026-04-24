@@ -1502,10 +1502,23 @@ Deno.serve(async (req) => {
       );
     }
 
-    const requestedScopes: string[] = body.scopes || ["national", "international", "state", "local"];
+    // Accept either `scopes` (array) or `scope` (single string) from callers.
+    let requestedScopes: string[];
+    if (Array.isArray(body.scopes) && body.scopes.length > 0) {
+      requestedScopes = body.scopes;
+    } else if (typeof body.scope === "string" && body.scope.trim()) {
+      requestedScopes = [body.scope.trim()];
+    } else {
+      requestedScopes = ["national", "international", "state", "local"];
+    }
     const requestedState: string | null = typeof body.state === "string" && body.state.trim()
       ? body.state.trim().toUpperCase()
       : null;
+    // If a state is provided without explicit scopes, narrow to local only to avoid
+    // fetching every national/international feed when the caller only wants one state.
+    if (requestedState && !Array.isArray(body.scopes) && typeof body.scope !== "string") {
+      requestedScopes = ["local"];
+    }
 
     console.log("Intel briefing sync starting for scopes:", requestedScopes, requestedState ? `(state=${requestedState})` : "");
 
