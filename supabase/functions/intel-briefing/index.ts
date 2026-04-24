@@ -917,9 +917,9 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
   ],
 };
 
-async function parseRSS(url: string, sourceName: string, scope: string): Promise<Array<{
+async function parseRSS(url: string, sourceName: string, scope: string, state?: string): Promise<Array<{
   title: string; summary: string; content: string; source_name: string;
-  source_url: string; published_at: string; scope: string; category: string;
+  source_url: string; published_at: string; scope: string; category: string; region: string | null;
 }>> {
   const items: Array<any> = [];
   try {
@@ -1005,6 +1005,7 @@ async function parseRSS(url: string, sourceName: string, scope: string): Promise
         published_at: parsedDate,
         scope,
         category: detectCategory(title, desc),
+        region: state ?? null,
       });
       count++;
     }
@@ -1043,6 +1044,7 @@ async function parseRSS(url: string, sourceName: string, scope: string): Promise
           published_at: parsedDate,
           scope,
           category: detectCategory(title, desc),
+          region: state ?? null,
         });
       }
     }
@@ -1088,7 +1090,7 @@ Deno.serve(async (req) => {
       for (let i = 0; i < sources.length; i += batchSize) {
         const batch = sources.slice(i, i + batchSize);
         const results = await Promise.allSettled(
-          batch.map(s => parseRSS(s.rssUrl, s.name, s.scope))
+          batch.map(s => parseRSS(s.rssUrl, s.name, s.scope, (s as { state?: string }).state))
         );
         for (const result of results) {
           if (result.status === "fulfilled") {
@@ -1126,6 +1128,7 @@ Deno.serve(async (req) => {
             published_at: item.published_at,
             scope: item.scope,
             category: item.category,
+            region: item.region,
           })),
           { onConflict: "title,source_name", ignoreDuplicates: true }
         );
