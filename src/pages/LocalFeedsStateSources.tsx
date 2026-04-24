@@ -52,6 +52,7 @@ export default function LocalFeedsStateSources() {
   const [health, setHealth] = useState<Record<string, HealthRow>>({});
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const [probing, setProbing] = useState(false);
+  const [refreshingUrls, setRefreshingUrls] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
   const [staleHours, setStaleHours] = useState<number>(() => {
