@@ -190,6 +190,21 @@ export default function LocalFeedsStateSources() {
               <AlertTriangle className="h-4 w-4" />
               <strong>{failedCount}</strong> failed
             </span>
+            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-500">
+              <Clock className="h-4 w-4" />
+              <strong>{staleCount}</strong> stale (&gt;{staleHours}h)
+            </span>
+            <label className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              Stale after
+              <Input
+                type="number"
+                min={1}
+                value={staleHours}
+                onChange={(e) => setStaleHours(Math.max(1, Number(e.target.value) || 48))}
+                className="h-6 w-16 text-xs px-1.5"
+              />
+              hours
+            </label>
             <span className="inline-flex items-center gap-1 text-muted-foreground text-xs ml-auto">
               <Clock className="h-3 w-3" />
               Last checked {formatRelative(checkedAt)}
