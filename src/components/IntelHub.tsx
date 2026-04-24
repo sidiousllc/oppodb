@@ -513,21 +513,39 @@ export function IntelHub() {
               </select>
             </div>
             {activeScope === "local" && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-bold text-gray-600 w-12">State:</span>
-                <select
-                  value={selectedState}
-                  onChange={(e) => setSelectedState(e.target.value)}
-                  className="text-xs border border-[#808080] bg-white px-1 py-0.5 focus:outline-none"
-                >
-                  <option value="all">All States ({availableStates.length})</option>
-                  {availableStates.map((abbr) => (
-                    <option key={abbr} value={abbr}>
-                      {STATE_ABBR_TO_NAME[abbr] ?? abbr} ({abbr})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-bold text-gray-600 w-12">State:</span>
+                  <select
+                    value={selectedState}
+                    onChange={(e) => setSelectedState(e.target.value)}
+                    className="text-xs border border-[#808080] bg-white px-1 py-0.5 focus:outline-none"
+                  >
+                    <option value="all">All States ({availableStates.length})</option>
+                    {availableStates.map((abbr) => (
+                      <option key={abbr} value={abbr}>
+                        {STATE_ABBR_TO_NAME[abbr] ?? abbr} ({abbr})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {lastSyncStats && (lastSyncStats.scope === "local" || lastSyncStats.scope === "all") && (
+                  <div className="flex items-center gap-2 flex-wrap text-[10px] border border-[#808080] bg-white px-2 py-1">
+                    <span className="font-bold text-gray-700">Last Local Sync:</span>
+                    <span className="text-gray-700">
+                      {lastSyncStats.stateTaggedSources || lastSyncStats.sourcesByScope?.local || 0} state-tagged sources processed
+                    </span>
+                    <span className="text-gray-400">·</span>
+                    <span className={lastSyncStats.insertedLocal > 0 ? "text-green-700 font-bold" : "text-gray-700"}>
+                      {lastSyncStats.insertedLocal} new {lastSyncStats.insertedLocal === 1 ? "briefing" : "briefings"}
+                    </span>
+                    <span className="text-gray-400">·</span>
+                    <span className="text-gray-500">
+                      {format(new Date(lastSyncStats.at), "h:mm a")}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-bold text-gray-600 w-12">Lean:</span>
