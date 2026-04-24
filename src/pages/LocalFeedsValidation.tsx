@@ -130,11 +130,28 @@ export default function LocalFeedsValidation() {
     const stale = rows.filter(
       (r) => r.briefingCount > 0 && r.daysSince !== null && r.daysSince > STALE_DAYS,
     );
+    const ok = rows.filter(
+      (r) => r.briefingCount > 0 && !(r.daysSince !== null && r.daysSince > STALE_DAYS),
+    );
     const covered = rows.length - zero.length;
     const totalBriefings = rows.reduce((sum, r) => sum + r.briefingCount, 0);
     const totalSources = rows.reduce((sum, r) => sum + r.uniqueSources, 0);
-    return { zero, stale, covered, totalBriefings, totalSources };
+    return { zero, stale, ok, covered, totalBriefings, totalSources };
   }, [rows]);
+
+  const visibleRows = useMemo(() => {
+    if (statusFilter === "all") return rows;
+    if (statusFilter === "zero") return rows.filter((r) => r.briefingCount === 0);
+    if (statusFilter === "stale") {
+      return rows.filter(
+        (r) => r.briefingCount > 0 && r.daysSince !== null && r.daysSince > STALE_DAYS,
+      );
+    }
+    // ok
+    return rows.filter(
+      (r) => r.briefingCount > 0 && !(r.daysSince !== null && r.daysSince > STALE_DAYS),
+    );
+  }, [rows, statusFilter]);
 
   const formatDate = (raw: string | null) => {
     if (!raw) return "—";
