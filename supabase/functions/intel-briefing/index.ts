@@ -1322,6 +1322,115 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Audit: probe every local source and report per-state coverage vs a min threshold
+    if (body.action === "audit_local_feeds") {
+      const minPerState: number = Number.isFinite(body.minPerState) && body.minPerState > 0
+        ? Math.min(20, Math.floor(body.minPerState))
+        : 2;
+      const localSources = (SOURCES.local || []) as Array<{ name: string; rssUrl: string; scope: string; state?: string }>;
+      // Only probe sources tagged to a state (DC included), skip national/cross-cutting
+      const stateSources = localSources.filter((s) => !!s.state);
+
+      const probe = async (s: { name: string; rssUrl: string; state?: string }) => {
+        const start = Date.now();
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 12000);
+          const res = await fetch(s.rssUrl, {
+            signal: ctrl.signal,
+            redirect: "follow",
+            headers: {
+              "User-Agent": "Mozilla/5.0 (compatible; OppoDB-Audit/1.0)",
+              "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8",
+            },
+          });
+          clearTimeout(timer);
+          const ms = Date.now() - start;
+          if (!res.ok) {
+            return { ok: false, status: res.status, ms, items: 0, error: `HTTP ${res.status}` };
+          }
+          const text = await res.text();
+          const itemMatches = text.match(/<(item|entry)\b/gi);
+          const items = itemMatches ? itemMatches.length : 0;
+          if (items === 0) {
+            return { ok: false, status: res.status, ms, items, error: "No <item>/<entry> elements" };
+          }
+          return { ok: true, status: res.status, ms, items, error: null as string | null };
+        } catch (e) {
+          const ms = Date.now() - start;
+          const msg = e instanceof Error ? e.message : String(e);
+          return { ok: false, status: 0, ms, items: 0, error: msg.slice(0, 200) };
+        }
+      };
+
+      // Probe in batches of 12 to avoid overwhelming
+      const results: Array<{
+        name: string; rssUrl: string; state: string;
+        ok: boolean; status: number; ms: number; items: number; error: string | null;
+      }> = [];
+      const BATCH = 12;
+      for (let i = 0; i < stateSources.length; i += BATCH) {
+        const slice = stateSources.slice(i, i + BATCH);
+        const out = await Promise.all(slice.map(async (s) => {
+          const r = await probe(s);
+          return { name: s.name, rssUrl: s.rssUrl, state: (s.state || "").toUpperCase(), ...r };
+        }));
+        results.push(...out);
+      }
+
+      // Aggregate per state
+      const perState = new Map<string, {
+        configured: number; healthy: number; failed: number;
+        failedSources: Array<{ name: string; rssUrl: string; error: string | null; status: number }>;
+      }>();
+      for (const r of results) {
+        const k = r.state;
+        if (!perState.has(k)) {
+          perState.set(k, { configured: 0, healthy: 0, failed: 0, failedSources: [] });
+        }
+        const entry = perState.get(k)!;
+        entry.configured += 1;
+        if (r.ok) entry.healthy += 1;
+        else {
+          entry.failed += 1;
+          entry.failedSources.push({ name: r.name, rssUrl: r.rssUrl, error: r.error, status: r.status });
+        }
+      }
+
+      const states = Array.from(perState.entries())
+        .map(([state, v]) => ({
+          state,
+          configured: v.configured,
+          healthy: v.healthy,
+          failed: v.failed,
+          meetsThreshold: v.healthy >= minPerState,
+          failedSources: v.failedSources,
+        }))
+        .sort((a, b) => a.state.localeCompare(b.state));
+
+      const totalConfigured = stateSources.length;
+      const totalHealthy = results.filter((r) => r.ok).length;
+      const totalFailed = results.length - totalHealthy;
+      const statesBelowThreshold = states.filter((s) => !s.meetsThreshold).map((s) => s.state);
+
+      return new Response(
+        JSON.stringify({
+          minPerState,
+          generatedAt: new Date().toISOString(),
+          summary: {
+            totalConfigured,
+            totalHealthy,
+            totalFailed,
+            statesAudited: states.length,
+            statesBelowThreshold: statesBelowThreshold.length,
+            statesBelowThresholdList: statesBelowThreshold,
+          },
+          states,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const requestedScopes: string[] = body.scopes || ["national", "international", "state", "local"];
     const requestedState: string | null = typeof body.state === "string" && body.state.trim()
       ? body.state.trim().toUpperCase()
