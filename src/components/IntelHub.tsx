@@ -85,6 +85,7 @@ export function IntelHub() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all");
   const [partyLeaning, setPartyLeaning] = useState<PartyLeaning>("all");
+  const [selectedState, setSelectedState] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [groupMode, setGroupMode] = useState<"clusters" | "sources">("clusters");
   const [selectionMode, setSelectionMode] = useState(false);
@@ -268,6 +269,7 @@ export function IntelHub() {
     const q = searchQuery.toLowerCase();
     if (q && !b.title.toLowerCase().includes(q) && !b.summary.toLowerCase().includes(q) && !b.source_name.toLowerCase().includes(q)) return false;
     if (selectedCategory !== "all" && b.category !== selectedCategory) return false;
+    if (activeScope === "local" && selectedState !== "all" && b.region !== selectedState) return false;
     if (partyLeaning === "left" && !LEFT_SOURCES.some(s => b.source_name.toLowerCase().includes(s.toLowerCase()))) return false;
     if (partyLeaning === "right" && !RIGHT_SOURCES.some(s => b.source_name.toLowerCase().includes(s.toLowerCase()))) return false;
     if (partyLeaning === "center") {
@@ -277,6 +279,16 @@ export function IntelHub() {
     }
     return true;
   });
+
+  // States actually present in current Local briefings (sorted alpha by name)
+  const availableStates = useMemo(() => {
+    if (activeScope !== "local") return [] as string[];
+    const set = new Set<string>();
+    for (const b of briefings) if (b.region) set.add(b.region);
+    return Array.from(set).sort((a, b) =>
+      (STATE_ABBR_TO_NAME[a] ?? a).localeCompare(STATE_ABBR_TO_NAME[b] ?? b),
+    );
+  }, [briefings, activeScope]);
 
   const groupedBySource = filteredBriefings.reduce<Record<string, Briefing[]>>((acc, b) => {
     if (!acc[b.source_name]) acc[b.source_name] = [];
