@@ -1358,9 +1358,9 @@ Deno.serve(async (req) => {
             published_at: item.published_at,
             scope: item.scope,
             category: item.category,
-            region: item.region,
+            region: item.region ?? "",
           })),
-          { onConflict: "title,source_name", ignoreDuplicates: true }
+          { onConflict: "title,source_name,region,published_at", ignoreDuplicates: true }
         );
         if (error) {
           console.error("Upsert error:", error.message);
