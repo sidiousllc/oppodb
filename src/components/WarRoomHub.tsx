@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Trash2, Users, X, UserPlus, Send, LogOut, Crown } from "lucide-react";
 import { toast } from "sonner";
+import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
 
 interface WarRoom {
   id: string;
