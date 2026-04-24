@@ -18,6 +18,7 @@ import ApiPage from "./pages/ApiPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import UnsubscribePage from "./pages/UnsubscribePage.tsx";
 import PublicReport from "./pages/PublicReport.tsx";
+import LocalFeedsValidation from "./pages/LocalFeedsValidation.tsx";
 import { initOfflineSync } from "./lib/offlineSync";
 import { LocationTrackerInit } from "./hooks/useLocationTracker";
 
