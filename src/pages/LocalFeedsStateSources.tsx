@@ -52,6 +52,7 @@ export default function LocalFeedsStateSources() {
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const [probing, setProbing] = useState(false);
   const [query, setQuery] = useState("");
+  const [scopeFilter, setScopeFilter] = useState<string>("all");
 
   useEffect(() => {
     let cancelled = false;
