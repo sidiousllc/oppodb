@@ -293,41 +293,61 @@ export async function syncAllTables(
   return { synced, errors };
 }
 
-/** Replay pending writes to Supabase */
-export async function replayPendingWrites(): Promise<{ replayed: number; failed: number }> {
+/** Replay pending writes to Supabase. Permanent (RLS / validation / 4xx)
+ *  errors drop the write so it does not jam the queue forever; transient
+ *  network errors keep the write for the next online cycle. */
+export async function replayPendingWrites(): Promise<{ replayed: number; failed: number; dropped: number }> {
   const online = await isReallyOnline();
-  if (!online) return { replayed: 0, failed: 0 };
+  if (!online) return { replayed: 0, failed: 0, dropped: 0 };
 
   const pending = await getPendingWrites();
   let replayed = 0;
   let failed = 0;
+  let dropped = 0;
 
   for (const write of pending) {
     try {
       const sb = supabase as any;
+      let error: { message: string; code?: string } | null = null;
       if (write.operation === "insert") {
-        const { error } = await sb.from(write.table).insert(write.data);
-        if (error) throw error;
+        ({ error } = await sb.from(write.table).insert(write.data));
       } else if (write.operation === "update") {
         const { id, ...rest } = write.data;
-        const { error } = await sb.from(write.table).update(rest).eq("id", String(id));
-        if (error) throw error;
+        ({ error } = await sb.from(write.table).update(rest).eq("id", String(id)));
       } else if (write.operation === "delete") {
-        const { error } = await sb.from(write.table).delete().eq("id", String(write.data.id));
-        if (error) throw error;
+        ({ error } = await sb.from(write.table).delete().eq("id", String(write.data.id)));
+      }
+
+      if (error) {
+        const msg = (error.message || "").toLowerCase();
+        const permanent =
+          msg.includes("permission denied") ||
+          msg.includes("row-level security") ||
+          msg.includes("violates") ||
+          msg.includes("duplicate key") ||
+          msg.includes("does not exist") ||
+          msg.includes("invalid input") ||
+          msg.includes("not null");
+        if (permanent) {
+          console.warn(`[offlineSync] dropping permanent-fail write ${write.id} on ${write.table}: ${error.message}`);
+          await removePendingWrite(write.id);
+          dropped++;
+          continue;
+        }
+        throw new Error(error.message);
       }
 
       await removePendingWrite(write.id);
       replayed++;
     } catch (e) {
-      console.error(`Failed to replay write ${write.id}:`, e);
+      console.error(`Failed to replay write ${write.id} on ${write.table}:`, e);
       failed++;
     }
   }
 
   syncStatus.pendingWrites = (await getPendingWrites()).length;
   notify();
-  return { replayed, failed };
+  return { replayed, failed, dropped };
 }
 
 /** Get offline data for a table (falls back to encrypted store when offline) */
