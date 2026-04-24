@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ReportBuilder } from "./ReportBuilder";
 import { toast } from "sonner";
 import { Plus, FileText, Trash2, Users, Calendar, Loader2 } from "lucide-react";
+import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
 
 interface ReportRow {
   id: string;
