@@ -429,23 +429,41 @@ export default function LocalFeedsStateSources() {
                           {formatRelative(checkedAt)}
                         </td>
                         <td className="px-3 py-2 text-right">
-                          <Button
-                            asChild
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                          >
-                            <a
-                              href={s.rssUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={`Open ${s.name} feed in a new tab`}
+                          <div className="inline-flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              disabled={refreshingUrls.has(s.rssUrl) || probing}
+                              onClick={() => refreshOne(s)}
+                              title={`Re-probe ${s.name} now`}
                             >
-                              <Rss className="h-3 w-3 mr-1" />
-                              Open RSS
-                              <ExternalLink className="h-3 w-3 ml-1" />
-                            </a>
-                          </Button>
+                              {refreshingUrls.has(s.rssUrl) ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-3 w-3" />
+                              )}
+                              <span className="ml-1">Refresh</span>
+                            </Button>
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                            >
+                              <a
+                                href={s.rssUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={`Open ${s.name} feed in a new tab`}
+                              >
+                                <Rss className="h-3 w-3 mr-1" />
+                                Open RSS
+                                <ExternalLink className="h-3 w-3 ml-1" />
+                              </a>
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
