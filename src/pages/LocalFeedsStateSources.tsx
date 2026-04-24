@@ -116,6 +116,41 @@ export default function LocalFeedsStateSources() {
     }
   };
 
+  const refreshOne = async (s: SourceRow) => {
+    setRefreshingUrls((prev) => {
+      const next = new Set(prev);
+      next.add(s.rssUrl);
+      return next;
+    });
+    try {
+      const { data, error: err } = await supabase.functions.invoke("intel-briefing", {
+        body: { action: "probe_one_source", url: s.rssUrl },
+      });
+      if (err) throw err;
+      const src = data?.source as HealthRow | undefined;
+      if (!src) throw new Error("Empty response");
+      setHealth((prev) => ({ ...prev, [s.rssUrl]: src }));
+      setCheckedAt(data?.checkedAt ?? new Date().toISOString());
+      if (src.ok) {
+        toast.success(
+          `${s.name}: ${src.items} item${src.items === 1 ? "" : "s"}${
+            src.lastItemAt ? ` (newest ${formatRelative(src.lastItemAt)})` : ""
+          }`,
+        );
+      } else {
+        toast.error(`${s.name}: ${src.error || "Failed"}`);
+      }
+    } catch (e) {
+      toast.error(`Refresh failed: ${e instanceof Error ? e.message : "error"}`);
+    } finally {
+      setRefreshingUrls((prev) => {
+        const next = new Set(prev);
+        next.delete(s.rssUrl);
+        return next;
+      });
+    }
+  };
+
   const hostOf = (url: string) => {
     try { return new URL(url).hostname.replace(/^www\./, ""); }
     catch { return url; }
