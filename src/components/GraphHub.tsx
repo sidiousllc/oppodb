@@ -6,6 +6,7 @@ import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { toast } from "sonner";
 import { Loader2, Network, Save, Wand2 } from "lucide-react";
+import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
 
 interface Node { id: string; type: string; label: string; }
 interface Edge { id: string; source: string; target: string; type: string; amount?: number | null; }
