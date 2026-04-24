@@ -169,7 +169,7 @@ export function IntelHub() {
       .select("*")
       .eq("scope", activeScope)
       .order("published_at", { ascending: false })
-      .limit(300);
+      .limit(999999999999);
 
     if (error) {
       console.error("Error fetching briefings:", error);
