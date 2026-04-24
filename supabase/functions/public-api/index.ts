@@ -1956,6 +1956,17 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "docs":
+      case "docs-wiki":
+      case "docs-endpoints":
+      case "docs-tables":
+      case "docs-mcp-tools":
+      case "docs-edge-functions": {
+        const docsResp = await handleDocsEndpoint(endpoint, url, supabase);
+        supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        return new Response(JSON.stringify(docsResp), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: "Unknown endpoint" }),
