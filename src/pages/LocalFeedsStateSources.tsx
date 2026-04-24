@@ -272,8 +272,8 @@ export default function LocalFeedsStateSources() {
                 <tbody>
                   {filteredSources.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="px-3 py-6 text-center text-xs text-muted-foreground">
-                        No sources match “{query}”.
+                      <td colSpan={9} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                        No sources match the current filters{query ? ` (search: “${query}”)` : ""}.
                       </td>
                     </tr>
                   )}
