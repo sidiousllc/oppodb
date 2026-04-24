@@ -72,6 +72,9 @@ interface TopUpResponse {
   additions: Record<string, TopUpAddition[]>;
   skipped: Record<string, Array<{ name: string; rssUrl: string; error: string | null; status: number }>>;
   note: string;
+}
+
+const REQUIRED_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
   "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
   "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
