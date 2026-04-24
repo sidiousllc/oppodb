@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { toast } from "sonner";
 import { Loader2, Play, Save, Trash2, Database, Sparkles } from "lucide-react";
+import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
 
 interface Scenario {
   id: string;
