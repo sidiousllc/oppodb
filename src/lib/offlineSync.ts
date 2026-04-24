@@ -363,36 +363,60 @@ export async function getOfflineData<T = Record<string, unknown>>(table: string)
   return getDecrypted<T>(table);
 }
 
-/** Queue a write for offline-first operation */
+/** Queue a write for offline-first operation.
+ *  Strategy: try the live write first when online. If the call **throws**
+ *  (network failure, fetch abort) we enqueue. RLS / 4xx errors from the
+ *  server are surfaced to the caller — those are not connectivity issues
+ *  and silently queueing them would mask real bugs. */
 export async function offlineWrite(
   table: string,
-  operation: "insert" | "update" | "delete",
-  data: Record<string, unknown>
-): Promise<void> {
+  operation: "insert" | "update" | "delete" | "upsert",
+  data: Record<string, unknown>,
+): Promise<{ queued: boolean; error?: string }> {
   const online = await isReallyOnline();
   if (online) {
     try {
       const sb = supabase as any;
+      let error: { message: string } | null = null;
       if (operation === "insert") {
-        const { error } = await sb.from(table).insert(data);
-        if (!error) return;
+        ({ error } = await sb.from(table).insert(data));
+      } else if (operation === "upsert") {
+        ({ error } = await sb.from(table).upsert(data));
       } else if (operation === "update") {
         const { id, ...rest } = data;
-        const { error } = await sb.from(table).update(rest).eq("id", String(id));
-        if (!error) return;
-      } else if (operation === "delete") {
-        const { error } = await sb.from(table).delete().eq("id", String(data.id));
-        if (!error) return;
+        ({ error } = await sb.from(table).update(rest).eq("id", String(id)));
+      } else {
+        ({ error } = await sb.from(table).delete().eq("id", String(data.id)));
       }
-    } catch {
-      // Fall through to queue
+      if (!error) return { queued: false };
+      // Surface RLS / validation errors instead of silently queueing.
+      return { queued: false, error: error.message };
+    } catch (e: any) {
+      // Network / fetch failure — fall through to queue.
+      console.warn(`[offlineSync] live ${operation} on ${table} threw, queueing:`, e?.message);
     }
   }
 
-  await queueWrite(table, operation, data);
+  // Upsert isn't supported in the legacy queue schema; map to insert as the
+  // closest equivalent — replay will retry as insert.
+  const op: "insert" | "update" | "delete" = operation === "upsert" ? "insert" : operation;
+  await queueWrite(table, op, data);
   syncStatus.pendingWrites++;
   notify();
+  return { queued: true };
 }
+
+/** Drop-in helpers mirroring the supabase-js shape but offline-aware. */
+export const offlineInsert = (table: string, data: Record<string, unknown>) =>
+  offlineWrite(table, "insert", data);
+export const offlineUpdate = (
+  table: string,
+  data: Record<string, unknown> & { id: string | number },
+) => offlineWrite(table, "update", data);
+export const offlineUpsert = (table: string, data: Record<string, unknown>) =>
+  offlineWrite(table, "upsert", data);
+export const offlineDelete = (table: string, id: string | number) =>
+  offlineWrite(table, "delete", { id });
 
 /** Initialize offline sync — installs reachability watcher + persistent storage. */
 export function initOfflineSync(): () => void {
