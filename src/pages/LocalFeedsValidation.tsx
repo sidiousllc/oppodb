@@ -385,20 +385,29 @@ export default function LocalFeedsValidation() {
                         )}
                       </td>
                       <td className="px-3 py-2 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-[11px]"
-                          disabled={isRefreshing}
-                          onClick={() => refreshState(r.abbr)}
-                        >
-                          {isRefreshing ? (
-                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                          ) : (
+                        {isRefreshing && progress[r.abbr] ? (
+                          <div className="inline-flex flex-col items-end gap-1 min-w-[160px]">
+                            <div className="flex items-center justify-between w-full text-[10px] text-muted-foreground">
+                              <span className="truncate">{progress[r.abbr].phase}</span>
+                              <span className="tabular-nums ml-2">{progress[r.abbr].elapsed}s</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                              <div className="h-full w-1/3 bg-primary rounded-full animate-[progress-slide_1.4s_ease-in-out_infinite]" />
+                            </div>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-[11px]"
+                            disabled={isRefreshing}
+                            onClick={() => refreshState(r.abbr)}
+                            title={`Refresh local feeds for ${r.name}`}
+                          >
                             <RefreshCw className="h-3 w-3 mr-1" />
-                          )}
-                          Refresh
-                        </Button>
+                            Refresh state feeds
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   );
