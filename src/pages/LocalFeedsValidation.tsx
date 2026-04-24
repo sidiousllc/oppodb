@@ -26,6 +26,28 @@ export default function LocalFeedsValidation() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState<Set<string>>(new Set());
+
+  const refreshState = async (abbr: string) => {
+    setRefreshing((prev) => new Set(prev).add(abbr));
+    try {
+      const { data, error: err } = await supabase.functions.invoke("intel-briefing", {
+        body: { scopes: ["local"], state: abbr },
+      });
+      if (err) throw err;
+      const newCount = data?.inserted_local ?? data?.inserted ?? 0;
+      toast.success(`${abbr}: ${newCount} new local ${newCount === 1 ? "briefing" : "briefings"}`);
+      await load();
+    } catch (e) {
+      toast.error(`Failed to refresh ${abbr}: ${e instanceof Error ? e.message : "error"}`);
+    } finally {
+      setRefreshing((prev) => {
+        const next = new Set(prev);
+        next.delete(abbr);
+        return next;
+      });
+    }
+  };
 
   const load = async () => {
     setLoading(true);
