@@ -20,7 +20,26 @@ interface Row {
   briefingCount: number;
   uniqueSources: number;
   latest: string | null;
+  daysSince: number | null;
 }
+
+const STALE_DAYS = 7;
+
+const daysSince = (raw: string | null): number | null => {
+  if (!raw) return null;
+  const t = new Date(raw).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.floor((Date.now() - t) / (1000 * 60 * 60 * 24));
+};
+
+const formatRelative = (days: number | null): string => {
+  if (days === null) return "—";
+  if (days <= 0) return "Today";
+  if (days === 1) return "1 day ago";
+  if (days < 30) return `${days} days ago`;
+  if (days < 365) return `${Math.floor(days / 30)} mo ago`;
+  return `${Math.floor(days / 365)} yr ago`;
+};
 
 export default function LocalFeedsValidation() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -91,6 +110,7 @@ export default function LocalFeedsValidation() {
         briefingCount: e.count,
         uniqueSources: e.sources.size,
         latest: e.latest,
+        daysSince: daysSince(e.latest),
       };
     });
 
@@ -104,10 +124,13 @@ export default function LocalFeedsValidation() {
 
   const stats = useMemo(() => {
     const zero = rows.filter((r) => r.briefingCount === 0);
+    const stale = rows.filter(
+      (r) => r.briefingCount > 0 && r.daysSince !== null && r.daysSince > STALE_DAYS,
+    );
     const covered = rows.length - zero.length;
     const totalBriefings = rows.reduce((sum, r) => sum + r.briefingCount, 0);
     const totalSources = rows.reduce((sum, r) => sum + r.uniqueSources, 0);
-    return { zero, covered, totalBriefings, totalSources };
+    return { zero, stale, covered, totalBriefings, totalSources };
   }, [rows]);
 
   const formatDate = (raw: string | null) => {
@@ -150,9 +173,10 @@ export default function LocalFeedsValidation() {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
           <SummaryCard label="Jurisdictions" value={`${stats.covered} / ${rows.length}`} hint="With ≥1 briefing" />
           <SummaryCard label="Zero-feed states" value={String(stats.zero.length)} hint="Need attention" tone={stats.zero.length > 0 ? "warn" : "ok"} />
+          <SummaryCard label={`Stale (>${STALE_DAYS}d)`} value={String(stats.stale.length)} hint="No recent articles" tone={stats.stale.length > 0 ? "warn" : "ok"} />
           <SummaryCard label="Total briefings" value={stats.totalBriefings.toLocaleString()} hint="Across all states" />
           <SummaryCard label="Unique sources" value={stats.totalSources.toLocaleString()} hint="Distinct outlets" />
         </div>
@@ -189,6 +213,7 @@ export default function LocalFeedsValidation() {
                 <th className="px-3 py-2 text-right font-semibold">Briefings</th>
                 <th className="px-3 py-2 text-right font-semibold">Unique sources</th>
                 <th className="px-3 py-2 text-right font-semibold">Latest</th>
+                <th className="px-3 py-2 text-right font-semibold">Last updated</th>
                 <th className="px-3 py-2 text-center font-semibold">Status</th>
                 <th className="px-3 py-2 text-right font-semibold">Action</th>
               </tr>
@@ -196,7 +221,7 @@ export default function LocalFeedsValidation() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
                     Loading…
                   </td>
@@ -204,11 +229,12 @@ export default function LocalFeedsValidation() {
               ) : (
                 rows.map((r) => {
                   const zero = r.briefingCount === 0;
+                  const stale = !zero && r.daysSince !== null && r.daysSince > STALE_DAYS;
                   const isRefreshing = refreshing.has(r.abbr);
                   return (
                     <tr
                       key={r.abbr}
-                      className={`border-t border-border ${zero ? "bg-destructive/5" : ""}`}
+                      className={`border-t border-border ${zero ? "bg-destructive/5" : stale ? "bg-yellow-500/5" : ""}`}
                     >
                       <td className="px-3 py-2">
                         <span className="font-mono text-xs text-muted-foreground mr-2">{r.abbr}</span>
@@ -223,11 +249,24 @@ export default function LocalFeedsValidation() {
                       <td className="px-3 py-2 text-right text-muted-foreground">
                         {formatDate(r.latest)}
                       </td>
+                      <td
+                        className={`px-3 py-2 text-right tabular-nums ${
+                          stale ? "text-yellow-600 dark:text-yellow-500 font-semibold" : "text-muted-foreground"
+                        }`}
+                        title={r.latest ?? undefined}
+                      >
+                        {formatRelative(r.daysSince)}
+                      </td>
                       <td className="px-3 py-2 text-center">
                         {zero ? (
                           <span className="inline-flex items-center gap-1 text-[11px] text-destructive">
                             <AlertTriangle className="h-3 w-3" />
                             Zero feeds
+                          </span>
+                        ) : stale ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-yellow-600 dark:text-yellow-500">
+                            <AlertTriangle className="h-3 w-3" />
+                            Stale
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[11px] text-primary">
