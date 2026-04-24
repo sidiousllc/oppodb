@@ -7,6 +7,7 @@ import { exportMessagingPDF } from "@/lib/messagingExport";
 import { Win98Window } from "@/components/Win98Window";
 import { MessagingAIPanel } from "@/components/MessagingAIPanel";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
 
 interface MessagingGuidance {
   id: string;
