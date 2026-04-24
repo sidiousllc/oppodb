@@ -2359,3 +2359,133 @@ async function handleDocsEndpoint(
   }
   return { error: "Unknown docs endpoint" };
 }
+
+// ─── Offline parity (Phase 10) ──────────────────────────────────────────────
+// Manifest mirrors src/lib/offlineSync.ts SYNC_TABLES exactly so a third-party
+// client can reconstruct the same offline store the web app builds.
+const OFFLINE_MANIFEST: Array<{ table: string; select: string; orderBy: string; pageSize: number }> = [
+  { table: "district_profiles", select: "*", orderBy: "id", pageSize: 1000 },
+  { table: "candidate_profiles", select: "id,slug,name,tags,is_subpage,parent_slug,subpage_title,github_path,legiscan_people_id,legiscan_state,updated_at", orderBy: "id", pageSize: 500 },
+  { table: "candidate_versions", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "congress_members", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "congress_bills", select: "id,bill_id,title,short_title,latest_action_text,latest_action_date,status,sponsor_name,policy_area,congress,bill_type,bill_number,introduced_date,updated_at", orderBy: "id", pageSize: 500 },
+  { table: "congress_committees", select: "*", orderBy: "id", pageSize: 200 },
+  { table: "congress_votes", select: "id,vote_id,chamber,congress,session,roll_number,vote_date,question,result,yea_total,nay_total,bill_id", orderBy: "id", pageSize: 500 },
+  { table: "election_forecasts", select: "*", orderBy: "id", pageSize: 1000 },
+  { table: "election_forecast_history", select: "*", orderBy: "id", pageSize: 1000 },
+  { table: "campaign_finance", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "polling_data", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "congressional_election_results", select: "*", orderBy: "id", pageSize: 1000 },
+  { table: "messaging_guidance", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "prediction_markets", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "wiki_pages", select: "*", orderBy: "id", pageSize: 100 },
+  { table: "intel_briefings", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "international_profiles", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "court_cases", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "entity_relationships", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "bill_impact_analyses", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "vulnerability_scores", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "talking_points", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "reports", select: "*", orderBy: "id", pageSize: 200 },
+  { table: "entity_notes", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "alert_rules", select: "*", orderBy: "id", pageSize: 200 },
+];
+
+const OFFLINE_TABLE_SET = new Set(OFFLINE_MANIFEST.map((t) => t.table));
+
+// Tables where offline mutations are accepted. Each must have a `user_id`
+// column so we can scope writes to the caller. Anything not listed is rejected.
+const OFFLINE_MUTABLE_TABLES: Record<string, { ownerCol: string }> = {
+  entity_notes: { ownerCol: "user_id" },
+  alert_rules: { ownerCol: "user_id" },
+  reports: { ownerCol: "user_id" },
+};
+
+async function handleOfflineEndpoint(
+  endpoint: string,
+  req: Request,
+  url: URL,
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userId: string,
+): Promise<Record<string, unknown> & { _status?: number }> {
+  if (endpoint === "offline-manifest") {
+    return {
+      version: 1,
+      tables: OFFLINE_MANIFEST,
+      mutable_tables: Object.keys(OFFLINE_MUTABLE_TABLES),
+      hint: "Iterate `tables` and call /public-api/offline-snapshot?table=<name>&page=N to mirror the offline store. Mutations: POST /public-api/offline-mutate.",
+    };
+  }
+
+  if (endpoint === "offline-snapshot") {
+    if (req.method !== "GET") return { _status: 405, error: "Method not allowed" };
+    const table = url.searchParams.get("table") ?? "";
+    if (!OFFLINE_TABLE_SET.has(table)) {
+      return { _status: 400, error: `Unknown or non-syncable table: ${table}`, allowed: [...OFFLINE_TABLE_SET] };
+    }
+    const cfg = OFFLINE_MANIFEST.find((t) => t.table === table)!;
+    const page = Math.max(0, Number(url.searchParams.get("page") ?? "0"));
+    const pageSize = Math.min(1000, Math.max(1, Number(url.searchParams.get("page_size") ?? cfg.pageSize)));
+    const orderBy = url.searchParams.get("order_by") ?? cfg.orderBy;
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+    const { data, error, count } = await supabase
+      .from(table)
+      .select(cfg.select, { count: "exact" })
+      .order(orderBy, { ascending: true })
+      .range(from, to);
+    if (error) return { _status: 500, error: error.message };
+    return { table, page, page_size: pageSize, count: count ?? 0, data: data ?? [] };
+  }
+
+  if (endpoint === "offline-mutate") {
+    if (req.method !== "POST") return { _status: 405, error: "POST required" };
+    const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+    const table = String(body.table ?? "");
+    const operation = String(body.operation ?? "");
+    const data = (body.data ?? {}) as Record<string, unknown>;
+    if (!OFFLINE_MUTABLE_TABLES[table]) {
+      return { _status: 400, error: `Table not mutable via offline API: ${table}`, allowed: Object.keys(OFFLINE_MUTABLE_TABLES) };
+    }
+    if (!["insert", "update", "delete"].includes(operation)) {
+      return { _status: 400, error: "operation must be insert | update | delete" };
+    }
+    const ownerCol = OFFLINE_MUTABLE_TABLES[table].ownerCol;
+
+    if (operation === "insert") {
+      const payload = { ...data, [ownerCol]: userId };
+      const { data: row, error } = await supabase.from(table).insert(payload).select().maybeSingle();
+      if (error) return { _status: 400, error: error.message };
+      return { ok: true, operation, table, row };
+    }
+    if (operation === "update") {
+      const id = data.id;
+      if (!id) return { _status: 400, error: "data.id required for update" };
+      const { id: _omit, ...rest } = data;
+      const { data: row, error } = await supabase
+        .from(table)
+        .update(rest)
+        .eq("id", String(id))
+        .eq(ownerCol, userId)
+        .select()
+        .maybeSingle();
+      if (error) return { _status: 400, error: error.message };
+      if (!row) return { _status: 404, error: "Not found or not owned by caller" };
+      return { ok: true, operation, table, row };
+    }
+    // delete
+    const id = data.id;
+    if (!id) return { _status: 400, error: "data.id required for delete" };
+    const { error, count } = await supabase
+      .from(table)
+      .delete({ count: "exact" })
+      .eq("id", String(id))
+      .eq(ownerCol, userId);
+    if (error) return { _status: 400, error: error.message };
+    if ((count ?? 0) === 0) return { _status: 404, error: "Not found or not owned by caller" };
+    return { ok: true, operation, table, deleted: count };
+  }
+
+  return { _status: 404, error: "Unknown offline endpoint" };
+}
