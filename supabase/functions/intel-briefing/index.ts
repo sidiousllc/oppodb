@@ -914,6 +914,231 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
     { name: "DCist", rssUrl: "https://dcist.com/feed", scope: "local", state: "DC" },
     { name: "WAMU (DC)", rssUrl: "https://wamu.org/feed/", scope: "local", state: "DC" },
     { name: "Washington City Paper", rssUrl: "https://washingtoncitypaper.com/feed/", scope: "local", state: "DC" },
+
+    // ─── Expansion pack: additional in-state outlets for all 50 states + DC ───
+    // Alabama
+    { name: "WBHM (Birmingham NPR)", rssUrl: "https://wbhm.org/feed/", scope: "local", state: "AL" },
+    { name: "WHNT News 19 (Huntsville)", rssUrl: "https://whnt.com/feed/", scope: "local", state: "AL" },
+    { name: "Montgomery Advertiser", rssUrl: "https://rssfeeds.montgomeryadvertiser.com/montgomery/news", scope: "local", state: "AL" },
+    // Alaska
+    { name: "KTOO (Juneau)", rssUrl: "https://www.ktoo.org/feed/", scope: "local", state: "AK" },
+    { name: "KTUU / Alaska's News Source", rssUrl: "https://www.alaskasnewssource.com/arc/outboundfeeds/rss/", scope: "local", state: "AK" },
+    { name: "Fairbanks Daily News-Miner", rssUrl: "https://www.newsminer.com/search/?f=rss&t=article&c=news&l=50&s=start_time&sd=desc", scope: "local", state: "AK" },
+    // Arizona
+    { name: "KJZZ (Phoenix NPR)", rssUrl: "https://kjzz.org/rss.xml", scope: "local", state: "AZ" },
+    { name: "Arizona Capitol Times", rssUrl: "https://azcapitoltimes.com/feed/", scope: "local", state: "AZ" },
+    { name: "AZPM News (Tucson)", rssUrl: "https://news.azpm.org/rss.xml", scope: "local", state: "AZ" },
+    // Arkansas
+    { name: "Talk Business & Politics (AR)", rssUrl: "https://talkbusiness.net/feed/", scope: "local", state: "AR" },
+    { name: "KUAR (Little Rock NPR)", rssUrl: "https://www.ualrpublicradio.org/feed", scope: "local", state: "AR" },
+    { name: "Arkansas Business", rssUrl: "https://www.arkansasbusiness.com/feed/", scope: "local", state: "AR" },
+    // California
+    { name: "Sacramento Bee Politics", rssUrl: "https://www.sacbee.com/news/politics-government/?widgetName=rssfeed&widgetContentId=15709873&getXmlFeed=true", scope: "local", state: "CA" },
+    { name: "LA Times California Politics", rssUrl: "https://www.latimes.com/california/rss2.0.xml", scope: "local", state: "CA" },
+    { name: "SF Chronicle Politics", rssUrl: "https://www.sfchronicle.com/politics/feed/Politics-562.php", scope: "local", state: "CA" },
+    { name: "San Diego Union-Tribune Politics", rssUrl: "https://www.sandiegouniontribune.com/news/politics/feed/", scope: "local", state: "CA" },
+    { name: "Capitol Weekly (CA)", rssUrl: "https://capitolweekly.net/feed/", scope: "local", state: "CA" },
+    // Colorado
+    { name: "CPR News (Colorado)", rssUrl: "https://www.cpr.org/feed/", scope: "local", state: "CO" },
+    { name: "Colorado Politics", rssUrl: "https://www.coloradopolitics.com/feed/", scope: "local", state: "CO" },
+    { name: "Westword (Denver)", rssUrl: "https://www.westword.com/feed", scope: "local", state: "CO" },
+    // Connecticut
+    { name: "WSHU (Connecticut Public)", rssUrl: "https://www.wshu.org/feed", scope: "local", state: "CT" },
+    { name: "New Haven Independent", rssUrl: "https://www.newhavenindependent.org/index.php/feed/", scope: "local", state: "CT" },
+    { name: "CT Examiner", rssUrl: "https://ctexaminer.com/feed/", scope: "local", state: "CT" },
+    // Delaware
+    { name: "Delaware Business Times", rssUrl: "https://delawarebusinesstimes.com/feed/", scope: "local", state: "DE" },
+    { name: "Bay to Bay News (DE)", rssUrl: "https://baytobaynews.com/rss/", scope: "local", state: "DE" },
+    // Florida
+    { name: "Florida Politics", rssUrl: "https://floridapolitics.com/feed/", scope: "local", state: "FL" },
+    { name: "Sun Sentinel Politics (FL)", rssUrl: "https://www.sun-sentinel.com/news/politics/feed/", scope: "local", state: "FL" },
+    { name: "WUSF Public Media (Tampa)", rssUrl: "https://wusfnews.wusf.usf.edu/feed", scope: "local", state: "FL" },
+    { name: "Florida Today", rssUrl: "https://rssfeeds.floridatoday.com/florida-today/news", scope: "local", state: "FL" },
+    // Georgia
+    { name: "GPB News (Georgia)", rssUrl: "https://www.gpb.org/feeds/news.rss", scope: "local", state: "GA" },
+    { name: "Macon Telegraph Politics", rssUrl: "https://www.macon.com/news/politics-government/?widgetName=rssfeed&widgetContentId=15709873&getXmlFeed=true", scope: "local", state: "GA" },
+    { name: "WABE (Atlanta NPR)", rssUrl: "https://www.wabe.org/feed/", scope: "local", state: "GA" },
+    // Hawaii
+    { name: "Hawaii News Now", rssUrl: "https://www.hawaiinewsnow.com/arc/outboundfeeds/rss/", scope: "local", state: "HI" },
+    { name: "Maui News", rssUrl: "https://www.mauinews.com/feed/", scope: "local", state: "HI" },
+    // Idaho
+    { name: "Idaho Statesman Politics", rssUrl: "https://www.idahostatesman.com/news/politics-government/?widgetName=rssfeed&widgetContentId=15709873&getXmlFeed=true", scope: "local", state: "ID" },
+    { name: "Boise State Public Radio", rssUrl: "https://www.boisestatepublicradio.org/feed", scope: "local", state: "ID" },
+    { name: "Idaho Press", rssUrl: "https://www.idahopress.com/search/?f=rss&t=article&c=news&l=50&s=start_time&sd=desc", scope: "local", state: "ID" },
+    // Illinois
+    { name: "WBEZ Chicago", rssUrl: "https://www.wbez.org/feed/", scope: "local", state: "IL" },
+    { name: "Chicago Sun-Times Politics", rssUrl: "https://chicago.suntimes.com/rss/politics", scope: "local", state: "IL" },
+    { name: "Capitol News Illinois", rssUrl: "https://www.capitolnewsillinois.com/feed/", scope: "local", state: "IL" },
+    { name: "Crain's Chicago Business", rssUrl: "https://www.chicagobusiness.com/rss-feeds", scope: "local", state: "IL" },
+    // Indiana
+    { name: "WFYI (Indianapolis)", rssUrl: "https://www.wfyi.org/feed", scope: "local", state: "IN" },
+    { name: "Indiana Capital Chronicle", rssUrl: "https://indianacapitalchronicle.com/feed/", scope: "local", state: "IN" },
+    { name: "IndyStar Politics", rssUrl: "https://rssfeeds.indystar.com/indianapolis/politics", scope: "local", state: "IN" },
+    // Iowa
+    { name: "Iowa Capital Dispatch", rssUrl: "https://iowacapitaldispatch.com/feed/", scope: "local", state: "IA" },
+    { name: "Des Moines Register Politics", rssUrl: "https://rssfeeds.desmoinesregister.com/desmoines/politics", scope: "local", state: "IA" },
+    { name: "Iowa Public Radio", rssUrl: "https://www.iowapublicradio.org/feed", scope: "local", state: "IA" },
+    // Kansas
+    { name: "Kansas Reflector", rssUrl: "https://kansasreflector.com/feed/", scope: "local", state: "KS" },
+    { name: "Kansas City Star Politics", rssUrl: "https://www.kansascity.com/news/politics-government/?widgetName=rssfeed&widgetContentId=15709873&getXmlFeed=true", scope: "local", state: "KS" },
+    { name: "KCUR (Kansas City NPR)", rssUrl: "https://www.kcur.org/feed", scope: "local", state: "KS" },
+    // Kentucky
+    { name: "Kentucky Lantern", rssUrl: "https://kentuckylantern.com/feed/", scope: "local", state: "KY" },
+    { name: "Louisville Public Media (WFPL)", rssUrl: "https://wfpl.org/feed/", scope: "local", state: "KY" },
+    { name: "Lexington Herald-Leader Politics", rssUrl: "https://www.kentucky.com/news/politics-government/?widgetName=rssfeed&widgetContentId=15709873&getXmlFeed=true", scope: "local", state: "KY" },
+    // Louisiana
+    { name: "Louisiana Illuminator", rssUrl: "https://lailluminator.com/feed/", scope: "local", state: "LA" },
+    { name: "WWNO (New Orleans NPR)", rssUrl: "https://www.wwno.org/feed", scope: "local", state: "LA" },
+    { name: "The Advocate (LA) Politics", rssUrl: "https://www.theadvocate.com/search/?f=rss&t=article&c=news/politics&l=50&s=start_time&sd=desc", scope: "local", state: "LA" },
+    // Maine
+    { name: "Maine Morning Star", rssUrl: "https://mainemorningstar.com/feed/", scope: "local", state: "ME" },
+    { name: "Bangor Daily News Politics", rssUrl: "https://www.bangordailynews.com/politics/feed/", scope: "local", state: "ME" },
+    { name: "Maine Public", rssUrl: "https://www.mainepublic.org/feed", scope: "local", state: "ME" },
+    // Maryland
+    { name: "Maryland Matters", rssUrl: "https://www.marylandmatters.org/feed/", scope: "local", state: "MD" },
+    { name: "Baltimore Banner", rssUrl: "https://www.thebaltimorebanner.com/arc/outboundfeeds/rss/", scope: "local", state: "MD" },
+    { name: "WYPR (Baltimore NPR)", rssUrl: "https://www.wypr.org/feed", scope: "local", state: "MD" },
+    // Massachusetts
+    { name: "WBUR (Boston)", rssUrl: "https://www.wbur.org/feed", scope: "local", state: "MA" },
+    { name: "Commonwealth Beacon", rssUrl: "https://commonwealthbeacon.org/feed/", scope: "local", state: "MA" },
+    { name: "Boston Globe Politics", rssUrl: "https://www.bostonglobe.com/rss/news/politics", scope: "local", state: "MA" },
+    { name: "MassLive Politics", rssUrl: "https://www.masslive.com/arc/outboundfeeds/rss/category/news/politics/", scope: "local", state: "MA" },
+    // Michigan
+    { name: "Michigan Advance", rssUrl: "https://michiganadvance.com/feed/", scope: "local", state: "MI" },
+    { name: "Bridge Michigan", rssUrl: "https://www.bridgemi.com/rss.xml", scope: "local", state: "MI" },
+    { name: "Detroit Free Press Politics", rssUrl: "https://rssfeeds.freep.com/freep/politics", scope: "local", state: "MI" },
+    { name: "Michigan Radio (NPR)", rssUrl: "https://www.michiganradio.org/feed", scope: "local", state: "MI" },
+    // Minnesota
+    { name: "MinnPost", rssUrl: "https://www.minnpost.com/feed/", scope: "local", state: "MN" },
+    { name: "MPR News", rssUrl: "https://www.mprnews.org/feed", scope: "local", state: "MN" },
+    { name: "Minnesota Reformer", rssUrl: "https://minnesotareformer.com/feed/", scope: "local", state: "MN" },
+    { name: "Star Tribune Politics", rssUrl: "https://www.startribune.com/politics/index.rss2", scope: "local", state: "MN" },
+    // Mississippi
+    { name: "Mississippi Today", rssUrl: "https://mississippitoday.org/feed/", scope: "local", state: "MS" },
+    { name: "Mississippi Free Press", rssUrl: "https://www.mississippifreepress.org/feed/", scope: "local", state: "MS" },
+    { name: "Clarion Ledger Politics", rssUrl: "https://rssfeeds.clarionledger.com/clarionledger/news/politics", scope: "local", state: "MS" },
+    // Missouri
+    { name: "Missouri Independent", rssUrl: "https://missouriindependent.com/feed/", scope: "local", state: "MO" },
+    { name: "St. Louis Public Radio", rssUrl: "https://news.stlpublicradio.org/feed", scope: "local", state: "MO" },
+    { name: "St. Louis Post-Dispatch Politics", rssUrl: "https://www.stltoday.com/search/?f=rss&t=article&c=news/local/govt-and-politics&l=50&s=start_time&sd=desc", scope: "local", state: "MO" },
+    // Montana
+    { name: "Daily Montanan", rssUrl: "https://dailymontanan.com/feed/", scope: "local", state: "MT" },
+    { name: "Montana Free Press", rssUrl: "https://montanafreepress.org/feed/", scope: "local", state: "MT" },
+    { name: "Montana Public Radio", rssUrl: "https://www.mtpr.org/feed", scope: "local", state: "MT" },
+    // Nebraska
+    { name: "Nebraska Examiner", rssUrl: "https://nebraskaexaminer.com/feed/", scope: "local", state: "NE" },
+    { name: "Omaha World-Herald Politics", rssUrl: "https://omaha.com/search/?f=rss&t=article&c=news/state-and-regional/govt-and-politics&l=50&s=start_time&sd=desc", scope: "local", state: "NE" },
+    { name: "Flatwater Free Press", rssUrl: "https://flatwaterfreepress.org/feed/", scope: "local", state: "NE" },
+    // Nevada
+    { name: "Nevada Current", rssUrl: "https://nevadacurrent.com/feed/", scope: "local", state: "NV" },
+    { name: "The Nevada Independent", rssUrl: "https://thenevadaindependent.com/feed", scope: "local", state: "NV" },
+    { name: "Las Vegas Review-Journal Politics", rssUrl: "https://www.reviewjournal.com/feed/?post_type=post&category_name=politics-and-government", scope: "local", state: "NV" },
+    // New Hampshire
+    { name: "New Hampshire Bulletin", rssUrl: "https://newhampshirebulletin.com/feed/", scope: "local", state: "NH" },
+    { name: "NHPR", rssUrl: "https://www.nhpr.org/feed", scope: "local", state: "NH" },
+    { name: "NH Journal", rssUrl: "https://nhjournal.com/feed/", scope: "local", state: "NH" },
+    // New Jersey
+    { name: "New Jersey Monitor", rssUrl: "https://newjerseymonitor.com/feed/", scope: "local", state: "NJ" },
+    { name: "NJ Spotlight News", rssUrl: "https://www.njspotlightnews.org/feed/", scope: "local", state: "NJ" },
+    { name: "WNYC (NJ/NY)", rssUrl: "https://www.wnyc.org/feed", scope: "local", state: "NJ" },
+    { name: "NJ.com Politics", rssUrl: "https://www.nj.com/arc/outboundfeeds/rss/category/politics/", scope: "local", state: "NJ" },
+    // New Mexico
+    { name: "Source NM", rssUrl: "https://sourcenm.com/feed/", scope: "local", state: "NM" },
+    { name: "Santa Fe New Mexican Politics", rssUrl: "https://www.santafenewmexican.com/search/?f=rss&t=article&c=news/local_news&l=50&s=start_time&sd=desc", scope: "local", state: "NM" },
+    { name: "KUNM (NM Public Radio)", rssUrl: "https://www.kunm.org/feed", scope: "local", state: "NM" },
+    // New York
+    { name: "City & State New York", rssUrl: "https://www.cityandstateny.com/arc/outboundfeeds/rss/", scope: "local", state: "NY" },
+    { name: "Spectrum News NY1", rssUrl: "https://www.ny1.com/nyc/all-boroughs/news.rss", scope: "local", state: "NY" },
+    { name: "The City (NYC)", rssUrl: "https://www.thecity.nyc/rss/", scope: "local", state: "NY" },
+    { name: "Times Union Politics (Albany)", rssUrl: "https://www.timesunion.com/news/politics/feed/", scope: "local", state: "NY" },
+    { name: "Buffalo News Politics", rssUrl: "https://buffalonews.com/search/?f=rss&t=article&c=news/local/govt-and-politics&l=50&s=start_time&sd=desc", scope: "local", state: "NY" },
+    // North Carolina
+    { name: "NC Newsline", rssUrl: "https://ncnewsline.com/feed/", scope: "local", state: "NC" },
+    { name: "WUNC (NC Public Radio)", rssUrl: "https://www.wunc.org/feed", scope: "local", state: "NC" },
+    { name: "Raleigh News & Observer Politics", rssUrl: "https://www.newsobserver.com/news/politics-government/?widgetName=rssfeed&widgetContentId=15709873&getXmlFeed=true", scope: "local", state: "NC" },
+    { name: "Carolina Public Press", rssUrl: "https://carolinapublicpress.org/feed/", scope: "local", state: "NC" },
+    // North Dakota
+    { name: "North Dakota Monitor", rssUrl: "https://northdakotamonitor.com/feed/", scope: "local", state: "ND" },
+    { name: "Bismarck Tribune", rssUrl: "https://bismarcktribune.com/search/?f=rss&t=article&c=news&l=50&s=start_time&sd=desc", scope: "local", state: "ND" },
+    { name: "Prairie Public (ND)", rssUrl: "https://news.prairiepublic.org/feed", scope: "local", state: "ND" },
+    // Ohio
+    { name: "Ohio Capital Journal", rssUrl: "https://ohiocapitaljournal.com/feed/", scope: "local", state: "OH" },
+    { name: "Cleveland.com Politics", rssUrl: "https://www.cleveland.com/arc/outboundfeeds/rss/category/news/politics/", scope: "local", state: "OH" },
+    { name: "WCPO (Cincinnati)", rssUrl: "https://www.wcpo.com/news.rss", scope: "local", state: "OH" },
+    { name: "WOSU (Columbus NPR)", rssUrl: "https://news.wosu.org/feed", scope: "local", state: "OH" },
+    // Oklahoma
+    { name: "Oklahoma Voice", rssUrl: "https://oklahomavoice.com/feed/", scope: "local", state: "OK" },
+    { name: "The Oklahoman Politics", rssUrl: "https://rssfeeds.oklahoman.com/oklahoma/news/politics", scope: "local", state: "OK" },
+    { name: "Oklahoma Watch", rssUrl: "https://oklahomawatch.org/feed/", scope: "local", state: "OK" },
+    // Oregon
+    { name: "Oregon Capital Chronicle", rssUrl: "https://oregoncapitalchronicle.com/feed/", scope: "local", state: "OR" },
+    { name: "OPB News", rssUrl: "https://www.opb.org/news/feed/", scope: "local", state: "OR" },
+    { name: "Willamette Week", rssUrl: "https://www.wweek.com/feed/", scope: "local", state: "OR" },
+    { name: "The Oregonian Politics", rssUrl: "https://www.oregonlive.com/arc/outboundfeeds/rss/category/politics/", scope: "local", state: "OR" },
+    // Pennsylvania
+    { name: "Pennsylvania Capital-Star", rssUrl: "https://penncapital-star.com/feed/", scope: "local", state: "PA" },
+    { name: "Spotlight PA", rssUrl: "https://www.spotlightpa.org/feed.rss", scope: "local", state: "PA" },
+    { name: "WHYY (Philadelphia)", rssUrl: "https://whyy.org/feed/", scope: "local", state: "PA" },
+    { name: "Philadelphia Inquirer Politics", rssUrl: "https://www.inquirer.com/arc/outboundfeeds/rss/category/politics/", scope: "local", state: "PA" },
+    { name: "Pittsburgh Post-Gazette Politics", rssUrl: "https://www.post-gazette.com/rss/feed/news/politics-state", scope: "local", state: "PA" },
+    // Rhode Island
+    { name: "Rhode Island Current", rssUrl: "https://rhodeislandcurrent.com/feed/", scope: "local", state: "RI" },
+    { name: "Providence Journal Politics", rssUrl: "https://rssfeeds.providencejournal.com/providencejournal/news/politics", scope: "local", state: "RI" },
+    { name: "The Public's Radio (RI)", rssUrl: "https://thepublicsradio.org/feed", scope: "local", state: "RI" },
+    // South Carolina
+    { name: "SC Daily Gazette", rssUrl: "https://scdailygazette.com/feed/", scope: "local", state: "SC" },
+    { name: "Post and Courier Politics", rssUrl: "https://www.postandcourier.com/search/?f=rss&t=article&c=politics&l=50&s=start_time&sd=desc", scope: "local", state: "SC" },
+    { name: "South Carolina Public Radio", rssUrl: "https://www.southcarolinapublicradio.org/feed", scope: "local", state: "SC" },
+    // South Dakota
+    { name: "South Dakota Searchlight", rssUrl: "https://southdakotasearchlight.com/feed/", scope: "local", state: "SD" },
+    { name: "SDPB News", rssUrl: "https://www.sdpb.org/feed", scope: "local", state: "SD" },
+    { name: "Argus Leader Politics", rssUrl: "https://rssfeeds.argusleader.com/argusleader/news/politics", scope: "local", state: "SD" },
+    // Tennessee
+    { name: "Tennessee Lookout", rssUrl: "https://tennesseelookout.com/feed/", scope: "local", state: "TN" },
+    { name: "WPLN (Nashville NPR)", rssUrl: "https://wpln.org/feed/", scope: "local", state: "TN" },
+    { name: "The Tennessean Politics", rssUrl: "https://rssfeeds.tennessean.com/tennessean/news/politics", scope: "local", state: "TN" },
+    { name: "Chattanooga Times Free Press", rssUrl: "https://www.timesfreepress.com/rss/headlines/local/", scope: "local", state: "TN" },
+    // Texas
+    { name: "Texas Tribune", rssUrl: "https://www.texastribune.org/feeds/news/", scope: "local", state: "TX" },
+    { name: "Houston Chronicle Politics", rssUrl: "https://www.houstonchronicle.com/politics/feed/Politics-562.php", scope: "local", state: "TX" },
+    { name: "Dallas Morning News Politics", rssUrl: "https://www.dallasnews.com/arc/outboundfeeds/rss/category/news/politics/", scope: "local", state: "TX" },
+    { name: "Austin American-Statesman Politics", rssUrl: "https://rssfeeds.statesman.com/statesman/news/politics", scope: "local", state: "TX" },
+    { name: "KUT (Austin NPR)", rssUrl: "https://www.kut.org/feed", scope: "local", state: "TX" },
+    { name: "San Antonio Express-News Politics", rssUrl: "https://www.expressnews.com/news/politics/feed/", scope: "local", state: "TX" },
+    // Utah
+    { name: "Utah News Dispatch", rssUrl: "https://utahnewsdispatch.com/feed/", scope: "local", state: "UT" },
+    { name: "Salt Lake Tribune Politics", rssUrl: "https://www.sltrib.com/arc/outboundfeeds/rss/category/news/politics/", scope: "local", state: "UT" },
+    { name: "KUER (Utah NPR)", rssUrl: "https://www.kuer.org/feed", scope: "local", state: "UT" },
+    // Vermont
+    { name: "VTDigger", rssUrl: "https://vtdigger.org/feed/", scope: "local", state: "VT" },
+    { name: "Vermont Public", rssUrl: "https://www.vermontpublic.org/feed", scope: "local", state: "VT" },
+    { name: "Seven Days (VT)", rssUrl: "https://www.sevendaysvt.com/vermont/Rss.xml?section=2197411", scope: "local", state: "VT" },
+    // Virginia
+    { name: "Virginia Mercury", rssUrl: "https://www.virginiamercury.com/feed/", scope: "local", state: "VA" },
+    { name: "VPM News", rssUrl: "https://www.vpm.org/feed", scope: "local", state: "VA" },
+    { name: "Richmond Times-Dispatch Politics", rssUrl: "https://richmond.com/search/?f=rss&t=article&c=news/state-and-regional/govt-and-politics&l=50&s=start_time&sd=desc", scope: "local", state: "VA" },
+    { name: "Cardinal News (VA)", rssUrl: "https://cardinalnews.org/feed/", scope: "local", state: "VA" },
+    // Washington
+    { name: "Washington State Standard", rssUrl: "https://washingtonstatestandard.com/feed/", scope: "local", state: "WA" },
+    { name: "KUOW (Seattle NPR)", rssUrl: "https://www.kuow.org/feed", scope: "local", state: "WA" },
+    { name: "Crosscut", rssUrl: "https://crosscut.com/rss.xml", scope: "local", state: "WA" },
+    { name: "Seattle Times Politics", rssUrl: "https://www.seattletimes.com/seattle-news/politics/feed/", scope: "local", state: "WA" },
+    // West Virginia
+    { name: "West Virginia Watch", rssUrl: "https://westvirginiawatch.com/feed/", scope: "local", state: "WV" },
+    { name: "Mountain State Spotlight", rssUrl: "https://mountainstatespotlight.org/feed/", scope: "local", state: "WV" },
+    { name: "WV Public Broadcasting", rssUrl: "https://wvpublic.org/feed/", scope: "local", state: "WV" },
+    // Wisconsin
+    { name: "Wisconsin Examiner", rssUrl: "https://wisconsinexaminer.com/feed/", scope: "local", state: "WI" },
+    { name: "Wisconsin Watch", rssUrl: "https://wisconsinwatch.org/feed/", scope: "local", state: "WI" },
+    { name: "Milwaukee Journal Sentinel Politics", rssUrl: "https://rssfeeds.jsonline.com/milwaukee/politics", scope: "local", state: "WI" },
+    { name: "WPR (Wisconsin Public Radio)", rssUrl: "https://www.wpr.org/feed", scope: "local", state: "WI" },
+    // Wyoming
+    { name: "WyoFile", rssUrl: "https://wyofile.com/feed/", scope: "local", state: "WY" },
+    { name: "Wyoming Public Media", rssUrl: "https://www.wyomingpublicmedia.org/feed", scope: "local", state: "WY" },
+    // District of Columbia
+    { name: "Washington Informer", rssUrl: "https://www.washingtoninformer.com/feed/", scope: "local", state: "DC" },
+    { name: "Greater Greater Washington", rssUrl: "https://ggwash.org/atom.xml", scope: "local", state: "DC" },
+    { name: "The DC Line", rssUrl: "https://thedcline.org/feed/", scope: "local", state: "DC" },
   ],
 };
 
