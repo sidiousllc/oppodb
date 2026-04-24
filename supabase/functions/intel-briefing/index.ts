@@ -1303,8 +1303,11 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const requestedScopes: string[] = body.scopes || ["national", "international", "state", "local"];
+    const requestedState: string | null = typeof body.state === "string" && body.state.trim()
+      ? body.state.trim().toUpperCase()
+      : null;
 
-    console.log("Intel briefing sync starting for scopes:", requestedScopes);
+    console.log("Intel briefing sync starting for scopes:", requestedScopes, requestedState ? `(state=${requestedState})` : "");
 
     const allItems: any[] = [];
     const sourcesByScope: Record<string, number> = {};
