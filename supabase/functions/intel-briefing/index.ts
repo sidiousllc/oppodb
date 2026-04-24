@@ -1333,7 +1333,12 @@ Deno.serve(async (req) => {
       // "ON CONFLICT … cannot affect row a second time" errors when a feed repeats a headline
       const seen = new Set<string>();
       const deduped = allItems.filter((it) => {
-        const key = `${(it.title || "").trim().toLowerCase()}|${(it.source_name || "").toLowerCase()}`;
+        const key = [
+          (it.title || "").trim().toLowerCase(),
+          (it.source_name || "").toLowerCase(),
+          (it.region || "").toLowerCase(),
+          it.published_at || "",
+        ].join("|");
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
