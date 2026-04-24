@@ -67,6 +67,7 @@ export function ReportsHub() {
 
   return (
     <div className="p-4 space-y-4">
+      <div className="flex justify-end"><OfflineSectionStatus label="Reports" tables={["reports","report_shares","entity_notes"]} /></div>
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold flex items-center gap-2">
