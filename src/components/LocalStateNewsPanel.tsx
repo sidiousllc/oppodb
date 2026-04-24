@@ -46,6 +46,7 @@ export function LocalStateNewsPanel({
 
   const [chamber, setChamber] = useState<ChamberFilter>(defaultChamber ?? "all");
   const [districtNumber, setDistrictNumber] = useState<string>(defaultDistrictNumber ?? "all");
+  const [showSources, setShowSources] = useState(false);
 
   const load = async () => {
     setLoading(true);
