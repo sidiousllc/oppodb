@@ -290,6 +290,11 @@ export default function LocalFeedsStateSources() {
                         <td className="px-3 py-2 text-muted-foreground font-mono text-xs">
                           {hostOf(s.rssUrl)}
                         </td>
+                        <td className="px-3 py-2">
+                          <span className="inline-block px-1.5 py-0.5 rounded bg-muted text-[10px] uppercase tracking-wide text-muted-foreground">
+                            {s.scope || "local"}
+                          </span>
+                        </td>
                         <td className="px-3 py-2 text-center">
                           {!checked ? (
                             <span className="text-[11px] text-muted-foreground">—</span>
