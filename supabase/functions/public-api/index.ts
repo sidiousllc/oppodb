@@ -2179,6 +2179,9 @@ const MCP_TOOLS_REGISTRY: Array<{ name: string; description: string; category: s
   { name: "docs_list_tables", description: "[docs] List every offline-synced DB table", category: "docs" },
   { name: "docs_list_edge_functions", description: "[docs] List every edge function", category: "docs" },
   { name: "docs_list_mcp_tools", description: "[docs] List every MCP tool (this registry)", category: "docs" },
+  { name: "offline_manifest", description: "[offline] List of offline-syncable tables + which are mutable", category: "offline" },
+  { name: "offline_snapshot", description: "[offline] Paginated read of an offline table for mirroring", category: "offline" },
+  { name: "offline_mutate", description: "[offline] Replay a queued offline write (entity_notes/alert_rules/reports)", category: "offline" },
 ];
 
 const EDGE_FUNCTIONS_REGISTRY: Array<{ name: string; purpose: string; auth: string }> = [
