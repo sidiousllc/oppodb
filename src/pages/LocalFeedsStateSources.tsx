@@ -315,10 +315,13 @@ export default function LocalFeedsStateSources() {
                     const h = health[s.rssUrl];
                     const checked = !!h;
                     const ok = h?.ok;
+                    const stale = checked && ok && isStale(h.lastItemAt);
                     return (
                       <tr
                         key={s.rssUrl}
-                        className={`border-t border-border ${checked && !ok ? "bg-destructive/5" : ""}`}
+                        className={`border-t border-border ${
+                          checked && !ok ? "bg-destructive/5" : stale ? "bg-warning/5" : ""
+                        }`}
                       >
                         <td className="px-3 py-2 font-medium">{s.name}</td>
                         <td className="px-3 py-2 text-muted-foreground font-mono text-xs">
@@ -333,10 +336,20 @@ export default function LocalFeedsStateSources() {
                           {!checked ? (
                             <span className="text-[11px] text-muted-foreground">—</span>
                           ) : ok ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] text-primary">
-                              <CheckCircle2 className="h-3 w-3" />
-                              OK
-                            </span>
+                            stale ? (
+                              <span
+                                className="inline-flex items-center gap-1 text-[11px] text-warning"
+                                title={`No new items in over ${staleHours}h`}
+                              >
+                                <AlertTriangle className="h-3 w-3" />
+                                Stale
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-primary">
+                                <CheckCircle2 className="h-3 w-3" />
+                                OK
+                              </span>
+                            )
                           ) : (
                             <span
                               className="inline-flex items-center gap-1 text-[11px] text-destructive"
@@ -361,9 +374,16 @@ export default function LocalFeedsStateSources() {
                           {checked ? `${h.ms}ms` : "—"}
                         </td>
                         <td
-                          className="px-3 py-2 text-right tabular-nums text-xs text-muted-foreground"
-                          title={h?.lastItemAt ?? undefined}
+                          className={`px-3 py-2 text-right tabular-nums text-xs ${
+                            stale ? "text-warning font-medium" : "text-muted-foreground"
+                          }`}
+                          title={
+                            stale
+                              ? `Stale: no new items in over ${staleHours}h (last ${h.lastItemAt})`
+                              : h?.lastItemAt ?? undefined
+                          }
                         >
+                          {stale && <AlertTriangle className="inline h-3 w-3 mr-1 -mt-0.5" />}
                           {checked && h.lastItemAt ? formatRelative(h.lastItemAt) : "—"}
                         </td>
                         <td
