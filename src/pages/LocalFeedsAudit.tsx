@@ -41,7 +41,37 @@ interface AuditResponse {
   states: StateAudit[];
 }
 
-const REQUIRED_STATES = [
+interface TopUpAddition {
+  name: string;
+  rssUrl: string;
+  items: number;
+  status: number;
+  ms: number;
+}
+
+interface TopUpResponse {
+  checkedAt: string;
+  minPerState: number;
+  perStateCap: number;
+  targetStates: string[];
+  summary: {
+    statesEvaluated: number;
+    statesImproved: number;
+    statesNowMeeting: number;
+    statesStillBelow: number;
+    candidatesProbed: number;
+    totalHealthyAdded: number;
+  };
+  perState: Array<{
+    state: string;
+    previousConfigured: number;
+    healthyAdded: number;
+    newTotal: number;
+    meetsThreshold: boolean;
+  }>;
+  additions: Record<string, TopUpAddition[]>;
+  skipped: Record<string, Array<{ name: string; rssUrl: string; error: string | null; status: number }>>;
+  note: string;
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
   "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
   "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
