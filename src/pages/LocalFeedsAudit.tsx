@@ -58,6 +58,12 @@ export default function LocalFeedsAudit() {
   const [lowCoverageThreshold, setLowCoverageThreshold] = useState(5);
   const [coverageMetric, setCoverageMetric] = useState<"configured" | "healthy">("configured");
 
+  // Top-up state
+  const [topUpLoading, setTopUpLoading] = useState(false);
+  const [topUpResult, setTopUpResult] = useState<TopUpResponse | null>(null);
+  const [topUpThreshold, setTopUpThreshold] = useState(5);
+  const [topUpPerStateCap, setTopUpPerStateCap] = useState(3);
+
   const runAudit = async () => {
     setLoading(true);
     setError(null);
