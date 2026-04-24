@@ -128,35 +128,77 @@ export function LocalStateNewsPanel({
   }, [briefings, defaultDistrictNumber]);
 
   const filtered = useMemo(() => {
-    if (chamber === "all" && districtNumber === "all") return briefings;
-    return briefings.filter((b) => {
-      const text = `${b.title} ${b.summary ?? ""}`;
+    const chamberRe =
+      chamber === "house"
+        ? /\b(house|hd|state\s+house|assembly|ad)\b/i
+        : chamber === "senate"
+          ? /\b(senate|sd|state\s+senate)\b/i
+          : null;
 
-      if (chamber !== "all") {
-        const chamberMatch =
-          chamber === "house"
-            ? /\b(house|hd|state\s+house|assembly|ad)\b/i.test(text)
-            : /\b(senate|sd|state\s+senate)\b/i.test(text);
-        if (!chamberMatch) return false;
-      }
-
-      if (districtNumber !== "all") {
-        const dn = districtNumber.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        // Match the requested district number after any supported prefix:
-        // "District 15", "District No. 15", "Dist. 15", "HD 15A", "HD-15A",
-        // "House District 15A", "Senate District 14", "Assembly 12", "AD-12".
-        const dnRe = new RegExp(
-          // chamber-prefixed forms
+    const dnEscaped =
+      districtNumber !== "all"
+        ? districtNumber.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        : null;
+    const districtRe = dnEscaped
+      ? new RegExp(
           `\\b(?:house|senate|assembly|state\\s+house|state\\s+senate|hd|sd|ad)` +
             `(?:[\\s.\\-]*(?:district|dist\\.?))?` +
-            `[\\s.\\-]*(?:no\\.?|number|#)?[\\s.\\-]*${dn}\\b` +
-            `|\\b(?:district|dist\\.?)[\\s.\\-]*(?:no\\.?|number|#)?[\\s.\\-]*${dn}\\b`,
+            `[\\s.\\-]*(?:no\\.?|number|#)?[\\s.\\-]*${dnEscaped}\\b` +
+            `|\\b(?:district|dist\\.?)[\\s.\\-]*(?:no\\.?|number|#)?[\\s.\\-]*${dnEscaped}\\b`,
           "i",
-        );
-        if (!dnRe.test(text)) return false;
-      }
+        )
+      : null;
+    // A "combined" regex that requires the chamber AND the district number close together,
+    // e.g. "House District 15A", "HD-15A", "Senate District 14".
+    const combinedRe =
+      chamber !== "all" && dnEscaped
+        ? new RegExp(
+            chamber === "house"
+              ? `\\b(?:house|hd|state\\s+house|assembly|ad)(?:[\\s.\\-]*(?:district|dist\\.?))?[\\s.\\-]*(?:no\\.?|number|#)?[\\s.\\-]*${dnEscaped}\\b`
+              : `\\b(?:senate|sd|state\\s+senate)(?:[\\s.\\-]*(?:district|dist\\.?))?[\\s.\\-]*(?:no\\.?|number|#)?[\\s.\\-]*${dnEscaped}\\b`,
+            "i",
+          )
+        : null;
 
+    const matched = briefings.filter((b) => {
+      if (chamber === "all" && districtNumber === "all") return true;
+      const text = `${b.title} ${b.summary ?? ""}`;
+      if (chamberRe && !chamberRe.test(text)) return false;
+      if (districtRe && !districtRe.test(text)) return false;
       return true;
+    });
+
+    if (chamber === "all" && districtNumber === "all") return matched;
+
+    // Score: explicit chamber+district mention (3) > both individually (2) >
+    // district-only (1.5) > chamber-only (1) > nothing (0). Title hits get a bonus.
+    const score = (b: Briefing): number => {
+      const title = b.title || "";
+      const summary = b.summary ?? "";
+      const text = `${title} ${summary}`;
+      let s = 0;
+      if (combinedRe) {
+        if (combinedRe.test(title)) s += 4;
+        else if (combinedRe.test(text)) s += 3;
+      }
+      if (districtRe) {
+        if (districtRe.test(title)) s += 1.5;
+        else if (districtRe.test(text)) s += 1;
+      }
+      if (chamberRe) {
+        if (chamberRe.test(title)) s += 0.75;
+        else if (chamberRe.test(text)) s += 0.5;
+      }
+      return s;
+    };
+
+    return [...matched].sort((a, b) => {
+      const diff = score(b) - score(a);
+      if (diff !== 0) return diff;
+      // Tiebreaker: most recent first
+      const ad = a.published_at ? Date.parse(a.published_at) : 0;
+      const bd = b.published_at ? Date.parse(b.published_at) : 0;
+      return bd - ad;
     });
   }, [briefings, chamber, districtNumber]);
 
