@@ -105,15 +105,26 @@ export default function LocalFeedsStateSources() {
   const healthyCount = Object.values(health).filter((h) => h.ok).length;
   const failedCount = Object.values(health).filter((h) => !h.ok).length;
 
+  const availableScopes = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of sources) {
+      if (s.scope) set.add(s.scope);
+    }
+    return Array.from(set).sort();
+  }, [sources]);
+
   const filteredSources = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return sources;
-    return sources.filter((s) =>
-      s.name.toLowerCase().includes(q) ||
-      s.rssUrl.toLowerCase().includes(q) ||
-      hostOf(s.rssUrl).toLowerCase().includes(q)
-    );
-  }, [sources, query]);
+    return sources.filter((s) => {
+      if (scopeFilter !== "all" && (s.scope || "local") !== scopeFilter) return false;
+      if (!q) return true;
+      return (
+        s.name.toLowerCase().includes(q) ||
+        s.rssUrl.toLowerCase().includes(q) ||
+        hostOf(s.rssUrl).toLowerCase().includes(q)
+      );
+    });
+  }, [sources, query, scopeFilter]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
