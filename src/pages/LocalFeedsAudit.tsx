@@ -113,7 +113,39 @@ export default function LocalFeedsAudit() {
     }
   };
 
-  // Determine missing required states (configured = 0)
+  const runTopUp = async () => {
+    setTopUpLoading(true);
+    setTopUpResult(null);
+    const tid = toast.loading("Probing vetted reserve feeds…");
+    try {
+      // Optionally narrow to states already in the report that fall below threshold
+      const narrowStates = report
+        ? report.states
+            .filter((s) => (coverageMetric === "healthy" ? s.healthy : s.configured) < topUpThreshold)
+            .map((s) => s.state)
+        : undefined;
+      const { data, error: err } = await supabase.functions.invoke("intel-briefing", {
+        body: {
+          action: "top_up_local_sources",
+          minPerState: topUpThreshold,
+          perStateCap: topUpPerStateCap,
+          ...(narrowStates && narrowStates.length > 0 ? { states: narrowStates } : {}),
+        },
+      });
+      if (err) throw err;
+      const result = data as TopUpResponse;
+      setTopUpResult(result);
+      toast.success(
+        `Found ${result.summary.totalHealthyAdded} healthy feed${result.summary.totalHealthyAdded === 1 ? "" : "s"} across ${result.summary.statesImproved} state${result.summary.statesImproved === 1 ? "" : "s"}`,
+        { id: tid },
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Top-up failed", { id: tid });
+    } finally {
+      setTopUpLoading(false);
+    }
+  };
+
   const auditedStates = new Set((report?.states ?? []).map((s) => s.state));
   const missingStates = report
     ? REQUIRED_STATES.filter((abbr) => !auditedStates.has(abbr))
