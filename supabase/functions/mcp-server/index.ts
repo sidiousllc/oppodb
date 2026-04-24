@@ -2439,7 +2439,6 @@ mcpServer.tool("offline_mutate", {
     if (!["insert","update","delete"].includes(operation)) {
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: "operation must be insert|update|delete" }) }] };
     }
-    const callerId = (callerUser as { id?: string } | null)?.id;
     if (!callerId) {
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Caller user not resolved from API key" }) }] };
     }
