@@ -41,11 +41,14 @@ const formatRelative = (days: number | null): string => {
   return `${Math.floor(days / 365)} yr ago`;
 };
 
+type StatusFilter = "all" | "zero" | "stale" | "ok";
+
 export default function LocalFeedsValidation() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<Set<string>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const refreshState = async (abbr: string) => {
     setRefreshing((prev) => new Set(prev).add(abbr));
