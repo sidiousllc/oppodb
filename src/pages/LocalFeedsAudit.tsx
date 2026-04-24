@@ -554,6 +554,21 @@ export default function LocalFeedsAudit() {
   );
 }
 
+function Stat({ label, value, tone }: { label: string; value: number | string; tone?: "ok" | "warn" }) {
+  const toneClass =
+    tone === "warn"
+      ? "border-destructive/40 bg-destructive/10 text-destructive"
+      : tone === "ok"
+      ? "border-primary/40 bg-primary/10 text-primary"
+      : "border-border bg-card";
+  return (
+    <div className={`rounded-md border px-2 py-1.5 ${toneClass}`}>
+      <p className="text-[10px] uppercase tracking-wide opacity-80 font-semibold">{label}</p>
+      <p className="text-base font-bold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
 function Card({
   label, value, tone,
 }: { label: string; value: string; tone?: "ok" | "warn" }) {
