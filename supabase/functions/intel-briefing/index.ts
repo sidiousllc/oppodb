@@ -1366,9 +1366,23 @@ Deno.serve(async (req) => {
           const itemMatches = text.match(/<(item|entry)\b/gi);
           const items = itemMatches ? itemMatches.length : 0;
           if (items === 0) {
-            return { ok: false, status: res.status, ms, items, error: "No <item>/<entry> elements" };
+            return { ok: false, status: res.status, ms, items, error: "No <item>/<entry> elements", lastItemAt: null as string | null };
           }
-          return { ok: true, status: res.status, ms, items, error: null as string | null };
+          // Extract the most recent publish timestamp from <pubDate>, <updated>, or <published>
+          let lastItemAt: string | null = null;
+          const dateMatches = [
+            ...text.matchAll(/<pubDate[^>]*>([^<]+)<\/pubDate>/gi),
+            ...text.matchAll(/<updated[^>]*>([^<]+)<\/updated>/gi),
+            ...text.matchAll(/<published[^>]*>([^<]+)<\/published>/gi),
+            ...text.matchAll(/<dc:date[^>]*>([^<]+)<\/dc:date>/gi),
+          ];
+          let maxTs = 0;
+          for (const m of dateMatches) {
+            const t = Date.parse((m[1] || "").trim());
+            if (Number.isFinite(t) && t > maxTs) maxTs = t;
+          }
+          if (maxTs > 0) lastItemAt = new Date(maxTs).toISOString();
+          return { ok: true, status: res.status, ms, items, error: null as string | null, lastItemAt };
         } catch (e) {
           const ms = Date.now() - start;
           const msg = e instanceof Error ? e.message : String(e);
