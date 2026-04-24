@@ -1322,6 +1322,77 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Probe a single state's local sources and return per-source health.
+    if (body.action === "probe_local_sources") {
+      const stateFilter: string | null = typeof body.state === "string" && body.state.trim()
+        ? body.state.trim().toUpperCase()
+        : null;
+      const localSources = (SOURCES.local || []) as Array<{ name: string; rssUrl: string; scope: string; state?: string }>;
+      const targets = stateFilter
+        ? localSources.filter((s) => (s.state || "").toUpperCase() === stateFilter)
+        : localSources.filter((s) => !!s.state);
+
+      const probeOne = async (s: { name: string; rssUrl: string; state?: string }) => {
+        const start = Date.now();
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 12000);
+          const res = await fetch(s.rssUrl, {
+            signal: ctrl.signal,
+            redirect: "follow",
+            headers: {
+              "User-Agent": "Mozilla/5.0 (compatible; OppoDB-Audit/1.0)",
+              "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8",
+            },
+          });
+          clearTimeout(timer);
+          const ms = Date.now() - start;
+          if (!res.ok) {
+            return { ok: false, status: res.status, ms, items: 0, error: `HTTP ${res.status}` };
+          }
+          const text = await res.text();
+          const itemMatches = text.match(/<(item|entry)\b/gi);
+          const items = itemMatches ? itemMatches.length : 0;
+          if (items === 0) {
+            return { ok: false, status: res.status, ms, items, error: "No <item>/<entry> elements" };
+          }
+          return { ok: true, status: res.status, ms, items, error: null as string | null };
+        } catch (e) {
+          const ms = Date.now() - start;
+          const msg = e instanceof Error ? e.message : String(e);
+          return { ok: false, status: 0, ms, items: 0, error: msg.slice(0, 200) };
+        }
+      };
+
+      const results: Array<any> = [];
+      const BATCH = 8;
+      for (let i = 0; i < targets.length; i += BATCH) {
+        const slice = targets.slice(i, i + BATCH);
+        const out = await Promise.all(slice.map(async (s) => {
+          const r = await probeOne(s);
+          return {
+            name: s.name,
+            rssUrl: s.rssUrl,
+            state: (s.state || "").toUpperCase() || null,
+            ...r,
+          };
+        }));
+        results.push(...out);
+      }
+
+      return new Response(
+        JSON.stringify({
+          state: stateFilter,
+          checkedAt: new Date().toISOString(),
+          count: results.length,
+          healthy: results.filter((r) => r.ok).length,
+          failed: results.filter((r) => !r.ok).length,
+          sources: results,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // Audit: probe every local source and report per-state coverage vs a min threshold
     if (body.action === "audit_local_feeds") {
       const minPerState: number = Number.isFinite(body.minPerState) && body.minPerState > 0
