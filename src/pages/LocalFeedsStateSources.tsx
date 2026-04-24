@@ -287,16 +287,23 @@ export default function LocalFeedsStateSources() {
                           {formatRelative(checkedAt)}
                         </td>
                         <td className="px-3 py-2 text-right">
-                          <a
-                            href={s.rssUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
                           >
-                            <Rss className="h-3 w-3" />
-                            RSS
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
+                            <a
+                              href={s.rssUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={`Open ${s.name} feed in a new tab`}
+                            >
+                              <Rss className="h-3 w-3 mr-1" />
+                              Open RSS
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                          </Button>
                         </td>
                       </tr>
                     );
