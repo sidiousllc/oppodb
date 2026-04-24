@@ -54,6 +54,23 @@ export default function LocalFeedsStateSources() {
   const [probing, setProbing] = useState(false);
   const [query, setQuery] = useState("");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
+  const [staleHours, setStaleHours] = useState<number>(() => {
+    const saved = Number(localStorage.getItem("localFeeds.staleHours"));
+    return Number.isFinite(saved) && saved > 0 ? saved : 48;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("localFeeds.staleHours", String(staleHours));
+  }, [staleHours]);
+
+  const isStale = (iso: string | null | undefined): boolean => {
+    if (!iso) return false;
+    const t = new Date(iso).getTime();
+    if (!Number.isFinite(t)) return false;
+    return (Date.now() - t) / 3_600_000 > staleHours;
+  };
+
+  const staleCount = Object.values(health).filter((h) => h.ok && isStale(h.lastItemAt)).length;
 
   useEffect(() => {
     let cancelled = false;
