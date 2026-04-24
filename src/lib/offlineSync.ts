@@ -116,6 +116,27 @@ const SYNC_TABLES: Array<{ table: string; select: string; orderBy: string; pageS
   { table: "watchlist_items", select: "*", orderBy: "id" },
   { table: "saved_searches", select: "*", orderBy: "id" },
   { table: "wiki_changelog", select: "*", orderBy: "id" },
+  // User-owned data — needed so the UI's read paths still work offline
+  // and so the queued-write replay layer can reconcile changes.
+  { table: "alert_rules", select: "*", orderBy: "id" },
+  { table: "entity_notes", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "webhook_endpoints", select: "*", orderBy: "id" },
+  { table: "report_shares", select: "*", orderBy: "id" },
+  { table: "user_news_preferences", select: "*", orderBy: "id" },
+  { table: "user_bias_history", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "user_devices", select: "*", orderBy: "id" },
+  { table: "user_mail", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "user_presence", select: "*", orderBy: "id" },
+  { table: "notifications", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "chat_messages", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "device_locations", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "entity_activity", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "war_rooms", select: "*", orderBy: "id" },
+  { table: "war_room_members", select: "*", orderBy: "id" },
+  { table: "war_room_messages", select: "*", orderBy: "id", pageSize: 500 },
+  { table: "profiles", select: "id,display_name,avatar_url,bio,updated_at", orderBy: "id", pageSize: 500 },
+  { table: "role_groups", select: "*", orderBy: "id" },
+  { table: "role_group_members", select: "*", orderBy: "id" },
 ];
 
 export interface SyncStatus {
