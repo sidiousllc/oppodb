@@ -267,12 +267,49 @@ export function LocalStateNewsPanel({
           <div>{error}</div>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-sm text-muted-foreground">
-          {isFiltered
-            ? `No in-state articles match the selected ${chamber !== "all" ? chamber : ""}${
-                chamber !== "all" && districtNumber !== "all" ? " / " : ""
-              }${districtNumber !== "all" ? `district ${districtNumber}` : ""} filter.`
-            : `No local briefings cached yet for ${stateName}. Click Refresh to fetch the latest articles from in-state outlets.`}
+        <div className="py-10 px-4 text-center space-y-4">
+          {isFiltered ? (
+            <>
+              <div className="text-sm text-muted-foreground">
+                No in-state articles match the selected
+                {chamber !== "all" && <> <span className="font-semibold text-foreground">{chamber}</span></>}
+                {chamber !== "all" && districtNumber !== "all" && " /"}
+                {districtNumber !== "all" && <> <span className="font-semibold text-foreground">district {districtNumber}</span></>}
+                {" "}filter.
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Try broadening your filters:
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {chamber !== "all" && (
+                  <Button variant="outline" size="sm" onClick={() => setChamber("all")}>
+                    Chamber → All
+                  </Button>
+                )}
+                {districtNumber !== "all" && (
+                  <Button variant="outline" size="sm" onClick={() => setDistrictNumber("all")}>
+                    District → All
+                  </Button>
+                )}
+                {chamber !== "all" && districtNumber !== "all" && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      setChamber("all");
+                      setDistrictNumber("all");
+                    }}
+                  >
+                    Clear all filters
+                  </Button>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              No local briefings cached yet for {stateName}. Click Refresh to fetch the latest articles from in-state outlets.
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
