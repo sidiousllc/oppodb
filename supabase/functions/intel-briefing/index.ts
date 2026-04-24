@@ -1335,6 +1335,87 @@ Deno.serve(async (req) => {
     }
 
     // Probe a single state's local sources and return per-source health.
+    // Probe a single RSS source on demand (used by the per-row "Refresh" button).
+    if (body.action === "probe_one_source") {
+      const url: string = typeof body.url === "string" ? body.url.trim() : "";
+      if (!url || !/^https?:\/\//i.test(url)) {
+        return new Response(JSON.stringify({ error: "invalid url" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Only probe URLs that exist in our configured catalog (prevents SSRF abuse)
+      const allScoped: Array<{ name: string; rssUrl: string; state?: string; scope?: string }> = [];
+      for (const [scopeKey, list] of Object.entries(SOURCES)) {
+        for (const s of (list as Array<{ name: string; rssUrl: string; state?: string; scope?: string }>)) {
+          allScoped.push({ ...s, scope: s.scope || scopeKey });
+        }
+      }
+      const match = allScoped.find((s) => s.rssUrl === url);
+      if (!match) {
+        return new Response(JSON.stringify({ error: "url not in source catalog" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const start = Date.now();
+      let result: Record<string, unknown>;
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 12000);
+        const res = await fetch(match.rssUrl, {
+          signal: ctrl.signal,
+          redirect: "follow",
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; OppoDB-Audit/1.0)",
+            "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8",
+          },
+        });
+        clearTimeout(timer);
+        const ms = Date.now() - start;
+        if (!res.ok) {
+          result = { ok: false, status: res.status, ms, items: 0, error: `HTTP ${res.status}`, lastItemAt: null };
+        } else {
+          const text = await res.text();
+          const itemMatches = text.match(/<(item|entry)\b/gi);
+          const items = itemMatches ? itemMatches.length : 0;
+          let lastItemAt: string | null = null;
+          const dateMatches = [
+            ...text.matchAll(/<pubDate[^>]*>([^<]+)<\/pubDate>/gi),
+            ...text.matchAll(/<updated[^>]*>([^<]+)<\/updated>/gi),
+            ...text.matchAll(/<published[^>]*>([^<]+)<\/published>/gi),
+            ...text.matchAll(/<dc:date[^>]*>([^<]+)<\/dc:date>/gi),
+          ];
+          let maxTs = 0;
+          for (const m of dateMatches) {
+            const t = Date.parse((m[1] || "").trim());
+            if (Number.isFinite(t) && t > maxTs) maxTs = t;
+          }
+          if (maxTs > 0) lastItemAt = new Date(maxTs).toISOString();
+          result = items === 0
+            ? { ok: false, status: res.status, ms, items, error: "No <item>/<entry> elements", lastItemAt }
+            : { ok: true, status: res.status, ms, items, error: null, lastItemAt };
+        }
+      } catch (e) {
+        const ms = Date.now() - start;
+        const msg = e instanceof Error ? e.message : String(e);
+        result = { ok: false, status: 0, ms, items: 0, error: msg.slice(0, 200), lastItemAt: null };
+      }
+      return new Response(
+        JSON.stringify({
+          checkedAt: new Date().toISOString(),
+          source: {
+            name: match.name,
+            rssUrl: match.rssUrl,
+            state: (match.state || "").toUpperCase() || null,
+            scope: match.scope || "local",
+            ...result,
+          },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     if (body.action === "probe_local_sources") {
       const stateFilter: string | null = typeof body.state === "string" && body.state.trim()
         ? body.state.trim().toUpperCase()
