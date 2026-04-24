@@ -50,6 +50,7 @@ export default function LocalFeedsStateSources() {
   const [health, setHealth] = useState<Record<string, HealthRow>>({});
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const [probing, setProbing] = useState(false);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
