@@ -2434,11 +2434,6 @@ mcpServer.tool("offline_mutate", {
     if (!["insert","update","delete"].includes(operation)) {
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: "operation must be insert|update|delete" }) }] };
     }
-      return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Table not mutable: ${table}` }) }] };
-    }
-    if (!["insert","update","delete"].includes(operation)) {
-      return { content: [{ type: "text" as const, text: JSON.stringify({ error: "operation must be insert|update|delete" }) }] };
-    }
     if (!callerId) {
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Caller user not resolved from API key" }) }] };
     }
