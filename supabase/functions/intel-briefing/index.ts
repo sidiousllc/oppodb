@@ -1386,7 +1386,7 @@ Deno.serve(async (req) => {
         } catch (e) {
           const ms = Date.now() - start;
           const msg = e instanceof Error ? e.message : String(e);
-          return { ok: false, status: 0, ms, items: 0, error: msg.slice(0, 200) };
+          return { ok: false, status: 0, ms, items: 0, error: msg.slice(0, 200), lastItemAt: null as string | null };
         }
       };
 
