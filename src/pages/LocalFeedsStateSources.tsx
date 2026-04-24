@@ -330,6 +330,12 @@ export default function LocalFeedsStateSources() {
                         </td>
                         <td
                           className="px-3 py-2 text-right tabular-nums text-xs text-muted-foreground"
+                          title={h?.lastItemAt ?? undefined}
+                        >
+                          {checked && h.lastItemAt ? formatRelative(h.lastItemAt) : "—"}
+                        </td>
+                        <td
+                          className="px-3 py-2 text-right tabular-nums text-xs text-muted-foreground"
                           title={checkedAt ?? undefined}
                         >
                           {formatRelative(checkedAt)}
