@@ -2359,6 +2359,106 @@ mcpServer.tool("docs_list_mcp_tools", {
   handler: async () => ({ content: [{ type: "text" as const, text: JSON.stringify(DOCS_POINTER("/public-api/docs-mcp-tools"), null, 2) }] }),
 });
 
+// ─── Offline parity tools (Phase 10) ────────────────────────────────────
+// Mirror the public-api offline-* endpoints so MCP clients can rebuild the
+// offline store and replay queued writes without the REST round-trip.
+const OFFLINE_MANIFEST_TOOL = [
+  "district_profiles","candidate_profiles","candidate_versions","congress_members",
+  "congress_bills","congress_committees","congress_votes","election_forecasts",
+  "election_forecast_history","campaign_finance","polling_data","congressional_election_results",
+  "messaging_guidance","prediction_markets","wiki_pages","intel_briefings",
+  "international_profiles","court_cases","entity_relationships","bill_impact_analyses",
+  "vulnerability_scores","talking_points","reports","entity_notes","alert_rules",
+];
+const OFFLINE_MUTABLE = new Set(["entity_notes","alert_rules","reports"]);
+
+mcpServer.tool("offline_manifest", {
+  description: "List of offline-syncable database tables and which are mutable via offline_mutate.",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async () => ({
+    content: [{ type: "text" as const, text: JSON.stringify({
+      tables: OFFLINE_MANIFEST_TOOL,
+      mutable_tables: [...OFFLINE_MUTABLE],
+      hint: "Use offline_snapshot to mirror a table; offline_mutate to replay queued writes.",
+    }, null, 2) }],
+  }),
+});
+
+mcpServer.tool("offline_snapshot", {
+  description: "Paginated read of an offline-syncable table. Returns at most page_size rows ordered by id.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      table: { type: "string" as const, description: "Table name (must be in offline_manifest.tables)" },
+      page: { type: "number" as const, description: "Zero-indexed page number (default 0)" },
+      page_size: { type: "number" as const, description: "Rows per page (default 500, max 1000)" },
+    },
+    required: ["table"],
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const table = String(args.table ?? "");
+    if (!OFFLINE_MANIFEST_TOOL.includes(table)) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Table not in offline manifest: ${table}` }) }] };
+    }
+    const page = Math.max(0, Number(args.page ?? 0));
+    const pageSize = Math.min(1000, Math.max(1, Number(args.page_size ?? 500)));
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+    const { data, error, count } = await supabase
+      .from(table).select("*", { count: "exact" }).order("id", { ascending: true }).range(from, to);
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ table, page, page_size: pageSize, count, data }, null, 2) }] };
+  },
+});
+
+mcpServer.tool("offline_mutate", {
+  description: "Replay a queued offline write. Mutations are scoped to the calling user via user_id. Allowed tables: entity_notes, alert_rules, reports.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      table: { type: "string" as const },
+      operation: { type: "string" as const, description: "insert | update | delete" },
+      data: { type: "object" as const, description: "Row payload. For update/delete, include `id`." },
+    },
+    required: ["table","operation","data"],
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const table = String(args.table ?? "");
+    const operation = String(args.operation ?? "");
+    const data = (args.data ?? {}) as Record<string, unknown>;
+    if (!OFFLINE_MUTABLE.has(table)) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Table not mutable: ${table}` }) }] };
+    }
+    if (!["insert","update","delete"].includes(operation)) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: "operation must be insert|update|delete" }) }] };
+    }
+    const callerId = (callerUser as { id?: string } | null)?.id;
+    if (!callerId) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Caller user not resolved from API key" }) }] };
+    }
+    if (operation === "insert") {
+      const { data: row, error } = await supabase.from(table).insert({ ...data, user_id: callerId }).select().maybeSingle();
+      if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ ok: true, row }, null, 2) }] };
+    }
+    if (operation === "update") {
+      if (!data.id) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "data.id required" }) }] };
+      const { id: _drop, ...rest } = data;
+      const { data: row, error } = await supabase
+        .from(table).update(rest).eq("id", String(data.id)).eq("user_id", callerId).select().maybeSingle();
+      if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+      if (!row) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Not found or not owned" }) }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ ok: true, row }, null, 2) }] };
+    }
+    if (!data.id) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "data.id required" }) }] };
+    const { error, count } = await supabase
+      .from(table).delete({ count: "exact" }).eq("id", String(data.id)).eq("user_id", callerId);
+    if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+    if ((count ?? 0) === 0) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Not found or not owned" }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ ok: true, deleted: count }, null, 2) }] };
+  },
+});
+
 const transport = new StreamableHttpTransport();
 const httpHandler = transport.bind(mcpServer);
 
