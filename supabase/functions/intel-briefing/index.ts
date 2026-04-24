@@ -1302,6 +1302,26 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
+
+    // Lightweight read-only action: return the configured local sources for a state
+    if (body.action === "list_local_sources") {
+      const stateFilter: string | null = typeof body.state === "string" && body.state.trim()
+        ? body.state.trim().toUpperCase()
+        : null;
+      const localSources = (SOURCES.local || []) as Array<{ name: string; rssUrl: string; scope: string; state?: string }>;
+      const filtered = stateFilter
+        ? localSources.filter((s) => (s.state || "").toUpperCase() === stateFilter)
+        : localSources;
+      return new Response(
+        JSON.stringify({
+          state: stateFilter,
+          count: filtered.length,
+          sources: filtered.map((s) => ({ name: s.name, rssUrl: s.rssUrl, state: s.state ?? null })),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const requestedScopes: string[] = body.scopes || ["national", "international", "state", "local"];
     const requestedState: string | null = typeof body.state === "string" && body.state.trim()
       ? body.state.trim().toUpperCase()
