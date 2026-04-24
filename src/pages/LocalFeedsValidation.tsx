@@ -205,7 +205,7 @@ export default function LocalFeedsValidation() {
                             Zero feeds
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+                          <span className="inline-flex items-center gap-1 text-[11px] text-primary">
                             <CheckCircle2 className="h-3 w-3" />
                             OK
                           </span>
