@@ -14,6 +14,7 @@ interface SourceRow {
   name: string;
   rssUrl: string;
   state: string | null;
+  scope?: string | null;
 }
 
 interface HealthRow {
