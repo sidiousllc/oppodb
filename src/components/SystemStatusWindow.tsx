@@ -15,7 +15,7 @@ interface HealthResponse {
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const HEALTH_URL = `${SUPABASE_URL}/functions/v1/health`;
+const HEALTH_URL = `${SUPABASE_URL}/functions/v1/system-status`;
 
 const STATUS_LABEL: Record<CheckStatus, string> = {
   ok: "OK",

@@ -1,7 +1,7 @@
 project_id = "yysbtxpupmwkxovgkama"
 
 [functions]
-  [functions.health]
+  [functions.system-status]
     verify_jwt = false
 
   [functions.auth-email-hook]
