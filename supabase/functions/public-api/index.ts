@@ -1975,6 +1975,17 @@ Deno.serve(async (req) => {
       case "docs-technical": {
         const docsResp = await handleDocsEndpoint(endpoint, url, supabase);
         supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
+        // Special-case raw markdown rendering for docs-technical?format=markdown
+        if ((docsResp as Record<string, unknown>).__raw_markdown__) {
+          const r = docsResp as { content: string; slug: string };
+          return new Response(r.content, {
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "text/markdown; charset=utf-8",
+              "Content-Disposition": `inline; filename="${r.slug}.md"`,
+            },
+          });
+        }
         return new Response(JSON.stringify(docsResp), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
