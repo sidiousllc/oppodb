@@ -2258,6 +2258,23 @@ mcpServer.tool("get_subject_ai_bundle", {
   },
 });
 
+mcpServer.tool("get_system_health", {
+  description: "Probe the public-api /health endpoint and return per-component status (database, docs-registry, docs-wiki, docs-export, ai-gateway, sync-pipeline). Useful for monitoring and debugging stale data.",
+  inputSchema: { type: "object" as const, properties: {} },
+  handler: async () => {
+    const supaUrl = Deno.env.get("SUPABASE_URL");
+    try {
+      const res = await fetch(`${supaUrl}/functions/v1/public-api/health`, {
+        headers: { "Accept": "application/json" },
+      });
+      const body = await res.json();
+      return { content: [{ type: "text" as const, text: JSON.stringify({ http_status: res.status, ...body }, null, 2) }] };
+    } catch (e: any) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(e?.message || e) }) }] };
+    }
+  },
+});
+
 
 
 // ─── Self-documentation tools (Phase 9) ─────────────────────────────────
