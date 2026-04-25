@@ -115,6 +115,16 @@ async function hashKey(key: string): Promise<string> {
     .join("");
 }
 
+
+async function handleHealthEndpoint(_supabase: ReturnType<typeof createClient>): Promise<Record<string, unknown>> {
+  return {
+    status: "ok",
+    generated_at: new Date().toISOString(),
+    duration_ms: 0,
+    checks: [],
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -131,6 +141,19 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Parse endpoint before auth so health probe can exit early
+    const url = new URL(req.url);
+    const pathParts = url.pathname.split("/").filter(Boolean);
+    const endpoint = pathParts[pathParts.length - 1] || "";
+
+    // Public health probe — no auth required
+    if (endpoint === "health") {
+      const healthResp = await handleHealthEndpoint(supabase);
+      return new Response(JSON.stringify(healthResp), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Authenticate via X-API-Key header only
     const apiKey = req.headers.get("X-API-Key");
