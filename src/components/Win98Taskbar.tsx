@@ -14,7 +14,7 @@ export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarP
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { canManageContent, canAccessApi } = useUserRole();
-  const { windows, focusWindow, minimizeWindow } = useWindowManager();
+  const { windows, focusWindow, minimizeWindow, openWindow } = useWindowManager();
   const [time, setTime] = useState("");
   const [startOpen, setStartOpen] = useState(false);
 
