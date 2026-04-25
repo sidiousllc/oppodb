@@ -1927,11 +1927,32 @@ Deno.serve(async (req) => {
 
       const localSources = (SOURCES.local || []) as Array<{ name: string; rssUrl: string; scope: string; state?: string }>;
       const configuredByState = new Map<string, Set<string>>();
+      // Global dedup set: every RSS URL already configured anywhere (any scope, any state).
+      // A URL appearing in one state's `local` config (or any other scope) must NOT be re-added
+      // to a different state during top-up.
+      const globallyConfiguredUrls = new Set<string>();
+      const normalizeUrl = (u: string): string => {
+        try {
+          const url = new URL(u);
+          url.hash = "";
+          // Lowercase host, strip default trailing slash for empty paths
+          url.hostname = url.hostname.toLowerCase();
+          if (url.pathname === "/") url.pathname = "";
+          return url.toString().replace(/\/$/, "");
+        } catch {
+          return u.trim().toLowerCase();
+        }
+      };
+      for (const scopeKey of Object.keys(SOURCES)) {
+        for (const s of SOURCES[scopeKey] ?? []) {
+          globallyConfiguredUrls.add(normalizeUrl(s.rssUrl));
+        }
+      }
       for (const s of localSources) {
         const st = (s.state || "").toUpperCase();
         if (!st) continue;
         if (!configuredByState.has(st)) configuredByState.set(st, new Set());
-        configuredByState.get(st)!.add(s.rssUrl);
+        configuredByState.get(st)!.add(normalizeUrl(s.rssUrl));
       }
 
       // Determine which states need top-up
