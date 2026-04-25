@@ -342,7 +342,8 @@ async function syncFromMITElectionLab(
 
 async function syncFromFEC(
   stateAbbr: string,
-  supabase: ReturnType<typeof createClient>,
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
 ): Promise<{ synced: number; errors: number }> {
   console.log(`[FEC fallback] Fetching House results for ${stateAbbr}...`);
 
