@@ -14,11 +14,16 @@ export interface SerialKey {
 
 const SERIAL_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1
 export function generateSerial(groups = 5, groupLen = 5): string {
-  const arr = crypto.getRandomValues(new Uint8Array(groups * groupLen));
+  const alphabetLen = SERIAL_CHARS.length;
+  const maxUnbiased = Math.floor(256 / alphabetLen) * alphabetLen;
   const parts: string[] = [];
   for (let g = 0; g < groups; g++) {
     let s = "";
-    for (let i = 0; i < groupLen; i++) s += SERIAL_CHARS[arr[g * groupLen + i] % SERIAL_CHARS.length];
+    while (s.length < groupLen) {
+      const byte = crypto.getRandomValues(new Uint8Array(1))[0];
+      if (byte >= maxUnbiased) continue;
+      s += SERIAL_CHARS[byte % alphabetLen];
+    }
     parts.push(s);
   }
   return parts.join("-");
