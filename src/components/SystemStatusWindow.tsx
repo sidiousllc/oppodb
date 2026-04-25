@@ -45,7 +45,6 @@ function StatusPill({ status }: { status: CheckStatus }) {
       : status === "degraded"
       ? "bg-[hsl(45_90%_50%)] text-black"
       : "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]";
-  const lastFetchLabel = lastFetch ? ("Refreshed " + String(lastFetch.toLocaleTimeString())) : "-";
   return (
     <span className={`px-1.5 py-[px] text-[10px] font-bold uppercase ${cls}`}>
       {STATUS_LABEL[status]}
@@ -347,7 +346,7 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
 
       {/* Statusbar */}
       <div className="win98-sunken px-2 py-[2px] text-[9px] text-[hsl(var(--muted-foreground))] flex justify-between">
-        <span>{lastFetchLabel}</span>
+        <span>{lastFetch ? "Refreshed " + lastFetch.toLocaleTimeString() : "-"}</span>
         <span>Auto-refresh 30s</span>
       </div>
     </div>
