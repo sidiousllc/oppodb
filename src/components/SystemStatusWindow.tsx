@@ -45,6 +45,7 @@ function StatusPill({ status }: { status: CheckStatus }) {
       : status === "degraded"
       ? "bg-[hsl(45_90%_50%)] text-black"
       : "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]";
+  const lastFetchLabel = lastFetch ? ("Refreshed " + String(lastFetch.toLocaleTimeString())) : "-";
   return (
     <span className={`px-1.5 py-[px] text-[10px] font-bold uppercase ${cls}`}>
       {STATUS_LABEL[status]}
@@ -78,7 +79,7 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
         check: async () => {
           const t0 = Date.now();
           try {
-            // Try unauthenticated public-api — it returns 401 or a valid JSON response
+            // Try unauthenticated public-api - it returns 401 or a valid JSON response
             const res = await fetch(`${SUPABASE_URL}/functions/v1/public-api/health`, {
               headers: { Accept: "application/json" },
             });
@@ -96,7 +97,7 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
         check: async () => {
           const t0 = Date.now();
           try {
-            // MCP server health — returns JSON or error
+            // MCP server health - returns JSON or error
             const res = await fetch(`${SUPABASE_URL}/functions/v1/mcp-server/rpc`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
@@ -346,7 +347,7 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
 
       {/* Statusbar */}
       <div className="win98-sunken px-2 py-[2px] text-[9px] text-[hsl(var(--muted-foreground))] flex justify-between">
-        <span>{lastFetch ? `Refreshed ${lastFetch.toLocaleTimeString()}` : "—"}}</span>
+        <span>{lastFetchLabel}</span>
         <span>Auto-refresh 30s</span>
       </div>
     </div>
