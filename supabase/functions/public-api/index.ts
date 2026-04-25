@@ -1974,7 +1974,8 @@ Deno.serve(async (req) => {
       case "docs-tables":
       case "docs-mcp-tools":
       case "docs-edge-functions":
-      case "docs-technical": {
+      case "docs-technical":
+      case "docs-technical-changelog": {
         const docsResp = await handleDocsEndpoint(endpoint, url, supabase);
         supabase.rpc("log_api_request", { p_key_id: keyId, p_user_id: userId, p_endpoint: endpoint, p_status: 200 }).then(() => {});
         // Special-case raw markdown rendering for docs-technical?format=markdown
