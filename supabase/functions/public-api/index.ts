@@ -2383,7 +2383,57 @@ async function handleDocsEndpoint(
     }
     return base;
   }
-  if (endpoint === "docs-wiki") {
+  if (endpoint === "docs-export") {
+    // Versioned, content-addressed snapshot of the full docs surface.
+    // Mirrors /docs?include=all but adds a stable docVersion (sha256 of payload)
+    // suitable for cache validation, ETag-style diffing, and offline manifests.
+    const { count: wikiCount } = await supabase
+      .from("wiki_pages").select("*", { count: "exact", head: true });
+    const { data: wikiPages } = await supabase
+      .from("wiki_pages")
+      .select("slug,title,content,sort_order,published,updated_at")
+      .order("sort_order", { ascending: true });
+
+    const payload = {
+      summary: {
+        wiki_pages: wikiCount ?? 0,
+        public_endpoints: ENDPOINT_SPECS.length,
+        offline_tables: OFFLINE_TABLES_REGISTRY.length,
+        edge_functions: EDGE_FUNCTIONS_REGISTRY.length,
+        mcp_tools: MCP_TOOL_SPECS.length,
+        sections: Object.keys(SECTIONS).length,
+      },
+      sections: SECTIONS,
+      wiki_pages: wikiPages ?? [],
+      endpoints: ENDPOINT_SPECS.map((e) => ({ ...e, path: `/public-api/${e.endpoint}` })),
+      offline_tables: OFFLINE_TABLES_REGISTRY.map((t) => ({ table: t })),
+      edge_functions: EDGE_FUNCTIONS_REGISTRY,
+      mcp_tools: MCP_TOOL_SPECS,
+    };
+
+    // Stable hash: sort keys deterministically before hashing so any logical
+    // change to the docs surface produces a new docVersion.
+    const stableJson = JSON.stringify(payload, Object.keys(payload).sort());
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(stableJson));
+    const docVersion = Array.from(new Uint8Array(buf))
+      .map((b) => b.toString(16).padStart(2, "0")).join("");
+
+    // Latest content modification timestamp from wiki pages (best-effort).
+    const latestWikiTs = (wikiPages ?? [])
+      .map((p: any) => p.updated_at)
+      .filter(Boolean)
+      .sort()
+      .pop() ?? null;
+
+    return {
+      message: "ORDB Versioned Documentation Export",
+      docVersion,                          // sha256 hex of the deterministic payload
+      schema_version: "1.0",               // bump when the export envelope shape changes
+      generated_at: new Date().toISOString(),
+      content_updated_at: latestWikiTs,    // newest source content timestamp
+      payload,
+    };
+  }
     const slug = url.searchParams.get("slug");
     if (slug) {
       const { data, error } = await supabase
