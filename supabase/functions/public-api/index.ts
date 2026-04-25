@@ -2353,6 +2353,7 @@ async function handleDocsEndpoint(
         tables: "/public-api/docs-tables",
         edge_functions: "/public-api/docs-edge-functions",
         mcp_tools: "/public-api/docs-mcp-tools",
+        technical: "/public-api/docs-technical  (?slug= for one page; ?format=markdown for raw md; slug=TECHNICAL-REFERENCE for consolidated)",
         full_dump: "/public-api/docs?include=all",
       },
       sections: SECTIONS,
