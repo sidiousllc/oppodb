@@ -2438,6 +2438,7 @@ async function handleDocsEndpoint(
       payload,
     };
   }
+  if (endpoint === "docs-wiki") {
     const slug = url.searchParams.get("slug");
     if (slug) {
       const { data, error } = await supabase
