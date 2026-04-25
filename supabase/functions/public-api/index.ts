@@ -1364,7 +1364,7 @@ Deno.serve(async (req) => {
           ? categoriesParam.split(",").map(c => c.trim().toLowerCase()).filter(c => ALL_CATEGORIES.includes(c))
           : ALL_CATEGORIES;
 
-        const categoryQueries: Record<string, Promise<{ data: unknown[]; label: string }>> = {};
+        const categoryQueries: Record<string, PromiseLike<{ data: unknown[]; label: string }>> = {};
 
         if (activeCategories.includes("candidates")) {
           categoryQueries.candidates = supabase.from("candidate_profiles")
