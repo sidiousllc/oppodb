@@ -29,6 +29,7 @@ import { AIHistoryWindow } from "@/components/AIHistoryWindow";
 import { TaskManagerWindow } from "@/components/TaskManagerWindow";
 import { AlertsHub } from "@/components/AlertsHub";
 import { BillDetailWindow } from "@/components/BillDetailWindow";
+import { SystemStatusWindow } from "@/components/SystemStatusWindow";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
