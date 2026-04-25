@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { ENDPOINT_SPECS, MCP_TOOL_SPECS, SECTIONS } from "../_shared/docs-registry.ts";
+import { TECHNICAL_DOCS, TECHNICAL_DOCS_BY_SLUG } from "../_shared/technical-docs.ts";
 
 const ENDPOINT_SPEC_BY_NAME: Record<string, typeof ENDPOINT_SPECS[number]> =
   Object.fromEntries(ENDPOINT_SPECS.map((e) => [e.endpoint, e]));
