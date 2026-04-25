@@ -2090,6 +2090,7 @@ function endpointDescription(endpoint: string): string {
     "docs-tables": "Every offline-synced database table",
     "docs-mcp-tools": "Every MCP server tool with description (mirrors mcp-server registry)",
     "docs-edge-functions": "Every deployed edge function with purpose and auth requirement",
+    "docs-technical": "Per-section *-Technical.md pages + consolidated TECHNICAL-REFERENCE. ?slug= for one page, ?format=markdown for raw md",
     "offline-manifest": "List of offline-synced tables with select hints + page sizes (parity with the web app's offline mirror)",
     "offline-snapshot": "Paginated table read for offline mirroring. Query params: ?table=<name>&page=0&page_size=500&order_by=id",
     "offline-mutate": "POST replay of a queued offline write. Body: { table, operation:'insert'|'update'|'delete', data }. RLS still applies via the caller's API key user.",
