@@ -2498,7 +2498,183 @@ async function handleDocsEndpoint(
       count: TECHNICAL_DOCS.length,
     };
   }
+  if (endpoint === "docs-technical-changelog") {
+    return await handleDocsTechnicalChangelog(url, supabase);
+  }
   return { error: "Unknown docs endpoint" };
+}
+
+// ─── Changelog extraction ──────────────────────────────────────────────────
+// Parses YAML frontmatter and "## Changelog" / "## Recent Changes" sections
+// from each technical doc + corresponding wiki page, plus derives an entry
+// from the wiki row's updated_at. Output is grouped by section slug.
+function parseFrontmatter(md: string): { fm: Record<string, unknown>; body: string } {
+  const m = md.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+  if (!m) return { fm: {}, body: md };
+  const fm: Record<string, unknown> = {};
+  for (const line of m[1].split("\n")) {
+    const kv = line.match(/^([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
+    if (!kv) continue;
+    let v: unknown = kv[2].trim().replace(/^["']|["']$/g, "");
+    // crude inline array support: [a, b, c]
+    const arr = String(v).match(/^\[(.*)\]$/);
+    if (arr) v = arr[1].split(",").map((s) => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+    fm[kv[1]] = v;
+  }
+  return { fm, body: m[2] ?? "" };
+}
+
+function extractChangelogBlock(md: string): Array<{ date?: string; entry: string }> {
+  // Match a heading line "## Changelog" or "## Recent Changes" (any level >= 2),
+  // then collect bullet items until the next heading of equal/higher level.
+  const re = /^(#{2,6})\s+(?:Changelog|Recent Changes|Change Log|History)\s*$/im;
+  const m = md.match(re);
+  if (!m || m.index === undefined) return [];
+  const level = m[1].length;
+  const after = md.slice(m.index + m[0].length);
+  const stopRe = new RegExp(`^#{1,${level}}\\s+`, "m");
+  const stop = after.search(stopRe);
+  const block = stop === -1 ? after : after.slice(0, stop);
+  const out: Array<{ date?: string; entry: string }> = [];
+  for (const raw of block.split("\n")) {
+    const line = raw.trim();
+    if (!line.startsWith("-") && !line.startsWith("*")) continue;
+    const text = line.replace(/^[-*]\s*/, "");
+    // Try to pull a leading date like 2026-04-25 or [2026-04-25]
+    const dm = text.match(/^\[?(\d{4}-\d{2}-\d{2})\]?\s*[—\-–:]?\s*(.*)$/);
+    if (dm) out.push({ date: dm[1], entry: dm[2] || text });
+    else out.push({ entry: text });
+  }
+  return out;
+}
+
+async function handleDocsTechnicalChangelog(
+  url: URL,
+  supabase: ReturnType<typeof createClient>,
+): Promise<Record<string, unknown>> {
+  const sinceParam = url.searchParams.get("since");
+  const slugFilter = url.searchParams.get("slug");
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") ?? "50", 10) || 50, 1), 200);
+  const since = sinceParam ? new Date(sinceParam) : null;
+  if (sinceParam && Number.isNaN(since!.getTime())) {
+    return { error: "Invalid ?since (expected ISO date)" };
+  }
+
+  // Pull every wiki page once so we can reconcile updated_at + content frontmatter.
+  const { data: wikiRows, error: wikiErr } = await supabase
+    .from("wiki_pages").select("slug,title,content,updated_at");
+  if (wikiErr) return { error: wikiErr.message };
+  const wikiBySlug = new Map<string, { slug: string; title: string; content: string; updated_at: string }>();
+  for (const w of (wikiRows as Array<{ slug: string; title: string; content: string; updated_at: string }> ?? [])) {
+    wikiBySlug.set(w.slug, w);
+  }
+
+  type Entry = { date: string | null; section: string; section_title: string; source: "frontmatter" | "changelog_block" | "wiki_updated_at"; entry: string; tags?: string[] };
+  const sections: Record<string, {
+    slug: string;
+    title: string;
+    wiki_slug: string;
+    last_updated: string | null;
+    entry_count: number;
+    tags: string[];
+    summary: string;
+    entries: Entry[];
+  }> = {};
+
+  const docs = slugFilter ? TECHNICAL_DOCS.filter(d => d.slug === slugFilter || d.slug === `${slugFilter}-Technical`) : TECHNICAL_DOCS;
+  if (slugFilter && docs.length === 0) {
+    return { error: `Technical doc not found: ${slugFilter}`, available: TECHNICAL_DOCS.map(d => d.slug) };
+  }
+
+  for (const doc of docs) {
+    // Map "01-Overview-Technical" -> wiki slug "01-Overview"
+    const wikiSlug = doc.slug.replace(/-Technical$/, "");
+    const wiki = wikiBySlug.get(wikiSlug);
+    const entries: Entry[] = [];
+    const tagSet = new Set<string>();
+    let lastUpdated: string | null = wiki?.updated_at ?? null;
+
+    // 1. Technical doc frontmatter + changelog block
+    const techParsed = parseFrontmatter(doc.content);
+    const techFm = techParsed.fm;
+    if (Array.isArray(techFm.tags)) for (const t of techFm.tags as string[]) tagSet.add(t);
+    if (typeof techFm.changelog === "string") {
+      entries.push({ date: typeof techFm.updated === "string" ? techFm.updated : null, section: doc.slug, section_title: doc.title, source: "frontmatter", entry: techFm.changelog });
+    }
+    if (typeof techFm.updated === "string" && (!lastUpdated || techFm.updated > lastUpdated)) lastUpdated = techFm.updated;
+    for (const e of extractChangelogBlock(techParsed.body)) {
+      entries.push({ date: e.date ?? null, section: doc.slug, section_title: doc.title, source: "changelog_block", entry: e.entry });
+    }
+
+    // 2. Wiki page frontmatter + changelog block
+    if (wiki) {
+      const wikiParsed = parseFrontmatter(wiki.content || "");
+      if (Array.isArray(wikiParsed.fm.tags)) for (const t of wikiParsed.fm.tags as string[]) tagSet.add(t);
+      if (typeof wikiParsed.fm.changelog === "string") {
+        entries.push({ date: typeof wikiParsed.fm.updated === "string" ? wikiParsed.fm.updated : wiki.updated_at, section: doc.slug, section_title: doc.title, source: "frontmatter", entry: wikiParsed.fm.changelog });
+      }
+      for (const e of extractChangelogBlock(wikiParsed.body)) {
+        entries.push({ date: e.date ?? null, section: doc.slug, section_title: doc.title, source: "changelog_block", entry: e.entry });
+      }
+      // 3. Always include the wiki updated_at as a synthetic "row touched" entry
+      entries.push({
+        date: wiki.updated_at,
+        section: doc.slug,
+        section_title: doc.title,
+        source: "wiki_updated_at",
+        entry: `Wiki page \`${wiki.slug}\` was updated.`,
+      });
+    }
+
+    // Apply ?since filter to dated entries; undated entries are kept (no way to compare).
+    const filtered = since
+      ? entries.filter((e) => !e.date || new Date(e.date) >= since)
+      : entries;
+
+    // Sort newest first, undated last
+    filtered.sort((a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return b.date.localeCompare(a.date);
+    });
+
+    const trimmed = filtered.slice(0, limit);
+    const summary = trimmed.length === 0
+      ? "No recorded changes in window."
+      : `${trimmed.length} change${trimmed.length === 1 ? "" : "s"} — most recent: ${trimmed[0].date ?? "undated"} (${trimmed[0].source}).`;
+
+    sections[doc.slug] = {
+      slug: doc.slug,
+      title: doc.title,
+      wiki_slug: wikiSlug,
+      last_updated: lastUpdated,
+      entry_count: trimmed.length,
+      tags: Array.from(tagSet),
+      summary,
+      entries: trimmed,
+    };
+  }
+
+  // Build a flat, globally-sorted recent changes feed too.
+  const allEntries: Entry[] = [];
+  for (const s of Object.values(sections)) allEntries.push(...s.entries);
+  allEntries.sort((a, b) => {
+    if (!a.date && !b.date) return 0;
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+    return b.date.localeCompare(a.date);
+  });
+
+  return {
+    generated_at: new Date().toISOString(),
+    since: sinceParam ?? null,
+    limit,
+    section_count: Object.keys(sections).length,
+    total_entries: allEntries.length,
+    sections,
+    recent: allEntries.slice(0, limit),
+  };
 }
 
 // ─── Offline parity (Phase 10) ──────────────────────────────────────────────
