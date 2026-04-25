@@ -359,7 +359,8 @@ describe('seed-polling Edge Function - Security Tests', () => {
         'http://localhost:3000',
       ];
 
-      const isAllowed = allowedOrigins.includes(evilOrigin);
+      const parsedOrigin = new URL(evilOrigin).origin;
+      const isAllowed = allowedOrigins.includes(parsedOrigin);
       expect(isAllowed).toBe(false);
       
       // Even if CORS allows the request, auth checks will block it
