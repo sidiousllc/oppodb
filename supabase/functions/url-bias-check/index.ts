@@ -31,9 +31,15 @@ async function scrapeUrl(url: string): Promise<{ title: string; markdown: string
     try {
       const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
       const html = await r.text();
-      const t = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-      title = t ? t[1].replace(/<[^>]+>/g, "").trim() : "";
-      markdown = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 5000);
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      if (doc) {
+        doc.querySelectorAll("script, style, noscript, template").forEach((el) => el.remove());
+        title = (doc.querySelector("title")?.textContent || "").trim();
+        markdown = (doc.body?.textContent || "").replace(/\s+/g, " ").trim().slice(0, 5000);
+      } else {
+        title = "";
+        markdown = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 5000);
+      }
     } catch (e) { console.error("html fetch err", e); }
   }
   let source = "";
