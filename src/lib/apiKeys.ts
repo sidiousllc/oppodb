@@ -21,13 +21,23 @@ async function hashKey(key: string): Promise<string> {
 
 function generateApiKey(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const segments = [8, 8, 8, 8];
-  return "ordb_" + segments.map((len) => {
+  const charsLength = chars.length;
+  const maxUnbiasedByte = Math.floor(256 / charsLength) * charsLength;
+
+  const generateSegment = (len: number): string => {
     let s = "";
-    const arr = crypto.getRandomValues(new Uint8Array(len));
-    for (const b of arr) s += chars[b % chars.length];
+    while (s.length < len) {
+      const arr = crypto.getRandomValues(new Uint8Array(len - s.length));
+      for (const b of arr) {
+        if (b >= maxUnbiasedByte) continue;
+        s += chars[b % charsLength];
+      }
+    }
     return s;
-  }).join("-");
+  };
+
+  const segments = [8, 8, 8, 8];
+  return "ordb_" + segments.map((len) => generateSegment(len)).join("-");
 }
 
 export async function createApiKey(
