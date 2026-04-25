@@ -25,20 +25,17 @@ const STATUS_LABEL: Record<CheckStatus, string> = {
 
 const COMPONENT_LABELS: Record<string, string> = {
   database: "Database",
-  "docs-registry": "Docs Registry",
-  "docs-wiki": "Wiki Pages",
-  "docs-export": "Docs Export",
-  "ai-gateway": "AI Gateway",
-  "sync-pipeline": "Sync Pipeline",
-  candidates: "Candidates",
+  "api-gateway": "Public API",
+  "mcp-server": "MCP Server",
+  "candidates": "Candidates",
   districts: "Districts",
   polling: "Polling",
   messaging: "Messaging",
   intel: "Intel Hub",
   international: "International",
   reports: "Reports Hub",
-  warroom: "War Rooms",
   sync: "Sync Status",
+  "docs-registry": "Docs Registry",
 };
 
 function StatusPill({ status }: { status: CheckStatus }) {
@@ -59,12 +56,6 @@ interface Props {
   variant?: "status" | "health";
 }
 
-type SystemStatusClient = {
-  component: string;
-  label: string;
-  check: () => Promise<{ ok: boolean; detail?: string }>;
-};
-
 export function SystemStatusWindow({ variant = "status" }: Props) {
   const [data, setData] = useState<HealthResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,10 +67,56 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
     const start = Date.now();
     const checks: HealthCheck[] = [];
 
-    const clients: SystemStatusClient[] = [
+    const SUPABASE_PROJECT = import.meta.env.VITE_SUPABASE_PROJECT_ID as string;
+    const SUPABASE_URL = `https://${SUPABASE_PROJECT}.supabase.co`;
+    const API_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
+    // ── Server checks (HTTP) ──────────────────────────────────────────────
+    const serverChecks = [
+      {
+        component: "api-gateway",
+        check: async () => {
+          const t0 = Date.now();
+          try {
+            // Try unauthenticated public-api — it returns 401 or a valid JSON response
+            const res = await fetch(`${SUPABASE_URL}/functions/v1/public-api/health`, {
+              headers: { Accept: "application/json" },
+            });
+            if (res.status === 401 || res.status === 200) {
+              return { ok: true, detail: `HTTP ${res.status}`, latency_ms: Date.now() - t0 };
+            }
+            return { ok: false, detail: `HTTP ${res.status}`, latency_ms: Date.now() - t0 };
+          } catch (err: any) {
+            return { ok: false, detail: err.message };
+          }
+        },
+      },
+      {
+        component: "mcp-server",
+        check: async () => {
+          const t0 = Date.now();
+          try {
+            // MCP server health — returns JSON or error
+            const res = await fetch(`${SUPABASE_URL}/functions/v1/mcp-server/rpc`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
+              body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+            });
+            if (res.ok || res.status === 401 || res.status === 400) {
+              return { ok: true, detail: `HTTP ${res.status}`, latency_ms: Date.now() - t0 };
+            }
+            return { ok: false, detail: `HTTP ${res.status}`, latency_ms: Date.now() - t0 };
+          } catch (err: any) {
+            return { ok: false, detail: err.message };
+          }
+        },
+      },
+    ];
+
+    // ── Database checks (Supabase client) ───────────────────────────────
+    const dbChecks = [
       {
         component: "database",
-        label: COMPONENT_LABELS["database"],
         check: async () => {
           const { error } = await supabase.from("sync_run_log").select("id").limit(1);
           if (error) throw new Error(error.message);
@@ -88,9 +125,8 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       },
       {
         component: "candidates",
-        label: COMPONENT_LABELS["candidates"],
         check: async () => {
-          const { data, error, count } = await supabase
+          const { count, error } = await supabase
             .from("candidates")
             .select("id", { count: "exact", head: true })
             .limit(1);
@@ -100,9 +136,8 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       },
       {
         component: "districts",
-        label: COMPONENT_LABELS["districts"],
         check: async () => {
-          const { data, error, count } = await supabase
+          const { count, error } = await supabase
             .from("district_profiles")
             .select("id", { count: "exact", head: true })
             .limit(1);
@@ -112,9 +147,8 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       },
       {
         component: "polling",
-        label: COMPONENT_LABELS["polling"],
         check: async () => {
-          const { data, error, count } = await supabase
+          const { count, error } = await supabase
             .from("polling_data")
             .select("id", { count: "exact", head: true })
             .limit(1);
@@ -124,9 +158,8 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       },
       {
         component: "messaging",
-        label: COMPONENT_LABELS["messaging"],
         check: async () => {
-          const { data, error, count } = await supabase
+          const { count, error } = await supabase
             .from("messaging_guidance")
             .select("id", { count: "exact", head: true })
             .limit(1);
@@ -136,9 +169,8 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       },
       {
         component: "intel",
-        label: COMPONENT_LABELS["intel"],
         check: async () => {
-          const { data, error, count } = await supabase
+          const { count, error } = await supabase
             .from("intel_briefings")
             .select("id", { count: "exact", head: true })
             .limit(1);
@@ -148,9 +180,8 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       },
       {
         component: "international",
-        label: COMPONENT_LABELS["international"],
         check: async () => {
-          const { data, error, count } = await supabase
+          const { count, error } = await supabase
             .from("international_profiles")
             .select("id", { count: "exact", head: true })
             .limit(1);
@@ -160,9 +191,8 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       },
       {
         component: "reports",
-        label: COMPONENT_LABELS["reports"],
         check: async () => {
-          const { data, error, count } = await supabase
+          const { count, error } = await supabase
             .from("narrative_reports")
             .select("id", { count: "exact", head: true })
             .limit(1);
@@ -172,7 +202,6 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       },
       {
         component: "sync",
-        label: COMPONENT_LABELS["sync"],
         check: async () => {
           const { data, error } = await supabase
             .from("sync_run_log")
@@ -189,9 +218,8 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       },
       {
         component: "docs-registry",
-        label: COMPONENT_LABELS["docs-registry"],
         check: async () => {
-          const { data, error, count } = await supabase
+          const { count, error } = await supabase
             .from("wiki_pages")
             .select("id", { count: "exact", head: true })
             .limit(1);
@@ -201,20 +229,22 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       },
     ];
 
+    // Run server checks and db checks in parallel
+    const allChecks = [...serverChecks, ...dbChecks];
     await Promise.all(
-      clients.map(async (client) => {
+      allChecks.map(async (check) => {
         const t0 = Date.now();
         try {
-          const result = await client.check();
+          const result = await check.check();
           checks.push({
-            component: client.component,
+            component: check.component,
             status: result.ok ? "ok" : "down",
-            latency_ms: Date.now() - t0,
+            latency_ms: result.latency_ms ?? Date.now() - t0,
             detail: result.detail,
           });
         } catch (err: any) {
           checks.push({
-            component: client.component,
+            component: check.component,
             status: "down",
             latency_ms: Date.now() - t0,
             detail: err?.message || String(err),
@@ -317,7 +347,7 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
 
       {/* Statusbar */}
       <div className="win98-sunken px-2 py-[2px] text-[9px] text-[hsl(var(--muted-foreground))] flex justify-between">
-        <span>{lastFetch ? `Refreshed ${lastFetch.toLocaleTimeString()}` : "—"}</span>
+        <span>{lastFetch ? `Refreshed ${lastFetch.toLocaleTimeString()}` : "—"}}</span>
         <span>Auto-refresh 30s</span>
       </div>
     </div>
