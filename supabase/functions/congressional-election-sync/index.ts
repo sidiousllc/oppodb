@@ -265,7 +265,8 @@ function parseFullCSV(text: string): Record<string, string>[] {
 
 async function syncFromMITElectionLab(
   stateAbbr: string,
-  supabase: ReturnType<typeof createClient>,
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
   minYear = 2000,
 ): Promise<{ synced: number; errors: number }> {
   console.log(`[MIT fallback] Downloading House dataset for ${stateAbbr}...`);
