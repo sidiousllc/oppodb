@@ -293,6 +293,57 @@ export async function syncAllTables(
   return { synced, errors };
 }
 
+/** Sync only a chosen subset of tables (used by per-section "Download for offline" buttons).
+ *  Unknown table names are silently skipped. Auth/online checks mirror syncAllTables. */
+export async function syncSelectedTables(
+  tables: string[],
+  onProgress?: (table: string, index: number, total: number) => void,
+): Promise<{ synced: number; errors: string[] }> {
+  const online = await isReallyOnline();
+  if (!online) return { synced: 0, errors: ["Device is offline"] };
+
+  await ensurePersistentStorage();
+
+  const { data: sess } = await supabase.auth.getSession();
+  if (!sess?.session) {
+    return { synced: 0, errors: ["Not signed in — sign in to sync data for offline use"] };
+  }
+
+  const wanted = SYNC_TABLES.filter((t) => tables.includes(t.table));
+  if (wanted.length === 0) return { synced: 0, errors: [] };
+
+  syncStatus.isSyncing = true;
+  syncStatus.error = null;
+  notify();
+
+  let synced = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < wanted.length; i++) {
+    const { table, select, orderBy, pageSize } = wanted[i];
+    onProgress?.(table, i, wanted.length);
+    try {
+      const count = await syncTable(table, select, orderBy, pageSize);
+      synced += count;
+      if (!syncStatus.tablesAvailable.includes(table)) {
+        syncStatus.tablesAvailable.push(table);
+      }
+      notify();
+    } catch (e: any) {
+      const msg = e?.message || `Failed to sync ${table}`;
+      errors.push(`${table}: ${msg}`);
+      console.error(`[offlineSync] ${table} failed:`, e);
+    }
+  }
+
+  syncStatus.isSyncing = false;
+  syncStatus.lastSyncAt = Date.now();
+  syncStatus.error = errors.length > 0 ? errors[0] : null;
+  notify();
+
+  return { synced, errors };
+}
+
 /** Replay pending writes to Supabase. Permanent (RLS / validation / 4xx)
  *  errors drop the write so it does not jam the queue forever; transient
  *  network errors keep the write for the next online cycle. */
