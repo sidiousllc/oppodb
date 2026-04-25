@@ -1989,13 +1989,29 @@ Deno.serve(async (req) => {
         }
       };
 
-      // Build candidate list: reserve feeds not already configured
+      // Build candidate list: reserve feeds not already configured (per state OR globally in any other scope/state)
       const candidates: Array<{ state: string; name: string; rssUrl: string }> = [];
+      const dedupSeenInRun = new Set<string>(); // prevents the same URL being proposed for multiple states this run
+      const duplicatesSkipped: Array<{ state: string; name: string; rssUrl: string; reason: string }> = [];
       for (const st of targetStates) {
         const reserve = LOCAL_RESERVE[st] ?? [];
         const haveSet = configuredByState.get(st) ?? new Set<string>();
         for (const c of reserve) {
-          if (!haveSet.has(c.rssUrl)) candidates.push({ state: st, ...c });
+          const norm = normalizeUrl(c.rssUrl);
+          if (haveSet.has(norm)) {
+            duplicatesSkipped.push({ state: st, name: c.name, rssUrl: c.rssUrl, reason: "already_configured_for_state" });
+            continue;
+          }
+          if (globallyConfiguredUrls.has(norm)) {
+            duplicatesSkipped.push({ state: st, name: c.name, rssUrl: c.rssUrl, reason: "already_configured_for_other_scope_or_state" });
+            continue;
+          }
+          if (dedupSeenInRun.has(norm)) {
+            duplicatesSkipped.push({ state: st, name: c.name, rssUrl: c.rssUrl, reason: "duplicate_within_reserve_pool" });
+            continue;
+          }
+          dedupSeenInRun.add(norm);
+          candidates.push({ state: st, ...c });
         }
       }
 
