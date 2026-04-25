@@ -2079,6 +2079,7 @@ Deno.serve(async (req) => {
             statesStillBelow,
             candidatesProbed: probed.length,
             totalHealthyAdded: totalAdded,
+            duplicatesSkipped: duplicatesSkipped.length,
           },
           perState: summaryByState,
           additions,
