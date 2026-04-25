@@ -2025,7 +2025,7 @@ mcpServer.tool("list_international_leaders", {
 mcpServer.tool("list_war_rooms", {
   description: "List war rooms the calling user owns or is a member of. War rooms are private collaborative spaces with shared notes, alerts, and chat.",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async (_args: Record<string, unknown>, ctx: { userId?: string; request?: Request; [k: string]: unknown }) => {
+  handler: async (_args: Record<string, unknown>, ctx: any) => {
     const userId = (ctx as { userId?: string })?.userId;
     if (!userId) return { content: [{ type: "text" as const, text: "Caller user_id unavailable" }] };
     const [{ data: owned }, { data: memberRows }] = await Promise.all([
@@ -2054,7 +2054,7 @@ mcpServer.tool("get_war_room_messages", {
     },
     required: ["room_id"],
   },
-  handler: async (args: Record<string, unknown>, ctx: { userId?: string; request?: Request; [k: string]: unknown }) => {
+  handler: async (args: Record<string, unknown>, ctx: any) => {
     const userId = (ctx as { userId?: string })?.userId;
     const roomId = String(args.room_id);
     const limit = Math.min((args.limit as number) || 50, 500);
