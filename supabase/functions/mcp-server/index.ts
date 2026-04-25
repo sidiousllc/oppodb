@@ -856,7 +856,7 @@ mcpServer.tool("master_search", {
       ? requestedCategories.filter(c => ALL_CATEGORIES.includes(c))
       : ALL_CATEGORIES;
 
-    const queries: Record<string, Promise<{ label: string; data: unknown[] }>> = {};
+    const queries: Record<string, PromiseLike<{ label: string; data: unknown[] }>> = {};
 
     if (activeCategories.includes("candidates")) {
       queries.candidates = supabase.from("candidate_profiles")
