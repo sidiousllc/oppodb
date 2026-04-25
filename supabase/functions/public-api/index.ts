@@ -149,6 +149,7 @@ Deno.serve(async (req) => {
 
     // Public health probe — no auth required
     if (endpoint === "health") {
+      console.log("[health] public health probe — returning without auth");
       const healthResp = await handleHealthEndpoint(supabase);
       return new Response(JSON.stringify(healthResp), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -159,6 +160,7 @@ Deno.serve(async (req) => {
     const apiKey = req.headers.get("X-API-Key");
 
     if (!apiKey) {
+      console.log(`[auth] Missing API key for endpoint=${endpoint} url=${req.url}`);
       return new Response(
         JSON.stringify({
           error: "Missing API key. Provide via X-API-Key header.",
