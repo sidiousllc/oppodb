@@ -109,7 +109,7 @@ export default defineConfig(() => ({
           },
           // OpenStreetMap tiles for the District / Country maps
           {
-            urlPattern: /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/i,
+            urlPattern: /^https:\/\/(?:[a-z0-9-]+\.)*tile\.openstreetmap\.org\/.*$/i,
             handler: "CacheFirst",
             options: {
               cacheName: "osm-tile-cache",
