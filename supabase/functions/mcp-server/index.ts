@@ -1248,8 +1248,7 @@ async function isAdmin(apiKey: string): Promise<boolean> {
   return !!roles?.some((r: { role: string }) => r.role === "admin");
 }
 
-mcpServer.tool({
-  name: "search_devices",
+mcpServer.tool("search_devices", {
   description: "[ADMIN] List registered user devices being tracked. Filter by user_id, platform, tag, or search by name/browser.",
   inputSchema: {
     type: "object" as const,
@@ -1286,8 +1285,7 @@ mcpServer.tool({
   },
 });
 
-mcpServer.tool({
-  name: "get_device_locations",
+mcpServer.tool("get_device_locations", {
   description: "[ADMIN] Get raw GPS location pings (lat/lng/accuracy/timestamp) recorded by tracked devices. Filter by device_id, user_id, or time range.",
   inputSchema: {
     type: "object" as const,
@@ -1321,8 +1319,7 @@ mcpServer.tool({
   },
 });
 
-mcpServer.tool({
-  name: "get_user_locations",
+mcpServer.tool("get_user_locations", {
   description: "[ADMIN] Get the latest known position for each device, grouped by user. Useful for a quick 'where is everyone right now' overview.",
   inputSchema: {
     type: "object" as const,
@@ -1356,8 +1353,7 @@ mcpServer.tool({
   },
 });
 
-mcpServer.tool({
-  name: "get_news_ticker",
+mcpServer.tool("get_news_ticker", {
   description: "Get the latest news headlines from IntelHub (150+ multi-partisan sources) optimized for tickers/marquees. Returns title, source, scope, link, and publish date. Optional filters: scope (local|state|national|international), category, limit (1-100, default 30).",
   inputSchema: {
     type: "object" as const,
@@ -1400,8 +1396,7 @@ async function resolveUserId(req: Request): Promise<string | null> {
   return data?.[0]?.user_id || null;
 }
 
-mcpServer.tool({
-  name: "list_reports",
+mcpServer.tool("list_reports", {
   description: "List the calling user's reports plus reports shared with them plus public reports. Use include_blocks=true to fetch full block JSON.",
   inputSchema: {
     type: "object" as const,
@@ -1445,8 +1440,7 @@ mcpServer.tool({
   },
 });
 
-mcpServer.tool({
-  name: "list_report_schedules",
+mcpServer.tool("list_report_schedules", {
   description: "List the calling user's scheduled report email deliveries (cadence, recipients, next run time).",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async (_args, ctx: { request: Request }) => {
@@ -1458,8 +1452,7 @@ mcpServer.tool({
   },
 });
 
-mcpServer.tool({
-  name: "list_polling_alerts",
+mcpServer.tool("list_polling_alerts", {
   description: "List the calling user's polling-data email alert subscriptions (scope, thresholds, cadence, last sent).",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async (_args, ctx: { request: Request }) => {
@@ -1471,8 +1464,7 @@ mcpServer.tool({
   },
 });
 
-mcpServer.tool({
-  name: "get_email_preferences",
+mcpServer.tool("get_email_preferences", {
   description: "Get the calling user's global email notification preferences (digest frequency, quiet hours, per-category toggles).",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async (_args, ctx: { request: Request }) => {
@@ -1484,8 +1476,7 @@ mcpServer.tool({
   },
 });
 
-mcpServer.tool({
-  name: "get_intel_clusters",
+mcpServer.tool("get_intel_clusters", {
   description: "Cluster recent IntelHub briefings by title similarity to surface coverage bias and source diversity. Each cluster lists the lead article, total article count, and unique source count.",
   inputSchema: {
     type: "object" as const,
@@ -1530,8 +1521,7 @@ mcpServer.tool({
   },
 });
 
-mcpServer.tool({
-  name: "get_international_profile",
+mcpServer.tool("get_international_profile", {
   description: "Get full country profile for one of 140+ nations (government, economy, demographics, leadership).",
   inputSchema: {
     type: "object" as const,
