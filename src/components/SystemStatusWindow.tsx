@@ -1,12 +1,15 @@
 import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-type CheckStatus = "ok" | "degraded" | "down" | "unknown";
+type CheckStatus = "ok" | "degraded" | "down";
+
 interface HealthCheck {
   component: string;
   status: CheckStatus;
   latency_ms: number;
   detail?: string;
 }
+
 interface HealthResponse {
   status: CheckStatus;
   generated_at: string;
@@ -14,31 +17,28 @@ interface HealthResponse {
   checks: HealthCheck[];
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const HEALTH_URL = `${SUPABASE_URL}/functions/v1/system-status`;
-
 const STATUS_LABEL: Record<CheckStatus, string> = {
   ok: "OK",
   degraded: "Degraded",
   down: "Down",
-  unknown: "Unknown",
 };
 
 const COMPONENT_LABELS: Record<string, string> = {
   database: "Database",
-  auth: "Auth",
+  "docs-registry": "Docs Registry",
+  "docs-wiki": "Wiki Pages",
+  "docs-export": "Docs Export",
+  "ai-gateway": "AI Gateway",
+  "sync-pipeline": "Sync Pipeline",
   candidates: "Candidates",
   districts: "Districts",
   polling: "Polling",
-  congress: "Congress",
-  "election-results": "Election Results",
+  messaging: "Messaging",
   intel: "Intel Hub",
-  messaging: "Messaging Hub",
-  "maga-files": "MAGA Files",
-  "narrative-reports": "Narrative Reports",
-  "sync-pipeline": "Sync Pipeline",
-  "docs-wiki": "Wiki Pages",
-  "public-api": "Public API",
+  international: "International",
+  reports: "Reports Hub",
+  warroom: "War Rooms",
+  sync: "Sync Status",
 };
 
 function StatusPill({ status }: { status: CheckStatus }) {
@@ -47,20 +47,23 @@ function StatusPill({ status }: { status: CheckStatus }) {
       ? "bg-[hsl(120_60%_35%)] text-white"
       : status === "degraded"
       ? "bg-[hsl(45_90%_50%)] text-black"
-      : status === "unknown"
-      ? "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
       : "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]";
   return (
-    <span className={`px-1.5 py-[1px] text-[10px] font-bold uppercase ${cls}`}>
+    <span className={`px-1.5 py-[px] text-[10px] font-bold uppercase ${cls}`}>
       {STATUS_LABEL[status]}
     </span>
   );
 }
 
 interface Props {
-  /** "status" shows full per-component table; "health" shows a compact summary. */
   variant?: "status" | "health";
 }
+
+type SystemStatusClient = {
+  component: string;
+  label: string;
+  check: () => Promise<{ ok: boolean; detail?: string }>;
+};
 
 export function SystemStatusWindow({ variant = "status" }: Props) {
   const [data, setData] = useState<HealthResponse | null>(null);
@@ -70,58 +73,172 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
 
   const fetchHealth = useCallback(async () => {
     setLoading(true);
-    try {
-      const res = await fetch(HEALTH_URL, { headers: { Accept: "application/json" } });
+    const start = Date.now();
+    const checks: HealthCheck[] = [];
 
-      if (!res.ok) {
-        let msg = `HTTP ${res.status}`;
+    const clients: SystemStatusClient[] = [
+      {
+        component: "database",
+        label: COMPONENT_LABELS["database"],
+        check: async () => {
+          const { error } = await supabase.from("sync_run_log").select("id").limit(1);
+          if (error) throw new Error(error.message);
+          return { ok: true };
+        },
+      },
+      {
+        component: "candidates",
+        label: COMPONENT_LABELS["candidates"],
+        check: async () => {
+          const { data, error, count } = await supabase
+            .from("candidates")
+            .select("id", { count: "exact", head: true })
+            .limit(1);
+          if (error) throw new Error(error.message);
+          return { ok: true, detail: count !== null ? `${count} records` : undefined };
+        },
+      },
+      {
+        component: "districts",
+        label: COMPONENT_LABELS["districts"],
+        check: async () => {
+          const { data, error, count } = await supabase
+            .from("district_profiles")
+            .select("id", { count: "exact", head: true })
+            .limit(1);
+          if (error) throw new Error(error.message);
+          return { ok: true, detail: count !== null ? `${count} records` : undefined };
+        },
+      },
+      {
+        component: "polling",
+        label: COMPONENT_LABELS["polling"],
+        check: async () => {
+          const { data, error, count } = await supabase
+            .from("polling_data")
+            .select("id", { count: "exact", head: true })
+            .limit(1);
+          if (error) throw new Error(error.message);
+          return { ok: true, detail: count !== null ? `${count} records` : undefined };
+        },
+      },
+      {
+        component: "messaging",
+        label: COMPONENT_LABELS["messaging"],
+        check: async () => {
+          const { data, error, count } = await supabase
+            .from("messaging_guidance")
+            .select("id", { count: "exact", head: true })
+            .limit(1);
+          if (error) throw new Error(error.message);
+          return { ok: true, detail: count !== null ? `${count} records` : undefined };
+        },
+      },
+      {
+        component: "intel",
+        label: COMPONENT_LABELS["intel"],
+        check: async () => {
+          const { data, error, count } = await supabase
+            .from("intel_briefings")
+            .select("id", { count: "exact", head: true })
+            .limit(1);
+          if (error) throw new Error(error.message);
+          return { ok: true, detail: count !== null ? `${count} records` : undefined };
+        },
+      },
+      {
+        component: "international",
+        label: COMPONENT_LABELS["international"],
+        check: async () => {
+          const { data, error, count } = await supabase
+            .from("international_profiles")
+            .select("id", { count: "exact", head: true })
+            .limit(1);
+          if (error) throw new Error(error.message);
+          return { ok: true, detail: count !== null ? `${count} records` : undefined };
+        },
+      },
+      {
+        component: "reports",
+        label: COMPONENT_LABELS["reports"],
+        check: async () => {
+          const { data, error, count } = await supabase
+            .from("narrative_reports")
+            .select("id", { count: "exact", head: true })
+            .limit(1);
+          if (error) throw new Error(error.message);
+          return { ok: true, detail: count !== null ? `${count} records` : undefined };
+        },
+      },
+      {
+        component: "sync",
+        label: COMPONENT_LABELS["sync"],
+        check: async () => {
+          const { data, error } = await supabase
+            .from("sync_run_log")
+            .select("id,source,status,started_at")
+            .order("started_at", { ascending: false })
+            .limit(1)
+            .single();
+          if (error) throw new Error(error.message);
+          const detail = data
+            ? `${data.source}: ${data.status} at ${new Date(data.started_at).toLocaleString()}`
+            : undefined;
+          return { ok: data?.status === "completed", detail };
+        },
+      },
+      {
+        component: "docs-registry",
+        label: COMPONENT_LABELS["docs-registry"],
+        check: async () => {
+          const { data, error, count } = await supabase
+            .from("wiki_pages")
+            .select("id", { count: "exact", head: true })
+            .limit(1);
+          if (error) throw new Error(error.message);
+          return { ok: true, detail: count !== null ? `${count} pages` : undefined };
+        },
+      },
+    ];
+
+    await Promise.all(
+      clients.map(async (client) => {
+        const t0 = Date.now();
         try {
-          const errJson = await res.json();
-          msg = errJson.message || errJson.error || msg;
-        } catch {}
-        // Build a graceful-degradation response when the function isn't deployed yet
-        setData({
-          status: "unknown",
-          generated_at: new Date().toISOString(),
-          duration_ms: 0,
-          checks: [],
-        });
-        setError(`Status service unavailable (${msg}). Deploy /system-status to enable monitoring.`);
-        return;
-      }
+          const result = await client.check();
+          checks.push({
+            component: client.component,
+            status: result.ok ? "ok" : "down",
+            latency_ms: Date.now() - t0,
+            detail: result.detail,
+          });
+        } catch (err: any) {
+          checks.push({
+            component: client.component,
+            status: "down",
+            latency_ms: Date.now() - t0,
+            detail: err?.message || String(err),
+          });
+        }
+      })
+    );
 
-      const json = await res.json();
+    const overall: CheckStatus =
+      checks.every((c) => c.status === "ok")
+        ? "ok"
+        : checks.some((c) => c.status === "down")
+        ? "down"
+        : "degraded";
 
-      // Gracefully handle unexpected response shapes
-      if (!json || typeof json.status !== "string") {
-        setData({
-          status: "unknown",
-          generated_at: new Date().toISOString(),
-          duration_ms: 0,
-          checks: [],
-        });
-        setError("Unexpected response from status service.");
-        return;
-      }
-
-      setData({
-        ...json,
-        status: (["ok", "degraded", "down"].includes(json.status) ? json.status : "unknown") as CheckStatus,
-        checks: Array.isArray(json.checks) ? json.checks : [],
-      });
-      setError(null);
-    } catch (e: any) {
-      setData({
-        status: "unknown",
-        generated_at: new Date().toISOString(),
-        duration_ms: 0,
-        checks: [],
-      });
-      setError(String(e?.message || e) || "Network error reaching status service.");
-    } finally {
-      setLoading(false);
-      setLastFetch(new Date());
-    }
+    setData({
+      status: overall,
+      generated_at: new Date().toISOString(),
+      duration_ms: Date.now() - start,
+      checks,
+    });
+    setError(null);
+    setLoading(false);
+    setLastFetch(new Date());
   }, []);
 
   useEffect(() => {
@@ -142,9 +259,7 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
           )}
           <span className="truncate text-[10px] text-[hsl(var(--muted-foreground))]">
             {data
-              ? data.status === "unknown"
-                ? "Status unavailable"
-                : `Probed in ${data.duration_ms}ms · ${new Date(data.generated_at).toLocaleTimeString()}`
+              ? `Probed in ${data.duration_ms}ms · ${new Date(data.generated_at).toLocaleTimeString()}`
               : loading
               ? "Checking…"
               : "No data"}
@@ -163,46 +278,40 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
 
       {/* Body */}
       <div className="flex-1 min-h-0 overflow-y-auto win98-sunken bg-[hsl(var(--win98-light))]">
-        {data?.checks && data.checks.length > 0 ? (
-          variant === "health" ? (
-            <ul className="divide-y divide-[hsl(var(--win98-shadow))]">
-              {data.checks.map((c) => (
-                <li key={c.component} className="flex items-center justify-between px-2 py-1">
-                  <span className="font-bold">{COMPONENT_LABELS[c.component] ?? c.component}</span>
-                  <StatusPill status={c.status} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <table className="w-full border-collapse text-[10px]">
-              <thead className="bg-[hsl(var(--win98-face))] sticky top-0">
-                <tr>
-                  <th className="text-left p-1 border-b border-[hsl(var(--win98-shadow))]">Component</th>
-                  <th className="text-left p-1 border-b border-[hsl(var(--win98-shadow))] w-[80px]">Status</th>
-                  <th className="text-right p-1 border-b border-[hsl(var(--win98-shadow))] w-[60px]">Latency</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.checks.map((c) => (
-                  <tr key={c.component} className="border-b border-[hsl(var(--win98-shadow))] align-top">
-                    <td className="p-1">
-                      <div className="font-bold">{COMPONENT_LABELS[c.component] ?? c.component}</div>
-                      <div className="font-mono text-[9px] text-[hsl(var(--muted-foreground))]">{c.component}</div>
-                      {c.detail && (
-                        <div className="text-[9px] text-[hsl(var(--destructive))] mt-[2px]">{c.detail}</div>
-                      )}
-                    </td>
-                    <td className="p-1"><StatusPill status={c.status} /></td>
-                    <td className="p-1 text-right font-mono">{c.latency_ms}ms</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )
+        {variant === "health" ? (
+          <ul className="divide-y divide-[hsl(var(--win98-shadow))]">
+            {(data?.checks ?? []).map((c) => (
+              <li key={c.component} className="flex items-center justify-between px-2 py-1">
+                <span className="font-bold">{COMPONENT_LABELS[c.component] ?? c.component}</span>
+                <StatusPill status={c.status} />
+              </li>
+            ))}
+          </ul>
         ) : (
-          <div className="flex items-center justify-center h-full text-[11px] text-[hsl(var(--muted-foreground))] p-4 text-center">
-            {loading ? "Checking system status…" : "No status data available."}
-          </div>
+          <table className="w-full border-collapse text-[10px]">
+            <thead className="bg-[hsl(var(--win98-face))] sticky top-0">
+              <tr>
+                <th className="text-left p-1 border-b border-[hsl(var(--win98-shadow))]">Component</th>
+                <th className="text-left p-1 border-b border-[hsl(var(--win98-shadow))] w-[80px]">Status</th>
+                <th className="text-right p-1 border-b border-[hsl(var(--win98-shadow))] w-[60px]">Latency</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.checks ?? []).map((c) => (
+                <tr key={c.component} className="border-b border-[hsl(var(--win98-shadow))] align-top">
+                  <td className="p-1">
+                    <div className="font-bold">{COMPONENT_LABELS[c.component] ?? c.component}</div>
+                    <div className="font-mono text-[9px] text-[hsl(var(--muted-foreground))]">{c.component}</div>
+                    {c.detail && (
+                      <div className="text-[9px] text-[hsl(var(--muted-foreground))] mt-[2px]">{c.detail}</div>
+                    )}
+                  </td>
+                  <td className="p-1"><StatusPill status={c.status} /></td>
+                  <td className="p-1 text-right font-mono">{c.latency_ms}ms</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
