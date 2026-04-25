@@ -97,6 +97,7 @@ const VALID_ENDPOINTS = [
     "docs-mcp-tools",               // GET — list every MCP tool name + description (mirrors mcp-server registry)
     "docs-edge-functions",          // GET — list every deployed edge function with purpose + auth requirement
     "docs-technical",               // GET — list per-section *-Technical.md pages | ?slug= for one | ?slug=TECHNICAL-REFERENCE for consolidated
+    "docs-technical-changelog",     // GET — recent changes per section, parsed from wiki + technical-doc frontmatter / "## Changelog" blocks (params: ?since=ISO, ?limit=)
     "docs-export",                  // GET — versioned full snapshot of /docs?include=all with docVersion (sha256) + generated_at for caching/diffing
     // Offline parity (Phase 10) — read snapshots + replay queued writes via REST
     "offline-manifest",              // GET — list of all offline-synced tables with select hints (matches src/lib/offlineSync SYNC_TABLES)
