@@ -342,6 +342,22 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     singleton: true,
     render: () => <div className="p-3"><AlertsHub /></div>,
   },
+  status: {
+    id: "status",
+    title: "System Status",
+    icon: "📊",
+    singleton: true,
+    size: { width: 520, height: 440 },
+    render: () => <SystemStatusWindow variant="status" />,
+  },
+  health: {
+    id: "health",
+    title: "Health Monitor",
+    icon: "❤️",
+    singleton: true,
+    size: { width: 360, height: 320 },
+    render: () => <SystemStatusWindow variant="health" />,
+  },
   // Notepad is rendered directly via Win98Notepad in Win98Desktop (it wraps its own window)
   "recycle-bin": {
     id: "recycle-bin",
