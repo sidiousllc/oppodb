@@ -81,6 +81,19 @@ export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarP
                   </button>
                   <div className="mx-2 my-1 border-t border-[hsl(var(--win98-shadow))]" />
                   <button
+                    onClick={() => { openWindow({ appId: "status", title: "System Status", icon: "📊", singleton: true, size: { width: 520, height: 440 } }); setStartOpen(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-[11px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
+                  >
+                    <span>📊</span> System Status
+                  </button>
+                  <button
+                    onClick={() => { openWindow({ appId: "health", title: "Health Monitor", icon: "❤️", singleton: true, size: { width: 360, height: 320 } }); setStartOpen(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-[11px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
+                  >
+                    <span>❤️</span> Health Monitor
+                  </button>
+                  <div className="mx-2 my-1 border-t border-[hsl(var(--win98-shadow))]" />
+                  <button
                     onClick={() => { signOut(); setStartOpen(false); }}
                     className="flex w-full items-center gap-2 px-3 py-1.5 text-[11px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
                   >
