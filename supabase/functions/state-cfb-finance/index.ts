@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      EdgeRuntime.waitUntil(syncStateData(supabase, stateParam));
+      (globalThis as any).EdgeRuntime?.waitUntil?.(syncStateData(supabase, stateParam)) ?? syncStateData(supabase, stateParam);
       return new Response(
         JSON.stringify({ success: true, message: `${stateParam} sync started in background` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
