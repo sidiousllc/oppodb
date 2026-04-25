@@ -111,7 +111,7 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       <div className="flex-1 min-h-0 overflow-y-auto win98-sunken bg-[hsl(var(--win98-light))]">
         {variant === "health" ? (
           <ul className="divide-y divide-[hsl(var(--win98-shadow))]">
-            {data?.checks.map((c) => (
+            {(data?.checks ?? []).map((c) => (
               <li key={c.component} className="flex items-center justify-between px-2 py-1">
                 <span className="font-bold">{COMPONENT_LABELS[c.component] ?? c.component}</span>
                 <StatusPill status={c.status} />
@@ -128,7 +128,7 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
               </tr>
             </thead>
             <tbody>
-              {data?.checks.map((c) => (
+              {(data?.checks ?? []).map((c) => (
                 <tr key={c.component} className="border-b border-[hsl(var(--win98-shadow))] align-top">
                   <td className="p-1">
                     <div className="font-bold">{COMPONENT_LABELS[c.component] ?? c.component}</div>
