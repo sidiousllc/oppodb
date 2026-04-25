@@ -21,6 +21,7 @@ import PublicReport from "./pages/PublicReport.tsx";
 import LocalFeedsValidation from "./pages/LocalFeedsValidation.tsx";
 import LocalFeedsStateSources from "./pages/LocalFeedsStateSources.tsx";
 import LocalFeedsAudit from "./pages/LocalFeedsAudit.tsx";
+import StatusPage from "./pages/StatusPage.tsx";
 import { initOfflineSync } from "./lib/offlineSync";
 import { LocationTrackerInit } from "./hooks/useLocationTracker";
 
@@ -82,6 +83,7 @@ const App = () => {
                 <Route path="/admin/local-feeds/:abbr" element={<ProtectedRoute><LocalFeedsStateSources /></ProtectedRoute>} />
                 <Route path="/unsubscribe" element={<UnsubscribePage />} />
                 <Route path="/r/:id" element={<PublicReport />} />
+                <Route path="/status" element={<StatusPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </WindowManagerProvider>
