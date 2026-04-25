@@ -208,12 +208,11 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
             .select("id,source,status,started_at")
             .order("started_at", { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
           if (error) throw new Error(error.message);
-          const detail = data
-            ? `${data.source}: ${data.status} at ${new Date(data.started_at).toLocaleString()}`
-            : undefined;
-          return { ok: data?.status === "completed", detail };
+          if (!data) return { ok: true, detail: "No sync runs recorded yet" };
+          const detail = `${data.source}: ${data.status} at ${new Date(data.started_at).toLocaleString()}`;
+          return { ok: data.status === "completed", detail };
         },
       },
       {
