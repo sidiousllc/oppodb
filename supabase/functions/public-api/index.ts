@@ -1034,7 +1034,8 @@ Deno.serve(async (req) => {
         if (tickerCat) q = q.eq("category", tickerCat);
         const { data, error } = await q;
         if (error) throw error;
-        result = { data: data || [], count: data?.length || 0, generated_at: new Date().toISOString() };
+        result = { data: data || [], count: data?.length || 0 };
+        (result as any).generated_at = new Date().toISOString();
         break;
       }
 
