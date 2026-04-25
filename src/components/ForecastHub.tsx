@@ -284,7 +284,7 @@ export function ForecastHub() {
 
   return (
       <div className="space-y-3">
-        <div className="flex justify-end gap-2 items-center"><OfflineSectionDownloadButtonProxy /><OfflineSectionStatus label="Forecast Hub" tables={["election_forecasts","election_forecast_history","forecast_scenarios","forecast_simulations"]} /></div>
+        <div className="flex justify-end gap-2 items-center"><OfflineSectionDownloadButton label="Forecast Hub" tables={["election_forecasts","election_forecast_history","forecast_scenarios","forecast_simulations"]} /><OfflineSectionStatus label="Forecast Hub" tables={["election_forecasts","election_forecast_history","forecast_scenarios","forecast_simulations"]} /></div>
         <div className="win98-raised bg-[hsl(var(--win98-face))]">
           <div className="px-2 py-1 text-[11px] font-bold border-b border-b-[hsl(var(--win98-shadow))]">🎲 Scenario Simulator</div>
           <div className="p-3 space-y-3">

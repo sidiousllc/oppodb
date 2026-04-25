@@ -72,7 +72,7 @@ export function AlertsHub() {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end gap-2 items-center"><OfflineSectionDownloadButtonProxy /><OfflineSectionStatus label="Alerts" tables={["alert_rules","notifications","watchlist_items","webhook_endpoints"]} /></div>
+      <div className="flex justify-end gap-2 items-center"><OfflineSectionDownloadButton label="Alerts" tables={["alert_rules","notifications","watchlist_items","webhook_endpoints"]} /><OfflineSectionStatus label="Alerts" tables={["alert_rules","notifications","watchlist_items","webhook_endpoints"]} /></div>
       <div className="flex gap-1 border-b border-[hsl(var(--win98-shadow))]">
         {(["inbox", "rules", "watch", "webhooks"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)} className={`text-[10px] px-2 py-1 ${tab === t ? "bg-[hsl(var(--win98-face))] win98-raised font-bold" : "opacity-70"}`}>
