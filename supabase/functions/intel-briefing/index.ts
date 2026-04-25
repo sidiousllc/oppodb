@@ -2084,7 +2084,8 @@ Deno.serve(async (req) => {
           perState: summaryByState,
           additions,
           skipped,
-          note: "Healthy candidates were probed live from a vetted reserve pool. To persist them, add the entries under additions to SOURCES.local in supabase/functions/intel-briefing/index.ts.",
+          duplicates: duplicatesSkipped,
+          note: "Healthy candidates were probed live from a vetted reserve pool. Reserve URLs already configured for any state/scope are skipped (see `duplicates`). To persist additions, add the entries under additions to SOURCES.local in supabase/functions/intel-briefing/index.ts.",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
