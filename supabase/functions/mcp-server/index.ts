@@ -1261,7 +1261,7 @@ mcpServer.tool("search_devices", {
       offset: { type: "number" as const, description: "Pagination offset" },
     },
   },
-  handler: async (args: Record<string, unknown>, ctx: { request: Request }) => {
+  handler: async (args: Record<string, unknown>, ctx: any) => {
     const apiKey = ctx.request.headers.get("X-API-Key") || ctx.request.headers.get("Authorization")?.replace("Bearer ", "") || "";
     if (!await isAdmin(apiKey)) {
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Admin role required" }) }] };
@@ -1298,7 +1298,7 @@ mcpServer.tool("get_device_locations", {
       offset: { type: "number" as const, description: "Pagination offset" },
     },
   },
-  handler: async (args: Record<string, unknown>, ctx: { request: Request }) => {
+  handler: async (args: Record<string, unknown>, ctx: any) => {
     const apiKey = ctx.request.headers.get("X-API-Key") || ctx.request.headers.get("Authorization")?.replace("Bearer ", "") || "";
     if (!await isAdmin(apiKey)) {
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Admin role required" }) }] };
@@ -1327,7 +1327,7 @@ mcpServer.tool("get_user_locations", {
       user_id: { type: "string" as const, description: "Filter to a specific user UUID" },
     },
   },
-  handler: async (args: Record<string, unknown>, ctx: { request: Request }) => {
+  handler: async (args: Record<string, unknown>, ctx: any) => {
     const apiKey = ctx.request.headers.get("X-API-Key") || ctx.request.headers.get("Authorization")?.replace("Bearer ", "") || "";
     if (!await isAdmin(apiKey)) {
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Admin role required" }) }] };
@@ -1408,7 +1408,7 @@ mcpServer.tool("list_reports", {
       limit: { type: "number" as const, description: "Max results (default 30)" },
     },
   },
-  handler: async (args: Record<string, unknown>, ctx: { request: Request }) => {
+  handler: async (args: Record<string, unknown>, ctx: any) => {
     const userId = await resolveUserId(ctx.request);
     if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
     const includeBlocks = !!args.include_blocks;
@@ -1443,7 +1443,7 @@ mcpServer.tool("list_reports", {
 mcpServer.tool("list_report_schedules", {
   description: "List the calling user's scheduled report email deliveries (cadence, recipients, next run time).",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async (_args, ctx: { request: Request }) => {
+  handler: async (_args: Record<string, unknown>, ctx: any) => {
     const userId = await resolveUserId(ctx.request);
     if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
     const { data, error } = await supabase.from("report_schedules").select("*").eq("owner_id", userId).order("next_run_at");
@@ -1455,7 +1455,7 @@ mcpServer.tool("list_report_schedules", {
 mcpServer.tool("list_polling_alerts", {
   description: "List the calling user's polling-data email alert subscriptions (scope, thresholds, cadence, last sent).",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async (_args, ctx: { request: Request }) => {
+  handler: async (_args: Record<string, unknown>, ctx: any) => {
     const userId = await resolveUserId(ctx.request);
     if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
     const { data, error } = await supabase.from("polling_alert_subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false });
@@ -1467,7 +1467,7 @@ mcpServer.tool("list_polling_alerts", {
 mcpServer.tool("get_email_preferences", {
   description: "Get the calling user's global email notification preferences (digest frequency, quiet hours, per-category toggles).",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async (_args, ctx: { request: Request }) => {
+  handler: async (_args: Record<string, unknown>, ctx: any) => {
     const userId = await resolveUserId(ctx.request);
     if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
     const { data, error } = await supabase.from("email_notification_preferences").select("*").eq("user_id", userId).maybeSingle();
