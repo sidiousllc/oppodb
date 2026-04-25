@@ -8,18 +8,24 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   plugins: {
     CapacitorCookies: {
-      enabled: true
+      enabled: true,
     },
     CapacitorSQLite: {
-      enabled: true
-    }
+      enabled: true,
+    },
+    Geolocation: {
+      enableBackgroundLocationModes: false,
+      alwaysAuthorization: false,
+    },
   },
-  ...(isDev ? {
-    server: {
-      url: 'https://4f0f9990-c3c0-4e04-9ceb-2c41704d227e.lovableproject.com?forceHideBadge=true',
-      cleartext: true
-    }
-  } : {})
+  ...(isDev
+    ? {
+        server: {
+          url: 'https://4f0f9990-c3c0-4e04-9ceb-2c41704d227e.lovableproject.com?forceHideBadge=true',
+          cleartext: true,
+        },
+      }
+    : {}),
 };
 
 export default config;
