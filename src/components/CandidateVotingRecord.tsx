@@ -88,7 +88,7 @@ function voteLabel(voteText: string) {
   if (v === "nay" || v === "no") return "NAY";
   if (v === "nv" || v === "not voting") return "NV";
   if (v === "absent") return "ABSENT";
-  return voteText.toUpperCase();
+  return (voteText || "").toUpperCase();
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────

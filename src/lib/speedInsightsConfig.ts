@@ -29,13 +29,13 @@ const DEFAULTS: Record<SpeedInsightsEnv, Omit<SpeedInsightsConfig, "env">> = {
 export function detectEnv(): SpeedInsightsEnv {
   if (import.meta.env.DEV) return "development";
 
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
+  if (typeof window !== "undefined" && window.location) {
+    const host = window.location.hostname ?? "";
     const isPreview =
       host.includes("id-preview--") ||
       host.includes("lovableproject.com") ||
       host.includes("lovable.app") ||
-      host.endsWith(".vercel.app");
+      host.endsWith("vercel.app");
     if (isPreview) return "preview";
   }
 
