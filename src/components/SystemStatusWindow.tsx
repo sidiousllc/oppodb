@@ -79,7 +79,7 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
           const t0 = Date.now();
           try {
             // Try unauthenticated public-api - it returns 401 or a valid JSON response
-            const res = await fetch(`${SUPABASE_URL}/functions/v1/public-api/health`, {
+            const res = await fetch(`${SUPABASE_URL}/functions/v1/public-health`, {
               headers: { Accept: "application/json" },
             });
             if (res.status === 401 || res.status === 200) {

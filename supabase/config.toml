@@ -62,3 +62,9 @@ project_id = "yysbtxpupmwkxovgkama"
     verify_jwt = false
   [functions.handle-email-suppression]
     verify_jwt = false
+
+[functions.health]
+  verify_jwt = false
+
+[functions.public-health]
+  verify_jwt = false
