@@ -1213,7 +1213,7 @@ mcpServer.tool("master_search", {
 
     const entries = Object.entries(queries);
     const settled = await Promise.all(entries.map(async ([key, promise]) => {
-      const res = await promise.catch(() => ({ label: key, data: [] as unknown[] }));
+      const res = await Promise.resolve(promise).catch(() => ({ label: key, data: [] as unknown[] }));
       return { key, label: res.label, count: res.data.length, results: res.data };
     }));
 
