@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { toast } from "sonner";
 import { Loader2, Network, Save, Wand2 } from "lucide-react";
 import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
+import { OfflineSectionDownloadButton } from "@/components/OfflineSectionDownloadButton";
 
 interface Node { id: string; type: string; label: string; }
 interface Edge { id: string; source: string; target: string; type: string; amount?: number | null; }
@@ -161,7 +162,7 @@ export function GraphHub() {
 
   return (
       <div className="space-y-3">
-        <div className="flex justify-end"><OfflineSectionStatus label="Graph" tables={["entity_relationships","graph_snapshots"]} /></div>
+        <div className="flex justify-end gap-2 items-center"><OfflineSectionDownloadButtonProxy /><OfflineSectionStatus label="Graph" tables={["entity_relationships","graph_snapshots"]} /></div>
         <div className="win98-raised bg-[hsl(var(--win98-face))]">
           <div className="px-2 py-1 text-[11px] font-bold border-b border-b-[hsl(var(--win98-shadow))]">🕸️ Build & Explore</div>
           <div className="p-3 space-y-2">

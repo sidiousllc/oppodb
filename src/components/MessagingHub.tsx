@@ -8,6 +8,7 @@ import { Win98Window } from "@/components/Win98Window";
 import { MessagingAIPanel } from "@/components/MessagingAIPanel";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
+import { OfflineSectionDownloadButton } from "@/components/OfflineSectionDownloadButton";
 
 interface MessagingGuidance {
   id: string;
@@ -221,7 +222,7 @@ export function MessagingHub() {
     <>
     {detailWindow}
     <div className="space-y-3">
-      <div className="flex justify-end"><OfflineSectionStatus label="Messaging Hub" tables={["messaging_guidance","messaging_audience_analyses","messaging_impact_analyses","talking_points"]} /></div>
+      <div className="flex justify-end gap-2 items-center"><OfflineSectionDownloadButtonProxy /><OfflineSectionStatus label="Messaging Hub" tables={["messaging_guidance","messaging_audience_analyses","messaging_impact_analyses","talking_points"]} /></div>
       <div className="win98-sunken bg-[hsl(var(--win98-light))] px-3 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-[11px]">

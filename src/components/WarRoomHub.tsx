@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Trash2, Users, X, UserPlus, Send, LogOut, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
+import { OfflineSectionDownloadButton } from "@/components/OfflineSectionDownloadButton";
 
 interface WarRoom {
   id: string;
@@ -316,7 +317,7 @@ export function WarRoomHub() {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end"><OfflineSectionStatus label="War Rooms" tables={["war_rooms","war_room_members","war_room_messages","entity_notes"]} /></div>
+      <div className="flex justify-end gap-2 items-center"><OfflineSectionDownloadButtonProxy /><OfflineSectionStatus label="War Rooms" tables={["war_rooms","war_room_members","war_room_messages","entity_notes"]} /></div>
       <div className="flex items-center justify-between">
         <h3 className="text-[12px] font-bold flex items-center gap-1">
           <Users className="h-3 w-3" /> War Rooms

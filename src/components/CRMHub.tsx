@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { OfflineSectionStatus } from "@/components/OfflineSectionStatus";
+import { OfflineSectionDownloadButton } from "@/components/OfflineSectionDownloadButton";
 
 interface Stakeholder {
   id: string;
@@ -80,7 +81,7 @@ export function CRMHub() {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end"><OfflineSectionStatus label="CRM" tables={["stakeholders","stakeholder_interactions","entity_notes"]} /></div>
+      <div className="flex justify-end gap-2 items-center"><OfflineSectionDownloadButtonProxy /><OfflineSectionStatus label="CRM" tables={["stakeholders","stakeholder_interactions","entity_notes"]} /></div>
       <div className="flex items-center justify-between">
         <h3 className="text-[12px] font-bold">🤝 Stakeholders CRM</h3>
         <button onClick={() => setAdding(true)} className="win98-button text-[10px] px-2 py-0.5 flex items-center gap-1">
