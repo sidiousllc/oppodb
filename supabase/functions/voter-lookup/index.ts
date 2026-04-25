@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
         search_type, first_name, last_name, state, city, zip,
       });
       results.push(...fecResults);
-    } catch (e) {
+    } catch (e: any) {
       errors.push(`FEC: ${e.message}`);
     }
 
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
           apiKey: CIVIC_API_KEY, address, city, state, zip,
         });
         results.push(...civicResults);
-      } catch (e) {
+      } catch (e: any) {
         errors.push(`Google Civic: ${e.message}`);
       }
     }
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
           apiKey: OPENSTATES_KEY, state, district, district_type,
         });
         results.push(...osResults);
-      } catch (e) {
+      } catch (e: any) {
         errors.push(`Open States: ${e.message}`);
       }
     }
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
           search_type, first_name, last_name, state, address, city, zip, district, district_type,
         });
         results.push(...nbResults);
-      } catch (e) {
+      } catch (e: any) {
         errors.push(`NationBuilder: ${e.message}`);
       }
     }
@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
           search_type, first_name, last_name, state, address, city, zip, district, district_type,
         });
         results.push(...vanResults);
-      } catch (e) {
+      } catch (e: any) {
         errors.push(`VAN: ${e.message}`);
       }
     }
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Voter lookup error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
