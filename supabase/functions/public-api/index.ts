@@ -2406,6 +2406,31 @@ async function handleDocsEndpoint(
   if (endpoint === "docs-edge-functions") {
     return { data: EDGE_FUNCTIONS_REGISTRY, count: EDGE_FUNCTIONS_REGISTRY.length };
   }
+  if (endpoint === "docs-technical") {
+    const slug = url.searchParams.get("slug");
+    const format = (url.searchParams.get("format") ?? "json").toLowerCase();
+    if (slug) {
+      const doc = TECHNICAL_DOCS_BY_SLUG[slug];
+      if (!doc) return { error: `Technical doc not found: ${slug}`, available: TECHNICAL_DOCS.map(d => d.slug) };
+      if (format === "markdown" || format === "md") {
+        // Special signal — caller in main handler will reformat to text/markdown.
+        return { __raw_markdown__: true, content: doc.content, slug: doc.slug, title: doc.title };
+      }
+      return { data: doc };
+    }
+    return {
+      message: "Per-section technical reference pages",
+      consolidated: "/public-api/docs-technical?slug=TECHNICAL-REFERENCE",
+      data: TECHNICAL_DOCS.map(d => ({
+        slug: d.slug,
+        title: d.title,
+        url: `/public-api/docs-technical?slug=${d.slug}`,
+        markdown_url: `/public-api/docs-technical?slug=${d.slug}&format=markdown`,
+        bytes: d.content.length,
+      })),
+      count: TECHNICAL_DOCS.length,
+    };
+  }
   return { error: "Unknown docs endpoint" };
 }
 
