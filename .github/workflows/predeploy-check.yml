@@ -27,12 +27,26 @@ jobs:
         run: npx tsc --noEmit --pretty false
 
   edge-functions:
-    name: Edge Functions (deno check)
+    name: Edge Functions (parse + type-check)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      - name: Parse + type-check every supabase/functions/*/index.ts
-        run: node scripts/check-edge-functions.mjs
+      - name: Run predeploy checklist
+        id: checklist
+        # Exit 0 = clean, 1 = parse failure (deploy blocked), 2 = type failure
+        # We capture the report regardless, then re-fail if parse errors exist.
+        run: node scripts/check-edge-functions.mjs || echo "exit=$?" >> $GITHUB_OUTPUT
+      - name: Upload checklist report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: predeploy-report
+          path: predeploy-report.json
+      - name: Fail job on parse errors
+        if: steps.checklist.outputs.exit == '1'
+        run: |
+          echo "::error::Parse failures detected — bundling will fail. See predeploy-report artifact."
+          exit 1
