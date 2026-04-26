@@ -140,27 +140,44 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  // Re-clamp all windows when viewport resizes so nothing is stuck offscreen
+  // Re-clamp all open windows whenever the viewport changes (resize, devtools
+  // open/close, orientation flip) so a window can never end up partially or
+  // fully off-screen. Persist the clamped geometry so reopening uses the
+  // corrected position rather than the stale saved one.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const onResize = () => {
-      const TASKBAR = 28;
+    const TASKBAR = 28;
+    const clampAll = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight - TASKBAR;
       setWindows((prev) =>
         prev.map((w) => {
           const width = Math.min(w.size.width, Math.max(280, vw - 16));
           const height = Math.min(w.size.height, Math.max(200, vh - 16));
-          const x = Math.max(0, Math.min(w.position.x, vw - width));
-          const y = Math.max(0, Math.min(w.position.y, vh - height));
-          if (width === w.size.width && height === w.size.height && x === w.position.x && y === w.position.y) return w;
+          const x = Math.max(0, Math.min(w.position.x, Math.max(0, vw - width)));
+          const y = Math.max(0, Math.min(w.position.y, Math.max(0, vh - height)));
+          if (
+            width === w.size.width &&
+            height === w.size.height &&
+            x === w.position.x &&
+            y === w.position.y
+          ) {
+            return w;
+          }
+          // Persist the clamped values so a future restore doesn't re-apply
+          // the off-screen coordinates that we just corrected.
+          saveGeometry(w.appId, { x, y, width, height });
           return { ...w, size: { width, height }, position: { x, y } };
         })
       );
     };
-    window.addEventListener("resize", onResize);
-    onResize();
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener("resize", clampAll);
+    window.addEventListener("orientationchange", clampAll);
+    clampAll();
+    return () => {
+      window.removeEventListener("resize", clampAll);
+      window.removeEventListener("orientationchange", clampAll);
+    };
   }, []);
 
   return (
