@@ -1,4 +1,5 @@
 import { createContext, useContext, useCallback, useEffect, useRef, useState, ReactNode } from "react";
+import { loadGeometry, saveGeometry } from "@/lib/windowGeometry";
 
 export interface OpenWindow {
   /** Unique instance id (random per open) */
