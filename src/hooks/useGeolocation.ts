@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Geolocation, Position, GeoPositionOptions } from '@capacitor/geolocation';
+import { Geolocation, Position, PositionOptions as GeoPositionOptions } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
 
 interface UseGeolocationOptions {
@@ -24,7 +24,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
   });
 
   const checkPermission = useCallback(async () => {
-    if (!Capacitor.isNativeApp()) {
+    if (!Capacitor.isNativePlatform()) {
       setState(s => ({ ...s, hasPermission: true }));
       return true;
     }
@@ -40,7 +40,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
   }, []);
 
   const requestPermission = useCallback(async () => {
-    if (!Capacitor.isNativeApp()) return true;
+    if (!Capacitor.isNativePlatform()) return true;
     try {
       const perm = await Geolocation.requestPermissions();
       const granted = perm.location === 'granted' || perm.coarseLocation === 'granted';
@@ -86,7 +86,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
  * Standalone single-shot position getter.
  */
 export async function getCurrentPosition(options?: UseGeolocationOptions): Promise<Position | null> {
-  if (!Capacitor.isNativeApp()) {
+  if (!Capacitor.isNativePlatform()) {
     // Fallback to browser geolocation
     return new Promise((resolve) => {
       if (!navigator.geolocation) { resolve(null); return; }
@@ -100,10 +100,9 @@ export async function getCurrentPosition(options?: UseGeolocationOptions): Promi
             altitudeAccuracy: pos.coords.altitudeAccuracy ?? 0,
             heading: pos.coords.heading ?? 0,
             speed: pos.coords.speed ?? 0,
-          },
+          } as Position["coords"],
           timestamp: pos.timestamp,
-          mocked: false,
-        }),
+        } as Position),
         () => resolve(null),
         { timeout: options?.timeout ?? 10000, enableHighAccuracy: options?.enableHighAccuracy ?? false }
       );

@@ -13,11 +13,11 @@ export function useCapacitor() {
   const [isNative, setIsNative] = useState(false);
 
   useEffect(() => {
-    setIsNative(Capacitor.isNativeApp());
+    setIsNative(Capacitor.isNativePlatform());
   }, []);
 
   const hideStatusBar = async () => {
-    if (!Capacitor.isNativeApp()) return;
+    if (!Capacitor.isNativePlatform()) return;
     try {
       await StatusBar.setStyle({ style: Style.Dark });
       await StatusBar.hide();
@@ -25,14 +25,14 @@ export function useCapacitor() {
   };
 
   const showStatusBar = async () => {
-    if (!Capacitor.isNativeApp()) return;
+    if (!Capacitor.isNativePlatform()) return;
     try {
       await StatusBar.show();
     } catch {}
   };
 
   const hapticFeedback = async (style: 'light' | 'medium' | 'heavy' = 'medium') => {
-    if (!Capacitor.isNativeApp()) return;
+    if (!Capacitor.isNativePlatform()) return;
     try {
       const map = { light: ImpactStyle.Light, medium: ImpactStyle.Medium, heavy: ImpactStyle.Heavy };
       await Haptics.impact({ style: map[style] });
@@ -40,21 +40,21 @@ export function useCapacitor() {
   };
 
   const vibrate = async () => {
-    if (!Capacitor.isNativeApp()) return;
+    if (!Capacitor.isNativePlatform()) return;
     try {
       await Haptics.vibrate({ duration: 100 });
     } catch {}
   };
 
   const showToast = async (message: string, duration: 'short' | 'long' = 'short') => {
-    if (!Capacitor.isNativeApp()) return;
+    if (!Capacitor.isNativePlatform()) return;
     try {
       await Toast.show({ text: message, duration: duration === 'long' ? 'long' : 'short' });
     } catch {}
   };
 
   const requestMotionPermission = async () => {
-    if (!Capacitor.isNativeApp()) return false;
+    if (!Capacitor.isNativePlatform()) return false;
     try {
       await Motion.addListener('accel', () => {});
       return true;
