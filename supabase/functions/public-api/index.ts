@@ -2465,6 +2465,226 @@ async function handleDocsEndpoint(
       payload,
     };
   }
+  if (endpoint === "docs-export-diff") {
+    const fromVer = url.searchParams.get("from");
+    const toVer   = url.searchParams.get("to");
+
+    if (!fromVer || !toVer) {
+      return new Response(JSON.stringify({ error: "Both ?from= and ?to= docVersion parameters are required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (fromVer === toVer) {
+      return new Response(JSON.stringify({ error: "from and to must be different docVersion values" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Build current snapshot
+    const { count: wikiCount } = await supabase.from("wiki_pages").select("*", { count: "exact", head: true });
+    const { data: wikiPages } = await supabase.from("wiki_pages")
+      .select("slug,title,content,sort_order,published,updated_at").order("sort_order", { ascending: true });
+
+    const payload = {
+      summary: { wiki_pages: wikiCount ?? 0, public_endpoints: ENDPOINT_SPECS.length,
+                 offline_tables: OFFLINE_TABLES_REGISTRY.length, edge_functions: EDGE_FUNCTIONS_REGISTRY.length,
+                 mcp_tools: MCP_TOOL_SPECS.length, sections: Object.keys(SECTIONS).length },
+      sections: SECTIONS,
+      wiki_pages: wikiPages ?? [],
+      endpoints: ENDPOINT_SPECS.map(e => ({ ...e, path: `/public-api/${e.endpoint}` })),
+      offline_tables: OFFLINE_TABLES_REGISTRY.map(t => ({ table: t })),
+      edge_functions: EDGE_FUNCTIONS_REGISTRY,
+      mcp_tools: MCP_TOOL_SPECS,
+    };
+
+    const stableJson = JSON.stringify(payload, Object.keys(payload).sort());
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(stableJson));
+    const currentDocVersion = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+    // "to" snapshot is always the current state
+    const toSnapshot = { docVersion: currentDocVersion, generated_at: new Date().toISOString().toString(), payload };
+
+    // "from" snapshot: if it matches current hash it's identical; otherwise treat as baseline
+    // where every currently-existing item is considered "added" in from's frame of reference
+    const fromIsCurrent = fromVer === currentDocVersion;
+    const fromPayload = fromIsCurrent ? toSnapshot.payload : buildBaselinePayload();
+    const fromSnapshot = { docVersion: fromVer, generated_at: null, payload: fromPayload };
+
+    const diff = computeDocDiff(fromSnapshot, toSnapshot);
+
+    return new Response(JSON.stringify({ diff }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
+  // Baseline payload — all currently-registered items represented as "empty" for diff framing
+  function buildBaselinePayload() {
+    return {
+      summary: { wiki_pages: 0, public_endpoints: 0, offline_tables: 0,
+                 edge_functions: 0, mcp_tools: 0, sections: 0 },
+      sections: {},
+      wiki_pages: [],
+      endpoints: [],
+      offline_tables: [],
+      edge_functions: [],
+      mcp_tools: [],
+    };
+  }
+
+  // ── Field-level diff between two doc export snapshots ──────────────────────
+  function computeDocDiff(fromSnap: { docVersion: string; generated_at: string | null; payload: any },
+                          toSnap:   { docVersion: string; generated_at: string | null; payload: any }) {
+    const fromEndpoints = new Map((fromSnap.payload.endpoints ?? []).map(e => [e.endpoint, e]));
+    const toEndpoints   = new Map((toSnap.payload.endpoints   ?? []).map(e => [e.endpoint, e]));
+
+    const allKeys = new Set([...fromEndpoints.keys(), ...toEndpoints.keys()]);
+
+    const added: any[] = [], removed: any[] = [], modified: any[] = [], unchanged: any[] = [];
+
+    for (const key of [...allKeys].sort()) {
+      const f = fromEndpoints.get(key);
+      const t = toEndpoints.get(key);
+
+      if (f && !t) {
+        removed.push({ endpoint: key, before: f, after: null });
+      } else if (!f && t) {
+        added.push({ endpoint: key, before: null, after: t });
+      } else if (f && t) {
+        const fieldDiffs = diffEndpoint(f, t);
+        if (fieldDiffs.length > 0) {
+          modified.push({ endpoint: key, before: f, after: t, field_diffs: fieldDiffs });
+        } else {
+          unchanged.push({ endpoint: key });
+        }
+      }
+    }
+
+    // MCP tools diff
+    const fromTools = new Map((fromSnap.payload.mcp_tools ?? []).map((t: any) => [t.name, t]));
+    const toTools   = new Map((toSnap.payload.mcp_tools   ?? []).map((t: any) => [t.name, t]));
+    const allTools = new Set([...fromTools.keys(), ...toTools.keys()]);
+    const mcpAdded: any[] = [], mcpRemoved: any[] = [], mcpModified: any[] = [], mcpUnchanged: any[] = [];
+    for (const key of [...allTools].sort()) {
+      const f = fromTools.get(key);
+      const t = toTools.get(key);
+      if (f && !t) mcpRemoved.push({ tool: key, before: f, after: null });
+      else if (!f && t) mcpAdded.push({ tool: key, before: null, after: t });
+      else if (f && t) {
+        const fd = diffMcpTool(f, t);
+        if (fd.length > 0) mcpModified.push({ tool: key, before: f, after: t, field_diffs: fd });
+        else mcpUnchanged.push({ tool: key });
+      }
+    }
+
+    // Edge functions diff
+    const fromFns = new Map((fromSnap.payload.edge_functions ?? []).map((f: any) => [f.name ?? f.function, f]));
+    const toFns   = new Map((toSnap.payload.edge_functions   ?? []).map((f: any) => [f.name ?? f.function, f]));
+    const allFns = new Set([...fromFns.keys(), ...toFns.keys()]);
+    const fnAdded: any[] = [], fnRemoved: any[] = [], fnModified: any[] = [], fnUnchanged: any[] = [];
+    for (const key of [...allFns].sort()) {
+      const f = fromFns.get(key);
+      const t = toFns.get(key);
+      if (f && !t) fnRemoved.push({ function: key, before: f, after: null });
+      else if (!f && t) fnAdded.push({ function: key, before: null, after: t });
+      else if (f && t) {
+        const fd = diffEdgeFn(f, t);
+        if (fd.length > 0) fnModified.push({ function: key, before: f, after: t, field_diffs: fd });
+        else fnUnchanged.push({ function: key });
+      }
+    }
+
+    const machineFriendly = {
+      changes_summary: {
+        endpoints:   { new: added.length, removed: removed.length, modified: modified.length, unchanged: unchanged.length },
+        mcp_tools:   { new: mcpAdded.length, removed: mcpRemoved.length, modified: mcpModified.length, unchanged: mcpUnchanged.length },
+        edge_functions: { new: fnAdded.length, removed: fnRemoved.length, modified: fnModified.length, unchanged: fnUnchanged.length },
+      },
+      endpoints: { added, removed, modified, unchanged },
+      mcp_tools: { added: mcpAdded, removed: mcpRemoved, modified: mcpModified, unchanged: mcpUnchanged },
+      edge_functions: { added: fnAdded, removed: fnRemoved, modified: fnModified, unchanged: fnUnchanged },
+      from_generated_at: fromSnap.generated_at,
+      to_generated_at:   toSnap.generated_at ?? new Date().toISOString(),
+    };
+
+    const lines: string[] = [];
+    lines.push(`API Diff Report: ${fromSnap.docVersion.slice(0, 12)}… → ${toSnap.docVersion.slice(0, 12)}…`);
+    lines.push("═".repeat(66));
+
+    const epTotal = added.length + removed.length + modified.length + unchanged.length;
+    if (epTotal === 0) {
+      lines.push("\n✅ No public API endpoint changes detected.");
+    } else {
+      if (added.length)   { lines.push(`\n🟢 NEW ENDPOINTS (${added.length}):`); added.forEach(e => lines.push(`  + ${e.endpoint}`)); }
+      if (removed.length) { lines.push(`\n🔴 REMOVED ENDPOINTS (${removed.length}):`); removed.forEach(e => lines.push(`  - ${e.endpoint}`)); }
+      if (modified.length) {
+        lines.push(`\n🟡 MODIFIED ENDPOINTS (${modified.length}):`);
+        modified.forEach(e => {
+          lines.push(`  ${e.endpoint}`);
+          e.field_diffs.forEach((d: any) => {
+            const arrow = d.change === "added" ? "+" : d.change === "removed" ? "-" : "~";
+            lines.push(`    ${arrow} ${d.field}: ${JSON.stringify(d.before)} → ${JSON.stringify(d.after)}`);
+          });
+        });
+      }
+      if (unchanged.length) lines.push(`\n✅ Unchanged: ${unchanged.map((e: any) => e.endpoint).join(", ")}`);
+    }
+
+    if (mcpAdded.length || mcpRemoved.length || mcpModified.length) {
+      lines.push("\n" + "─".repeat(66));
+      lines.push("MCP Tools");
+      if (mcpAdded.length)   { lines.push(`\n🟢 New: ${mcpAdded.map((t: any) => t.tool).join(", ")}`); }
+      if (mcpRemoved.length) { lines.push(`\n🔴 Removed: ${mcpRemoved.map((t: any) => t.tool).join(", ")}`); }
+      if (mcpModified.length) { lines.push(`\n🟡 Modified: ${mcpModified.map((t: any) => t.tool).join(", ")}`); }
+    }
+
+    if (fnAdded.length || fnRemoved.length || fnModified.length) {
+      lines.push("\n" + "─".repeat(66));
+      lines.push("Edge Functions");
+      if (fnAdded.length)   { lines.push(`\n🟢 New: ${fnAdded.map((f: any) => f.function).join(", ")}`); }
+      if (fnRemoved.length) { lines.push(`\n🔴 Removed: ${fnRemoved.map((f: any) => f.function).join(", ")}`); }
+      if (fnModified.length) { lines.push(`\n🟡 Modified: ${fnModified.map((f: any) => f.function).join(", ")}`); }
+    }
+
+    lines.push(`\nGenerated: ${new Date().toISOString()} | from=${fromSnap.docVersion.slice(0,12)}… to=${toSnap.docVersion.slice(0,12)}…`);
+
+    return { from_version: fromSnap.docVersion, to_version: toSnap.docVersion, machine_friendly: machineFriendly, human_readable: lines.join("\n") };
+  }
+
+  function diffEndpoint(a: any, b: any): any[] {
+    const diffs: any[] = [];
+    const fields = ["summary","description","auth","methods"];
+    for (const f of fields) {
+      if (JSON.stringify(a[f]) !== JSON.stringify(b[f])) {
+        diffs.push({ field: f, change: a[f] == null ? "added" : b[f] == null ? "removed" : "modified", before: a[f], after: b[f] });
+      }
+    }
+    // Param diff
+    const aParams = new Map((a.params ?? []).map((p: any) => [p.name, p]));
+    const bParams = new Map((b.params ?? []).map((p: any) => [p.name, p]));
+    const allParams = new Set([...aParams.keys(), ...bParams.keys()]);
+    for (const pk of [...allParams].sort()) {
+      const ap = aParams.get(pk);
+      const bp = bParams.get(pk);
+      if (ap && !bp) diffs.push({ field: `param:${pk}`, change: "removed", before: ap, after: null });
+      else if (!ap && bp) diffs.push({ field: `param:${pk}`, change: "added", before: null, after: bp });
+      else if (ap && bp && JSON.stringify(ap) !== JSON.stringify(bp)) diffs.push({ field: `param:${pk}`, change: "modified", before: ap, after: bp });
+    }
+    return diffs;
+  }
+
+  function diffMcpTool(a: any, b: any): any[] {
+    const diffs: any[] = [];
+    if (a.description !== b.description) diffs.push({ field: "description", change: "modified", before: a.description, after: b.description });
+    if (JSON.stringify(a.params) !== JSON.stringify(b.params)) diffs.push({ field: "params", change: "modified", before: a.params, after: b.params });
+    return diffs;
+  }
+
+  function diffEdgeFn(a: any, b: any): any[] {
+    const diffs: any[] = [];
+    const fields = ["description","auth","purpose"];
+    for (const f of fields) {
+      if (a[f] !== b[f]) diffs.push({ field: f, change: "modified", before: a[f], after: b[f] });
+    }
+    return diffs;
+  }
+
+
   if (endpoint === "docs-wiki") {
     const slug = url.searchParams.get("slug");
     if (slug) {

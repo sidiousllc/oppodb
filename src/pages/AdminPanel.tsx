@@ -61,78 +61,112 @@ export default function AdminPanel() {
     );
   }
 
-  const tabs: Array<{ id: Tab; label: string; emoji: string; adminOnly?: boolean }> = [
-    { id: "users", label: "Users", emoji: "👥", adminOnly: true },
-    { id: "roles", label: "Role Groups", emoji: "🛡️", adminOnly: true },
-    { id: "access", label: "Access Control", emoji: "🔑", adminOnly: true },
-    { id: "permissions", label: "Permissions", emoji: "🔒", adminOnly: true },
-    { id: "logs", label: "Activity Logs", emoji: "📊", adminOnly: true },
-    { id: "devices", label: "Device Tracking", emoji: "📍", adminOnly: true },
-    { id: "intel-ops", label: "Intel Ops", emoji: "🛰️", adminOnly: true },
-    { id: "speed-insights", label: "Speed Insights", emoji: "⚡", adminOnly: true },
-    { id: "local-feeds", label: "Local Feeds", emoji: "📡", adminOnly: true },
-    { id: "candidates", label: "Candidates", emoji: "📋" },
-    { id: "maga", label: "MAGA Files", emoji: "⚠️" },
-    { id: "local", label: "Local Impact", emoji: "🌐" },
-    { id: "narratives", label: "Narratives", emoji: "📄" },
-    { id: "messaging", label: "Messaging", emoji: "📢" },
-    { id: "international", label: "International", emoji: "🌐" },
-    { id: "docs", label: "Documentation", emoji: "📖" },
-    { id: "desktop-icons", label: "Desktop Icons", emoji: "🖵", adminOnly: true },
+  const adminTabs = [
+    { id: "users" as Tab, label: "Users", emoji: "👥" },
+    { id: "roles" as Tab, label: "Role Groups", emoji: "🛡️" },
+    { id: "access" as Tab, label: "Access Control", emoji: "🔑" },
+    { id: "permissions" as Tab, label: "Permissions", emoji: "🔒" },
+    { id: "logs" as Tab, label: "Activity Logs", emoji: "📊" },
+    { id: "devices" as Tab, label: "Device Tracking", emoji: "📍" },
+    { id: "intel-ops" as Tab, label: "Intel Ops", emoji: "🛰️" },
+    { id: "speed-insights" as Tab, label: "Speed Insights", emoji: "⚡" },
+    { id: "local-feeds" as Tab, label: "Local Feeds", emoji: "📡" },
+    { id: "desktop-icons" as Tab, label: "Desktop Icons", emoji: "🖵" },
+  ];
+
+  const contentTabs = [
+    { id: "candidates" as Tab, label: "Candidates", emoji: "📋" },
+    { id: "maga" as Tab, label: "MAGA Files", emoji: "⚠️" },
+    { id: "local" as Tab, label: "Local Impact", emoji: "🌐" },
+    { id: "narratives" as Tab, label: "Narratives", emoji: "📄" },
+    { id: "messaging" as Tab, label: "Messaging", emoji: "📢" },
+    { id: "docs" as Tab, label: "Documentation", emoji: "📖" },
+    { id: "international" as Tab, label: "International", emoji: "🌐" },
   ];
 
   return (
     <Win98PageLayout title="Admin Panel" icon="🛡️" addressUrl="aol://ordb.research/admin">
       {/* User info bar */}
-      <div className="win98-sunken bg-[hsl(var(--win98-light))] px-2 py-1 mb-3 flex items-center justify-between text-[10px]">
+      <div className="win98-sunken bg-[hsl(var(--win98-light))] px-2 py-1 mb-2 flex items-center justify-between text-[10px]">
         <span>Logged in as: <b>{user?.email}</b></span>
         <span className="win98-button px-2 py-0 h-[16px] text-[9px] font-bold">
           {isAdmin ? "🔑 Admin" : "📋 Moderator"}
         </span>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-0 mb-3">
-        {tabs
-          .filter(t => !t.adminOnly || isAdmin)
-          .map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`win98-button text-[10px] flex items-center gap-1 ${
-                tab === t.id ? "font-bold bg-white" : ""
-              }`}
-              style={tab === t.id ? {
-                borderBottomColor: "white",
-                marginBottom: "-1px",
-                position: "relative",
-                zIndex: 1,
-              } : {}}
-            >
-              <span>{t.emoji}</span>
-              {t.label}
-            </button>
-          ))}
-      </div>
+      <div className="flex gap-2 h-[calc(100vh-140px)] min-h-0">
+        {/* Sidebar */}
+        <div className="win98-raised flex flex-col w-44 shrink-0 overflow-y-auto">
+          {/* Admin section */}
+          <div className="win98-sunken px-2 py-1 flex items-center gap-1.5 text-[10px] font-bold bg-[hsl(var(--win98-face))] sticky top-0 z-10">
+            <Shield className="h-3 w-3" /> Admin
+          </div>
+          <div className="flex flex-col pb-1">
+            {adminTabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`win98-button text-[10px] flex items-center gap-1.5 px-2 py-1 mx-1 mt-0.5 ${
+                  tab === t.id ? "font-bold bg-white" : ""
+                }`}
+                style={tab === t.id ? {
+                  borderBottomColor: "white",
+                  marginBottom: "-1px",
+                  position: "relative",
+                  zIndex: 1,
+                } : {}}
+              >
+                <span>{t.emoji}</span>
+                <span className="truncate">{t.label}</span>
+              </button>
+            ))}
+          </div>
+          {/* Content section */}
+          <div className="win98-sunken px-2 py-1 flex items-center gap-1.5 text-[10px] font-bold bg-[hsl(var(--win98-face))] sticky top-0 z-10">
+            <FileText className="h-3 w-3" /> Content
+          </div>
+          <div className="flex flex-col pb-1">
+            {contentTabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`win98-button text-[10px] flex items-center gap-1.5 px-2 py-1 mx-1 mt-0.5 ${
+                  tab === t.id ? "font-bold bg-white" : ""
+                }`}
+                style={tab === t.id ? {
+                  borderBottomColor: "white",
+                  marginBottom: "-1px",
+                  position: "relative",
+                  zIndex: 1,
+                } : {}}
+              >
+                <span>{t.emoji}</span>
+                <span className="truncate">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <div className="win98-sunken bg-white p-3">
-        {tab === "users" && isAdmin && <UsersTab />}
-        {tab === "roles" && isAdmin && <RoleGroupsTab />}
-        {tab === "access" && isAdmin && <AccessControlTab />}
-        {tab === "permissions" && isAdmin && <SectionPermissionsTab />}
-        {tab === "desktop-icons" && isAdmin && <DesktopIconsTab />}
-        {tab === "logs" && isAdmin && <ActivityLogsTab />}
-        {tab === "devices" && isAdmin && <DeviceTrackingTab />}
-        {tab === "intel-ops" && isAdmin && <Phase5AdminTab />}
-        {tab === "speed-insights" && isAdmin && <SpeedInsightsStatusTab />}
-        {tab === "local-feeds" && isAdmin && <LocalFeedsTab />}
-        {tab === "candidates" && <CandidatesTab />}
-        {tab === "maga" && <ContentTab table="maga_files" nameField="name" />}
-        {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
-        {tab === "narratives" && <ContentTab table="narrative_reports" nameField="name" />}
-        {tab === "messaging" && <MessagingGuidanceTab />}
-        {tab === "international" && <InternationalTab />}
-        {tab === "docs" && <WikiPagesTab />}
+        {/* Content panel */}
+        <div className="flex-1 win98-raised overflow-y-auto bg-white p-3 min-w-0">
+          {tab === "users" && isAdmin && <UsersTab />}
+          {tab === "roles" && isAdmin && <RoleGroupsTab />}
+          {tab === "access" && isAdmin && <AccessControlTab />}
+          {tab === "permissions" && isAdmin && <SectionPermissionsTab />}
+          {tab === "desktop-icons" && isAdmin && <DesktopIconsTab />}
+          {tab === "logs" && isAdmin && <ActivityLogsTab />}
+          {tab === "devices" && isAdmin && <DeviceTrackingTab />}
+          {tab === "intel-ops" && isAdmin && <Phase5AdminTab />}
+          {tab === "speed-insights" && isAdmin && <SpeedInsightsStatusTab />}
+          {tab === "local-feeds" && isAdmin && <LocalFeedsTab />}
+          {tab === "candidates" && <CandidatesTab />}
+          {tab === "maga" && <ContentTab table="maga_files" nameField="name" />}
+          {tab === "local" && <ContentTab table="local_impacts" nameField="state" hasState hasSummary />}
+          {tab === "narratives" && <ContentTab table="narrative_reports" nameField="name" />}
+          {tab === "messaging" && <MessagingGuidanceTab />}
+          {tab === "international" && <InternationalTab />}
+          {tab === "docs" && <WikiPagesTab />}
+        </div>
       </div>
 
       {/* Security Badge */}
