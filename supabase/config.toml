@@ -66,5 +66,8 @@ project_id = "yysbtxpupmwkxovgkama"
 [functions.health]
   verify_jwt = false
 
+[functions.state-health-scheduler]
+  verify_jwt = true
+
 [functions.public-health]
   verify_jwt = false

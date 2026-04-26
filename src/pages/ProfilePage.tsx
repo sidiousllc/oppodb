@@ -13,6 +13,7 @@ import { AlertWebhooksManager } from "@/components/AlertWebhooksManager";
 import { NetworkSettingsPanel } from "@/components/NetworkSettingsPanel";
 import { NewsTickerSettings } from "@/components/NewsTickerSettings";
 import { SyncPreferencesPanel } from "@/components/SyncPreferencesPanel";
+import { StateSchedulerPanel } from "@/components/StateSchedulerPanel";
 import { SerialKeyManager } from "@/components/SerialKeyManager";
 import { OSINTApiKeysTab } from "@/components/OSINTApiKeysTab";
 import { useLocationConsent } from "@/hooks/useLocationTracker";
@@ -86,7 +87,7 @@ const THEME_THUMBNAILS: Record<WindowsTheme, string> = {
 
 const CATEGORY_ORDER: ThemeCategory[] = ["windows", "macos", "linux", "ios", "android", "palm"];
 
-const VALID_TABS = ["account", "appearance", "notifications", "integrations", "osint-keys", "sync", "android", "network"] as const;
+const VALID_TABS = ["account", "appearance", "notifications", "integrations", "osint-keys", "sync", "state-scheduler", "android", "network"] as const;
 type ProfileTab = (typeof VALID_TABS)[number];
 
 export default function ProfilePage() {
@@ -185,6 +186,7 @@ export default function ProfilePage() {
           <TabsTrigger value="integrations" className="text-[11px] py-1.5">🔌 Integrations</TabsTrigger>
           <TabsTrigger value="osint-keys" className="text-[11px] py-1.5">🔑 OSINT Keys</TabsTrigger>
           <TabsTrigger value="sync" className="text-[11px] py-1.5">🔄 Sync</TabsTrigger>
+          <TabsTrigger value="state-scheduler" className="text-[11px] py-1.5">🗳️ States</TabsTrigger>
           <TabsTrigger value="android" className="text-[11px] py-1.5">📱 Android</TabsTrigger>
           <TabsTrigger value="network" className="text-[11px] py-1.5">📡 Privacy</TabsTrigger>
         </TabsList>
@@ -428,6 +430,13 @@ export default function ProfilePage() {
           <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
             <p className="text-[11px] font-bold mb-2 flex items-center gap-1">🔄 Auto-Sync Preferences</p>
             <SyncPreferencesPanel />
+          </div>
+        </TabsContent>
+
+        {/* ============== STATE SCHEDULER ============== */}
+        <TabsContent value="state-scheduler" className="space-y-3 mt-0">
+          <div className="win98-raised bg-[hsl(var(--win98-face))] p-3">
+            <StateSchedulerPanel />
           </div>
         </TabsContent>
 
