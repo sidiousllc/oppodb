@@ -24,7 +24,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
   });
 
   const checkPermission = useCallback(async () => {
-    if (!Capacitor.isNativeApp()) {
+    if (!Capacitor.isNativePlatform()) {
       setState(s => ({ ...s, hasPermission: true }));
       return true;
     }
@@ -40,7 +40,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
   }, []);
 
   const requestPermission = useCallback(async () => {
-    if (!Capacitor.isNativeApp()) return true;
+    if (!Capacitor.isNativePlatform()) return true;
     try {
       const perm = await Geolocation.requestPermissions();
       const granted = perm.location === 'granted' || perm.coarseLocation === 'granted';
@@ -86,7 +86,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
  * Standalone single-shot position getter.
  */
 export async function getCurrentPosition(options?: UseGeolocationOptions): Promise<Position | null> {
-  if (!Capacitor.isNativeApp()) {
+  if (!Capacitor.isNativePlatform()) {
     // Fallback to browser geolocation
     return new Promise((resolve) => {
       if (!navigator.geolocation) { resolve(null); return; }
