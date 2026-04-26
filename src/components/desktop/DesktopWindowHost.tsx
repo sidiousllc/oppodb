@@ -1,6 +1,7 @@
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { Win98Window } from "@/components/Win98Window";
 import { APP_REGISTRY, useOpenApp } from "./appRegistry";
+import { saveGeometry } from "@/lib/windowGeometry";
 
 /**
  * Renders every currently-open floating window. Mounted once at the page
