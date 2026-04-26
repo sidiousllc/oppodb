@@ -171,8 +171,19 @@ export function Win98Window({
     };
 
     const onMouseUp = () => {
+      const wasInteracting = isDragging.current || !!isResizing.current;
       isDragging.current = false;
       isResizing.current = null;
+      if (wasInteracting && onGeometryChange) {
+        // Read the latest values via functional setState to avoid stale closures.
+        setPosition((p) => {
+          setSize((s) => {
+            onGeometryChange({ x: p.x, y: p.y, width: s.width, height: s.height });
+            return s;
+          });
+          return p;
+        });
+      }
     };
 
     window.addEventListener("mousemove", onMouseMove);
@@ -181,7 +192,7 @@ export function Win98Window({
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [minSize]);
+  }, [minSize, onGeometryChange]);
 
   const isFullWindow = isMaximized || maximized;
 
