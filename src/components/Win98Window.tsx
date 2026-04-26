@@ -14,6 +14,8 @@ interface Win98WindowProps {
   defaultPosition?: { x: number; y: number };
   defaultSize?: { width: number; height: number };
   minSize?: { width: number; height: number };
+  /** Fired after the user finishes a drag or resize, with the latest geometry. */
+  onGeometryChange?: (g: { x: number; y: number; width: number; height: number }) => void;
 }
 
 export function Win98Window({
