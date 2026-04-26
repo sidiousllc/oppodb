@@ -1,5 +1,12 @@
 import { createContext, useContext, useCallback, useEffect, useRef, useState, ReactNode } from "react";
-import { loadGeometry, saveGeometry, reapplyAllGeometry } from "@/lib/windowGeometry";
+import {
+  loadGeometry,
+  saveGeometry,
+  reapplyAllGeometry,
+  getUsableViewport,
+  clampGeometry,
+  type Geometry,
+} from "@/lib/windowGeometry";
 
 export interface OpenWindow {
   /** Unique instance id (random per open) */
@@ -83,10 +90,9 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
       resultId = id;
       zCounterRef.current += 1;
       const z = BASE_Z + zCounterRef.current;
-      // Available area (account for taskbar ~28px)
-      const TASKBAR = 28;
-      const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
-      const vh = (typeof window !== "undefined" ? window.innerHeight : 768) - TASKBAR;
+      // Available area — uses VisualViewport on mobile (accounts for virtual
+      // keyboard / browser chrome) and desktop taskbar on desktop.
+      const { vw, vh } = getUsableViewport();
       // Try restoring persisted geometry first; fall back to cascade defaults.
       const saved = loadGeometry(appId);
       const desiredW = saved?.width ?? size?.width ?? Math.min(900, Math.max(320, vw - 40));
@@ -96,8 +102,11 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
       let x: number;
       let y: number;
       if (saved) {
-        x = Math.max(0, Math.min(saved.x, vw - winW));
-        y = Math.max(0, Math.min(saved.y, vh - winH));
+        // Re-clamp saved position through current usable viewport so a window
+        // that was stored when the viewport was larger stays on-screen.
+        const clamped = clampGeometry({ x: saved.x, y: saved.y, width: winW, height: winH });
+        x = clamped.x;
+        y = clamped.y;
       } else {
         // Cascade position so multiple windows don't overlap exactly
         const idx = openIndexRef.current++;
@@ -141,42 +150,41 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Re-clamp all open windows whenever the viewport changes (resize, devtools
-  // open/close, orientation flip) so a window can never end up partially or
-  // fully off-screen. Persist the clamped geometry so reopening uses the
-  // corrected position rather than the stale saved one.
+  // open/close, orientation flip, virtual keyboard) so a window can never end
+  // up partially or fully off-screen. Uses VisualViewport on mobile so the
+  // keyboard and browser chrome are accounted for. Persists the clamped
+  // geometry so reopening uses the corrected position rather than the stale
+  // saved one.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const TASKBAR = 28;
     const clampAll = () => {
-      const vw = window.innerWidth;
-      const vh = window.innerHeight - TASKBAR;
+      const { vw, vh } = getUsableViewport();
       setWindows((prev) =>
         prev.map((w) => {
-          const width = Math.min(w.size.width, Math.max(280, vw - 16));
-          const height = Math.min(w.size.height, Math.max(200, vh - 16));
-          const x = Math.max(0, Math.min(w.position.x, Math.max(0, vw - width)));
-          const y = Math.max(0, Math.min(w.position.y, Math.max(0, vh - height)));
+          const clamped = clampGeometry({ x: w.position.x, y: w.position.y, width: w.size.width, height: w.size.height });
           if (
-            width === w.size.width &&
-            height === w.size.height &&
-            x === w.position.x &&
-            y === w.position.y
+            clamped.width === w.size.width &&
+            clamped.height === w.size.height &&
+            clamped.x === w.position.x &&
+            clamped.y === w.position.y
           ) {
             return w;
           }
-          // Persist the clamped values so a future restore doesn't re-apply
-          // the off-screen coordinates that we just corrected.
-          saveGeometry(w.appId, { x, y, width, height });
-          return { ...w, size: { width, height }, position: { x, y } };
+          saveGeometry(w.appId, { x: clamped.x, y: clamped.y, width: clamped.width, height: clamped.height });
+          return { ...w, size: { width: clamped.width, height: clamped.height }, position: { x: clamped.x, y: clamped.y } };
         })
       );
     };
     window.addEventListener("resize", clampAll);
     window.addEventListener("orientationchange", clampAll);
+    // VisualViewport resize fires on virtual keyboard and browser chrome changes
+    // on mobile — much more reliable than orientationchange alone.
+    window.visualViewport?.addEventListener("resize", clampAll);
     clampAll();
     return () => {
       window.removeEventListener("resize", clampAll);
       window.removeEventListener("orientationchange", clampAll);
+      window.visualViewport?.removeEventListener("resize", clampAll);
     };
   }, []);
 
@@ -192,25 +200,20 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
         lastDpr = current;
         reapplyAllGeometry();
         // Also re-clamp open windows in the current React state.
-        const TASKBAR = 28;
-        const vw = window.innerWidth;
-        const vh = window.innerHeight - TASKBAR;
+        const { vw, vh } = getUsableViewport();
         setWindows((prev) =>
           prev.map((w) => {
-            const width = Math.min(w.size.width, Math.max(280, vw - 16));
-            const height = Math.min(w.size.height, Math.max(200, vh - 16));
-            const x = Math.max(0, Math.min(w.position.x, Math.max(0, vw - width)));
-            const y = Math.max(0, Math.min(w.position.y, Math.max(0, vh - height)));
+            const clamped = clampGeometry({ x: w.position.x, y: w.position.y, width: w.size.width, height: w.size.height });
             if (
-              width === w.size.width &&
-              height === w.size.height &&
-              x === w.position.x &&
-              y === w.position.y
+              clamped.width === w.size.width &&
+              clamped.height === w.size.height &&
+              clamped.x === w.position.x &&
+              clamped.y === w.position.y
             ) {
               return w;
             }
-            saveGeometry(w.appId, { x, y, width, height });
-            return { ...w, size: { width, height }, position: { x, y } };
+            saveGeometry(w.appId, { x: clamped.x, y: clamped.y, width: clamped.width, height: clamped.height });
+            return { ...w, size: { width: clamped.width, height: clamped.height }, position: { x: clamped.x, y: clamped.y } };
           })
         );
       }
