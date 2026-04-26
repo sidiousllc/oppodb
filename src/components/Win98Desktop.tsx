@@ -1,10 +1,12 @@
 import { useState, useCallback } from "react";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import { Win98Notepad } from "./Win98Notepad";
 import { Win98Window } from "./Win98Window";
 import { useOpenApp } from "./desktop/appRegistry";
 
 interface DesktopIcon {
+  condition?: boolean;
   label: string;
   icon: string;
   action: () => void;
@@ -22,6 +24,7 @@ interface ContextMenuState {
 
 export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
   const { signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const openApp = useOpenApp();
   const [notepadOpen, setNotepadOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -56,6 +59,7 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
     { label: "AI History", icon: "🧠", action: () => openApp("ai-history") },
     { label: "Task\nManager", icon: "📋", action: () => openApp("task-manager") },
     { label: "Log Off", icon: "🔌", action: () => signOut() },
+    { label: "Deploy Checklist", icon: "✅", action: () => openApp("deploy-checklist"), condition: isAdmin },
   ];
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
@@ -86,7 +90,7 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
         onClick={closeMenu}
       >
         <div className="flex flex-col flex-wrap gap-1 h-full content-start">
-          {icons.map((item) => (
+          {icons.filter(i => i.condition !== false).map((item) => (
             <button
               key={item.label}
               onClick={item.action}
