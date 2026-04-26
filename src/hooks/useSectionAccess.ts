@@ -76,6 +76,20 @@ export const APP_SECTIONS: Record<string, { label: string; emoji: string; subsec
   },
   "live-elections": { label: "Live Elections", emoji: "🏛️" },
   documentation: { label: "Documentation", emoji: "📖" },
+  // OSINT Tools
+  "osint-people": { label: "OSINT: People", emoji: "👤" },
+  "osint-business": { label: "OSINT: Business", emoji: "🏢" },
+  "osint-property": { label: "OSINT: Property", emoji: "🏠" },
+  // Research Tools
+  "voter-data": { label: "Voter Data", emoji: "🗳️" },
+  "court-records": { label: "Court Records", emoji: "⚖️" },
+  "follow-money": { label: "Follow the Money", emoji: "💰" },
+  "investigations": { label: "Investigations", emoji: "🔍" },
+  "state-report": { label: "State Report", emoji: "📊" },
+  "war-rooms": { label: "War Rooms", emoji: "⚔️" },
+  "stakeholders": { label: "Stakeholders", emoji: "🤝" },
+  "forecast-lab": { label: "Forecast Lab", emoji: "🎲" },
+  "entity-graph": { label: "Entity Graph", emoji: "🕸️" },
 };
 
 export function useSectionAccess() {

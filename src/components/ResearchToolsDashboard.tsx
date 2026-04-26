@@ -1,4 +1,5 @@
 import { Search, ArrowLeft } from "lucide-react";
+import { useSectionAccess } from "@/hooks/useSectionAccess";
 import { OSINT_TOOLS, OSINT_CATEGORY_META, type OSINTCategory } from "@/data/osintTools";
 
 interface ResearchToolsDashboardProps {
@@ -34,7 +35,7 @@ export function ResearchToolsDashboard({ onNavigateSubsection }: ResearchToolsDa
       <section>
         <div className="text-[10px] font-bold mb-2 px-1">🏛️ Platform Research Tools</div>
         <div className="grid gap-3 sm:grid-cols-2">
-          {PLATFORM_TOOLS.map((tool) => (
+          {PLATFORM_TOOLS.filter(t => canAccess(t.id)).map((tool) => (
             <ToolCard
               key={tool.id}
               emoji={tool.emoji}
@@ -50,7 +51,8 @@ export function ResearchToolsDashboard({ onNavigateSubsection }: ResearchToolsDa
       {/* OSINT toolbox by category */}
       {categories.map((cat) => {
         const meta = OSINT_CATEGORY_META[cat];
-        const tools = OSINT_TOOLS.filter((t) => t.category === cat);
+        const { canAccess } = useSectionAccess();
+        const tools = OSINT_TOOLS.filter((t) => t.category === cat && canAccess(`osint-${cat}`));
         return (
           <section key={cat}>
             <div className="text-[10px] font-bold mb-2 px-1 flex items-center gap-1.5">
