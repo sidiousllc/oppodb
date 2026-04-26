@@ -30,6 +30,7 @@ import { TaskManagerWindow } from "@/components/TaskManagerWindow";
 import { AlertsHub } from "@/components/AlertsHub";
 import { BillDetailWindow } from "@/components/BillDetailWindow";
 import { SystemStatusWindow } from "@/components/SystemStatusWindow";
+import { DeployChecklistWindow } from "@/components/DeployChecklistWindow";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
@@ -357,6 +358,14 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     singleton: true,
     size: { width: 360, height: 320 },
     render: () => <SystemStatusWindow variant="health" />,
+  },
+  "deploy-checklist": {
+    id: "deploy-checklist",
+    title: "Deploy Checklist",
+    icon: "✅",
+    singleton: true,
+    size: { width: 560, height: 520 },
+    render: () => <DeployChecklistWindow />,
   },
   // Notepad is rendered directly via Win98Notepad in Win98Desktop (it wraps its own window)
   "recycle-bin": {
