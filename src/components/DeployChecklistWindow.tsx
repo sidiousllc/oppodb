@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 interface CheckEntry {
   name: string;
@@ -40,7 +41,21 @@ function Pill({ status }: { status: CheckEntry["parse"] }) {
   );
 }
 
-export function DeployChecklistWindow() {
+function DeployChecklistContent() {
+  const { isAdmin } = useIsAdmin();
+
+  if (!isAdmin) {
+    return (
+      <div className="p-3 text-[11px] text-[hsl(var(--destructive))] flex flex-col items-center justify-center h-full gap-2">
+        <span className="text-2xl">🛡️</span>
+        <p className="font-bold">Admin Access Required</p>
+        <p className="text-[10px] text-[hsl(var(--muted-foreground))] text-center">
+          Only admins can view the Deploy Checklist.
+        </p>
+      </div>
+    );
+  }
+
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -192,6 +207,14 @@ export function DeployChecklistWindow() {
         <span>Source: /predeploy-report.json</span>
         <span>Run: node scripts/check-edge-functions.mjs</span>
       </div>
+    </div>
+  );
+}
+
+export function DeployChecklistWindow() {
+  return (
+    <div className="flex flex-col h-full">
+      <DeployChecklistContent />
     </div>
   );
 }

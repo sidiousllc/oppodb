@@ -2809,7 +2809,7 @@ export function PollingSection() {
             content: (
               <div className="grid gap-4 lg:grid-cols-2">
                 <GenericBallotChart polls={genericBallotPolls} />
-                <FavorabilityChart polls={polls} />
+                <FavorabilityChart polls={approvalPolls} />
               </div>
             ),
           },
