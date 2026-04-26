@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Geolocation, Position, GeoPositionOptions } from '@capacitor/geolocation';
+import { Geolocation, Position, PositionOptions as GeoPositionOptions } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
 
 interface UseGeolocationOptions {
@@ -100,7 +100,7 @@ export async function getCurrentPosition(options?: UseGeolocationOptions): Promi
             altitudeAccuracy: pos.coords.altitudeAccuracy ?? 0,
             heading: pos.coords.heading ?? 0,
             speed: pos.coords.speed ?? 0,
-          },
+          } as Position["coords"],
           timestamp: pos.timestamp,
           mocked: false,
         }),
