@@ -97,6 +97,7 @@ export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarP
                     className="flex w-full items-center gap-2 px-3 py-1.5 text-[11px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
                   >
                     <span>✅</span> Deploy Checklist
+                  </button>
                   <div className="mx-2 my-1 border-t border-[hsl(var(--win98-shadow))]" />
                   <button
                     onClick={() => { signOut(); setStartOpen(false); }}
