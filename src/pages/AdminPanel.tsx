@@ -1521,3 +1521,35 @@ function ContentEditor({ item, nameLabel, hasState, hasSummary, onSave, onCancel
     </div>
   );
 }
+
+// ============== LocalFeedsTab ==============
+// Embeds the Local Feeds admin pages as sub-tabs. The per-state Sources page
+// requires a URL param (`:abbr`), so we navigate to that route instead of
+// trying to embed it inline.
+function LocalFeedsTab() {
+  const [sub, setSub] = useState<"validation" | "audit">("validation");
+  const subTabs = [
+    { id: "validation" as const, label: "Coverage Validation", emoji: "✅" },
+    { id: "audit" as const, label: "Source Audit", emoji: "🔍" },
+  ];
+  return (
+    <div>
+      <div className="flex gap-0 mb-2">
+        {subTabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setSub(t.id)}
+            className={`win98-button text-[10px] flex items-center gap-1 ${sub === t.id ? "font-bold bg-white" : ""}`}
+            style={sub === t.id ? { borderBottomColor: "white", marginBottom: "-1px", position: "relative", zIndex: 1 } : {}}
+          >
+            <span>{t.emoji}</span>{t.label}
+          </button>
+        ))}
+      </div>
+      <div className="win98-sunken bg-white">
+        {sub === "validation" && <LocalFeedsValidation />}
+        {sub === "audit" && <LocalFeedsAudit />}
+      </div>
+    </div>
+  );
+}
