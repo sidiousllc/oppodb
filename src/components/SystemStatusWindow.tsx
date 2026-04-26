@@ -130,7 +130,7 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
       {
         component: "candidates",
         check: async () => {
-          const { count, error } = await supabase
+          const { count, error } = await db
             .from("candidates")
             .select("id", { count: "exact", head: true })
             .limit(1);
