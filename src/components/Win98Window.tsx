@@ -31,6 +31,7 @@ export function Win98Window({
   defaultPosition,
   defaultSize,
   minSize = { width: 200, height: 120 },
+  onGeometryChange,
 }: Win98WindowProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(!!maximized);
