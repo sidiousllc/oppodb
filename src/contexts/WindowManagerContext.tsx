@@ -1,4 +1,5 @@
 import { createContext, useContext, useCallback, useEffect, useRef, useState, ReactNode } from "react";
+import { loadGeometry, saveGeometry } from "@/lib/windowGeometry";
 
 export interface OpenWindow {
   /** Unique instance id (random per open) */
@@ -86,18 +87,25 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
       const TASKBAR = 28;
       const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
       const vh = (typeof window !== "undefined" ? window.innerHeight : 768) - TASKBAR;
-      // Clamp size to viewport, with reasonable minimums
-      const desiredW = size?.width ?? Math.min(900, Math.max(320, vw - 40));
-      const desiredH = size?.height ?? Math.min(640, Math.max(240, vh - 40));
+      // Try restoring persisted geometry first; fall back to cascade defaults.
+      const saved = loadGeometry(appId);
+      const desiredW = saved?.width ?? size?.width ?? Math.min(900, Math.max(320, vw - 40));
+      const desiredH = saved?.height ?? size?.height ?? Math.min(640, Math.max(240, vh - 40));
       const winW = Math.min(desiredW, Math.max(280, vw - 16));
       const winH = Math.min(desiredH, Math.max(200, vh - 16));
-      // Cascade position so multiple windows don't overlap exactly
-      const idx = openIndexRef.current++;
-      const baseX = 20 + (idx % 8) * 28;
-      const baseY = 20 + (idx % 8) * 24;
-      // Clamp position so window fits fully onscreen
-      const x = Math.max(0, Math.min(baseX, vw - winW));
-      const y = Math.max(0, Math.min(baseY, vh - winH));
+      let x: number;
+      let y: number;
+      if (saved) {
+        x = Math.max(0, Math.min(saved.x, vw - winW));
+        y = Math.max(0, Math.min(saved.y, vh - winH));
+      } else {
+        // Cascade position so multiple windows don't overlap exactly
+        const idx = openIndexRef.current++;
+        const baseX = 20 + (idx % 8) * 28;
+        const baseY = 20 + (idx % 8) * 24;
+        x = Math.max(0, Math.min(baseX, vw - winW));
+        y = Math.max(0, Math.min(baseY, vh - winH));
+      }
       return [
         ...prev,
         {

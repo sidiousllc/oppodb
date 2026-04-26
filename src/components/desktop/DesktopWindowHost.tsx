@@ -1,6 +1,7 @@
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { Win98Window } from "@/components/Win98Window";
 import { APP_REGISTRY, useOpenApp } from "./appRegistry";
+import { saveGeometry } from "@/lib/windowGeometry";
 
 /**
  * Renders every currently-open floating window. Mounted once at the page
@@ -46,6 +47,7 @@ export function DesktopWindowHost() {
               defaultPosition={w.position}
               defaultSize={w.size}
               minSize={{ width: 320, height: 240 }}
+              onGeometryChange={(g) => saveGeometry(w.appId, g)}
             >
               {desc.render(w.payload, {
                 openApp: (id, payload) => openApp(id, payload),
