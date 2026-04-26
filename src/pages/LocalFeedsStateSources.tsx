@@ -4,10 +4,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { STATE_ABBR_TO_NAME } from "@/lib/stateAbbreviations";
 import {
   ArrowLeft, ExternalLink, Loader2, Rss, RefreshCw,
-  CheckCircle2, AlertTriangle, Clock, Search, X, Download,
+  CheckCircle2, AlertTriangle, Clock, Search, X, Download, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 interface SourceRow {
@@ -236,8 +251,115 @@ export default function LocalFeedsStateSources() {
     });
   }, [sources, query, scopeFilter]);
 
+  // Move feed dialog state
+  const [moveTarget, setMoveTarget] = useState<SourceRow | null>(null);
+  const [targetState, setTargetState] = useState<string>("");
+  const [availableStates, setAvailableStates] = useState<Array<{ abbr: string; name: string; disabled: boolean; reason: string | null }>>([]);
+  const [moving, setMoving] = useState(false);
+
+  // Fetch available target states when move dialog opens
+  useEffect(() => {
+    if (!moveTarget) { setAvailableStates([]); setTargetState(""); return; }
+    (async () => {
+      const { data, error } = await supabase.functions.invoke("intel-briefing", {
+        body: { action: "get_available_target_states", rssUrl: moveTarget.rssUrl },
+      });
+      if (error || !data?.available) {
+        toast.error("Failed to load available states");
+        setMoveTarget(null);
+        return;
+      }
+      setAvailableStates(data.available);
+      // Pre-select the first non-disabled state
+      const first = data.available.find((s: { disabled: boolean }) => !s.disabled);
+      if (first) setTargetState(first.abbr);
+    })();
+  }, [moveTarget, supabase]);
+
+  const handleMove = async () => {
+    if (!moveTarget || !targetState) return;
+    setMoving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("intel-briefing", {
+        body: { action: "move_feed_state", rssUrl: moveTarget.rssUrl, newState: targetState },
+      });
+      if (error || !data?.success) {
+        toast.error(data?.error ?? "Move failed");
+        return;
+      }
+      toast.success(`Moved ${moveTarget.name} to ${targetState}`);
+      setMoveTarget(null);
+      // Reload sources to reflect new state
+      const { data: rel } = await supabase.functions.invoke("intel-briefing", {
+        body: { action: "list_local_sources", state: abbr },
+      });
+      setSources((rel?.sources as SourceRow[]) ?? []);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Move failed");
+    } finally {
+      setMoving(false);
+    }
+  };
+
+  const openMoveDialog = async (s: SourceRow) => {
+    setMoveTarget(s);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Move Feed Dialog */}
+      <Dialog open={!!moveTarget} onOpenChange={(v) => { if (!v) setMoveTarget(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Move Feed to Another State</DialogTitle>
+            <DialogDescription>
+              Reassign <strong>{moveTarget?.name}</strong> to a different state.
+              States with a conflicting rssUrl are shown but disabled.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Current state</label>
+              <div className="text-sm text-muted-foreground">{abbr} — {stateName}</div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Target state</label>
+              <Select value={targetState} onValueChange={setTargetState}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableStates.map((s) => (
+                    <SelectItem
+                      key={s.abbr}
+                      value={s.abbr}
+                      disabled={s.disabled}
+                      className={s.disabled ? "opacity-50 cursor-not-allowed" : ""}
+                    >
+                      {s.disabled && <span className="text-destructive mr-1">⚠</span>}
+                      {s.name} ({s.abbr})
+                      {s.disabled && s.reason && (
+                        <span className="text-xs text-muted-foreground ml-1">— {s.reason}</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoveTarget(null)}>Cancel</Button>
+            <Button
+              onClick={handleMove}
+              disabled={!targetState || moving || availableStates.filter(s => !s.disabled).length === 0}
+              className="gap-1"
+            >
+              {moving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+              Move Feed
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex items-center gap-3">
@@ -533,6 +655,17 @@ export default function LocalFeedsStateSources() {
                                 <RefreshCw className="h-3 w-3" />
                               )}
                               <span className="ml-1">Refresh</span>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-xs gap-1"
+                              onClick={() => openMoveDialog(s)}
+                              title={`Move ${s.name} to another state`}
+                            >
+                              <ArrowRight className="h-3 w-3" />
+                              <span>Move</span>
                             </Button>
                             <Button
                               asChild
