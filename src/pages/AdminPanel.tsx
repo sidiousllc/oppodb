@@ -15,6 +15,7 @@ import { AdminRoleGroupWindow } from "@/components/AdminRoleGroupWindow";
 import { DeviceTrackingTab } from "@/components/DeviceTrackingTab";
 import { Phase5AdminTab } from "@/components/Phase5AdminTab";
 import { SpeedInsightsStatusTab } from "@/components/SpeedInsightsStatusTab";
+import { DesktopIconsTab } from "@/components/DesktopIconsTab";
 import LocalFeedsValidation from "@/pages/LocalFeedsValidation";
 import LocalFeedsAudit from "@/pages/LocalFeedsAudit";
 import LocalFeedsStateSources from "@/pages/LocalFeedsStateSources";
@@ -77,6 +78,7 @@ export default function AdminPanel() {
     { id: "messaging", label: "Messaging", emoji: "📢" },
     { id: "international", label: "International", emoji: "🌐" },
     { id: "docs", label: "Documentation", emoji: "📖" },
+    { id: "desktop-icons", label: "Desktop Icons", emoji: "🖵", adminOnly: true },
   ];
 
   return (
@@ -118,6 +120,7 @@ export default function AdminPanel() {
         {tab === "roles" && isAdmin && <RoleGroupsTab />}
         {tab === "access" && isAdmin && <AccessControlTab />}
         {tab === "permissions" && isAdmin && <SectionPermissionsTab />}
+        {tab === "desktop-icons" && isAdmin && <DesktopIconsTab />}
         {tab === "logs" && isAdmin && <ActivityLogsTab />}
         {tab === "devices" && isAdmin && <DeviceTrackingTab />}
         {tab === "intel-ops" && isAdmin && <Phase5AdminTab />}

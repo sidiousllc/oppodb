@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSectionAccess } from "@/hooks/useSectionAccess";
 import { Win98Notepad } from "./Win98Notepad";
 import { Win98Window } from "./Win98Window";
 import { useOpenApp } from "./desktop/appRegistry";
@@ -25,6 +26,7 @@ interface ContextMenuState {
 export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
   const { signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { canAccess } = useSectionAccess();
   const openApp = useOpenApp();
   const [notepadOpen, setNotepadOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
