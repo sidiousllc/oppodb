@@ -42,6 +42,12 @@ function Pill({ status }: { status: CheckEntry["parse"] }) {
 }
 
 function DeployChecklistContent() {
+  const [report, setReport] = useState<Report | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("all");
+  const [expanded, setExpanded] = useState<string | null>(null);
+
   const { isAdmin } = useIsAdmin();
 
   if (!isAdmin) {
@@ -55,12 +61,6 @@ function DeployChecklistContent() {
       </div>
     );
   }
-
-  const [report, setReport] = useState<Report | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("all");
-  const [expanded, setExpanded] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
