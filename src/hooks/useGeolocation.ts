@@ -102,8 +102,7 @@ export async function getCurrentPosition(options?: UseGeolocationOptions): Promi
             speed: pos.coords.speed ?? 0,
           } as Position["coords"],
           timestamp: pos.timestamp,
-          mocked: false,
-        }),
+        } as Position),
         () => resolve(null),
         { timeout: options?.timeout ?? 10000, enableHighAccuracy: options?.enableHighAccuracy ?? false }
       );
