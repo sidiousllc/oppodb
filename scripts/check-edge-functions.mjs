@@ -20,7 +20,7 @@
  *   node scripts/check-edge-functions.mjs public-api    # check subset
  *   node scripts/check-edge-functions.mjs --json        # JSON only, no log
  */
-import { readdirSync, statSync, existsSync, writeFileSync } from "node:fs";
+import { readdirSync, statSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, resolve, relative } from "node:path";
 
@@ -154,6 +154,11 @@ const report = {
   checks,
 };
 writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2));
+// Also publish into /public so the in-app status window can fetch it after build.
+try {
+  const pub = resolve(process.cwd(), "public");
+  if (existsSync(pub)) writeFileSync(join(pub, "predeploy-report.json"), JSON.stringify(report, null, 2));
+} catch { /* ignore */ }
 
 if (jsonOnly) {
   process.stdout.write(JSON.stringify(report, null, 2) + "\n");
