@@ -114,7 +114,11 @@ export function SystemStatusWindow({ variant = "status" }: Props) {
     ];
 
     // ── Database checks (Supabase client) ───────────────────────────────
-    const dbChecks = [
+    // Cast to `any` so we can probe tables that aren't in the generated
+    // Database type (e.g. `candidates` lives outside the typed surface).
+    const db = supabase as any;
+    type CheckResult = { ok: boolean; detail?: string; latency_ms?: number };
+    const dbChecks: { component: string; check: () => Promise<CheckResult> }[] = [
       {
         component: "database",
         check: async () => {
