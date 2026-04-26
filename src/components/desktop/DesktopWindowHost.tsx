@@ -47,6 +47,7 @@ export function DesktopWindowHost() {
               defaultPosition={w.position}
               defaultSize={w.size}
               minSize={{ width: 320, height: 240 }}
+              onGeometryChange={(g) => saveGeometry(w.appId, g)}
             >
               {desc.render(w.payload, {
                 openApp: (id, payload) => openApp(id, payload),
