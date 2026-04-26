@@ -1,0 +1,38 @@
+name: Predeploy Checks
+
+# Runs TypeScript + edge-function parse/type checks before any deploy.
+# Surfaces the EXACT file:line:col that would fail Supabase bundling so
+# we never push a broken function to production.
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  typescript:
+    name: TypeScript (frontend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      - name: tsc --noEmit (reports file:line for every error)
+        run: npx tsc --noEmit --pretty false
+
+  edge-functions:
+    name: Edge Functions (deno check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Parse + type-check every supabase/functions/*/index.ts
+        run: node scripts/check-edge-functions.mjs
