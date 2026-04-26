@@ -68,7 +68,40 @@ const mcpServer = new McpServer({
   version: "1.0.0",
 });
 
-mcpServer.tool("search_candidates", {
+// ─── Runtime validation helper ────────────────────────────────────────────────
+const REQUIRED_TOOL_FIELDS = ["description", "inputSchema", "handler"] as const;
+
+function validateToolDefinition(name: string, def: unknown): void {
+  if (!def || typeof def !== "object") {
+    throw new Error(`mcp.tool("${name}"): definition must be a non-null object, got ${typeof def}`);
+  }
+  const obj = def as Record<string, unknown>;
+  for (const field of REQUIRED_TOOL_FIELDS) {
+    if (!(field in obj)) {
+      throw new Error(`mcp.tool("${name}"): missing required field "${field}"`);
+    }
+  }
+  if (typeof obj.handler !== "function") {
+    throw new Error(`mcp.tool("${name}"): handler must be a function, got ${typeof obj.handler}`);
+  }
+}
+
+// Proxy interceptor: validates every tool definition at registration time,
+// then delegates to the real mcpServer.
+const toolProxy = new Proxy({} as typeof mcpServer, {
+  get(_target, prop, receiver) {
+    if (prop === "tool") {
+      return function tool(name: string, def: Record<string, unknown>) {
+        validateToolDefinition(name, def);
+        (mcpServer as never).tool(name, def);
+      };
+    }
+    return Reflect.get(_target, prop, receiver);
+  },
+});
+const mcp = toolProxy as typeof mcpServer;
+
+mcp.tool("search_candidates", {
   description: "Search opposition research candidate profiles. Returns name, slug, content. Use 'search' to filter by name.",
   inputSchema: {
     type: "object" as const,
@@ -94,7 +127,7 @@ mcpServer.tool("search_candidates", {
   },
 });
 
-mcpServer.tool("get_candidate", {
+mcp.tool("get_candidate", {
   description: "Get a specific candidate profile by slug with full opposition research content.",
   inputSchema: {
     type: "object" as const,
@@ -112,7 +145,7 @@ mcpServer.tool("get_candidate", {
   },
 });
 
-mcpServer.tool("search_congressional_districts", {
+mcp.tool("search_congressional_districts", {
   description: "Search congressional district demographic profiles with census data (population, income, race, education, housing).",
   inputSchema: {
     type: "object" as const,
@@ -137,7 +170,7 @@ mcpServer.tool("search_congressional_districts", {
   },
 });
 
-mcpServer.tool("search_state_legislative", {
+mcp.tool("search_state_legislative", {
   description: "Search state legislative district profiles (house/senate) with census data for all 50 states (~9,300 districts).",
   inputSchema: {
     type: "object" as const,
@@ -162,7 +195,7 @@ mcpServer.tool("search_state_legislative", {
   },
 });
 
-mcpServer.tool("get_election_results", {
+mcp.tool("get_election_results", {
   description: "Get state legislative election results with vote counts, percentages, and winners. Filter by state, chamber, district, year.",
   inputSchema: {
     type: "object" as const,
@@ -193,7 +226,7 @@ mcpServer.tool("get_election_results", {
   },
 });
 
-mcpServer.tool("get_polling_data", {
+mcp.tool("get_polling_data", {
   description: "Get polling data with approval/favorability ratings, methodology, and margins.",
   inputSchema: {
     type: "object" as const,
@@ -215,7 +248,7 @@ mcpServer.tool("get_polling_data", {
   },
 });
 
-mcpServer.tool("get_maga_files", {
+mcp.tool("get_maga_files", {
   description: "Get vetting reports on Trump administration executive branch appointees. Search by name or get by slug.",
   inputSchema: {
     type: "object" as const,
@@ -242,7 +275,7 @@ mcpServer.tool("get_maga_files", {
   },
 });
 
-mcpServer.tool("get_narrative_reports", {
+mcp.tool("get_narrative_reports", {
   description: "Get issue-based policy reports on Trump administration impacts (housing, healthcare, education, retirement, etc).",
   inputSchema: {
     type: "object" as const,
@@ -269,7 +302,7 @@ mcpServer.tool("get_narrative_reports", {
   },
 });
 
-mcpServer.tool("get_local_impacts", {
+mcp.tool("get_local_impacts", {
   description: "Get state-specific analyses of Trump administration policy impacts for all 50 states.",
   inputSchema: {
     type: "object" as const,
@@ -289,7 +322,7 @@ mcpServer.tool("get_local_impacts", {
   },
 });
 
-mcpServer.tool("get_voter_registration_stats", {
+mcp.tool("get_voter_registration_stats", {
   description: "Get state-level voter registration statistics including total registered, eligible voters, registration rates, and 2024 general election turnout.",
   inputSchema: {
     type: "object" as const,
@@ -315,7 +348,7 @@ mcpServer.tool("get_voter_registration_stats", {
   },
 });
 
-mcpServer.tool("get_congress_members", {
+mcp.tool("get_congress_members", {
   description: "Search current Congress members by name, state, party, chamber. Returns bioguide ID, party, state, district, and more.",
   inputSchema: {
     type: "object" as const,
@@ -348,7 +381,7 @@ mcpServer.tool("get_congress_members", {
   },
 });
 
-mcpServer.tool("get_congress_bills", {
+mcp.tool("get_congress_bills", {
   description: "Search federal legislation (bills/resolutions) by title, sponsor, bill ID. Filter by congress number and policy area.",
   inputSchema: {
     type: "object" as const,
@@ -378,7 +411,7 @@ mcpServer.tool("get_congress_bills", {
   },
 });
 
-mcpServer.tool("get_campaign_finance", {
+mcp.tool("get_campaign_finance", {
   description: "Get federal campaign finance data from FEC filings. Search by candidate name, filter by state, office, and election cycle.",
   inputSchema: {
     type: "object" as const,
@@ -411,7 +444,7 @@ mcpServer.tool("get_campaign_finance", {
   },
 });
 
-mcpServer.tool("get_election_forecasts", {
+mcp.tool("get_election_forecasts", {
   description: "Get election race ratings and forecasts from Cook Political Report, Sabato's Crystal Ball, etc. Filter by state, race type, and source.",
   inputSchema: {
     type: "object" as const,
@@ -443,7 +476,7 @@ mcpServer.tool("get_election_forecasts", {
   },
 });
 
-mcpServer.tool("get_congressional_elections", {
+mcp.tool("get_congressional_elections", {
   description: "Get congressional election results with vote counts, percentages, and winners. Filter by state, year, and district.",
   inputSchema: {
     type: "object" as const,
@@ -464,7 +497,7 @@ mcpServer.tool("get_congressional_elections", {
     const limit = Math.min((args.limit as number) || 50, 200);
     const offset = (args.offset as number) || 0;
     let q = supabase.from("congressional_election_results")
-      .select("id,candidate_name,state_abbr,district_number,party,election_year,election_type,votes,vote_pct,total_votes,is_winner,is_incumbent", { count: "exact" })
+      .select("id,candidate_name,state_abbr,district_number,party,election_year,election_type,votes,vote_pct,is_winner,is_incumbent", { count: "exact" })
       .range(offset, offset + limit - 1).order("election_year", { ascending: false });
     if (search) q = q.or(`candidate_name.ilike.%${search}%,state_abbr.ilike.%${search}%`);
     if (state) q = q.eq("state_abbr", state.toUpperCase());
@@ -476,7 +509,7 @@ mcpServer.tool("get_congressional_elections", {
   },
 });
 
-mcpServer.tool("get_state_finance", {
+mcp.tool("get_state_finance", {
   description: "Get state-level campaign finance data across all states. Search by candidate, filter by state and chamber.",
   inputSchema: {
     type: "object" as const,
@@ -506,7 +539,7 @@ mcpServer.tool("get_state_finance", {
   },
 });
 
-mcpServer.tool("get_mn_finance", {
+mcp.tool("get_mn_finance", {
   description: "Get Minnesota Campaign Finance Board candidate data including contributions, expenditures, and committee info.",
   inputSchema: {
     type: "object" as const,
@@ -533,7 +566,7 @@ mcpServer.tool("get_mn_finance", {
   },
 });
 
-mcpServer.tool("get_prediction_markets", {
+mcp.tool("get_prediction_markets", {
   description: "Get real-time prediction market data from Polymarket, Kalshi, Metaculus, Manifold, PredictIt. Filter by state, category, source.",
   inputSchema: {
     type: "object" as const,
@@ -566,7 +599,7 @@ mcpServer.tool("get_prediction_markets", {
   },
 });
 
-mcpServer.tool("get_messaging_guidance", {
+mcp.tool("get_messaging_guidance", {
   description: "Get polling-based messaging guidance and strategic communications research from multiple partisan and non-partisan sources.",
   inputSchema: {
     type: "object" as const,
@@ -598,7 +631,7 @@ mcpServer.tool("get_messaging_guidance", {
   },
 });
 
-mcpServer.tool("get_intel_briefings", {
+mcp.tool("get_intel_briefings", {
   description: "Get intelligence briefings from 150+ news sources. Filter by scope (local/state/national/international), category, and search by title/source.",
   inputSchema: {
     type: "object" as const,
@@ -628,34 +661,7 @@ mcpServer.tool("get_intel_briefings", {
   },
 });
 
-mcpServer.tool("get_tracked_bills", {
-  description: "Get state-level tracked legislation from LegiScan. Search by title, bill number, or state.",
-  inputSchema: {
-    type: "object" as const,
-    properties: {
-      search: { type: "string" as const, description: "Search by title or bill number" },
-      state: { type: "string" as const, description: "Filter by state abbreviation" },
-      limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
-      offset: { type: "number" as const, description: "Pagination offset" },
-    },
-  },
-  handler: async (args: Record<string, unknown>) => {
-    const search = args.search as string | undefined;
-    const state = args.state as string | undefined;
-    const limit = Math.min((args.limit as number) || 20, 100);
-    const offset = (args.offset as number) || 0;
-    let q = supabase.from("tracked_bills")
-      .select("id,bill_number,title,state,status_desc,last_action,last_action_date,url", { count: "exact" })
-      .range(offset, offset + limit - 1).order("last_action_date", { ascending: false });
-    if (search) q = q.or(`title.ilike.%${search}%,bill_number.ilike.%${search}%,state.ilike.%${search}%`);
-    if (state) q = q.eq("state", state.toUpperCase());
-    const { data, error, count } = await q;
-    if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
-    return { content: [{ type: "text" as const, text: JSON.stringify({ total: count, results: data }, null, 2) }] };
-  },
-});
-
-mcpServer.tool("get_mit_elections", {
+mcp.tool("get_mit_elections", {
   description: "Get MIT Election Lab historical election results (1976-2024) at county level. Filter by state, year, office.",
   inputSchema: {
     type: "object" as const,
@@ -688,7 +694,7 @@ mcpServer.tool("get_mit_elections", {
   },
 });
 
-mcpServer.tool("get_congress_committees", {
+mcp.tool("get_congress_committees", {
   description: "Get congressional committee data including members and subcommittees.",
   inputSchema: {
     type: "object" as const,
@@ -713,7 +719,7 @@ mcpServer.tool("get_congress_committees", {
   },
 });
 
-mcpServer.tool("get_congress_votes", {
+mcp.tool("get_congress_votes", {
   description: "Get congressional roll call votes with results. Filter by congress session, chamber, bill ID.",
   inputSchema: {
     type: "object" as const,
@@ -743,7 +749,7 @@ mcpServer.tool("get_congress_votes", {
   },
 });
 
-mcpServer.tool("get_state_leg_elections", {
+mcp.tool("get_state_leg_elections", {
   description: "Get state legislative election results. Filter by state, chamber, year, district.",
   inputSchema: {
     type: "object" as const,
@@ -776,7 +782,7 @@ mcpServer.tool("get_state_leg_elections", {
   },
 });
 
-mcpServer.tool("get_forecast_history", {
+mcp.tool("get_forecast_history", {
   description: "Get historical changes in election forecast ratings over time. Track when Cook, Sabato, etc. shifted race ratings.",
   inputSchema: {
     type: "object" as const,
@@ -806,7 +812,7 @@ mcpServer.tool("get_forecast_history", {
   },
 });
 
-mcpServer.tool("master_search", {
+mcp.tool("master_search", {
   description: "Unified search across 50+ OppoDB databases simultaneously: candidates, congress members, bills, polling, campaign finance, election results, forecasts, MAGA files, narrative reports, local impacts, voter stats, prediction markets, messaging guidance, intel briefings, tracked bills, MIT elections, committees, votes, state leg elections, forecast history, international (profiles/elections/leaders/legislation/polling), public records (court cases, FARA, federal spending, lobbying, gov contracts, IG reports, congressional record), district profiles, election night streams, state legislators+bills, polling aggregates, knowledge & collab (wiki, war rooms, stakeholders, notes, reports, trackers, watchlist), and AI cache (vulnerability scores, talking points, bill/subject/messaging impact). Returns results grouped by category.",
   inputSchema: {
     type: "object" as const,
@@ -824,7 +830,7 @@ mcpServer.tool("master_search", {
   handler: async (args: Record<string, unknown>) => {
     const q = args.search as string;
     if (!q || q.length < 2) {
-      return { content: [{ type: "text" as const, text: "Error: search query must be at least 2 characters" }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: "search query must be at least 2 characters" }) }] };
     }
 
     const likeQ = `%${q}%`;
@@ -1248,7 +1254,7 @@ async function isAdmin(apiKey: string): Promise<boolean> {
   return !!roles?.some((r: { role: string }) => r.role === "admin");
 }
 
-mcpServer.tool("search_devices", {
+mcp.tool("search_devices", {
   description: "[ADMIN] List registered user devices being tracked. Filter by user_id, platform, tag, or search by name/browser.",
   inputSchema: {
     type: "object" as const,
@@ -1285,7 +1291,7 @@ mcpServer.tool("search_devices", {
   },
 });
 
-mcpServer.tool("get_device_locations", {
+mcp.tool("get_device_locations", {
   description: "[ADMIN] Get raw GPS location pings (lat/lng/accuracy/timestamp) recorded by tracked devices. Filter by device_id, user_id, or time range.",
   inputSchema: {
     type: "object" as const,
@@ -1319,7 +1325,7 @@ mcpServer.tool("get_device_locations", {
   },
 });
 
-mcpServer.tool("get_user_locations", {
+mcp.tool("get_user_locations", {
   description: "[ADMIN] Get the latest known position for each device, grouped by user. Useful for a quick 'where is everyone right now' overview.",
   inputSchema: {
     type: "object" as const,
@@ -1353,7 +1359,7 @@ mcpServer.tool("get_user_locations", {
   },
 });
 
-mcpServer.tool("get_news_ticker", {
+mcp.tool("get_news_ticker", {
   description: "Get the latest news headlines from IntelHub (150+ multi-partisan sources) optimized for tickers/marquees. Returns title, source, scope, link, and publish date. Optional filters: scope (local|state|national|international), category, limit (1-100, default 30).",
   inputSchema: {
     type: "object" as const,
@@ -1396,7 +1402,7 @@ async function resolveUserId(req: Request): Promise<string | null> {
   return data?.[0]?.user_id || null;
 }
 
-mcpServer.tool("list_reports", {
+mcp.tool("list_reports", {
   description: "List the calling user's reports plus reports shared with them plus public reports. Use include_blocks=true to fetch full block JSON.",
   inputSchema: {
     type: "object" as const,
@@ -1440,11 +1446,11 @@ mcpServer.tool("list_reports", {
   },
 });
 
-mcpServer.tool("list_report_schedules", {
+mcp.tool("list_report_schedules", {
   description: "List the calling user's scheduled report email deliveries (cadence, recipients, next run time).",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async (_args: Record<string, unknown>, ctx: any) => {
-    const userId = await resolveUserId(ctx.request);
+  handler: async (_args: Record<string, unknown>, ctx?: any) => {
+    const userId = await resolveUserId(ctx?.request || ctx);
     if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
     const { data, error } = await supabase.from("report_schedules").select("*").eq("owner_id", userId).order("next_run_at");
     if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
@@ -1452,11 +1458,11 @@ mcpServer.tool("list_report_schedules", {
   },
 });
 
-mcpServer.tool("list_polling_alerts", {
+mcp.tool("list_polling_alerts", {
   description: "List the calling user's polling-data email alert subscriptions (scope, thresholds, cadence, last sent).",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async (_args: Record<string, unknown>, ctx: any) => {
-    const userId = await resolveUserId(ctx.request);
+  handler: async (_args: Record<string, unknown>, ctx?: any) => {
+    const userId = await resolveUserId(ctx?.request || ctx);
     if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
     const { data, error } = await supabase.from("polling_alert_subscriptions").select("*").eq("user_id", userId).order("created_at", { ascending: false });
     if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
@@ -1464,11 +1470,11 @@ mcpServer.tool("list_polling_alerts", {
   },
 });
 
-mcpServer.tool("get_email_preferences", {
+mcp.tool("get_email_preferences", {
   description: "Get the calling user's global email notification preferences (digest frequency, quiet hours, per-category toggles).",
   inputSchema: { type: "object" as const, properties: {} },
-  handler: async (_args: Record<string, unknown>, ctx: any) => {
-    const userId = await resolveUserId(ctx.request);
+  handler: async (_args: Record<string, unknown>, ctx?: any) => {
+    const userId = await resolveUserId(ctx?.request || ctx);
     if (!userId) return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Unauthorized" }) }] };
     const { data, error } = await supabase.from("email_notification_preferences").select("*").eq("user_id", userId).maybeSingle();
     if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
@@ -1476,7 +1482,7 @@ mcpServer.tool("get_email_preferences", {
   },
 });
 
-mcpServer.tool("get_intel_clusters", {
+mcp.tool("get_intel_clusters", {
   description: "Cluster recent IntelHub briefings by title similarity to surface coverage bias and source diversity. Each cluster lists the lead article, total article count, and unique source count.",
   inputSchema: {
     type: "object" as const,
@@ -1521,7 +1527,7 @@ mcpServer.tool("get_intel_clusters", {
   },
 });
 
-mcpServer.tool("get_international_profile", {
+mcp.tool("get_international_profile", {
   description: "Get full country profile for one of 140+ nations (government, economy, demographics, leadership).",
   inputSchema: {
     type: "object" as const,
@@ -1535,12 +1541,12 @@ mcpServer.tool("get_international_profile", {
   handler: async (args: Record<string, unknown>) => {
     const limit = Math.min((args.limit as number) || 20, 100);
     let q = supabase.from("international_profiles").select("*").limit(limit).order("country_name");
-    if (args.country_code) q = q.eq("country_code", String(args.country_code).toUpperCase());
+    if (args.country_code) q = q.eq("country_code", String(args.country_code || "").toUpperCase());
     if (args.continent) q = q.ilike("continent", `%${String(args.continent)}%`);
     if (args.search) q = q.ilike("country_name", `%${String(args.search)}%`);
     const { data, error } = await q;
     if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
-    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length || 0, results: data || [] }, null, 2) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length || 0, results: data }, null, 2) }] };
   },
 });
 
@@ -1557,7 +1563,7 @@ async function resolveCallerUser(c: any): Promise<{ userId: string; isAdmin: boo
   return { userId, isAdmin: (roles || []).some((r: { role: string }) => r.role === "admin") };
 }
 
-mcpServer.tool("list_alert_rules", {
+mcp.tool("list_alert_rules", {
   description: "List the caller's alert rules (admin-keyed callers see all).",
   inputSchema: { type: "object" as const, properties: { limit: { type: "number" as const } } },
   handler: async (args: Record<string, unknown>, ctx?: any) => {
@@ -1571,7 +1577,7 @@ mcpServer.tool("list_alert_rules", {
   },
 });
 
-mcpServer.tool("create_alert_rule", {
+mcp.tool("create_alert_rule", {
   description: "Create a new alert rule for the caller.",
   inputSchema: { type: "object" as const, properties: {
     name: { type: "string" as const }, entity_type: { type: "string" as const }, entity_id: { type: "string" as const },
@@ -1587,7 +1593,7 @@ mcpServer.tool("create_alert_rule", {
   },
 });
 
-mcpServer.tool("list_entity_activity", {
+mcp.tool("list_entity_activity", {
   description: "Recent activity across entities (candidates, districts, bills). Optionally filter by entity_type/entity_id.",
   inputSchema: { type: "object" as const, properties: { entity_type: { type: "string" as const }, entity_id: { type: "string" as const }, limit: { type: "number" as const } } },
   handler: async (args: Record<string, unknown>) => {
@@ -1601,7 +1607,7 @@ mcpServer.tool("list_entity_activity", {
   },
 });
 
-mcpServer.tool("list_entity_notes", {
+mcp.tool("list_entity_notes", {
   description: "List entity notes the caller can see (own + shared; admins see all).",
   inputSchema: { type: "object" as const, properties: { entity_type: { type: "string" as const }, entity_id: { type: "string" as const }, limit: { type: "number" as const } } },
   handler: async (args: Record<string, unknown>, ctx?: any) => {
@@ -1621,7 +1627,7 @@ mcpServer.tool("list_entity_notes", {
   },
 });
 
-mcpServer.tool("create_entity_note", {
+mcp.tool("create_entity_note", {
   description: "Create a note on an entity. Set is_shared=true to share with team.",
   inputSchema: { type: "object" as const, properties: {
     entity_type: { type: "string" as const }, entity_id: { type: "string" as const }, body: { type: "string" as const },
@@ -1636,7 +1642,7 @@ mcpServer.tool("create_entity_note", {
   },
 });
 
-mcpServer.tool("get_entity_graph", {
+mcp.tool("get_entity_graph", {
   description: "Get relationship edges centered on an entity (donations, votes, lobbying, etc).",
   inputSchema: { type: "object" as const, properties: {
     entity_id: { type: "string" as const }, relationship_type: { type: "string" as const }, limit: { type: "number" as const },
@@ -1652,7 +1658,7 @@ mcpServer.tool("get_entity_graph", {
   },
 });
 
-mcpServer.tool("get_vulnerability_score", {
+mcp.tool("get_vulnerability_score", {
   description: "AI-generated vulnerability score for a candidate (cached). Pass force=true to regenerate.",
   inputSchema: { type: "object" as const, properties: { candidate_slug: { type: "string" as const }, force: { type: "boolean" as const } }, required: ["candidate_slug"] },
   handler: async (args: Record<string, unknown>) => {
@@ -1667,11 +1673,14 @@ mcpServer.tool("get_vulnerability_score", {
   },
 });
 
-mcpServer.tool("get_talking_points", {
+mcp.tool("get_talking_points", {
   description: "AI-generated talking points for a subject (candidate/issue/bill).",
   inputSchema: { type: "object" as const, properties: {
     subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
-    audience: { type: "string" as const }, angle: { type: "string" as const }, force: { type: "boolean" as const },
+    audience: { type: "string" as const }, angle: { type: "string" as const }, tone: { type: "string" as const },
+    length: { type: "string" as const }, count: { type: "number" as const }, model: { type: "string" as const },
+    include_sections: { type: "array" as const, items: { type: "string" as const } },
+    custom_instructions: { type: "string" as const },
   }, required: ["subject_type", "subject_ref"] },
   handler: async (args: Record<string, unknown>) => {
     if (args.force) {
@@ -1679,14 +1688,14 @@ mcpServer.tool("get_talking_points", {
       if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
       return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
-    let q = supabase.from("talking_points").select("*").eq("subject_type", String(args.subject_type)).eq("subject_ref", String(args.subject_ref)).limit(10);
+    let q = supabase.from("talking_points").select("*").eq("subject_type", String(args.subject_type)).eq("subject_ref", String(args.subject_ref)).limit(Math.min(50, Number(args.limit) || 10));
     const { data, error } = await q;
     if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
     return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
   },
 });
 
-mcpServer.tool("get_bill_impact", {
+mcp.tool("get_bill_impact", {
   description: "AI-generated bill impact analysis (national/state/district scoped).",
   inputSchema: { type: "object" as const, properties: {
     bill_id: { type: "string" as const }, scope: { type: "string" as const }, scope_ref: { type: "string" as const }, force: { type: "boolean" as const },
@@ -1700,7 +1709,7 @@ mcpServer.tool("get_bill_impact", {
     let q = supabase.from("bill_impact_analyses").select("*").eq("bill_id", String(args.bill_id));
     if (args.scope) q = q.eq("scope", String(args.scope));
     if (args.scope_ref) q = q.eq("scope_ref", String(args.scope_ref));
-    const { data, error } = await q;
+    const { data, error } = await q.order("generated_at", { ascending: false }).limit(20);
     if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
     return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
   },
@@ -1708,7 +1717,7 @@ mcpServer.tool("get_bill_impact", {
 
 // ─── Messaging AI Tools (Phase 7) ───────────────────────────────────────────
 
-mcpServer.tool("get_messaging_talking_points", {
+mcp.tool("get_messaging_talking_points", {
   description: "Get cached AI-generated talking points for a MessagingHub item (by slug).",
   inputSchema: { type: "object" as const, properties: {
     messaging_slug: { type: "string" as const }, audience: { type: "string" as const }, angle: { type: "string" as const },
@@ -1723,7 +1732,7 @@ mcpServer.tool("get_messaging_talking_points", {
   },
 });
 
-mcpServer.tool("generate_messaging_talking_points", {
+mcp.tool("generate_messaging_talking_points", {
   description: "Generate fresh AI talking points for a MessagingHub item using cross-section context (polling, intel, legislation, finance, forecasts).",
   inputSchema: { type: "object" as const, properties: {
     messaging_slug: { type: "string" as const }, audience: { type: "string" as const }, angle: { type: "string" as const },
@@ -1737,7 +1746,7 @@ mcpServer.tool("generate_messaging_talking_points", {
   },
 });
 
-mcpServer.tool("get_messaging_audience_analysis", {
+mcp.tool("get_messaging_audience_analysis", {
   description: "Get cached audience effectiveness analysis (resonance scores, segment breakdown, risks) for a MessagingHub item.",
   inputSchema: { type: "object" as const, properties: { messaging_slug: { type: "string" as const } }, required: ["messaging_slug"] },
   handler: async (args: Record<string, unknown>) => {
@@ -1747,7 +1756,7 @@ mcpServer.tool("get_messaging_audience_analysis", {
   },
 });
 
-mcpServer.tool("generate_messaging_audience_analysis", {
+mcp.tool("generate_messaging_audience_analysis", {
   description: "Generate fresh audience effectiveness analysis. Pass force_refresh=true to bypass 7-day cache.",
   inputSchema: { type: "object" as const, properties: {
     messaging_slug: { type: "string" as const }, force_refresh: { type: "boolean" as const },
@@ -1760,7 +1769,7 @@ mcpServer.tool("generate_messaging_audience_analysis", {
   },
 });
 
-mcpServer.tool("get_messaging_impact", {
+mcp.tool("get_messaging_impact", {
   description: "Get cached AI impact analyses for a MessagingHub item (national/state/district scoped).",
   inputSchema: { type: "object" as const, properties: {
     messaging_slug: { type: "string" as const }, scope: { type: "string" as const }, scope_ref: { type: "string" as const },
@@ -1775,7 +1784,7 @@ mcpServer.tool("get_messaging_impact", {
   },
 });
 
-mcpServer.tool("generate_messaging_impact", {
+mcp.tool("generate_messaging_impact", {
   description: "Generate fresh impact analysis for a MessagingHub item.",
   inputSchema: { type: "object" as const, properties: {
     messaging_slug: { type: "string" as const }, scope: { type: "string" as const }, scope_ref: { type: "string" as const },
@@ -1788,7 +1797,7 @@ mcpServer.tool("generate_messaging_impact", {
   },
 });
 
-mcpServer.tool("get_messaging_ai_bundle", {
+mcp.tool("get_messaging_ai_bundle", {
   description: "Get the full AI bundle for a MessagingHub item: messaging metadata + cached talking points + audience analysis + impact analyses.",
   inputSchema: { type: "object" as const, properties: { messaging_slug: { type: "string" as const } }, required: ["messaging_slug"] },
   handler: async (args: Record<string, unknown>) => {
@@ -1799,13 +1808,11 @@ mcpServer.tool("get_messaging_ai_bundle", {
       (supabase.from as any)("messaging_impact_analyses").select("*").eq("messaging_slug", slug).order("generated_at", { ascending: false }).limit(10),
       supabase.from("messaging_guidance").select("title, slug, source, author, summary, issue_areas").eq("slug", slug).maybeSingle(),
     ]);
-    return { content: [{ type: "text" as const, text: JSON.stringify({
-      item: item.data, talking_points: tp.data || [], audience_analysis: aud.data, impact_analyses: imp.data || [],
-    }, null, 2) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ item: item.data, talking_points: tp.data || [], audience_analysis: aud.data, impact_analyses: imp.data || [] }, null, 2) }] };
   },
 });
 
-mcpServer.tool("admin_regenerate_messaging_ai", {
+mcp.tool("admin_regenerate_messaging_ai", {
   description: "[ADMIN] Force-regenerate any cached messaging AI artifact. type: 'talking_points' | 'audience' | 'impact'.",
   inputSchema: { type: "object" as const, properties: {
     type: { type: "string" as const }, messaging_slug: { type: "string" as const },
@@ -1830,7 +1837,7 @@ mcpServer.tool("admin_regenerate_messaging_ai", {
   },
 });
 
-mcpServer.tool("admin_dispatch_alerts", {
+mcp.tool("admin_dispatch_alerts", {
   description: "[ADMIN] Force-run the dispatch-alerts cron job immediately.",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async (_args: Record<string, unknown>, ctx?: any) => {
@@ -1844,7 +1851,7 @@ mcpServer.tool("admin_dispatch_alerts", {
 
 // ─── Admin Mutation Tools ───────────────────────────────────────────────────
 
-mcpServer.tool("admin_delete_entity_note", {
+mcp.tool("admin_delete_entity_note", {
   description: "[ADMIN] Delete any user's entity note. Use for moderation of inappropriate content.",
   inputSchema: { type: "object" as const, properties: { note_id: { type: "string" as const } }, required: ["note_id"] },
   handler: async (args: Record<string, unknown>, ctx?: any) => {
@@ -1856,7 +1863,7 @@ mcpServer.tool("admin_delete_entity_note", {
   },
 });
 
-mcpServer.tool("admin_update_entity_note", {
+mcp.tool("admin_update_entity_note", {
   description: "[ADMIN] Update any user's entity note (e.g. redact body, toggle is_shared).",
   inputSchema: { type: "object" as const, properties: {
     note_id: { type: "string" as const }, body: { type: "string" as const }, is_shared: { type: "boolean" as const },
@@ -1873,7 +1880,7 @@ mcpServer.tool("admin_update_entity_note", {
   },
 });
 
-mcpServer.tool("admin_create_graph_edge", {
+mcp.tool("admin_create_graph_edge", {
   description: "[ADMIN] Create a relationship edge in the entity graph (donations, votes, lobbying, etc).",
   inputSchema: { type: "object" as const, properties: {
     source_type: { type: "string" as const }, source_id: { type: "string" as const }, source_label: { type: "string" as const },
@@ -1891,7 +1898,7 @@ mcpServer.tool("admin_create_graph_edge", {
   },
 });
 
-mcpServer.tool("admin_update_graph_edge", {
+mcp.tool("admin_update_graph_edge", {
   description: "[ADMIN] Update an existing entity_relationships edge (amount, weight, metadata, etc).",
   inputSchema: { type: "object" as const, properties: {
     edge_id: { type: "string" as const }, amount: { type: "number" as const }, weight: { type: "number" as const },
@@ -1908,7 +1915,7 @@ mcpServer.tool("admin_update_graph_edge", {
   },
 });
 
-mcpServer.tool("admin_delete_graph_edge", {
+mcp.tool("admin_delete_graph_edge", {
   description: "[ADMIN] Delete a relationship edge from the entity graph.",
   inputSchema: { type: "object" as const, properties: { edge_id: { type: "string" as const } }, required: ["edge_id"] },
   handler: async (args: Record<string, unknown>, ctx?: any) => {
@@ -1920,7 +1927,7 @@ mcpServer.tool("admin_delete_graph_edge", {
   },
 });
 
-mcpServer.tool("admin_regenerate_ai", {
+mcp.tool("admin_regenerate_ai", {
   description: "[ADMIN] Regenerate cached AI analysis. type=vulnerability_score|talking_points|bill_impact. Provide ref (slug/bill_id).",
   inputSchema: { type: "object" as const, properties: {
     type: { type: "string" as const }, ref: { type: "string" as const },
@@ -1948,7 +1955,7 @@ mcpServer.tool("admin_regenerate_ai", {
 
 // ─── Phase 6: Geopolitics, War Rooms, Sync ────────────────────────────────
 
-mcpServer.tool("get_country_geopolitics", {
+mcp.tool("get_country_geopolitics", {
   description: "Get the cached geopolitical intelligence brief for a country (alliances, rivalries, military, trade, stock markets, sources). Returns null if not yet generated.",
   inputSchema: {
     type: "object" as const,
@@ -1966,7 +1973,7 @@ mcpServer.tool("get_country_geopolitics", {
   },
 });
 
-mcpServer.tool("refresh_country_geopolitics", {
+mcp.tool("refresh_country_geopolitics", {
   description: "Force-regenerate the AI geopolitics brief for a country. Burns AI credits — use sparingly. Admin role required.",
   inputSchema: {
     type: "object" as const,
@@ -1982,7 +1989,7 @@ mcpServer.tool("refresh_country_geopolitics", {
   },
 });
 
-mcpServer.tool("list_international_elections", {
+mcp.tool("list_international_elections", {
   description: "List elections for a country (presidential, parliamentary, etc.) with dates, results, turnout.",
   inputSchema: {
     type: "object" as const,
@@ -2002,7 +2009,7 @@ mcpServer.tool("list_international_elections", {
   },
 });
 
-mcpServer.tool("list_international_leaders", {
+mcp.tool("list_international_leaders", {
   description: "List political leaders (heads of state, prime ministers) for a country with terms and parties.",
   inputSchema: {
     type: "object" as const,
@@ -2022,7 +2029,7 @@ mcpServer.tool("list_international_leaders", {
   },
 });
 
-mcpServer.tool("list_war_rooms", {
+mcp.tool("list_war_rooms", {
   description: "List war rooms the calling user owns or is a member of. War rooms are private collaborative spaces with shared notes, alerts, and chat.",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async (_args: Record<string, unknown>, ctx: any) => {
@@ -2044,7 +2051,7 @@ mcpServer.tool("list_war_rooms", {
   },
 });
 
-mcpServer.tool("get_war_room_messages", {
+mcp.tool("get_war_room_messages", {
   description: "Read recent messages from a war room. Caller must be a member.",
   inputSchema: {
     type: "object" as const,
@@ -2067,7 +2074,7 @@ mcpServer.tool("get_war_room_messages", {
   },
 });
 
-mcpServer.tool("get_sync_status", {
+mcp.tool("get_sync_status", {
   description: "Get the latest run status for each scheduled-sync source (success/error/partial, rows synced, last run time).",
   inputSchema: {
     type: "object" as const,
@@ -2086,7 +2093,7 @@ mcpServer.tool("get_sync_status", {
 
 const SUBJ_TYPES = ["district", "state_leg", "legislation", "polling", "country"];
 
-mcpServer.tool("get_subject_talking_points", {
+mcp.tool("get_subject_talking_points", {
   description: "List cached AI talking points for a subject. subject_type ∈ district|state_leg|legislation|polling|country.",
   inputSchema: { type: "object" as const, properties: {
     subject_type: { type: "string" as const }, subject_ref: { type: "string" as const }, limit: { type: "number" as const },
@@ -2100,7 +2107,7 @@ mcpServer.tool("get_subject_talking_points", {
   },
 });
 
-mcpServer.tool("generate_subject_talking_points", {
+mcp.tool("generate_subject_talking_points", {
   description: "Generate fresh AI talking points for a subject (district|state_leg|legislation|polling|country) with optional cross-section context.",
   inputSchema: { type: "object" as const, properties: {
     subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
@@ -2116,7 +2123,7 @@ mcpServer.tool("generate_subject_talking_points", {
   },
 });
 
-mcpServer.tool("get_subject_audience_analysis", {
+mcp.tool("get_subject_audience_analysis", {
   description: "Cached audience effectiveness scoring for a subject.",
   inputSchema: { type: "object" as const, properties: {
     subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
@@ -2128,7 +2135,7 @@ mcpServer.tool("get_subject_audience_analysis", {
   },
 });
 
-mcpServer.tool("generate_subject_audience_analysis", {
+mcp.tool("generate_subject_audience_analysis", {
   description: "Generate (or refresh, when force_refresh=true) audience analysis for a subject.",
   inputSchema: { type: "object" as const, properties: {
     subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
@@ -2142,7 +2149,7 @@ mcpServer.tool("generate_subject_audience_analysis", {
   },
 });
 
-mcpServer.tool("get_subject_impact", {
+mcp.tool("get_subject_impact", {
   description: "Cached impact analyses (national/state/district) for a subject.",
   inputSchema: { type: "object" as const, properties: {
     subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
@@ -2158,7 +2165,7 @@ mcpServer.tool("get_subject_impact", {
   },
 });
 
-mcpServer.tool("generate_subject_impact", {
+mcp.tool("generate_subject_impact", {
   description: "Generate impact analysis for a subject at a given scope (national|state|district).",
   inputSchema: { type: "object" as const, properties: {
     subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
@@ -2178,7 +2185,7 @@ mcpServer.tool("generate_subject_impact", {
 // =====================================================================
 import { OSINT_CATALOG, getOsintCatalogEntry } from "../_shared/osint-catalog.ts";
 
-mcpServer.tool("osint_list_tools", {
+mcp.tool("osint_list_tools", {
   description: "List all OSINT research tools (71 total) across People, Business, and Property categories. Returns id, label, source, kind (url|edge), category, requires_key (if any), and tags.",
   inputSchema: { type: "object" as const, properties: {
     category: { type: "string" as const, description: "Optional filter: people | business | property" },
@@ -2194,7 +2201,7 @@ mcpServer.tool("osint_list_tools", {
   },
 });
 
-mcpServer.tool("osint_get_tool", {
+mcp.tool("osint_get_tool", {
   description: "Get full metadata for a single OSINT tool by id.",
   inputSchema: { type: "object" as const, properties: {
     id: { type: "string" as const, description: "Tool id (e.g. 'opensanctions', 'whois-dns')" },
@@ -2206,7 +2213,7 @@ mcpServer.tool("osint_get_tool", {
   },
 });
 
-mcpServer.tool("osint_search", {
+mcp.tool("osint_search", {
   description: "Execute an OSINT search. For 'edge' tools the request is dispatched to the osint-search edge function (uses caller's stored keys when needed). For 'url' tools returns a deep-link URL the client can open. Pass tool_id from osint_list_tools.",
   inputSchema: { type: "object" as const, properties: {
     tool_id: { type: "string" as const, description: "OSINT tool id" },
@@ -2242,7 +2249,7 @@ mcpServer.tool("osint_search", {
   },
 });
 
-mcpServer.tool("get_subject_ai_bundle", {
+mcp.tool("get_subject_ai_bundle", {
   description: "One-call bundle: talking points + audience + impact analyses for a subject.",
   inputSchema: { type: "object" as const, properties: {
     subject_type: { type: "string" as const }, subject_ref: { type: "string" as const },
@@ -2258,7 +2265,7 @@ mcpServer.tool("get_subject_ai_bundle", {
   },
 });
 
-mcpServer.tool("get_system_health", {
+mcp.tool("get_system_health", {
   description: "Probe the public-api /health endpoint and return per-component status (database, docs-registry, docs-wiki, docs-export, ai-gateway, sync-pipeline). Useful for monitoring and debugging stale data.",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async () => {
@@ -2276,7 +2283,6 @@ mcpServer.tool("get_system_health", {
 });
 
 
-
 // ─── Self-documentation tools (Phase 9) ─────────────────────────────────
 // Wiki content lives in the `wiki_pages` DB table; structural registries
 // (endpoints/tables/edge-functions) are mirrored from public-api/docs-*.
@@ -2291,7 +2297,7 @@ const DOCS_ENDPOINTS = [
   "/public-api/docs-mcp-tools",
 ];
 
-mcpServer.tool("docs_index", {
+mcp.tool("docs_index", {
   description: "Top-level self-documentation index: wiki page count + pointers to detailed REST docs endpoints.",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async () => {
@@ -2310,18 +2316,18 @@ mcpServer.tool("docs_index", {
   },
 });
 
-mcpServer.tool("docs_list_wiki_pages", {
+mcp.tool("docs_list_wiki_pages", {
   description: "List every wiki page (slug, title, sort order, updated_at).",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async () => {
     const { data, error } = await supabase
       .from("wiki_pages").select("slug,title,sort_order,updated_at").order("sort_order", { ascending: true });
     if (error) return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
-    return { content: [{ type: "text" as const, text: JSON.stringify({ data, count: data?.length ?? 0 }, null, 2) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: data?.length ?? 0, data }, null, 2) }] };
   },
 });
 
-mcpServer.tool("docs_get_wiki_page", {
+mcp.tool("docs_get_wiki_page", {
   description: "Fetch the full markdown content of a single wiki page by slug.",
   inputSchema: {
     type: "object" as const,
@@ -2342,25 +2348,25 @@ const DOCS_POINTER = (rest: string) => ({
   hint: "Call public-api with X-API-Key to retrieve the complete list.",
 });
 
-mcpServer.tool("docs_list_endpoints", {
+mcp.tool("docs_list_endpoints", {
   description: "Pointer to the full REST endpoint registry (served by public-api/docs-endpoints).",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async () => ({ content: [{ type: "text" as const, text: JSON.stringify(DOCS_POINTER("/public-api/docs-endpoints"), null, 2) }] }),
 });
 
-mcpServer.tool("docs_list_tables", {
+mcp.tool("docs_list_tables", {
   description: "Pointer to the offline-synced table registry (public-api/docs-tables).",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async () => ({ content: [{ type: "text" as const, text: JSON.stringify(DOCS_POINTER("/public-api/docs-tables"), null, 2) }] }),
 });
 
-mcpServer.tool("docs_list_edge_functions", {
+mcp.tool("docs_list_edge_functions", {
   description: "Pointer to the edge function registry (public-api/docs-edge-functions).",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async () => ({ content: [{ type: "text" as const, text: JSON.stringify(DOCS_POINTER("/public-api/docs-edge-functions"), null, 2) }] }),
 });
 
-mcpServer.tool("docs_list_mcp_tools", {
+mcp.tool("docs_list_mcp_tools", {
   description: "Pointer to the MCP tool registry (public-api/docs-mcp-tools).",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async () => ({ content: [{ type: "text" as const, text: JSON.stringify(DOCS_POINTER("/public-api/docs-mcp-tools"), null, 2) }] }),
@@ -2379,7 +2385,7 @@ const OFFLINE_MANIFEST_TOOL = [
 ];
 const OFFLINE_MUTABLE = new Set(["entity_notes","alert_rules","reports"]);
 
-mcpServer.tool("offline_manifest", {
+mcp.tool("offline_manifest", {
   description: "List of offline-syncable database tables and which are mutable via offline_mutate.",
   inputSchema: { type: "object" as const, properties: {} },
   handler: async () => ({
@@ -2391,7 +2397,7 @@ mcpServer.tool("offline_manifest", {
   }),
 });
 
-mcpServer.tool("offline_snapshot", {
+mcp.tool("offline_snapshot", {
   description: "Paginated read of an offline-syncable table. Returns at most page_size rows ordered by id.",
   inputSchema: {
     type: "object" as const,
@@ -2418,13 +2424,12 @@ mcpServer.tool("offline_snapshot", {
   },
 });
 
-mcpServer.tool("offline_mutate", {
+mcp.tool("offline_mutate", {
   description: "Replay a queued offline write. Mutations are scoped to the calling user via user_id. Allowed tables: entity_notes, alert_rules, reports.",
   inputSchema: {
     type: "object" as const,
     properties: {
-      table: { type: "string" as const },
-      operation: { type: "string" as const, description: "insert | update | delete" },
+      table: { type: "string" as const }, operation: { type: "string" as const, description: "insert | update | delete" },
       data: { type: "object" as const, description: "Row payload. For update/delete, include `id`." },
     },
     required: ["table","operation","data"],
