@@ -60,3 +60,50 @@ export function saveGeometry(appId: string, g: Geometry) {
     saveTimer = null;
   }, 250);
 }
+
+// Like saveGeometry but overwrites immediately (no debounce) and is used
+// when we need to force a geometry refresh after an external change like
+// a theme switch or DPI scaling change.
+export function reapplyGeometry(
+  appId: string,
+  g: Geometry,
+  viewport: { vw: number; vh: number }
+): Geometry {
+  const TASKBAR = 28;
+  const vw = viewport.vw;
+  const vh = viewport.vh - TASKBAR;
+  const winW = Math.min(g.width, Math.max(280, vw - 16));
+  const winH = Math.min(g.height, Math.max(200, vh - 16));
+  const x = Math.max(0, Math.min(g.x, Math.max(0, vw - winW)));
+  const y = Math.max(0, Math.min(g.y, Math.max(0, vh - winH)));
+  const clamped: Geometry = { x, y, width: winW, height: winH };
+  const store = readAll();
+  store[appId] = clamped;
+  writeAll(store);
+  return clamped;
+}
+
+export function reapplyAllGeometry(): void {
+  if (typeof window === "undefined") return;
+  const TASKBAR = 28;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight - TASKBAR;
+  const store = readAll();
+  const next: Store = {};
+  for (const [appId, g] of Object.entries(store)) {
+    if (
+      typeof g.x !== "number" ||
+      typeof g.y !== "number" ||
+      typeof g.width !== "number" ||
+      typeof g.height !== "number"
+    ) {
+      continue;
+    }
+    const winW = Math.min(g.width, Math.max(280, vw - 16));
+    const winH = Math.min(g.height, Math.max(200, vh - 16));
+    const x = Math.max(0, Math.min(g.x, Math.max(0, vw - winW)));
+    const y = Math.max(0, Math.min(g.y, Math.max(0, vh - winH)));
+    next[appId] = { x, y, width: winW, height: winH };
+  }
+  writeAll(next);
+}

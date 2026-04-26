@@ -1,5 +1,5 @@
 import { createContext, useContext, useCallback, useEffect, useRef, useState, ReactNode } from "react";
-import { loadGeometry, saveGeometry } from "@/lib/windowGeometry";
+import { loadGeometry, saveGeometry, reapplyAllGeometry } from "@/lib/windowGeometry";
 
 export interface OpenWindow {
   /** Unique instance id (random per open) */
@@ -178,6 +178,46 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("resize", clampAll);
       window.removeEventListener("orientationchange", clampAll);
     };
+  }, []);
+
+  // Reapply saved geometries when the OS-level display scaling (DPI / zoom)
+  // changes — window positions stored in CSS pixels become incorrect at a new
+  // scale, and clamping against the new viewport is necessary to stay on-screen.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let lastDpr = window.devicePixelRatio;
+    const pollDpr = () => {
+      const current = window.devicePixelRatio;
+      if (current !== lastDpr) {
+        lastDpr = current;
+        reapplyAllGeometry();
+        // Also re-clamp open windows in the current React state.
+        const TASKBAR = 28;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight - TASKBAR;
+        setWindows((prev) =>
+          prev.map((w) => {
+            const width = Math.min(w.size.width, Math.max(280, vw - 16));
+            const height = Math.min(w.size.height, Math.max(200, vh - 16));
+            const x = Math.max(0, Math.min(w.position.x, Math.max(0, vw - width)));
+            const y = Math.max(0, Math.min(w.position.y, Math.max(0, vh - height)));
+            if (
+              width === w.size.width &&
+              height === w.size.height &&
+              x === w.position.x &&
+              y === w.position.y
+            ) {
+              return w;
+            }
+            saveGeometry(w.appId, { x, y, width, height });
+            return { ...w, size: { width, height }, position: { x, y } };
+          })
+        );
+      }
+    };
+    // Poll every 500 ms — devicePixelRatio does not fire events on its own.
+    const id = setInterval(pollDpr, 500);
+    return () => clearInterval(id);
   }, []);
 
   return (

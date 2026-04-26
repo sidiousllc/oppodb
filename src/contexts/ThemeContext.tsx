@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { reapplyAllGeometry } from "@/lib/windowGeometry";
 
 export type WindowsTheme =
   // Windows
@@ -200,12 +201,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = (newTheme: WindowsTheme) => {
     setThemeState(newTheme);
     localStorage.setItem("windows-theme", newTheme);
+    // Theme switch may change chrome height / scrollbar width — re-clamp and
+    // re-save all persisted geometries so windows stay correctly placed.
+    reapplyAllGeometry();
     saveToProfile(newTheme, darkMode);
   };
 
   const setDarkMode = (dark: boolean) => {
     setDarkModeState(dark);
     localStorage.setItem("windows-dark-mode", String(dark));
+    // Dark mode toggle can shift content sizing — reapply all geometry.
+    reapplyAllGeometry();
     saveToProfile(theme, dark);
   };
 
