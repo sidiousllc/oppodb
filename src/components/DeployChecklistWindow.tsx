@@ -83,7 +83,33 @@ function DeployChecklistContent() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  const [autoRun, setAutoRun] = useState<boolean>(() => {
+    try { return localStorage.getItem("deployChecklist.autoRun") === "1"; } catch { return false; }
+  });
+
+  const toggleAutoRun = (next: boolean) => {
+    setAutoRun(next);
+    try { localStorage.setItem("deployChecklist.autoRun", next ? "1" : "0"); } catch { /* ignore */ }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await load();
+      if (cancelled || !autoRun) return;
+      // Only attempt generation in local dev where the Vite middleware exists.
+      // Probe with HEAD so we don't spawn the script if the endpoint is missing.
+      try {
+        const probe = await fetch("/__predeploy", { method: "HEAD" });
+        // Vite returns 405 for HEAD on our middleware (only POST supported);
+        // SPA fallback returns 200 with HTML. Use content-type to detect.
+        const isDevEndpoint = probe.status === 405 || probe.headers.get("x-predeploy") === "1";
+        if (isDevEndpoint && !cancelled) await generate();
+      } catch { /* offline / not available */ }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const generate = async () => {
     setGenerating(true);
