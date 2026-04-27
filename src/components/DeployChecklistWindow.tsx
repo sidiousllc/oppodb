@@ -83,7 +83,33 @@ function DeployChecklistContent() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  const [autoRun, setAutoRun] = useState<boolean>(() => {
+    try { return localStorage.getItem("deployChecklist.autoRun") === "1"; } catch { return false; }
+  });
+
+  const toggleAutoRun = (next: boolean) => {
+    setAutoRun(next);
+    try { localStorage.setItem("deployChecklist.autoRun", next ? "1" : "0"); } catch { /* ignore */ }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await load();
+      if (cancelled || !autoRun) return;
+      // Only attempt generation in local dev where the Vite middleware exists.
+      // Probe with HEAD so we don't spawn the script if the endpoint is missing.
+      try {
+        const probe = await fetch("/__predeploy", { method: "HEAD" });
+        // Vite returns 405 for HEAD on our middleware (only POST supported);
+        // SPA fallback returns 200 with HTML. Use content-type to detect.
+        const isDevEndpoint = probe.status === 405 || probe.headers.get("x-predeploy") === "1";
+        if (isDevEndpoint && !cancelled) await generate();
+      } catch { /* offline / not available */ }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const generate = async () => {
     setGenerating(true);
@@ -140,7 +166,16 @@ function DeployChecklistContent() {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <label className="flex items-center gap-1 text-[10px] cursor-pointer select-none" title="When this window opens, automatically run the predeploy script (local dev only).">
+            <input
+              type="checkbox"
+              checked={autoRun}
+              onChange={(e) => toggleAutoRun(e.target.checked)}
+              className="h-3 w-3"
+            />
+            Auto-run on open
+          </label>
           <button
             onClick={generate}
             disabled={generating || loading}

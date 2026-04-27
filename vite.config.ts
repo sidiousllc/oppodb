@@ -12,6 +12,14 @@ function predeployRunnerPlugin(): PluginOption {
     apply: "serve",
     configureServer(server) {
       server.middlewares.use("/__predeploy", (req, res) => {
+        // Marker so the browser can probe whether this dev endpoint exists
+        // (the SPA fallback returns 200 + HTML for unknown paths).
+        res.setHeader("x-predeploy", "1");
+        if (req.method === "HEAD") {
+          res.statusCode = 200;
+          res.end();
+          return;
+        }
         if (req.method !== "POST") {
           res.statusCode = 405;
           res.end("Method Not Allowed");
