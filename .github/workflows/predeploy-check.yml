@@ -29,8 +29,14 @@ jobs:
   edge-functions:
     name: Edge Functions (parse + type-check)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Need a real token + full ref so we can push the regenerated report back.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref }}
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
@@ -39,12 +45,36 @@ jobs:
         # Exit 0 = clean, 1 = parse failure (deploy blocked), 2 = type failure
         # We capture the report regardless, then re-fail if parse errors exist.
         run: node scripts/check-edge-functions.mjs || echo "exit=$?" >> $GITHUB_OUTPUT
+      - name: Mirror report into public/ for the Deploy Checklist window
+        if: always()
+        run: |
+          mkdir -p public
+          cp -f predeploy-report.json public/predeploy-report.json
       - name: Upload checklist report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: predeploy-report
           path: predeploy-report.json
+      - name: Commit updated report back to the branch
+        # Only on direct pushes to main — never on PRs (no write access to forks)
+        # and never on manual dispatch unless on main.
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add predeploy-report.json public/predeploy-report.json
+          if git diff --cached --quiet; then
+            echo "No report changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(predeploy): refresh report [skip ci]"
+          # Retry-friendly push in case main moved while we ran.
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin HEAD:main && exit 0
+            sleep 3
+          done
+          echo "::warning::Could not push refreshed report after 3 attempts."
       - name: Fail job on parse errors
         if: steps.checklist.outputs.exit == '1'
         run: |
