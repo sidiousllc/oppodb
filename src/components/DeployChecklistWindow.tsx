@@ -54,33 +54,43 @@ function DeployChecklistContent() {
 
   const load = async () => {
     setLoading(true);
-    try {
-      // Cache-bust so a freshly generated report shows up immediately.
-      const res = await fetch(`/predeploy-report.json?t=${Date.now()}`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`No report found (HTTP ${res.status}). Run \`node scripts/check-edge-functions.mjs\` to generate one.`);
-      // Dev server returns index.html (200) for missing static files. Detect
-      // that and surface a friendly message instead of a JSON parse error.
-      const text = await res.text();
-      const trimmed = text.trimStart();
-      if (trimmed.startsWith("<")) {
-        throw new Error(
-          "No predeploy report has been generated yet. Run `node scripts/check-edge-functions.mjs` to create public/predeploy-report.json."
-        );
-      }
-      let data: Report;
+    // Try, in order: served public asset, explicit /public path, root-level file.
+    const candidates = [
+      `/predeploy-report.json?t=${Date.now()}`,
+      `/public/predeploy-report.json?t=${Date.now()}`,
+      `/../predeploy-report.json?t=${Date.now()}`,
+      `/predeploy-report.root.json?t=${Date.now()}`,
+    ];
+    let lastErr: string | null = null;
+    for (const url of candidates) {
       try {
-        data = JSON.parse(text) as Report;
-      } catch {
-        throw new Error("predeploy-report.json is not valid JSON. Re-run the predeploy script.");
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) { lastErr = `HTTP ${res.status} for ${url}`; continue; }
+        const text = await res.text();
+        const trimmed = text.trimStart();
+        if (trimmed.startsWith("<")) { lastErr = `HTML returned for ${url} (file not found)`; continue; }
+        let data: Report;
+        try {
+          data = JSON.parse(text) as Report;
+        } catch {
+          lastErr = `Invalid JSON at ${url}`;
+          continue;
+        }
+        setReport(data);
+        setError(null);
+        setLoading(false);
+        return;
+      } catch (e: any) {
+        lastErr = e?.message || String(e);
       }
-      setReport(data);
-      setError(null);
-    } catch (e: any) {
-      setError(e?.message || String(e));
-      setReport(null);
-    } finally {
-      setLoading(false);
     }
+    setError(
+      `No predeploy report found (tried ${candidates.length} locations). ` +
+      `Run \`node scripts/check-edge-functions.mjs\` to generate public/predeploy-report.json.` +
+      (lastErr ? ` Last error: ${lastErr}` : "")
+    );
+    setReport(null);
+    setLoading(false);
   };
 
   const [autoRun, setAutoRun] = useState<boolean>(() => {
