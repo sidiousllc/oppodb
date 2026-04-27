@@ -41,8 +41,24 @@ function Pill({ status }: { status: CheckEntry["parse"] }) {
   );
 }
 
+const CACHE_KEY = "deployChecklist.lastReport";
+const CACHE_TS_KEY = "deployChecklist.lastFetchedAt";
+
+function loadCachedReport(): { report: Report | null; cachedAt: string | null } {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    const ts = localStorage.getItem(CACHE_TS_KEY);
+    if (!raw) return { report: null, cachedAt: ts };
+    return { report: JSON.parse(raw) as Report, cachedAt: ts };
+  } catch {
+    return { report: null, cachedAt: null };
+  }
+}
+
 function DeployChecklistContent() {
-  const [report, setReport] = useState<Report | null>(null);
+  const initialCache = loadCachedReport();
+  const [report, setReport] = useState<Report | null>(initialCache.report);
+  const [cachedAt, setCachedAt] = useState<string | null>(initialCache.cachedAt);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -79,6 +95,12 @@ function DeployChecklistContent() {
         setReport(data);
         setError(null);
         setLoading(false);
+        const ts = new Date().toISOString();
+        setCachedAt(ts);
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+          localStorage.setItem(CACHE_TS_KEY, ts);
+        } catch { /* quota / disabled */ }
         return;
       } catch (e: any) {
         lastErr = e?.message || String(e);
@@ -89,7 +111,7 @@ function DeployChecklistContent() {
       `Run \`node scripts/check-edge-functions.mjs\` to generate public/predeploy-report.json.` +
       (lastErr ? ` Last error: ${lastErr}` : "")
     );
-    setReport(null);
+    // Keep showing cached report (do not clear it) so the user can still see the last good run.
     setLoading(false);
   };
 
@@ -171,8 +193,11 @@ function DeployChecklistContent() {
         <div className="min-w-0 flex items-center gap-2">
           <span className="font-bold">Deploy Checklist</span>
           {report && (
-            <span className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">
+            <span className="text-[10px] text-[hsl(var(--muted-foreground))] truncate" title={cachedAt ? `Cached at ${new Date(cachedAt).toLocaleString()}` : undefined}>
               {new Date(report.generated_at).toLocaleString()}
+              {error && cachedAt && (
+                <span className="ml-1 text-[hsl(45_90%_40%)]">(cached {new Date(cachedAt).toLocaleTimeString()})</span>
+              )}
             </span>
           )}
         </div>
