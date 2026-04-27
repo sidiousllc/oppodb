@@ -52,6 +52,7 @@ export default defineConfig(() => ({
   },
   plugins: [
     react(),
+    predeployRunnerPlugin(),
     VitePWA({
       registerType: "autoUpdate",
       devOptions: {
