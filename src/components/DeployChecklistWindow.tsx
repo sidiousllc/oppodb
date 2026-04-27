@@ -267,6 +267,63 @@ function DeployChecklistContent() {
         </div>
       )}
 
+      {/* Quick error locations — first 5 of each kind, click to copy */}
+      {report && (report.totals.parse_failures > 0 || report.totals.type_failures > 0) && (() => {
+        const parseLocs = report.checks
+          .filter(c => c.parse === "fail" && c.parse_location)
+          .slice(0, 5)
+          .map(c => ({ name: c.name, kind: "parse" as const, loc: c.parse_location! }));
+        const typeLocs = report.checks
+          .filter(c => c.types === "fail" && c.types_location)
+          .slice(0, 5)
+          .map(c => ({ name: c.name, kind: "types" as const, loc: c.types_location! }));
+        const all = [...parseLocs, ...typeLocs];
+        if (all.length === 0) return null;
+        const allText = all.map(e => `${e.loc.file}:${e.loc.line}:${e.loc.column}`).join("\n");
+        const copy = (text: string) => {
+          try { navigator.clipboard?.writeText(text); } catch { /* ignore */ }
+        };
+        return (
+          <div className="win98-sunken px-2 py-1 text-[10px] space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold">First error locations</span>
+              <button
+                onClick={() => copy(allText)}
+                className="win98-button text-[9px] px-1.5 py-[1px]"
+                title="Copy all locations to clipboard"
+              >
+                Copy all
+              </button>
+            </div>
+            <ul className="space-y-[1px]">
+              {all.map((e, i) => {
+                const locStr = `${e.loc.file}:${e.loc.line}:${e.loc.column}`;
+                const colorClass = e.kind === "parse"
+                  ? "text-[hsl(var(--destructive))]"
+                  : "text-[hsl(45_90%_40%)]";
+                return (
+                  <li key={`${e.kind}-${i}`} className="flex items-center gap-1">
+                    <span className={`text-[8px] uppercase font-bold w-9 shrink-0 ${colorClass}`}>
+                      {e.kind === "parse" ? "PARSE" : "TYPE"}
+                    </span>
+                    <button
+                      onClick={() => { copy(locStr); setExpanded(e.name); }}
+                      className="font-mono text-[9px] truncate text-left hover:underline flex-1"
+                      title={`Click to copy & jump to ${e.name}`}
+                    >
+                      {locStr}
+                    </button>
+                    <span className="text-[8px] text-[hsl(var(--muted-foreground))] truncate max-w-[40%]">
+                      {e.name}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })()}
+
       {error && (
         <div className="win98-sunken bg-[hsl(var(--destructive)/0.12)] text-[hsl(var(--destructive))] px-2 py-1 text-[10px]">
           {error}
