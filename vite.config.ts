@@ -1,7 +1,44 @@
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
+import { spawn } from "node:child_process";
+
+// Dev-only endpoint to run the predeploy checklist script from the browser.
+// POST /__predeploy -> runs `node scripts/check-edge-functions.mjs`, returns log.
+function predeployRunnerPlugin(): PluginOption {
+  return {
+    name: "predeploy-runner",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use("/__predeploy", (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.end("Method Not Allowed");
+          return;
+        }
+        const child = spawn("node", ["scripts/check-edge-functions.mjs"], {
+          cwd: process.cwd(),
+          env: process.env,
+        });
+        let out = "";
+        child.stdout.on("data", (d) => { out += d.toString(); });
+        child.stderr.on("data", (d) => { out += d.toString(); });
+        child.on("error", (e) => {
+          res.statusCode = 500;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ ok: false, error: String(e), output: out }));
+        });
+        child.on("close", (code) => {
+          res.statusCode = 200;
+          res.setHeader("content-type", "application/json");
+          // Exit code 2 = type-only failures (still considered "ran successfully")
+          res.end(JSON.stringify({ ok: code === 0 || code === 2, exit_code: code, output: out }));
+        });
+      });
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
