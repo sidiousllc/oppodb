@@ -45,6 +45,8 @@ function DeployChecklistContent() {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [runLog, setRunLog] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -83,6 +85,29 @@ function DeployChecklistContent() {
 
   useEffect(() => { load(); }, []);
 
+  const generate = async () => {
+    setGenerating(true);
+    setRunLog(null);
+    setError(null);
+    try {
+      const res = await fetch("/__predeploy", { method: "POST" });
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        throw new Error(
+          "Generation endpoint not available. This only works in local `npm run dev` (Vite dev server). In production builds, run `node scripts/check-edge-functions.mjs` from a terminal."
+        );
+      }
+      const data = await res.json() as { ok: boolean; exit_code: number; output: string; error?: string };
+      setRunLog(data.output || data.error || "(no output)");
+      // Reload the static report regardless — script writes it on every run.
+      await load();
+    } catch (e: any) {
+      setError(e?.message || String(e));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const filtered = (() => {
     if (!report) return [];
     if (tab === "parse") return report.checks.filter(c => c.parse === "fail");
@@ -115,9 +140,19 @@ function DeployChecklistContent() {
             </span>
           )}
         </div>
-        <button onClick={load} disabled={loading} className="win98-button text-[10px] px-2 py-[1px]">
-          {loading ? "…" : "Reload"}
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={generate}
+            disabled={generating || loading}
+            className="win98-button text-[10px] px-2 py-[1px]"
+            title="Runs `node scripts/check-edge-functions.mjs` (dev server only)"
+          >
+            {generating ? "Running…" : "Generate"}
+          </button>
+          <button onClick={load} disabled={loading || generating} className="win98-button text-[10px] px-2 py-[1px]">
+            {loading ? "…" : "Reload"}
+          </button>
+        </div>
       </div>
 
       {/* Summary tiles */}
@@ -166,6 +201,15 @@ function DeployChecklistContent() {
         <div className="win98-sunken bg-[hsl(var(--destructive)/0.12)] text-[hsl(var(--destructive))] px-2 py-1 text-[10px]">
           {error}
         </div>
+      )}
+
+      {runLog && (
+        <details className="win98-sunken px-2 py-1 text-[10px]" open>
+          <summary className="cursor-pointer font-bold">Run log</summary>
+          <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap font-mono text-[9px]">
+            {runLog}
+          </pre>
+        </details>
       )}
 
       {/* List */}
