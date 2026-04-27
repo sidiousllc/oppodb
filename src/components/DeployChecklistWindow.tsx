@@ -95,6 +95,12 @@ function DeployChecklistContent() {
         setReport(data);
         setError(null);
         setLoading(false);
+        const ts = new Date().toISOString();
+        setCachedAt(ts);
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+          localStorage.setItem(CACHE_TS_KEY, ts);
+        } catch { /* quota / disabled */ }
         return;
       } catch (e: any) {
         lastErr = e?.message || String(e);
@@ -105,7 +111,7 @@ function DeployChecklistContent() {
       `Run \`node scripts/check-edge-functions.mjs\` to generate public/predeploy-report.json.` +
       (lastErr ? ` Last error: ${lastErr}` : "")
     );
-    setReport(null);
+    // Keep showing cached report (do not clear it) so the user can still see the last good run.
     setLoading(false);
   };
 
