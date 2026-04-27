@@ -1,0 +1,732 @@
+{
+  "generated_at": "2026-04-27T15:59:03.113Z",
+  "totals": {
+    "total": 90,
+    "passed": 0,
+    "parse_failures": 90,
+    "type_failures": 0,
+    "skipped": 0
+  },
+  "checks": [
+    {
+      "name": "admin-data-export",
+      "entry": "supabase/functions/admin-data-export/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "admin-users",
+      "entry": "supabase/functions/admin-users/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "api-key-manager",
+      "entry": "supabase/functions/api-key-manager/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "auth-email-hook",
+      "entry": "supabase/functions/auth-email-hook/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "auth-handler",
+      "entry": "supabase/functions/auth-handler/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "auto-docs",
+      "entry": "supabase/functions/auto-docs/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "bill-impact",
+      "entry": "supabase/functions/bill-impact/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "campaign-finance-sync",
+      "entry": "supabase/functions/campaign-finance-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "candidate-scraper",
+      "entry": "supabase/functions/candidate-scraper/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "census-sync",
+      "entry": "supabase/functions/census-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "civic-api-proxy",
+      "entry": "supabase/functions/civic-api-proxy/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "congress-sync",
+      "entry": "supabase/functions/congress-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "congressional-election-sync",
+      "entry": "supabase/functions/congressional-election-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "content-admin",
+      "entry": "supabase/functions/content-admin/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "contracts-sync",
+      "entry": "supabase/functions/contracts-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "court-cases-sync",
+      "entry": "supabase/functions/court-cases-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "court-search",
+      "entry": "supabase/functions/court-search/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "credential-vault",
+      "entry": "supabase/functions/credential-vault/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "device-manager",
+      "entry": "supabase/functions/device-manager/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "dispatch-alerts",
+      "entry": "supabase/functions/dispatch-alerts/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "dispatch-android-build",
+      "entry": "supabase/functions/dispatch-android-build/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "district-intel",
+      "entry": "supabase/functions/district-intel/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "district-news",
+      "entry": "supabase/functions/district-news/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "election-results-sync",
+      "entry": "supabase/functions/election-results-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "elevenlabs-sfx",
+      "entry": "supabase/functions/elevenlabs-sfx/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "entity-graph",
+      "entry": "supabase/functions/entity-graph/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "followthemoney",
+      "entry": "supabase/functions/followthemoney/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "forecast-scrape",
+      "entry": "supabase/functions/forecast-scrape/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "forecast-sync",
+      "entry": "supabase/functions/forecast-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "geopolitics-brief",
+      "entry": "supabase/functions/geopolitics-brief/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "handle-email-suppression",
+      "entry": "supabase/functions/handle-email-suppression/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "handle-email-unsubscribe",
+      "entry": "supabase/functions/handle-email-unsubscribe/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "integration-proxy",
+      "entry": "supabase/functions/integration-proxy/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "intel-briefing",
+      "entry": "supabase/functions/intel-briefing/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "international-sync",
+      "entry": "supabase/functions/international-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "investigations-sync",
+      "entry": "supabase/functions/investigations-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "legiscan",
+      "entry": "supabase/functions/legiscan/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "lobbying-sync",
+      "entry": "supabase/functions/lobbying-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "location-tracking",
+      "entry": "supabase/functions/location-tracking/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "map-geojson",
+      "entry": "supabase/functions/map-geojson/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "market-trading",
+      "entry": "supabase/functions/market-trading/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "mcp-server",
+      "entry": "supabase/functions/mcp-server/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "messaging-audience-analysis",
+      "entry": "supabase/functions/messaging-audience-analysis/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "messaging-impact",
+      "entry": "supabase/functions/messaging-impact/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "messaging-sync",
+      "entry": "supabase/functions/messaging-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "messaging-talking-points",
+      "entry": "supabase/functions/messaging-talking-points/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "mit-election-sync",
+      "entry": "supabase/functions/mit-election-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "mn-cfb-finance",
+      "entry": "supabase/functions/mn-cfb-finance/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "news-cluster-stories",
+      "entry": "supabase/functions/news-cluster-stories/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "news-source-rate",
+      "entry": "supabase/functions/news-source-rate/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "opensecrets-sync",
+      "entry": "supabase/functions/opensecrets-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "osint-scrape-parse",
+      "entry": "supabase/functions/osint-scrape-parse/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "osint-search",
+      "entry": "supabase/functions/osint-search/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "polling-aggregator",
+      "entry": "supabase/functions/polling-aggregator/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "polling-alerts-dispatch",
+      "entry": "supabase/functions/polling-alerts-dispatch/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "polling-sync",
+      "entry": "supabase/functions/polling-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "prediction-markets-sync",
+      "entry": "supabase/functions/prediction-markets-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "preview-transactional-email",
+      "entry": "supabase/functions/preview-transactional-email/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "process-email-queue",
+      "entry": "supabase/functions/process-email-queue/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "public-api",
+      "entry": "supabase/functions/public-api/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "public-health",
+      "entry": "supabase/functions/public-health/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "research-chat",
+      "entry": "supabase/functions/research-chat/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "revoke-sessions",
+      "entry": "supabase/functions/revoke-sessions/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "scenario-simulator",
+      "entry": "supabase/functions/scenario-simulator/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "scheduled-report-email",
+      "entry": "supabase/functions/scheduled-report-email/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "scheduled-sync",
+      "entry": "supabase/functions/scheduled-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "scrape-article",
+      "entry": "supabase/functions/scrape-article/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "seed-polling",
+      "entry": "supabase/functions/seed-polling/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "send-external-mail",
+      "entry": "supabase/functions/send-external-mail/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "send-mail-notification",
+      "entry": "supabase/functions/send-mail-notification/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "send-transactional-email",
+      "entry": "supabase/functions/send-transactional-email/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "state-cfb-finance",
+      "entry": "supabase/functions/state-cfb-finance/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "state-health-scheduler",
+      "entry": "supabase/functions/state-health-scheduler/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "state-legislative-sync",
+      "entry": "supabase/functions/state-legislative-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "state-voter-portal-lookup",
+      "entry": "supabase/functions/state-voter-portal-lookup/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "subject-audience-analysis",
+      "entry": "supabase/functions/subject-audience-analysis/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "subject-impact-analysis",
+      "entry": "supabase/functions/subject-impact-analysis/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "subject-talking-points",
+      "entry": "supabase/functions/subject-talking-points/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "sync-github",
+      "entry": "supabase/functions/sync-github/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "system-status",
+      "entry": "supabase/functions/system-status/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "talking-points",
+      "entry": "supabase/functions/talking-points/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "url-bias-check",
+      "entry": "supabase/functions/url-bias-check/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "validate-serial",
+      "entry": "supabase/functions/validate-serial/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "version-history",
+      "entry": "supabase/functions/version-history/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "voter-file-sync",
+      "entry": "supabase/functions/voter-file-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "voter-lookup",
+      "entry": "supabase/functions/voter-lookup/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "voter-registration-stats",
+      "entry": "supabase/functions/voter-registration-stats/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "vulnerability-score",
+      "entry": "supabase/functions/vulnerability-score/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "wiki-sync",
+      "entry": "supabase/functions/wiki-sync/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    },
+    {
+      "name": "winred-webhook",
+      "entry": "supabase/functions/winred-webhook/index.ts",
+      "parse": "fail",
+      "parse_location": null,
+      "parse_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--no-check' found\n\n  tip: a similar argument exists: '--no-lock'\n\nUsage: deno check --no-lock [file]...",
+      "types": "blocked"
+    }
+  ]
+}
