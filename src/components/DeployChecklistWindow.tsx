@@ -166,7 +166,16 @@ function DeployChecklistContent() {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <label className="flex items-center gap-1 text-[10px] cursor-pointer select-none" title="When this window opens, automatically run the predeploy script (local dev only).">
+            <input
+              type="checkbox"
+              checked={autoRun}
+              onChange={(e) => toggleAutoRun(e.target.checked)}
+              className="h-3 w-3"
+            />
+            Auto-run on open
+          </label>
           <button
             onClick={generate}
             disabled={generating || loading}
