@@ -41,8 +41,24 @@ function Pill({ status }: { status: CheckEntry["parse"] }) {
   );
 }
 
+const CACHE_KEY = "deployChecklist.lastReport";
+const CACHE_TS_KEY = "deployChecklist.lastFetchedAt";
+
+function loadCachedReport(): { report: Report | null; cachedAt: string | null } {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    const ts = localStorage.getItem(CACHE_TS_KEY);
+    if (!raw) return { report: null, cachedAt: ts };
+    return { report: JSON.parse(raw) as Report, cachedAt: ts };
+  } catch {
+    return { report: null, cachedAt: null };
+  }
+}
+
 function DeployChecklistContent() {
-  const [report, setReport] = useState<Report | null>(null);
+  const initialCache = loadCachedReport();
+  const [report, setReport] = useState<Report | null>(initialCache.report);
+  const [cachedAt, setCachedAt] = useState<string | null>(initialCache.cachedAt);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
