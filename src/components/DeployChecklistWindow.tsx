@@ -193,8 +193,11 @@ function DeployChecklistContent() {
         <div className="min-w-0 flex items-center gap-2">
           <span className="font-bold">Deploy Checklist</span>
           {report && (
-            <span className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">
+            <span className="text-[10px] text-[hsl(var(--muted-foreground))] truncate" title={cachedAt ? `Cached at ${new Date(cachedAt).toLocaleString()}` : undefined}>
               {new Date(report.generated_at).toLocaleString()}
+              {error && cachedAt && (
+                <span className="ml-1 text-[hsl(45_90%_40%)]">(cached {new Date(cachedAt).toLocaleTimeString()})</span>
+              )}
             </span>
           )}
         </div>
