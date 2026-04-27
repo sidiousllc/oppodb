@@ -75,7 +75,7 @@ export function DesktopIconsTab() {
   useEffect(() => {
     Promise.all([
       loadPermissions(),
-      supabase.from("profiles").select("id, display_name, email").limit(500).then(({ data }) => setUsers(data || [])),
+      supabase.from("profiles").select("id, display_name").limit(500).then(({ data }) => setUsers((data as any) || [])),
       supabase.from("role_groups").select("id, name, color").then(({ data }) => setGroups(data || [])),
     ]).finally(() => setLoading(false));
   }, []);

@@ -20,6 +20,7 @@ const PLATFORM_TOOLS = [
 
 export function ResearchToolsDashboard({ onNavigateSubsection }: ResearchToolsDashboardProps) {
   const categories: OSINTCategory[] = ["people", "business", "property"];
+  const { canAccess } = useSectionAccess();
 
   return (
     <div className="space-y-4">
@@ -51,7 +52,6 @@ export function ResearchToolsDashboard({ onNavigateSubsection }: ResearchToolsDa
       {/* OSINT toolbox by category */}
       {categories.map((cat) => {
         const meta = OSINT_CATEGORY_META[cat];
-        const { canAccess } = useSectionAccess();
         const tools = OSINT_TOOLS.filter((t) => t.category === cat && canAccess(`osint-${cat}`));
         return (
           <section key={cat}>
