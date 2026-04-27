@@ -56,7 +56,21 @@ function DeployChecklistContent() {
       // Cache-bust so a freshly generated report shows up immediately.
       const res = await fetch(`/predeploy-report.json?t=${Date.now()}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`No report found (HTTP ${res.status}). Run \`node scripts/check-edge-functions.mjs\` to generate one.`);
-      const data = (await res.json()) as Report;
+      // Dev server returns index.html (200) for missing static files. Detect
+      // that and surface a friendly message instead of a JSON parse error.
+      const text = await res.text();
+      const trimmed = text.trimStart();
+      if (trimmed.startsWith("<")) {
+        throw new Error(
+          "No predeploy report has been generated yet. Run `node scripts/check-edge-functions.mjs` to create public/predeploy-report.json."
+        );
+      }
+      let data: Report;
+      try {
+        data = JSON.parse(text) as Report;
+      } catch {
+        throw new Error("predeploy-report.json is not valid JSON. Re-run the predeploy script.");
+      }
       setReport(data);
       setError(null);
     } catch (e: any) {
