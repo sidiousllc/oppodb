@@ -77,6 +77,18 @@ function DeployChecklistContent() {
     return report.checks;
   })();
 
+  if (!isAdmin) {
+    return (
+      <div className="p-3 text-[11px] text-[hsl(var(--destructive))] flex flex-col items-center justify-center h-full gap-2">
+        <span className="text-2xl">🛡️</span>
+        <p className="font-bold">Admin Access Required</p>
+        <p className="text-[10px] text-[hsl(var(--muted-foreground))] text-center">
+          Only admins can view the Deploy Checklist.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-2 text-[11px] space-y-2 bg-[hsl(var(--win98-face))] h-full flex flex-col">
       {/* Toolbar */}
