@@ -22,7 +22,7 @@ import LocalFeedsStateSources from "@/pages/LocalFeedsStateSources";
 import { toast } from "sonner";
 import { Win98PageLayout } from "@/components/Win98PageLayout";
 
-type Tab = "users" | "roles" | "access" | "permissions" | "logs" | "devices" | "intel-ops" | "speed-insights" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs" | "international" | "local-feeds";
+type Tab = "users" | "roles" | "access" | "permissions" | "desktop-icons" | "logs" | "devices" | "intel-ops" | "speed-insights" | "candidates" | "maga" | "local" | "narratives" | "messaging" | "docs" | "international" | "local-feeds";
 
 interface ContentItem {
   id: string;
