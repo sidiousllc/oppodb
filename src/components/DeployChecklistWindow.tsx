@@ -140,9 +140,19 @@ function DeployChecklistContent() {
             </span>
           )}
         </div>
-        <button onClick={load} disabled={loading} className="win98-button text-[10px] px-2 py-[1px]">
-          {loading ? "…" : "Reload"}
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={generate}
+            disabled={generating || loading}
+            className="win98-button text-[10px] px-2 py-[1px]"
+            title="Runs `node scripts/check-edge-functions.mjs` (dev server only)"
+          >
+            {generating ? "Running…" : "Generate"}
+          </button>
+          <button onClick={load} disabled={loading || generating} className="win98-button text-[10px] px-2 py-[1px]">
+            {loading ? "…" : "Reload"}
+          </button>
+        </div>
       </div>
 
       {/* Summary tiles */}
