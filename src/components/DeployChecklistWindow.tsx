@@ -203,6 +203,15 @@ function DeployChecklistContent() {
         </div>
       )}
 
+      {runLog && (
+        <details className="win98-sunken px-2 py-1 text-[10px]" open>
+          <summary className="cursor-pointer font-bold">Run log</summary>
+          <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap font-mono text-[9px]">
+            {runLog}
+          </pre>
+        </details>
+      )}
+
       {/* List */}
       <div className="flex-1 min-h-0 overflow-y-auto win98-sunken bg-[hsl(var(--win98-light))]">
         {!report && !error && (
