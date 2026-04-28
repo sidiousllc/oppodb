@@ -88,7 +88,7 @@ const JURISDICTIONS = [
 ];
 
 // Intelligence sources organized by scope — 150+ feeds
-const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: string }>> = {
+const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: string; state?: string }>> = {
   international: [
     // Wire services & major outlets
     { name: "Reuters World", rssUrl: "https://feeds.reuters.com/Reuters/worldNews", scope: "international" },
