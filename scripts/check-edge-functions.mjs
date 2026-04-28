@@ -62,8 +62,14 @@ if (fnDirs.length === 0) {
 
 if (!jsonOnly) {
   console.log(bold(`▸ Predeploy checklist — ${fnDirs.length} edge function(s)\n`));
-  console.log(dim("  Pass 1: parse (must succeed for bundling)"));
-  console.log(dim("  Pass 2: type-check (recommended for safe deploy)\n"));
+  console.log(dim("  Single `deno check` pass per function — parse errors block bundling, type errors are unsafe.\n"));
+}
+
+// Heuristic: classify a failed `deno check` output as a parse error vs type error.
+// Parse/syntax errors from Deno's swc parser surface as "The module's source code could not be parsed",
+// "Expected", "Unexpected token", "SyntaxError", or "Parse error".
+function isParseFailure(output) {
+  return /(?:source code could not be parsed|Unexpected (?:token|eof)|Expected [^\n]{0,40}, got|SyntaxError|Parse error|unterminated)/i.test(output);
 }
 
 // Extract `file:line:col` from deno's stderr.
