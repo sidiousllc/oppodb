@@ -104,39 +104,36 @@ for (let i = 0; i < fnDirs.length; i++) {
 
   if (!jsonOnly) process.stdout.write(`  [${i + 1}/${fnDirs.length}] ${name.padEnd(36)} `);
 
-  const parse = runDeno(["check", "--no-lock", "--no-check", "--allow-import", entry]);
-  if (parse.missing) {
+  const result = runDeno(["check", "--no-lock", "--allow-import", entry]);
+  if (result.missing) {
     denoMissing = true;
     if (!jsonOnly) console.log(yellow("SKIP (deno not installed)"));
     checks.push({ name, entry: rel, parse: "skipped", types: "skipped" });
     continue;
   }
 
-  if (parse.code !== 0) {
-    const loc = extractLocation(parse.output);
-    checks.push({
-      name, entry: rel,
-      parse: "fail", parse_location: loc, parse_error: parse.output,
-      types: "blocked",
-    });
-    if (!jsonOnly) {
-      console.log(red("PARSE ✗"));
-      if (loc) console.log(red(`        └─ ${loc.file}:${loc.line}:${loc.column}`));
-    }
-    continue;
-  }
-
-  const types = runDeno(["check", "--no-lock", "--allow-import", entry]);
-  if (types.code !== 0) {
-    const loc = extractLocation(types.output);
-    checks.push({
-      name, entry: rel,
-      parse: "ok",
-      types: "fail", types_location: loc, types_error: types.output,
-    });
-    if (!jsonOnly) {
-      console.log(yellow("TYPES ✗"));
-      if (loc) console.log(yellow(`        └─ ${loc.file}:${loc.line}:${loc.column}`));
+  if (result.code !== 0) {
+    const loc = extractLocation(result.output);
+    if (isParseFailure(result.output)) {
+      checks.push({
+        name, entry: rel,
+        parse: "fail", parse_location: loc, parse_error: result.output,
+        types: "blocked",
+      });
+      if (!jsonOnly) {
+        console.log(red("PARSE ✗"));
+        if (loc) console.log(red(`        └─ ${loc.file}:${loc.line}:${loc.column}`));
+      }
+    } else {
+      checks.push({
+        name, entry: rel,
+        parse: "ok",
+        types: "fail", types_location: loc, types_error: result.output,
+      });
+      if (!jsonOnly) {
+        console.log(yellow("TYPES ✗"));
+        if (loc) console.log(yellow(`        └─ ${loc.file}:${loc.line}:${loc.column}`));
+      }
     }
     continue;
   }
