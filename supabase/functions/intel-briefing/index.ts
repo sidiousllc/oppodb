@@ -896,16 +896,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Counters/buffers used by the main briefing fetch path further down.
-    let inserted = 0;
-    let insertedLocal = 0;
-    const dedupedCount = 0;
-    const skippedDbDuplicate = 0;
-    const allItems: unknown[] = [];
-    const sourcesByScope: Record<string, number> = {};
-    const stateTaggedSources = new Set<string>();
-
-    void supabase; void inserted; void insertedLocal;
+    void supabase;
 
 // ─── Get available target states for a given feed URL ────────────────────────
     // Returns all states except the feed's current state, with conflict flags.
