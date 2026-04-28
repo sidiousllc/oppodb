@@ -881,31 +881,6 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
   ],
 };
 
-// ─── Helpers used inside the request handler ────────────────────────────────
-function isConflict(rssUrl: string, targetState: string, sources: Array<{ rssUrl: string; state?: string }>): boolean {
-  const norm = normalizeUrl(rssUrl);
-  return sources.some((s) => s.state === targetState && normalizeUrl(s.rssUrl) === norm);
-}
-
-function setSourceState(rssUrl: string, newState: string): void {
-  LOCAL_SOURCE_OVERRIDES[normalizeUrl(rssUrl)] = newState;
-}
-
-const STATE_ABBR_TO_NAME: Record<string, string> = {
-  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
-  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
-  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
-  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
-  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
-  MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
-  NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
-  OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
-  SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
-  VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
-  DC: "District of Columbia",
-};
-
-const JURISDICTIONS: string[] = Object.keys(STATE_ABBR_TO_NAME);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
