@@ -141,16 +141,10 @@ function DeployChecklistContent() {
     let cancelled = false;
     (async () => {
       await load();
+      if (cancelled) return;
+      const isDevEndpoint = await probeDevEndpoint();
       if (cancelled || !autoRun) return;
-      // Only attempt generation in local dev where the Vite middleware exists.
-      // Probe with HEAD so we don't spawn the script if the endpoint is missing.
-      try {
-        const probe = await fetch("/__predeploy", { method: "HEAD" });
-        // Vite returns 405 for HEAD on our middleware (only POST supported);
-        // SPA fallback returns 200 with HTML. Use content-type to detect.
-        const isDevEndpoint = probe.status === 405 || probe.headers.get("x-predeploy") === "1";
-        if (isDevEndpoint && !cancelled) await generate();
-      } catch { /* offline / not available */ }
+      if (isDevEndpoint && !cancelled) await generate();
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
