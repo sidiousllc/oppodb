@@ -65,8 +65,21 @@ function DeployChecklistContent() {
   const [runLog, setRunLog] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [devEndpointAvailable, setDevEndpointAvailable] = useState<boolean | null>(null);
 
   const { isAdmin } = useIsAdmin();
+
+  const probeDevEndpoint = async () => {
+    try {
+      const probe = await fetch("/__predeploy", { method: "HEAD" });
+      const ok = probe.status === 405 || probe.headers.get("x-predeploy") === "1";
+      setDevEndpointAvailable(ok);
+      return ok;
+    } catch {
+      setDevEndpointAvailable(false);
+      return false;
+    }
+  };
 
   const load = async () => {
     setLoading(true);
