@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-04-28T17:25:38.912Z",
+  "generated_at": "2026-04-28T17:33:37.446Z",
   "totals": {
     "total": 90,
-    "passed": 0,
+    "passed": 62,
     "parse_failures": 0,
-    "type_failures": 90,
+    "type_failures": 28,
     "skipped": 0
   },
   "checks": [
@@ -12,9 +12,7 @@
       "name": "admin-data-export",
       "entry": "supabase/functions/admin-data-export/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "admin-users",
@@ -22,7 +20,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/admin-users/index.ts\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'error' is of type 'unknown'.\n    return new Response(JSON.stringify({ error: error.message }), {\n\u001b[0m\u001b[31m                                                ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/admin-users/index.ts\u001b[0m:\u001b[0m\u001b[33m617\u001b[0m:\u001b[0m\u001b[33m49\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "api-key-manager",
@@ -30,7 +28,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/api-key-manager/index.ts\n\u001b[0m\u001b[1mTS2339 \u001b[0m[ERROR]: Property 'role' does not exist on type '{ role: any; }[]'.\n      if (adminSession?.auth_users?.role !== 'admin') {\n\u001b[0m\u001b[31m                                    ~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/api-key-manager/index.ts\u001b[0m:\u001b[0m\u001b[33m166\u001b[0m:\u001b[0m\u001b[33m37\u001b[0m\n\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'error' is of type 'unknown'.\n    return new Response(JSON.stringify({ error: error.message }), {\n\u001b[0m\u001b[31m                                                ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/api-key-manager/index.ts\u001b[0m:\u001b[0m\u001b[33m188\u001b[0m:\u001b[0m\u001b[33m49\u001b[0m\n\nFound 2 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "auth-email-hook",
@@ -38,7 +36,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Could not find a matching package for 'npm:@lovable.dev/webhooks-js' in the node_modules directory. Ensure you have all your JSR and npm dependencies listed in your deno.json or package.json, then run `deno install`. Alternatively, turn on auto-install by specifying `\"nodeModulesDir\": \"auto\"` in your deno.json file.\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/auth-email-hook/index.ts\u001b[0m:\u001b[0m\u001b[33m4\u001b[0m:\u001b[0m\u001b[33m52\u001b[0m\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "auth-handler",
@@ -46,55 +44,43 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/auth-handler/index.ts\n\u001b[0m\u001b[1mTS18048 \u001b[0m[ERROR]: 'existing.length' is possibly 'undefined'.\n      if (existing?.length > 0) {\n\u001b[0m\u001b[31m          ~~~~~~~~~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/auth-handler/index.ts\u001b[0m:\u001b[0m\u001b[33m95\u001b[0m:\u001b[0m\u001b[33m11\u001b[0m\n\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'error' is of type 'unknown'.\n    return new Response(JSON.stringify({ error: error.message }), {\n\u001b[0m\u001b[31m                                                ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/auth-handler/index.ts\u001b[0m:\u001b[0m\u001b[33m158\u001b[0m:\u001b[0m\u001b[33m49\u001b[0m\n\nFound 2 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "auto-docs",
       "entry": "supabase/functions/auto-docs/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "bill-impact",
       "entry": "supabase/functions/bill-impact/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "campaign-finance-sync",
       "entry": "supabase/functions/campaign-finance-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "candidate-scraper",
       "entry": "supabase/functions/candidate-scraper/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "census-sync",
       "entry": "supabase/functions/census-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "civic-api-proxy",
       "entry": "supabase/functions/civic-api-proxy/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "congress-sync",
@@ -102,55 +88,43 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/congress-sync/index.ts\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'e' is of type 'unknown'.\n    return new Response(JSON.stringify({ error: e.message }), {\n\u001b[0m\u001b[31m                                                ^\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/congress-sync/index.ts\u001b[0m:\u001b[0m\u001b[33m97\u001b[0m:\u001b[0m\u001b[33m49\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "congressional-election-sync",
       "entry": "supabase/functions/congressional-election-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "content-admin",
       "entry": "supabase/functions/content-admin/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "contracts-sync",
       "entry": "supabase/functions/contracts-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "court-cases-sync",
       "entry": "supabase/functions/court-cases-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "court-search",
       "entry": "supabase/functions/court-search/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "credential-vault",
       "entry": "supabase/functions/credential-vault/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "device-manager",
@@ -158,95 +132,73 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/device-manager/index.ts\n\u001b[0m\u001b[1mTS2339 \u001b[0m[ERROR]: Property 'role' does not exist on type '{ role: any; }[]'.\n      return { userId: session.user_id, role: session.auth_users?.role || null }\n\u001b[0m\u001b[31m                                                                  ~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/device-manager/index.ts\u001b[0m:\u001b[0m\u001b[33m31\u001b[0m:\u001b[0m\u001b[33m67\u001b[0m\n\n\u001b[0m\u001b[1mTS2339 \u001b[0m[ERROR]: Property 'timestamp' does not exist on type '{ device_id: any; device_model: any; android_version: any; }'.\n            lastSeen: loc.timestamp\n\u001b[0m\u001b[31m                          ~~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/device-manager/index.ts\u001b[0m:\u001b[0m\u001b[33m237\u001b[0m:\u001b[0m\u001b[33m27\u001b[0m\n\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'error' is of type 'unknown'.\n    return new Response(JSON.stringify({ error: error.message }), {\n\u001b[0m\u001b[31m                                                ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/device-manager/index.ts\u001b[0m:\u001b[0m\u001b[33m307\u001b[0m:\u001b[0m\u001b[33m49\u001b[0m\n\nFound 3 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "dispatch-alerts",
       "entry": "supabase/functions/dispatch-alerts/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "dispatch-android-build",
       "entry": "supabase/functions/dispatch-android-build/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "district-intel",
       "entry": "supabase/functions/district-intel/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "district-news",
       "entry": "supabase/functions/district-news/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "election-results-sync",
       "entry": "supabase/functions/election-results-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "elevenlabs-sfx",
       "entry": "supabase/functions/elevenlabs-sfx/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "entity-graph",
       "entry": "supabase/functions/entity-graph/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "followthemoney",
       "entry": "supabase/functions/followthemoney/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "forecast-scrape",
       "entry": "supabase/functions/forecast-scrape/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "forecast-sync",
       "entry": "supabase/functions/forecast-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "geopolitics-brief",
       "entry": "supabase/functions/geopolitics-brief/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "handle-email-suppression",
@@ -254,31 +206,25 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Could not find a matching package for 'npm:@lovable.dev/webhooks-js' in the node_modules directory. Ensure you have all your JSR and npm dependencies listed in your deno.json or package.json, then run `deno install`. Alternatively, turn on auto-install by specifying `\"nodeModulesDir\": \"auto\"` in your deno.json file.\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/handle-email-suppression/index.ts\u001b[0m:\u001b[0m\u001b[33m2\u001b[0m:\u001b[0m\u001b[33m52\u001b[0m\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "handle-email-unsubscribe",
       "entry": "supabase/functions/handle-email-unsubscribe/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "integration-proxy",
       "entry": "supabase/functions/integration-proxy/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "intel-briefing",
       "entry": "supabase/functions/intel-briefing/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "international-sync",
@@ -286,31 +232,25 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/international-sync/index.ts\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'error' is of type 'unknown'.\n      JSON.stringify({ success: false, error: error.message }),\n\u001b[0m\u001b[31m                                              ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/international-sync/index.ts\u001b[0m:\u001b[0m\u001b[33m120\u001b[0m:\u001b[0m\u001b[33m47\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "investigations-sync",
       "entry": "supabase/functions/investigations-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "legiscan",
       "entry": "supabase/functions/legiscan/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "lobbying-sync",
       "entry": "supabase/functions/lobbying-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "location-tracking",
@@ -318,23 +258,19 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/location-tracking/index.ts\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'error' is of type 'unknown'.\n    return new Response(JSON.stringify({ error: error.message }), {\n\u001b[0m\u001b[31m                                                ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/location-tracking/index.ts\u001b[0m:\u001b[0m\u001b[33m183\u001b[0m:\u001b[0m\u001b[33m49\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "map-geojson",
       "entry": "supabase/functions/map-geojson/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "market-trading",
       "entry": "supabase/functions/market-trading/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "mcp-server",
@@ -342,7 +278,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/mcp-server/index.ts\n\u001b[0m\u001b[1mTS2339 \u001b[0m[ERROR]: Property 'tool' does not exist on type 'never'.\n        (mcpServer as never).tool(name, def);\n\u001b[0m\u001b[31m                             ~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/mcp-server/index.ts\u001b[0m:\u001b[0m\u001b[33m96\u001b[0m:\u001b[0m\u001b[33m30\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "messaging-audience-analysis",
@@ -350,7 +286,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/messaging-audience-analysis/index.ts\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n    const ctx = await buildContext(admin, msg.issue_areas || [], selected);\n\u001b[0m\u001b[31m                                   ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/messaging-audience-analysis/index.ts\u001b[0m:\u001b[0m\u001b[33m69\u001b[0m:\u001b[0m\u001b[33m36\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "messaging-impact",
@@ -358,7 +294,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/messaging-impact/index.ts\n\u001b[0m\u001b[1mTS2339 \u001b[0m[ERROR]: Property 'join' does not exist on type '{}'.\n    if (d) parts.push(`DISTRICT ${scopeRef}: pop ${d.population}, median income $${d.median_income}, top issues: ${(d.top_issues || []).join(\", \")}`);\n\u001b[0m\u001b[31m                                                                                                                                        ~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/messaging-impact/index.ts\u001b[0m:\u001b[0m\u001b[33m24\u001b[0m:\u001b[0m\u001b[33m137\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n    const ctx = await buildContext(admin, msg.issue_areas || [], selected, scope, scope_ref);\n\u001b[0m\u001b[31m                                   ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/messaging-impact/index.ts\u001b[0m:\u001b[0m\u001b[33m74\u001b[0m:\u001b[0m\u001b[33m36\u001b[0m\n\nFound 2 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "messaging-sync",
@@ -366,7 +302,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/messaging-sync/index.ts\n\u001b[0m\u001b[1mTS1117 \u001b[0m[ERROR]: An object literal cannot have multiple properties with the same name.\n    \"minimum wage\": \"Labor\",\n\u001b[0m\u001b[31m    ~~~~~~~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/messaging-sync/index.ts\u001b[0m:\u001b[0m\u001b[33m252\u001b[0m:\u001b[0m\u001b[33m5\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "messaging-talking-points",
@@ -374,7 +310,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/messaging-talking-points/index.ts\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n    const sectionContext = await buildSectionContext(admin, msg.issue_areas || [], selectedSections);\n\u001b[0m\u001b[31m                                                     ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/messaging-talking-points/index.ts\u001b[0m:\u001b[0m\u001b[33m109\u001b[0m:\u001b[0m\u001b[33m54\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "mit-election-sync",
@@ -382,87 +318,67 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/mit-election-sync/index.ts\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n            const result = await syncGitHubCountySource(src, stateFilter.toUpperCase(), adminClient);\n\u001b[0m\u001b[31m                                                                                        ~~~~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/mit-election-sync/index.ts\u001b[0m:\u001b[0m\u001b[33m455\u001b[0m:\u001b[0m\u001b[33m89\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "mn-cfb-finance",
       "entry": "supabase/functions/mn-cfb-finance/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "news-cluster-stories",
       "entry": "supabase/functions/news-cluster-stories/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "news-source-rate",
       "entry": "supabase/functions/news-source-rate/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "opensecrets-sync",
       "entry": "supabase/functions/opensecrets-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "osint-scrape-parse",
       "entry": "supabase/functions/osint-scrape-parse/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "osint-search",
       "entry": "supabase/functions/osint-search/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "polling-aggregator",
       "entry": "supabase/functions/polling-aggregator/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "polling-alerts-dispatch",
       "entry": "supabase/functions/polling-alerts-dispatch/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "polling-sync",
       "entry": "supabase/functions/polling-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "prediction-markets-sync",
       "entry": "supabase/functions/prediction-markets-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "preview-transactional-email",
@@ -470,7 +386,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Could not find a matching package for 'npm:@react-email/components@0.0.22' in the node_modules directory. Ensure you have all your JSR and npm dependencies listed in your deno.json or package.json, then run `deno install`. Alternatively, turn on auto-install by specifying `\"nodeModulesDir\": \"auto\"` in your deno.json file.\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/preview-transactional-email/index.ts\u001b[0m:\u001b[0m\u001b[33m2\u001b[0m:\u001b[0m\u001b[33m29\u001b[0m\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "process-email-queue",
@@ -478,7 +394,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Could not find a matching package for 'npm:@lovable.dev/email-js' in the node_modules directory. Ensure you have all your JSR and npm dependencies listed in your deno.json or package.json, then run `deno install`. Alternatively, turn on auto-install by specifying `\"nodeModulesDir\": \"auto\"` in your deno.json file.\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/process-email-queue/index.ts\u001b[0m:\u001b[0m\u001b[33m1\u001b[0m:\u001b[0m\u001b[33m34\u001b[0m\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "public-api",
@@ -486,71 +402,55 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/public-api/index.ts\n\u001b[0m\u001b[1mTS2451 \u001b[0m[ERROR]: Cannot redeclare block-scoped variable 'url'.\n    const url = new URL(req.url);\n\u001b[0m\u001b[31m          ~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m146\u001b[0m:\u001b[0m\u001b[33m11\u001b[0m\n\n\u001b[0m\u001b[1mTS2451 \u001b[0m[ERROR]: Cannot redeclare block-scoped variable 'pathParts'.\n    const pathParts = url.pathname.split(\"/\").filter(Boolean);\n\u001b[0m\u001b[31m          ~~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m147\u001b[0m:\u001b[0m\u001b[33m11\u001b[0m\n\n\u001b[0m\u001b[1mTS2451 \u001b[0m[ERROR]: Cannot redeclare block-scoped variable 'endpoint'.\n    const endpoint = pathParts[pathParts.length - 1] || \"\";\n\u001b[0m\u001b[31m          ~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m148\u001b[0m:\u001b[0m\u001b[33m11\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n      const healthResp = await handleHealthEndpoint(supabase);\n\u001b[0m\u001b[31m                                                    ~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m153\u001b[0m:\u001b[0m\u001b[33m53\u001b[0m\n\n\u001b[0m\u001b[1mTS2451 \u001b[0m[ERROR]: Cannot redeclare block-scoped variable 'url'.\n    const url = new URL(req.url);\n\u001b[0m\u001b[31m          ~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m191\u001b[0m:\u001b[0m\u001b[33m11\u001b[0m\n\n\u001b[0m\u001b[1mTS2451 \u001b[0m[ERROR]: Cannot redeclare block-scoped variable 'pathParts'.\n    const pathParts = url.pathname.split(\"/\").filter(Boolean);\n\u001b[0m\u001b[31m          ~~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m192\u001b[0m:\u001b[0m\u001b[33m11\u001b[0m\n\n\u001b[0m\u001b[1mTS2451 \u001b[0m[ERROR]: Cannot redeclare block-scoped variable 'endpoint'.\n    const endpoint = pathParts[pathParts.length - 1] || \"\";\n\u001b[0m\u001b[31m          ~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m194\u001b[0m:\u001b[0m\u001b[33m11\u001b[0m\n\n\u001b[0m\u001b[1mTS2322 \u001b[0m[ERROR]: Type 'Response' is not assignable to type 'Record<string, unknown>'.\n  Index signature for type 'string' is missing in type 'Response'.\n      return new Response(JSON.stringify({ error: \"Both ?from= and ?to= docVersion parameters are required\" }),\n\u001b[0m\u001b[31m      ~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m2473\u001b[0m:\u001b[0m\u001b[33m7\u001b[0m\n\n\u001b[0m\u001b[1mTS2322 \u001b[0m[ERROR]: Type 'Response' is not assignable to type 'Record<string, unknown>'.\n  Index signature for type 'string' is missing in type 'Response'.\n      return new Response(JSON.stringify({ error: \"from and to must be different docVersion values\" }),\n\u001b[0m\u001b[31m      ~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m2477\u001b[0m:\u001b[0m\u001b[33m7\u001b[0m\n\n\u001b[0m\u001b[1mTS2322 \u001b[0m[ERROR]: Type 'Response' is not assignable to type 'Record<string, unknown>'.\n  Index signature for type 'string' is missing in type 'Response'.\n    return new Response(JSON.stringify({ diff }), { headers: { ...corsHeaders, \"Content-Type\": \"application/json\" } });\n\u001b[0m\u001b[31m    ~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m2513\u001b[0m:\u001b[0m\u001b[33m5\u001b[0m\n\n\u001b[0m\u001b[1mTS7006 \u001b[0m[ERROR]: Parameter 'e' implicitly has an 'any' type.\n    const fromEndpoints = new Map((fromSnap.payload.endpoints ?? []).map(e => [e.endpoint, e]));\n\u001b[0m\u001b[31m                                                                         ^\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m2533\u001b[0m:\u001b[0m\u001b[33m74\u001b[0m\n\n\u001b[0m\u001b[1mTS7006 \u001b[0m[ERROR]: Parameter 'e' implicitly has an 'any' type.\n    const toEndpoints   = new Map((toSnap.payload.endpoints   ?? []).map(e => [e.endpoint, e]));\n\u001b[0m\u001b[31m                                                                         ^\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/public-api/index.ts\u001b[0m:\u001b[0m\u001b[33m2534\u001b[0m:\u001b[0m\u001b[33m74\u001b[0m\n\nFound 12 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "public-health",
       "entry": "supabase/functions/public-health/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "research-chat",
       "entry": "supabase/functions/research-chat/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "revoke-sessions",
       "entry": "supabase/functions/revoke-sessions/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "scenario-simulator",
       "entry": "supabase/functions/scenario-simulator/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "scheduled-report-email",
       "entry": "supabase/functions/scheduled-report-email/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "scheduled-sync",
       "entry": "supabase/functions/scheduled-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "scrape-article",
       "entry": "supabase/functions/scrape-article/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "seed-polling",
       "entry": "supabase/functions/seed-polling/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "send-external-mail",
@@ -558,15 +458,13 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Could not find a matching package for 'npm:@react-email/components@0.0.22' in the node_modules directory. Ensure you have all your JSR and npm dependencies listed in your deno.json or package.json, then run `deno install`. Alternatively, turn on auto-install by specifying `\"nodeModulesDir\": \"auto\"` in your deno.json file.\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/send-external-mail/index.ts\u001b[0m:\u001b[0m\u001b[33m2\u001b[0m:\u001b[0m\u001b[33m29\u001b[0m\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "send-mail-notification",
       "entry": "supabase/functions/send-mail-notification/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "send-transactional-email",
@@ -574,15 +472,13 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Could not find a matching package for 'npm:@react-email/components@0.0.22' in the node_modules directory. Ensure you have all your JSR and npm dependencies listed in your deno.json or package.json, then run `deno install`. Alternatively, turn on auto-install by specifying `\"nodeModulesDir\": \"auto\"` in your deno.json file.\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/send-transactional-email/index.ts\u001b[0m:\u001b[0m\u001b[33m2\u001b[0m:\u001b[0m\u001b[33m29\u001b[0m\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "state-cfb-finance",
       "entry": "supabase/functions/state-cfb-finance/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "state-health-scheduler",
@@ -590,23 +486,19 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/state-health-scheduler/index.ts\n\u001b[0m\u001b[1mTS2322 \u001b[0m[ERROR]: Type '{}' is not assignable to type 'string'.\n    if (!lastSyncAt && run.finished_at) lastSyncAt = run.finished_at;\n\u001b[0m\u001b[31m                                        ~~~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/state-health-scheduler/index.ts\u001b[0m:\u001b[0m\u001b[33m85\u001b[0m:\u001b[0m\u001b[33m41\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n        supabase,\n\u001b[0m\u001b[31m        ~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/state-health-scheduler/index.ts\u001b[0m:\u001b[0m\u001b[33m149\u001b[0m:\u001b[0m\u001b[33m9\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n        supabase,\n\u001b[0m\u001b[31m        ~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/state-health-scheduler/index.ts\u001b[0m:\u001b[0m\u001b[33m266\u001b[0m:\u001b[0m\u001b[33m9\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n          supabase,\n\u001b[0m\u001b[31m          ~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/state-health-scheduler/index.ts\u001b[0m:\u001b[0m\u001b[33m290\u001b[0m:\u001b[0m\u001b[33m11\u001b[0m\n\nFound 4 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "state-legislative-sync",
       "entry": "supabase/functions/state-legislative-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "state-voter-portal-lookup",
       "entry": "supabase/functions/state-voter-portal-lookup/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "subject-audience-analysis",
@@ -614,7 +506,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/subject-audience-analysis/index.ts\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'data.district_id' is of type 'unknown'.\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-audience-analysis/index.ts\u001b[0m:\u001b[0m\u001b[33m31\u001b[0m:\u001b[0m\u001b[33m204\u001b[0m\n\n\u001b[0m\u001b[1mTS2339 \u001b[0m[ERROR]: Property 'slice' does not exist on type '{}'.\n      tags: (data.major_industries || []).slice(0, 6),\n\u001b[0m\u001b[31m                                          ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-audience-analysis/index.ts\u001b[0m:\u001b[0m\u001b[33m63\u001b[0m:\u001b[0m\u001b[33m43\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n    const subject = await loadSubject(admin, subject_type, subject_ref);\n\u001b[0m\u001b[31m                                      ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-audience-analysis/index.ts\u001b[0m:\u001b[0m\u001b[33m117\u001b[0m:\u001b[0m\u001b[33m39\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n    const ctx = await buildContext(admin, subject, selected);\n\u001b[0m\u001b[31m                                   ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-audience-analysis/index.ts\u001b[0m:\u001b[0m\u001b[33m121\u001b[0m:\u001b[0m\u001b[33m36\u001b[0m\n\nFound 4 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "subject-impact-analysis",
@@ -622,7 +514,7 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/subject-impact-analysis/index.ts\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'data.district_id' is of type 'unknown'.\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-impact-analysis/index.ts\u001b[0m:\u001b[0m\u001b[33m30\u001b[0m:\u001b[0m\u001b[33m204\u001b[0m\n\n\u001b[0m\u001b[1mTS2339 \u001b[0m[ERROR]: Property 'slice' does not exist on type '{}'.\n      tags: (data.major_industries || []).slice(0, 6),\n\u001b[0m\u001b[31m                                          ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-impact-analysis/index.ts\u001b[0m:\u001b[0m\u001b[33m62\u001b[0m:\u001b[0m\u001b[33m43\u001b[0m\n\n\u001b[0m\u001b[1mTS2339 \u001b[0m[ERROR]: Property 'join' does not exist on type '{}'.\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-impact-analysis/index.ts\u001b[0m:\u001b[0m\u001b[33m74\u001b[0m:\u001b[0m\u001b[33m149\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n    const subject = await loadSubject(admin, subject_type, subject_ref);\n\u001b[0m\u001b[31m                                      ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-impact-analysis/index.ts\u001b[0m:\u001b[0m\u001b[33m122\u001b[0m:\u001b[0m\u001b[33m39\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n    const ctx = await buildContext(admin, subject, selected, scope, scope_ref);\n\u001b[0m\u001b[31m                                   ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-impact-analysis/index.ts\u001b[0m:\u001b[0m\u001b[33m134\u001b[0m:\u001b[0m\u001b[33m36\u001b[0m\n\nFound 5 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "subject-talking-points",
@@ -630,15 +522,13 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/subject-talking-points/index.ts\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'data.district_id' is of type 'unknown'.\n      state_abbr: data.district_id.split(\"-\")[0],\n\u001b[0m\u001b[31m                  ~~~~~~~~~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-talking-points/index.ts\u001b[0m:\u001b[0m\u001b[33m38\u001b[0m:\u001b[0m\u001b[33m19\u001b[0m\n\n\u001b[0m\u001b[1mTS2339 \u001b[0m[ERROR]: Property 'slice' does not exist on type '{}'.\n      tags: (data.major_industries || []).slice(0, 6),\n\u001b[0m\u001b[31m                                          ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-talking-points/index.ts\u001b[0m:\u001b[0m\u001b[33m105\u001b[0m:\u001b[0m\u001b[33m43\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n    const subject = await loadSubject(admin, subject_type, subject_ref);\n\u001b[0m\u001b[31m                                      ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-talking-points/index.ts\u001b[0m:\u001b[0m\u001b[33m185\u001b[0m:\u001b[0m\u001b[33m39\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n    const sectionContext = await buildSectionContext(admin, subject, selected);\n\u001b[0m\u001b[31m                                                     ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/subject-talking-points/index.ts\u001b[0m:\u001b[0m\u001b[33m194\u001b[0m:\u001b[0m\u001b[33m54\u001b[0m\n\nFound 4 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "sync-github",
       "entry": "supabase/functions/sync-github/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "system-status",
@@ -646,15 +536,13 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/system-status/index.ts\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type 'SupabaseClient<any, \"public\", any>' is not assignable to parameter of type 'SupabaseClient<unknown, never, GenericSchema>'.\n  Type '\"public\"' is not assignable to type 'never'.\n        const result = await fn(supabase, supabaseUrl);\n\u001b[0m\u001b[31m                                ~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/system-status/index.ts\u001b[0m:\u001b[0m\u001b[33m64\u001b[0m:\u001b[0m\u001b[33m33\u001b[0m\n\n\u001b[0m\u001b[1mTS2353 \u001b[0m[ERROR]: Object literal may only specify known properties, and 'limit' does not exist in type 'PageParams'.\n  const { error } = await s.auth.admin.listUsers({ limit: 1 });\n\u001b[0m\u001b[31m                                                   ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/system-status/index.ts\u001b[0m:\u001b[0m\u001b[33m101\u001b[0m:\u001b[0m\u001b[33m52\u001b[0m\n\n\u001b[0m\u001b[1mTS2769 \u001b[0m[ERROR]: No overload matches this call.\n  Overload 1 of 2, '(predicate: (value: { source: unknown; status: unknown; }, index: number, array: { source: unknown; status: unknown; }[]) => value is { source: unknown; status: unknown; }, thisArg?: any): { source: unknown; status: unknown; }[]', gave the following error.\n    Argument of type '(r: { status: string; }) => boolean' is not assignable to parameter of type '(value: { source: unknown; status: unknown; }, index: number, array: { source: unknown; status: unknown; }[]) => value is { source: unknown; status: unknown; }'.\n      Types of parameters 'r' and 'value' are incompatible.\n        Type '{ source: unknown; status: unknown; }' is not assignable to type '{ status: string; }'.\n          Types of property 'status' are incompatible.\n            Type 'unknown' is not assignable to type 'string'.\n  Overload 2 of 2, '(predicate: (value: { source: unknown; status: unknown; }, index: number, array: { source: unknown; status: unknown; }[]) => unknown, thisArg?: any): { source: unknown; status: unknown; }[]', gave the following error.\n    Argument of type '(r: { status: string; }) => boolean' is not assignable to parameter of type '(value: { source: unknown; status: unknown; }, index: number, array: { source: unknown; status: unknown; }[]) => unknown'.\n      Types of parameters 'r' and 'value' are incompatible.\n        Type '{ source: unknown; status: unknown; }' is not assignable to type '{ status: string; }'.\n          Types of property 'status' are incompatible.\n            Type 'unknown' is not assignable to type 'string'.\n  const failures = (data ?? []).filter((r: { status: string }) => r.status === \"failed\");\n\u001b[0m\u001b[31m                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/system-status/index.ts\u001b[0m:\u001b[0m\u001b[33m169\u001b[0m:\u001b[0m\u001b[33m40\u001b[0m\n\n\u001b[0m\u001b[1mTS2345 \u001b[0m[ERROR]: Argument of type '(r: { source: string; }) => string' is not assignable to parameter of type '(value: { source: unknown; status: unknown; }, index: number, array: { source: unknown; status: unknown; }[]) => string'.\n  Types of parameters 'r' and 'value' are incompatible.\n    Type '{ source: unknown; status: unknown; }' is not assignable to type '{ source: string; }'.\n      Types of property 'source' are incompatible.\n        Type 'unknown' is not assignable to type 'string'.\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/system-status/index.ts\u001b[0m:\u001b[0m\u001b[33m171\u001b[0m:\u001b[0m\u001b[33m103\u001b[0m\n\nFound 4 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "talking-points",
       "entry": "supabase/functions/talking-points/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "url-bias-check",
@@ -662,23 +550,19 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/url-bias-check/index.ts\n\u001b[0m\u001b[1mTS2304 \u001b[0m[ERROR]: Cannot find name 'DOMParser'.\n      const doc = new DOMParser().parseFromString(html, \"text/html\");\n\u001b[0m\u001b[31m                      ~~~~~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/url-bias-check/index.ts\u001b[0m:\u001b[0m\u001b[33m34\u001b[0m:\u001b[0m\u001b[33m23\u001b[0m\n\n\u001b[0m\u001b[1mTS7006 \u001b[0m[ERROR]: Parameter 'el' implicitly has an 'any' type.\n        doc.querySelectorAll(\"script, style, noscript, template\").forEach((el) => el.remove());\n\u001b[0m\u001b[31m                                                                           ~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/url-bias-check/index.ts\u001b[0m:\u001b[0m\u001b[33m36\u001b[0m:\u001b[0m\u001b[33m76\u001b[0m\n\nFound 2 errors.\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "validate-serial",
       "entry": "supabase/functions/validate-serial/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "version-history",
       "entry": "supabase/functions/version-history/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "voter-file-sync",
@@ -686,15 +570,13 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/voter-file-sync/index.ts\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'error' is of type 'unknown'.\n    return new Response(JSON.stringify({ error: error.message }), {\n\u001b[0m\u001b[31m                                                ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/voter-file-sync/index.ts\u001b[0m:\u001b[0m\u001b[33m82\u001b[0m:\u001b[0m\u001b[33m49\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "voter-lookup",
       "entry": "supabase/functions/voter-lookup/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "voter-registration-stats",
@@ -702,31 +584,25 @@
       "parse": "ok",
       "types": "fail",
       "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/voter-registration-stats/index.ts\n\u001b[0m\u001b[1mTS18046 \u001b[0m[ERROR]: 'error' is of type 'unknown'.\n    return new Response(JSON.stringify({ error: error.message }), {\n\u001b[0m\u001b[31m                                                ~~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/voter-registration-stats/index.ts\u001b[0m:\u001b[0m\u001b[33m42\u001b[0m:\u001b[0m\u001b[33m49\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
     },
     {
       "name": "vulnerability-score",
       "entry": "supabase/functions/vulnerability-score/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "wiki-sync",
       "entry": "supabase/functions/wiki-sync/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     },
     {
       "name": "winred-webhook",
       "entry": "supabase/functions/winred-webhook/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '--allow-import' found\n\n  tip: a similar argument exists: '--all'\n\nUsage: deno check --no-lock --all [file]..."
+      "types": "ok"
     }
   ]
 }

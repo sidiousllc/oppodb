@@ -87,8 +87,63 @@ const JURISDICTIONS = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC",
 ];
 
+interface IntelItem {
+  title: string; summary: string; content: string;
+  source_name: string; source_url: string; published_at: string;
+  scope: string; category: string; region?: string;
+}
+
+async function parseRSS(rssUrl: string, sourceName: string, scope: string, region?: string): Promise<IntelItem[]> {
+  try {
+    const res = await fetch(rssUrl, {
+      headers: { "User-Agent": "ORO-IntelBriefing/1.0 (+https://oppodb.com)" },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!res.ok) return [];
+    const xml = await res.text();
+    const stripTags = (s: string) => s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]+>/g, "").trim();
+    const decode = (s: string) => s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'");
+    const pick = (block: string, tags: string[]): string => {
+      for (const t of tags) {
+        const m = block.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)<\\/${t}>`, "i"));
+        if (m) return decode(stripTags(m[1]));
+      }
+      return "";
+    };
+    const items: IntelItem[] = [];
+    const blocks = [
+      ...xml.matchAll(/<item[\s>][\s\S]*?<\/item>/gi),
+      ...xml.matchAll(/<entry[\s>][\s\S]*?<\/entry>/gi),
+    ];
+    for (const m of blocks) {
+      const block = m[0];
+      const title = pick(block, ["title"]);
+      if (!title) continue;
+      let link = pick(block, ["link"]);
+      if (!link) {
+        const lm = block.match(/<link[^>]*href=["']([^"']+)["']/i);
+        if (lm) link = lm[1];
+      }
+      const pub = pick(block, ["pubDate", "published", "updated", "dc:date"]);
+      const desc = pick(block, ["description", "summary", "content:encoded", "content"]);
+      items.push({
+        title: title.slice(0, 500),
+        summary: desc.slice(0, 1000),
+        content: desc.slice(0, 5000),
+        source_name: sourceName,
+        source_url: link.trim(),
+        published_at: pub ? new Date(pub).toISOString() : new Date().toISOString(),
+        scope, category: scope,
+        region: region ?? "",
+      });
+      if (items.length >= 25) break;
+    }
+    return items;
+  } catch { return []; }
+}
+
 // Intelligence sources organized by scope — 150+ feeds
-const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: string }>> = {
+const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: string; state?: string }>> = {
   international: [
     // Wire services & major outlets
     { name: "Reuters World", rssUrl: "https://feeds.reuters.com/Reuters/worldNews", scope: "international" },
@@ -881,31 +936,6 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
   ],
 };
 
-// ─── Helpers used inside the request handler ────────────────────────────────
-function isConflict(rssUrl: string, targetState: string, sources: Array<{ rssUrl: string; state?: string }>): boolean {
-  const norm = normalizeUrl(rssUrl);
-  return sources.some((s) => s.state === targetState && normalizeUrl(s.rssUrl) === norm);
-}
-
-function setSourceState(rssUrl: string, newState: string): void {
-  LOCAL_SOURCE_OVERRIDES[normalizeUrl(rssUrl)] = newState;
-}
-
-const STATE_ABBR_TO_NAME: Record<string, string> = {
-  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
-  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
-  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
-  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
-  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
-  MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
-  NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
-  OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
-  SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
-  VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
-  DC: "District of Columbia",
-};
-
-const JURISDICTIONS: string[] = Object.keys(STATE_ABBR_TO_NAME);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -921,16 +951,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Counters/buffers used by the main briefing fetch path further down.
-    let inserted = 0;
-    let insertedLocal = 0;
-    const dedupedCount = 0;
-    const skippedDbDuplicate = 0;
-    const allItems: unknown[] = [];
-    const sourcesByScope: Record<string, number> = {};
-    const stateTaggedSources = new Set<string>();
-
-    void supabase; void inserted; void insertedLocal;
+    void supabase;
 
 // ─── Get available target states for a given feed URL ────────────────────────
     // Returns all states except the feed's current state, with conflict flags.
