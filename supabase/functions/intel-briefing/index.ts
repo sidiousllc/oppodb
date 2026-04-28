@@ -87,6 +87,61 @@ const JURISDICTIONS = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC",
 ];
 
+interface IntelItem {
+  title: string; summary: string; content: string;
+  source_name: string; source_url: string; published_at: string;
+  scope: string; category: string; region?: string;
+}
+
+async function parseRSS(rssUrl: string, sourceName: string, scope: string, region?: string): Promise<IntelItem[]> {
+  try {
+    const res = await fetch(rssUrl, {
+      headers: { "User-Agent": "ORO-IntelBriefing/1.0 (+https://oppodb.com)" },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!res.ok) return [];
+    const xml = await res.text();
+    const stripTags = (s: string) => s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]+>/g, "").trim();
+    const decode = (s: string) => s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'");
+    const pick = (block: string, tags: string[]): string => {
+      for (const t of tags) {
+        const m = block.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)<\\/${t}>`, "i"));
+        if (m) return decode(stripTags(m[1]));
+      }
+      return "";
+    };
+    const items: IntelItem[] = [];
+    const blocks = [
+      ...xml.matchAll(/<item[\s>][\s\S]*?<\/item>/gi),
+      ...xml.matchAll(/<entry[\s>][\s\S]*?<\/entry>/gi),
+    ];
+    for (const m of blocks) {
+      const block = m[0];
+      const title = pick(block, ["title"]);
+      if (!title) continue;
+      let link = pick(block, ["link"]);
+      if (!link) {
+        const lm = block.match(/<link[^>]*href=["']([^"']+)["']/i);
+        if (lm) link = lm[1];
+      }
+      const pub = pick(block, ["pubDate", "published", "updated", "dc:date"]);
+      const desc = pick(block, ["description", "summary", "content:encoded", "content"]);
+      items.push({
+        title: title.slice(0, 500),
+        summary: desc.slice(0, 1000),
+        content: desc.slice(0, 5000),
+        source_name: sourceName,
+        source_url: link.trim(),
+        published_at: pub ? new Date(pub).toISOString() : new Date().toISOString(),
+        scope, category: scope,
+        region: region ?? "",
+      });
+      if (items.length >= 25) break;
+    }
+    return items;
+  } catch { return []; }
+}
+
 // Intelligence sources organized by scope — 150+ feeds
 const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: string; state?: string }>> = {
   international: [
