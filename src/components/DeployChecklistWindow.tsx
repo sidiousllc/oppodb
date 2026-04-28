@@ -337,6 +337,58 @@ function DeployChecklistContent() {
         </div>
       )}
 
+      {/* Manual run instructions — shown when the dev endpoint is missing (production / preview). */}
+      {devEndpointAvailable === false && (() => {
+        const commands: { label: string; cmd: string }[] = [
+          { label: "Check Node (>= 18)", cmd: "node --version" },
+          { label: "Check Deno (>= 1.40)", cmd: "deno --version" },
+          { label: "Install deps (first run only)", cmd: "npm install" },
+          { label: "Run predeploy checks", cmd: "node scripts/check-edge-functions.mjs" },
+          { label: "Mirror to public/ for the web UI", cmd: "cp predeploy-report.json public/predeploy-report.json" },
+        ];
+        const allCmds = commands.map(c => c.cmd).join(" && \\\n  ");
+        const copy = (text: string) => {
+          try { navigator.clipboard?.writeText(text); } catch { /* ignore */ }
+        };
+        return (
+          <div className="win98-sunken px-2 py-1 text-[10px] space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-bold">Manual run (dev endpoint unavailable)</span>
+              <button
+                onClick={() => copy(allCmds)}
+                className="win98-button text-[9px] px-1.5 py-[1px]"
+                title="Copy all commands as a single chained shell line"
+              >
+                Copy all
+              </button>
+            </div>
+            <p className="text-[9px] text-[hsl(var(--muted-foreground))]">
+              The in-browser <span className="font-mono">/__predeploy</span> endpoint only exists under <span className="font-mono">npm run dev</span>. Run these in a terminal at the repo root:
+            </p>
+            <ul className="space-y-[2px]">
+              {commands.map((c) => (
+                <li key={c.cmd} className="flex items-center gap-1">
+                  <span className="text-[8px] uppercase font-bold w-24 shrink-0 text-[hsl(var(--muted-foreground))] truncate" title={c.label}>
+                    {c.label}
+                  </span>
+                  <button
+                    onClick={() => copy(c.cmd)}
+                    className="font-mono text-[9px] truncate text-left hover:underline flex-1 bg-[hsl(var(--win98-light))] px-1 py-[1px] border border-[hsl(var(--win98-shadow))]"
+                    title="Click to copy"
+                  >
+                    {c.cmd}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[9px] text-[hsl(var(--muted-foreground))]">
+              After it finishes, click <span className="font-bold">Reload</span> above to refresh this window.
+            </p>
+          </div>
+        );
+      })()}
+
+
       {runLog && (
         <details className="win98-sunken px-2 py-1 text-[10px]" open>
           <summary className="cursor-pointer font-bold">Run log</summary>
