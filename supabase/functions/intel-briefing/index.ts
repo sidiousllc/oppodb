@@ -881,6 +881,57 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
   ],
 };
 
+// ─── Helpers used inside the request handler ────────────────────────────────
+function isConflict(rssUrl: string, targetState: string, sources: Array<{ rssUrl: string; state?: string }>): boolean {
+  const norm = normalizeUrl(rssUrl);
+  return sources.some((s) => s.state === targetState && normalizeUrl(s.rssUrl) === norm);
+}
+
+function setSourceState(rssUrl: string, newState: string): void {
+  LOCAL_SOURCE_OVERRIDES[normalizeUrl(rssUrl)] = newState;
+}
+
+const STATE_ABBR_TO_NAME: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
+  MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
+  NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
+  OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+  SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
+  VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+  DC: "District of Columbia",
+};
+
+const JURISDICTIONS: string[] = Object.keys(STATE_ABBR_TO_NAME);
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const body = (await req.json().catch(() => ({}))) as Record<string, any>;
+
+    // Initialize Supabase client (used by the briefing-insertion path below).
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+
+    // Counters/buffers used by the main briefing fetch path further down.
+    let inserted = 0;
+    let insertedLocal = 0;
+    const dedupedCount = 0;
+    const skippedDbDuplicate = 0;
+    const allItems: unknown[] = [];
+    const sourcesByScope: Record<string, number> = {};
+    const stateTaggedSources = new Set<string>();
+
+    void supabase; void inserted; void insertedLocal;
+
 // ─── Get available target states for a given feed URL ────────────────────────
     // Returns all states except the feed's current state, with conflict flags.
     if (body.action === "get_available_target_states") {
@@ -951,108 +1002,10 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
       );
     }
 
-    // Top-up: for each low-coverage state, probe vetted reserve feeds and return
-    // Build candidate list: reserve feeds not already configured (per state OR globally in any other scope/state)
-      const candidates: Array<{ state: string; name: string; rssUrl: string }> = [];
-      const dedupSeenInRun = new Set<string>(); // prevents the same URL being proposed for multiple states this run
-      const duplicatesSkipped: Array<{ state: string; name: string; rssUrl: string; reason: string }> = [];
-      for (const st of targetStates) {
-        const reserve = LOCAL_RESERVE[st] ?? [];
-        const haveSet = configuredByState.get(st) ?? new Set<string>();
-        for (const c of reserve) {
-          const norm = normalizeUrl(c.rssUrl);
-          if (haveSet.has(norm)) {
-            duplicatesSkipped.push({ state: st, name: c.name, rssUrl: c.rssUrl, reason: "already_configured_for_state" });
-            continue;
-          }
-          if (globallyConfiguredUrls.has(norm)) {
-            duplicatesSkipped.push({ state: st, name: c.name, rssUrl: c.rssUrl, reason: "already_configured_for_other_scope_or_state" });
-            continue;
-          }
-          if (dedupSeenInRun.has(norm)) {
-            duplicatesSkipped.push({ state: st, name: c.name, rssUrl: c.rssUrl, reason: "duplicate_within_reserve_pool" });
-            continue;
-          }
-          dedupSeenInRun.add(norm);
-          candidates.push({ state: st, ...c });
-        }
-      }
-
-      // Probe in batches
-      const probed: Array<{
-        state: string; name: string; rssUrl: string;
-        ok: boolean; status: number; ms: number; items: number; error: string | null;
-      }> = [];
-      const BATCH = 10;
-      for (let i = 0; i < candidates.length; i += BATCH) {
-        const slice = candidates.slice(i, i + BATCH);
-        const out = await Promise.all(slice.map(async (c) => {
-          const r = await probe(c);
-          return { state: c.state, name: c.name, rssUrl: c.rssUrl, ...r };
-        }));
-        probed.push(...out);
-      }
-
-      // Group healthy results by state, capped
-      const additions: Record<string, Array<{ name: string; rssUrl: string; items: number; status: number; ms: number }>> = {};
-      const skipped: Record<string, Array<{ name: string; rssUrl: string; error: string | null; status: number }>> = {};
-      const summaryByState: Array<{
-        state: string; previousConfigured: number; healthyAdded: number; newTotal: number; meetsThreshold: boolean;
-      }> = [];
-
-      for (const st of targetStates) {
-        const okOnes = probed.filter((p) => p.state === st && p.ok).slice(0, perStateCap);
-        const failed = probed.filter((p) => p.state === st && !p.ok);
-        if (okOnes.length > 0) {
-          additions[st] = okOnes.map((p) => ({
-            name: p.name, rssUrl: p.rssUrl, items: p.items, status: p.status, ms: p.ms,
-          }));
-        }
-        if (failed.length > 0) {
-          skipped[st] = failed.map((p) => ({
-            name: p.name, rssUrl: p.rssUrl, error: p.error, status: p.status,
-          }));
-        }
-        const previous = configuredByState.get(st)?.size ?? 0;
-        const newTotal = previous + okOnes.length;
-        summaryByState.push({
-          state: st,
-          previousConfigured: previous,
-          healthyAdded: okOnes.length,
-          newTotal,
-          meetsThreshold: newTotal >= minPerState,
-        });
-      }
-
-      const totalAdded = Object.values(additions).reduce((sum, arr) => sum + arr.length, 0);
-      const statesImproved = summaryByState.filter((s) => s.healthyAdded > 0).length;
-      const statesNowMeeting = summaryByState.filter((s) => s.meetsThreshold).length;
-      const statesStillBelow = summaryByState.filter((s) => !s.meetsThreshold).length;
-
-      return new Response(
-        JSON.stringify({
-          checkedAt: new Date().toISOString(),
-          minPerState,
-          perStateCap,
-          targetStates,
-          summary: {
-            statesEvaluated: targetStates.length,
-            statesImproved,
-            statesNowMeeting,
-            statesStillBelow,
-            candidatesProbed: probed.length,
-            totalHealthyAdded: totalAdded,
-            duplicatesSkipped: duplicatesSkipped.length,
-          },
-          perState: summaryByState,
-          additions,
-          skipped,
-          duplicates: duplicatesSkipped,
-          note: "Healthy candidates were probed live from a vetted reserve pool. Reserve URLs already configured for any state/scope are skipped (see `duplicates`). To persist additions, add the entries under additions to SOURCES.local in supabase/functions/intel-briefing/index.ts.",
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
+    // NOTE: The `top_up_local_feeds` action handler was removed because the
+    // implementation was missing its enclosing `if` block and several required
+    // helpers (targetStates, configuredByState, LOCAL_RESERVE, probe, etc.).
+    // Re-introduce it as a complete handler if/when the feature is needed.
 
     // Accept either `scopes` (array) or `scope` (single string) from callers.
     let requestedScopes: string[];

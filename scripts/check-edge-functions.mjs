@@ -2,11 +2,12 @@
 /**
  * Predeploy checklist for Supabase Edge Functions.
  *
- * For each supabase/functions/<name>/index.ts we run TWO passes:
- *   1. PARSE  — `deno check --no-lock --no-check` (syntax only)
- *               If this fails, Supabase bundling will ALWAYS fail. Fix first.
- *   2. TYPES  — `deno check --no-lock` (full type-check)
- *               If this fails the function may still bundle, but is unsafe.
+ * For each supabase/functions/<name>/index.ts we run a single `deno check` pass
+ * (compatible with both Deno 1.x and 2.x — the old `--no-check` flag was removed
+ * in Deno 2). The result is then classified:
+ *   - PARSE fail  — stderr contains a syntax/parse marker. Bundling will fail.
+ *   - TYPES fail  — type-only error. Bundle may succeed but is unsafe.
+ *   - OK          — both pass.
  *
  * The script:
  *   - Prints a colored checklist to stdout
@@ -61,8 +62,14 @@ if (fnDirs.length === 0) {
 
 if (!jsonOnly) {
   console.log(bold(`▸ Predeploy checklist — ${fnDirs.length} edge function(s)\n`));
-  console.log(dim("  Pass 1: parse (must succeed for bundling)"));
-  console.log(dim("  Pass 2: type-check (recommended for safe deploy)\n"));
+  console.log(dim("  Single `deno check` pass per function — parse errors block bundling, type errors are unsafe.\n"));
+}
+
+// Heuristic: classify a failed `deno check` output as a parse error vs type error.
+// Parse/syntax errors from Deno's swc parser surface as "The module's source code could not be parsed",
+// "Expected", "Unexpected token", "SyntaxError", or "Parse error".
+function isParseFailure(output) {
+  return /(?:source code could not be parsed|Unexpected (?:token|eof)|Expected [^\n]{0,40}, got|SyntaxError|Parse error|unterminated)/i.test(output);
 }
 
 // Extract `file:line:col` from deno's stderr.
@@ -97,39 +104,36 @@ for (let i = 0; i < fnDirs.length; i++) {
 
   if (!jsonOnly) process.stdout.write(`  [${i + 1}/${fnDirs.length}] ${name.padEnd(36)} `);
 
-  const parse = runDeno(["check", "--no-lock", "--no-check", "--allow-import", entry]);
-  if (parse.missing) {
+  const result = runDeno(["check", "--no-lock", "--allow-import", entry]);
+  if (result.missing) {
     denoMissing = true;
     if (!jsonOnly) console.log(yellow("SKIP (deno not installed)"));
     checks.push({ name, entry: rel, parse: "skipped", types: "skipped" });
     continue;
   }
 
-  if (parse.code !== 0) {
-    const loc = extractLocation(parse.output);
-    checks.push({
-      name, entry: rel,
-      parse: "fail", parse_location: loc, parse_error: parse.output,
-      types: "blocked",
-    });
-    if (!jsonOnly) {
-      console.log(red("PARSE ✗"));
-      if (loc) console.log(red(`        └─ ${loc.file}:${loc.line}:${loc.column}`));
-    }
-    continue;
-  }
-
-  const types = runDeno(["check", "--no-lock", "--allow-import", entry]);
-  if (types.code !== 0) {
-    const loc = extractLocation(types.output);
-    checks.push({
-      name, entry: rel,
-      parse: "ok",
-      types: "fail", types_location: loc, types_error: types.output,
-    });
-    if (!jsonOnly) {
-      console.log(yellow("TYPES ✗"));
-      if (loc) console.log(yellow(`        └─ ${loc.file}:${loc.line}:${loc.column}`));
+  if (result.code !== 0) {
+    const loc = extractLocation(result.output);
+    if (isParseFailure(result.output)) {
+      checks.push({
+        name, entry: rel,
+        parse: "fail", parse_location: loc, parse_error: result.output,
+        types: "blocked",
+      });
+      if (!jsonOnly) {
+        console.log(red("PARSE ✗"));
+        if (loc) console.log(red(`        └─ ${loc.file}:${loc.line}:${loc.column}`));
+      }
+    } else {
+      checks.push({
+        name, entry: rel,
+        parse: "ok",
+        types: "fail", types_location: loc, types_error: result.output,
+      });
+      if (!jsonOnly) {
+        console.log(yellow("TYPES ✗"));
+        if (loc) console.log(yellow(`        └─ ${loc.file}:${loc.line}:${loc.column}`));
+      }
     }
     continue;
   }
