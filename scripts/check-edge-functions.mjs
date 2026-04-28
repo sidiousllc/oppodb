@@ -2,11 +2,12 @@
 /**
  * Predeploy checklist for Supabase Edge Functions.
  *
- * For each supabase/functions/<name>/index.ts we run TWO passes:
- *   1. PARSE  — `deno check --no-lock --no-check` (syntax only)
- *               If this fails, Supabase bundling will ALWAYS fail. Fix first.
- *   2. TYPES  — `deno check --no-lock` (full type-check)
- *               If this fails the function may still bundle, but is unsafe.
+ * For each supabase/functions/<name>/index.ts we run a single `deno check` pass
+ * (compatible with both Deno 1.x and 2.x — the old `--no-check` flag was removed
+ * in Deno 2). The result is then classified:
+ *   - PARSE fail  — stderr contains a syntax/parse marker. Bundling will fail.
+ *   - TYPES fail  — type-only error. Bundle may succeed but is unsafe.
+ *   - OK          — both pass.
  *
  * The script:
  *   - Prints a colored checklist to stdout
