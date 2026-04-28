@@ -881,6 +881,57 @@ const SOURCES: Record<string, Array<{ name: string; rssUrl: string; scope: strin
   ],
 };
 
+// ─── Helpers used inside the request handler ────────────────────────────────
+function isConflict(rssUrl: string, targetState: string, sources: Array<{ rssUrl: string; state?: string }>): boolean {
+  const norm = normalizeUrl(rssUrl);
+  return sources.some((s) => s.state === targetState && normalizeUrl(s.rssUrl) === norm);
+}
+
+function setSourceState(rssUrl: string, newState: string): void {
+  LOCAL_SOURCE_OVERRIDES[normalizeUrl(rssUrl)] = newState;
+}
+
+const STATE_ABBR_TO_NAME: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
+  MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
+  NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
+  OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+  SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
+  VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+  DC: "District of Columbia",
+};
+
+const JURISDICTIONS: string[] = Object.keys(STATE_ABBR_TO_NAME);
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const body = (await req.json().catch(() => ({}))) as Record<string, any>;
+
+    // Initialize Supabase client (used by the briefing-insertion path below).
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+
+    // Counters/buffers used by the main briefing fetch path further down.
+    let inserted = 0;
+    let insertedLocal = 0;
+    const dedupedCount = 0;
+    const skippedDbDuplicate = 0;
+    const allItems: unknown[] = [];
+    const sourcesByScope: Record<string, number> = {};
+    const stateTaggedSources = new Set<string>();
+
+    void supabase; void inserted; void insertedLocal;
+
 // ─── Get available target states for a given feed URL ────────────────────────
     // Returns all states except the feed's current state, with conflict flags.
     if (body.action === "get_available_target_states") {
