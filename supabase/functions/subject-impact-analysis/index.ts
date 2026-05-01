@@ -1,6 +1,7 @@
 // Generic impact analysis for District Intel / State Legislative Districts /
 // Legislation bills. Cached in subject_impact_analyses (scoped national/state/district).
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import type { SupabaseLike } from "../_shared/supabase-types.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -21,7 +22,7 @@ const DEFAULT_MODEL = "google/gemini-2.5-flash";
 const SECTIONS = ["polling", "intel", "legislation", "finance", "forecasts", "international", "demographics"] as const;
 type Section = typeof SECTIONS[number];
 
-type SAdmin = ReturnType<typeof createClient>;
+type SAdmin = SupabaseLike;
 
 async function loadSubject(admin: SAdmin, subject_type: string, subject_ref: string) {
   if (subject_type === "district") {

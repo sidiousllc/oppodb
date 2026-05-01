@@ -1,6 +1,7 @@
 // Vulnerability-style audience effectiveness analysis for a messaging item.
 // Cached in messaging_audience_analyses with cross-section context enrichment.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import type { SupabaseLike } from "../_shared/supabase-types.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { logAIGeneration } from "../_shared/ai-history.ts";
 
@@ -16,7 +17,7 @@ const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const SECTIONS = ["polling", "intel", "legislation", "finance", "forecasts", "international"] as const;
 type Section = typeof SECTIONS[number];
 
-async function buildContext(admin: ReturnType<typeof createClient>, tags: string[], selected: Section[]) {
+async function buildContext(admin: SupabaseLike, tags: string[], selected: Section[]) {
   const filtered = (tags || []).filter((t) => !["Democrat","Republican","Independent"].includes(t));
   const orFilter = filtered.length ? filtered.map((t) => `title.ilike.%${t}%,summary.ilike.%${t}%`).join(",") : null;
   const parts: string[] = [];
