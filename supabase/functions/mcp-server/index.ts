@@ -68,6 +68,34 @@ const mcpServer = new McpServer({
   version: "1.0.0",
 });
 
+// ─── Tool typing ──────────────────────────────────────────────────────────────
+// mcp-lite's exported types don't expose `.tool(name, def)` in a way that's
+// usable here, so we declare the minimal structural interface we rely on.
+// This eliminates the previous `(mcpServer as never).tool(...)` cast and gives
+// every `mcp.tool(...)` call site real type-checking on the definition shape.
+
+interface ToolInputSchema {
+  type: "object";
+  properties?: Record<string, unknown>;
+  required?: readonly string[];
+  [key: string]: unknown;
+}
+
+interface ToolDefinition {
+  description: string;
+  inputSchema: ToolInputSchema;
+  // deno-lint-ignore no-explicit-any
+  handler: (args: any) => unknown | Promise<unknown>;
+}
+
+interface ToolRegistrar {
+  tool(name: string, def: ToolDefinition): void;
+}
+
+// `McpServer` from mcp-lite implements `.tool(name, def)` at runtime; we cast
+// once to the structural type we declared above, then never again.
+const mcpServerTyped = mcpServer as unknown as ToolRegistrar;
+
 // ─── Runtime validation helper ────────────────────────────────────────────────
 const REQUIRED_TOOL_FIELDS = ["description", "inputSchema", "handler"] as const;
 
@@ -86,20 +114,15 @@ function validateToolDefinition(name: string, def: unknown): void {
   }
 }
 
-// Proxy interceptor: validates every tool definition at registration time,
-// then delegates to the real mcpServer.
-const toolProxy = new Proxy({} as typeof mcpServer, {
-  get(_target, prop, receiver) {
-    if (prop === "tool") {
-      return function tool(name: string, def: Record<string, unknown>) {
-        validateToolDefinition(name, def);
-        (mcpServer as never).tool(name, def);
-      };
-    }
-    return Reflect.get(_target, prop, receiver);
+// Validating registrar: every tool registration is checked at startup, then
+// delegated to the real McpServer instance. Now fully type-safe — callers must
+// pass a `ToolDefinition`-shaped object.
+const mcp: ToolRegistrar = {
+  tool(name, def) {
+    validateToolDefinition(name, def);
+    mcpServerTyped.tool(name, def);
   },
-});
-const mcp = toolProxy as typeof mcpServer;
+};
 
 mcp.tool("search_candidates", {
   description: "Search opposition research candidate profiles. Returns name, slug, content. Use 'search' to filter by name.",
