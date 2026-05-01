@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-05-01T12:08:51.695Z",
+  "generated_at": "2026-05-01T12:17:10.925Z",
   "totals": {
     "total": 90,
-    "passed": 84,
+    "passed": 85,
     "parse_failures": 0,
-    "type_failures": 6,
+    "type_failures": 5,
     "skipped": 0
   },
   "checks": [
@@ -262,9 +262,7 @@
       "name": "mcp-server",
       "entry": "supabase/functions/mcp-server/index.ts",
       "parse": "ok",
-      "types": "fail",
-      "types_location": null,
-      "types_error": "\u001b[0m\u001b[32mCheck\u001b[0m supabase/functions/mcp-server/index.ts\n\u001b[0m\u001b[1mTS2339 \u001b[0m[ERROR]: Property 'tool' does not exist on type 'never'.\n        (mcpServer as never).tool(name, def);\n\u001b[0m\u001b[31m                             ~~~~\u001b[0m\n    at \u001b[0m\u001b[36mfile:///dev-server/supabase/functions/mcp-server/index.ts\u001b[0m:\u001b[0m\u001b[33m96\u001b[0m:\u001b[0m\u001b[33m30\u001b[0m\n\n\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Type checking failed.\n\nStack backtrace:\n   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from\n   1: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::convert::Infallible,E>>>::from_residual\n   2: deno::graph_container::MainModuleGraphContainer::check_specifiers::{{closure}}\n   3: deno::spawn_subcommand::{{closure}}\n   4: tokio::runtime::task::raw::poll\n   5: deno::main\n   6: std::sys::backtrace::__rust_begin_short_backtrace\n   7: main\n   8: __libc_start_call_main\n   9: __libc_start_main@@GLIBC_2.34\n  10: _start"
+      "types": "ok"
     },
     {
       "name": "messaging-audience-analysis",
