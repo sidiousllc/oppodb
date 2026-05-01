@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getErrorMessage } from "../_shared/errors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -92,7 +93,7 @@ serve(async (req) => {
         .eq("email", email.toLowerCase())
         .limit(1);
 
-      if (existing?.length > 0) {
+      if ((existing?.length ?? 0) > 0) {
         return new Response(JSON.stringify({ error: "Email already registered" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -155,7 +156,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: getErrorMessage(error) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
