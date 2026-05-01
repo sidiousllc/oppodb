@@ -2,6 +2,7 @@
 // cross-section context (polling, intel, legislation, finance, forecasts,
 // international). Stores rows in `talking_points` with subject_type='messaging'.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import type { SupabaseLike } from "../_shared/supabase-types.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { logAIGeneration } from "../_shared/ai-history.ts";
 
@@ -29,7 +30,7 @@ const SECTIONS = ["polling", "intel", "legislation", "finance", "forecasts", "in
 type Section = typeof SECTIONS[number];
 
 async function buildSectionContext(
-  admin: ReturnType<typeof createClient>,
+  admin: SupabaseLike,
   issueAreas: string[],
   selected: Section[],
 ): Promise<string> {

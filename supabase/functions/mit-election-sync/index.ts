@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import type { SupabaseLike } from "../_shared/supabase-types.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -159,7 +160,7 @@ function parseData(text: string): Record<string, string>[] {
 async function syncGitHubCountySource(
   source: typeof GITHUB_COUNTY_SOURCES[0],
   stateFilter: string,
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseLike,
 ): Promise<{ synced: number; errors: number }> {
   console.log(`[GitHub] Downloading ${source.description}...`);
 

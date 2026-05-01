@@ -3,6 +3,7 @@
 // subject_type ∈ {'district','state_leg','legislation'} and subject_ref ∈
 // {district_id, state_leg row id, congress_bills.bill_id}.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import type { SupabaseLike } from "../_shared/supabase-types.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { logAIGeneration } from "../_shared/ai-history.ts";
 
@@ -24,7 +25,7 @@ const ALLOWED_SUBJECTS = new Set(["district", "state_leg", "legislation", "polli
 const SECTIONS = ["polling", "intel", "legislation", "finance", "forecasts", "international", "demographics"] as const;
 type Section = typeof SECTIONS[number];
 
-type SAdmin = ReturnType<typeof createClient>;
+type SAdmin = SupabaseLike;
 
 async function loadSubject(admin: SAdmin, subject_type: string, subject_ref: string) {
   if (subject_type === "district") {

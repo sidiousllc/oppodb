@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import type { SupabaseLike } from "../_shared/supabase-types.ts";
 
 const TRUSTED_ORIGINS = [
   "https://oppodb.com",
@@ -59,7 +60,7 @@ function stateHealthScore(
 }
 
 async function getRecentSyncStats(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseLike,
   state: string,
   windowHours: number,
 ): Promise<{ successes: number; failures: number; lastSyncAt: string | null }> {
@@ -89,7 +90,7 @@ async function getRecentSyncStats(
 }
 
 async function sendAlert(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseLike,
   userId: string,
   state: string,
   score: number,

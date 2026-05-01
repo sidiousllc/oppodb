@@ -1,6 +1,7 @@
 // Generic audience effectiveness analysis for District Intel / State Legislative
 // Districts / Legislation bills. Cached in subject_audience_analyses.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import type { SupabaseLike } from "../_shared/supabase-types.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { logAIGeneration } from "../_shared/ai-history.ts";
 
@@ -22,7 +23,7 @@ const DEFAULT_MODEL = "google/gemini-2.5-flash";
 const SECTIONS = ["polling", "intel", "legislation", "finance", "forecasts", "international", "demographics"] as const;
 type Section = typeof SECTIONS[number];
 
-type SAdmin = ReturnType<typeof createClient>;
+type SAdmin = SupabaseLike;
 
 async function loadSubject(admin: SAdmin, subject_type: string, subject_ref: string) {
   if (subject_type === "district") {

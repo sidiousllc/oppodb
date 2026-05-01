@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import type { SupabaseLike } from "../_shared/supabase-types.ts";
 
 type CheckStatus = "ok" | "degraded" | "down";
 
@@ -91,75 +92,75 @@ Deno.serve(async (req): Promise<Response> => {
 
 type CheckResult = { ok: boolean; degraded?: boolean; detail?: string };
 
-async function checkDatabase(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkDatabase(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { error } = await s.from("user_devices").select("id").limit(1);
   if (error) return { ok: false, detail: error.message };
   return { ok: true };
 }
 
-async function checkAuth(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkAuth(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { error } = await s.auth.admin.listUsers({ limit: 1 });
   if (error) return { ok: false, detail: error.message };
   return { ok: true };
 }
 
-async function checkCandidates(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkCandidates(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { count, error } = await s.from("candidates").select("*", { count: "exact", head: true });
   if (error) return { ok: false, detail: error.message };
   if (count === 0) return { ok: false, degraded: true, detail: "No records found" };
   return { ok: true };
 }
 
-async function checkDistricts(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkDistricts(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { count, error } = await s.from("district_profiles").select("*", { count: "exact", head: true });
   if (error) return { ok: false, detail: error.message };
   if (count === 0) return { ok: false, degraded: true, detail: "No records found" };
   return { ok: true };
 }
 
-async function checkPolling(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkPolling(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { count, error } = await s.from("polling_data").select("*", { count: "exact", head: true });
   if (error) return { ok: false, detail: error.message };
   return { ok: true };
 }
 
-async function checkCongress(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkCongress(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { count, error } = await s.from("congress_members").select("*", { count: "exact", head: true });
   if (error) return { ok: false, detail: error.message };
   return { ok: true };
 }
 
-async function checkElectionResults(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkElectionResults(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { count, error } = await s.from("congressional_election_results").select("*", { count: "exact", head: true });
   if (error) return { ok: false, detail: error.message };
   return { ok: true };
 }
 
-async function checkIntel(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkIntel(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { count, error } = await s.from("intel_briefings").select("*", { count: "exact", head: true });
   if (error) return { ok: false, detail: error.message };
   return { ok: true };
 }
 
-async function checkMessaging(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkMessaging(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { count, error } = await s.from("messaging_guidance").select("*", { count: "exact", head: true });
   if (error) return { ok: false, detail: error.message };
   return { ok: true };
 }
 
-async function checkMagaFiles(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkMagaFiles(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { count, error } = await s.from("maga_files").select("*", { count: "exact", head: true });
   if (error) return { ok: false, detail: error.message };
   return { ok: true };
 }
 
-async function checkNarrativeReports(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkNarrativeReports(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { count, error } = await s.from("narrative_reports").select("*", { count: "exact", head: true });
   if (error) return { ok: false, detail: error.message };
   return { ok: true };
 }
 
-async function checkSyncPipeline(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkSyncPipeline(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { data, error } = await s
     .from("sync_run_log")
     .select("source, status")
@@ -173,13 +174,13 @@ async function checkSyncPipeline(s: ReturnType<typeof createClient>, _url: strin
   return { ok: true };
 }
 
-async function checkDocsWiki(s: ReturnType<typeof createClient>, _url: string): Promise<CheckResult> {
+async function checkDocsWiki(s: SupabaseLike, _url: string): Promise<CheckResult> {
   const { count, error } = await s.from("wiki_pages").select("*", { count: "exact", head: true });
   if (error) return { ok: false, detail: error.message };
   return { ok: true };
 }
 
-async function checkPublicApi(_s: ReturnType<typeof createClient>, url: string): Promise<CheckResult> {
+async function checkPublicApi(_s: SupabaseLike, url: string): Promise<CheckResult> {
   try {
     const res = await fetch(`${url}/functions/v1/public-api`, {
       method: "HEAD",

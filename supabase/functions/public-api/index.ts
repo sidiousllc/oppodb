@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import type { SupabaseLike } from "../_shared/supabase-types.ts";
 import { ENDPOINT_SPECS, MCP_TOOL_SPECS, SECTIONS } from "../_shared/docs-registry.ts";
 import { TECHNICAL_DOCS, TECHNICAL_DOCS_BY_SLUG } from "../_shared/technical-docs.ts";
 
@@ -116,7 +117,7 @@ async function hashKey(key: string): Promise<string> {
 }
 
 
-async function handleHealthEndpoint(_supabase: ReturnType<typeof createClient>): Promise<Record<string, unknown>> {
+async function handleHealthEndpoint(_supabase: SupabaseLike): Promise<Record<string, unknown>> {
   return {
     status: "ok",
     generated_at: new Date().toISOString(),
@@ -2798,7 +2799,7 @@ function extractChangelogBlock(md: string): Array<{ date?: string; entry: string
 
 async function handleDocsTechnicalChangelog(
   url: URL,
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseLike,
 ): Promise<Record<string, unknown>> {
   const sinceParam = url.searchParams.get("since");
   const slugFilter = url.searchParams.get("slug");
