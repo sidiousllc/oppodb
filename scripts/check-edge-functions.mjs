@@ -104,7 +104,7 @@ for (let i = 0; i < fnDirs.length; i++) {
 
   if (!jsonOnly) process.stdout.write(`  [${i + 1}/${fnDirs.length}] ${name.padEnd(36)} `);
 
-  const result = runDeno(["check", "--no-lock", "-I", entry]);
+  const result = runDeno(["check", "--no-lock", "-I", "--node-modules-dir=auto", entry]);
   if (result.missing) {
     denoMissing = true;
     if (!jsonOnly) console.log(yellow("SKIP (deno not installed)"));
