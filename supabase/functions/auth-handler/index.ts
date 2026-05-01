@@ -93,7 +93,7 @@ serve(async (req) => {
         .eq("email", email.toLowerCase())
         .limit(1);
 
-      if (existing?.length > 0) {
+      if ((existing?.length ?? 0) > 0) {
         return new Response(JSON.stringify({ error: "Email already registered" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
