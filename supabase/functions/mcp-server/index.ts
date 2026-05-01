@@ -85,7 +85,7 @@ interface ToolDefinition {
   description: string;
   inputSchema: ToolInputSchema;
   // deno-lint-ignore no-explicit-any
-  handler: (args: any) => unknown | Promise<unknown>;
+  handler: (args: any, ctx?: any) => unknown | Promise<unknown>;
 }
 
 interface ToolRegistrar {
