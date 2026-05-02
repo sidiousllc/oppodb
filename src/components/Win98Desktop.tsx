@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSectionAccess } from "@/hooks/useSectionAccess";
 import { Win98Notepad } from "./Win98Notepad";
@@ -26,6 +27,7 @@ interface ContextMenuState {
 export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
   const { signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { isPremium } = useUserRole();
   const { canAccess } = useSectionAccess();
   const openApp = useOpenApp();
   const [notepadOpen, setNotepadOpen] = useState(false);
@@ -62,6 +64,7 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
     { label: "Task\nManager", icon: "📋", action: () => openApp("task-manager") },
     { label: "Log Off", icon: "🔌", action: () => signOut() },
     { label: "Deploy Checklist", icon: "✅", action: () => openApp("deploy-checklist"), condition: isAdmin },
+    { label: "MCP Tools", icon: "🧰", action: () => openApp("mcp-tools"), condition: isAdmin || isPremium },
   ];
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
