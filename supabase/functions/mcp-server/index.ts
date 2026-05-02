@@ -24,6 +24,31 @@ app.use("/*", async (c, next) => {
     return c.newResponse(null, 204);
   }
 
+  // Bridge bypass: mcp-bridge presents the service role + a precomputed key hash
+  // for an authenticated premium/admin user. We validate by re-checking the
+  // service role secret matches and the hash maps to a non-revoked key.
+  const bridgeSecret = c.req.header("X-MCP-Bridge-Secret");
+  const bridgeHash = c.req.header("X-MCP-Bridge-Key-Hash");
+  if (bridgeSecret && bridgeHash && bridgeSecret === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
+    const { data: keyData } = await supabase.rpc("validate_api_key", { p_key_hash: bridgeHash });
+    if (keyData && keyData.length > 0) {
+      const userId = keyData[0].user_id;
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+      const ok = roles?.some((r: { role: string }) => r.role === "premium" || r.role === "admin");
+      if (ok) {
+        supabase.rpc("log_api_request", {
+          p_key_id: keyData[0].key_id,
+          p_user_id: userId,
+          p_endpoint: "mcp-server-bridge",
+          p_status: 200,
+        }).then(() => {});
+        await next();
+        return;
+      }
+    }
+    return c.json({ error: "Bridge auth failed" }, 403);
+  }
+
   const apiKey = c.req.header("X-API-Key") || c.req.header("Authorization")?.replace("Bearer ", "");
   if (!apiKey) {
     return c.json({ error: "Missing API key. Provide via X-API-Key header." }, 401);
