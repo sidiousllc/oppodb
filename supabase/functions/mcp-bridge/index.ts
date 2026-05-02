@@ -145,25 +145,45 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Built-in mode: call this project's mcp-server using a service-issued API key.
-  // We mint a temporary in-memory key by calling validate_api_key isn't possible —
-  // instead we expose tools/list and tools/call via direct McpServer invocation
-  // by routing to /functions/v1/mcp-server with a server-side stored key.
-  const builtinKey = Deno.env.get("MCP_BRIDGE_BUILTIN_KEY") ?? "";
-  if (!builtinKey) {
+  // Built-in mode: forward to this project's mcp-server.
+  // The mcp-server requires an API key. Premium/admin users authenticate via
+  // their Supabase session here; we authorize using the service role and let
+  // mcp-server trust the bridge by passing a service header.
+  // Strategy: use the caller's most-recent active API key if present, otherwise
+  // return a clear error directing them to create one on /api.
+  const { data: keyRow } = await admin
+    .from("api_keys")
+    .select("key_hash")
+    .eq("user_id", userId)
+    .is("revoked_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!keyRow) {
     return new Response(
       JSON.stringify({
         error:
-          "Built-in MCP not configured. Set MCP_BRIDGE_BUILTIN_KEY secret to a valid API key for this project.",
+          "No active API key found. Create one on the API Access page before using built-in MCP tools.",
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 412, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
+
+  // mcp-server validates by hashing the provided key and looking it up. We only
+  // have the hash here, so we forward the hash directly via a trusted header
+  // recognized by mcp-server (added below).
   const builtinUrl = `${SUPABASE_URL}/functions/v1/mcp-server`;
   try {
     return await callStreamableHttp(
       builtinUrl,
-      { "X-API-Key": builtinKey, apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
+      {
+        "X-MCP-Bridge-User": userId,
+        "X-MCP-Bridge-Key-Hash": keyRow.key_hash as string,
+        "X-MCP-Bridge-Secret": SERVICE_ROLE,
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${ANON_KEY}`,
+      },
       rpc,
     );
   } catch (error) {
