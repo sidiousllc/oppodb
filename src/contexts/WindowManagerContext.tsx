@@ -93,22 +93,29 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
       // Available area — uses VisualViewport on mobile (accounts for virtual
       // keyboard / browser chrome) and desktop taskbar on desktop.
       const { vw, vh } = getUsableViewport();
+      const isMobile = vw < 768;
       // Try restoring persisted geometry first; fall back to cascade defaults.
       const saved = loadGeometry(appId);
-      const desiredW = saved?.width ?? size?.width ?? Math.min(900, Math.max(320, vw - 40));
-      const desiredH = saved?.height ?? size?.height ?? Math.min(640, Math.max(240, vh - 40));
-      const winW = Math.min(desiredW, Math.max(280, vw - 16));
-      const winH = Math.min(desiredH, Math.max(200, vh - 16));
+      // On mobile, ignore saved sizes and fit the screen so windows never
+      // exceed the viewport (which would force the user to scroll).
+      const desiredW = isMobile
+        ? Math.max(280, vw - 8)
+        : (saved?.width ?? size?.width ?? Math.min(900, Math.max(320, vw - 40)));
+      const desiredH = isMobile
+        ? Math.max(240, vh - 8)
+        : (saved?.height ?? size?.height ?? Math.min(640, Math.max(240, vh - 40)));
+      const winW = Math.min(desiredW, Math.max(280, vw - 8));
+      const winH = Math.min(desiredH, Math.max(200, vh - 8));
       let x: number;
       let y: number;
-      if (saved) {
-        // Re-clamp saved position through current usable viewport so a window
-        // that was stored when the viewport was larger stays on-screen.
+      if (isMobile) {
+        x = Math.max(0, Math.floor((vw - winW) / 2));
+        y = 4;
+      } else if (saved) {
         const clamped = clampGeometry({ x: saved.x, y: saved.y, width: winW, height: winH });
         x = clamped.x;
         y = clamped.y;
       } else {
-        // Cascade position so multiple windows don't overlap exactly
         const idx = openIndexRef.current++;
         const baseX = 20 + (idx % 8) * 28;
         const baseY = 20 + (idx % 8) * 24;
