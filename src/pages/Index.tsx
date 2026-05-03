@@ -85,7 +85,15 @@ export default function Index() {
   const [researchSubsection, setResearchSubsection] = useState<string | null>(null);
   const [candidateSubsection, setCandidateSubsection] = useState<"profiles" | "maga-files">("profiles");
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState<boolean>(() => {
+    // Show the Win98 desktop first on initial login; remember the user's
+    // preference for subsequent visits in the same browser.
+    try {
+      const v = localStorage.getItem("ordb:showDesktopFirst");
+      if (v === "0") return false;
+    } catch {}
+    return true;
+  });
   const [hasLoadedStateLegDistricts, setHasLoadedStateLegDistricts] = useState(false);
   const [editData, setEditData] = useState<{
     id: string; name: string; slug: string; content: string;
@@ -592,14 +600,14 @@ export default function Index() {
       {/* Desktop background */}
       <div className={`flex flex-col h-screen bg-[hsl(var(--background))] ${section === "dashboard" && !selectedSlug && !editorMode ? "pb-[72px]" : "pb-[50px]"}`}>
         {isMinimized ? (
-          <Win98Desktop onOpenWindow={() => setIsMinimized(false)} />
+          <Win98Desktop onOpenWindow={() => { try { localStorage.setItem("ordb:showDesktopFirst","0"); } catch {} setIsMinimized(false); }} />
         ) : (
           /* Main ORO browser window */
           <Win98Window
             title="OppoDB - Opposition Research Database"
             icon={<span className="text-[14px]">🌐</span>}
             maximized
-            onMinimize={() => setIsMinimized(true)}
+            onMinimize={() => { try { localStorage.setItem("ordb:showDesktopFirst","1"); } catch {} setIsMinimized(true); }}
           >
             {/* AOL Browser chrome */}
             <AOLToolbar
