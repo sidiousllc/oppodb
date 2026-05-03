@@ -211,16 +211,17 @@ export function Win98Window({
 
   const isFullWindow = isMaximized || maximized;
 
+  // Larger touch targets on mobile (touch-friendly hit areas, visually thin)
   const resizeHandles = isPositioned && !isFullWindow ? (
     <>
-      <div className="absolute top-0 left-1 right-1 h-[3px] cursor-n-resize" onMouseDown={(e) => onResizeStart(e, "n")} />
-      <div className="absolute bottom-0 left-1 right-1 h-[3px] cursor-s-resize" onMouseDown={(e) => onResizeStart(e, "s")} />
-      <div className="absolute left-0 top-1 bottom-1 w-[3px] cursor-w-resize" onMouseDown={(e) => onResizeStart(e, "w")} />
-      <div className="absolute right-0 top-1 bottom-1 w-[3px] cursor-e-resize" onMouseDown={(e) => onResizeStart(e, "e")} />
-      <div className="absolute top-0 left-0 w-[6px] h-[6px] cursor-nw-resize" onMouseDown={(e) => onResizeStart(e, "nw")} />
-      <div className="absolute top-0 right-0 w-[6px] h-[6px] cursor-ne-resize" onMouseDown={(e) => onResizeStart(e, "ne")} />
-      <div className="absolute bottom-0 left-0 w-[6px] h-[6px] cursor-sw-resize" onMouseDown={(e) => onResizeStart(e, "sw")} />
-      <div className="absolute bottom-0 right-0 w-[6px] h-[6px] cursor-se-resize" onMouseDown={(e) => onResizeStart(e, "se")} />
+      <div className="absolute -top-1 left-2 right-2 h-3 cursor-n-resize touch-none" style={{ touchAction: "none" }} onPointerDown={(e) => onResizeStart(e, "n")} />
+      <div className="absolute -bottom-1 left-2 right-2 h-3 cursor-s-resize touch-none" style={{ touchAction: "none" }} onPointerDown={(e) => onResizeStart(e, "s")} />
+      <div className="absolute -left-1 top-2 bottom-2 w-3 cursor-w-resize touch-none" style={{ touchAction: "none" }} onPointerDown={(e) => onResizeStart(e, "w")} />
+      <div className="absolute -right-1 top-2 bottom-2 w-3 cursor-e-resize touch-none" style={{ touchAction: "none" }} onPointerDown={(e) => onResizeStart(e, "e")} />
+      <div className="absolute -top-1 -left-1 w-4 h-4 cursor-nw-resize touch-none" style={{ touchAction: "none" }} onPointerDown={(e) => onResizeStart(e, "nw")} />
+      <div className="absolute -top-1 -right-1 w-4 h-4 cursor-ne-resize touch-none" style={{ touchAction: "none" }} onPointerDown={(e) => onResizeStart(e, "ne")} />
+      <div className="absolute -bottom-1 -left-1 w-4 h-4 cursor-sw-resize touch-none" style={{ touchAction: "none" }} onPointerDown={(e) => onResizeStart(e, "sw")} />
+      <div className="absolute -bottom-1 -right-1 w-4 h-4 cursor-se-resize touch-none" style={{ touchAction: "none" }} onPointerDown={(e) => onResizeStart(e, "se")} />
     </>
   ) : null;
 
