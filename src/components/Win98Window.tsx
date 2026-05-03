@@ -247,8 +247,8 @@ export function Win98Window({
       <div
         className="win98-titlebar"
         onDoubleClick={handleMaximize}
-        onMouseDown={isPositioned ? onDragStart : undefined}
-        style={isPositioned && !isFullWindow ? { cursor: "move" } : undefined}
+        onPointerDown={isPositioned ? onDragStart : undefined}
+        style={isPositioned && !isFullWindow ? { cursor: "move", touchAction: "none" } : undefined}
       >
         {icon && <span className="shrink-0">{icon}</span>}
         <span className="flex-1 truncate text-[11px]">{title}</span>
