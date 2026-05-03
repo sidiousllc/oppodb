@@ -85,7 +85,15 @@ export default function Index() {
   const [researchSubsection, setResearchSubsection] = useState<string | null>(null);
   const [candidateSubsection, setCandidateSubsection] = useState<"profiles" | "maga-files">("profiles");
   const [editorMode, setEditorMode] = useState<"create" | "edit" | null>(null);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState<boolean>(() => {
+    // Show the Win98 desktop first on initial login; remember the user's
+    // preference for subsequent visits in the same browser.
+    try {
+      const v = localStorage.getItem("ordb:showDesktopFirst");
+      if (v === "0") return false;
+    } catch {}
+    return true;
+  });
   const [hasLoadedStateLegDistricts, setHasLoadedStateLegDistricts] = useState(false);
   const [editData, setEditData] = useState<{
     id: string; name: string; slug: string; content: string;
