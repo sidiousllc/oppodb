@@ -600,14 +600,14 @@ export default function Index() {
       {/* Desktop background */}
       <div className={`flex flex-col h-screen bg-[hsl(var(--background))] ${section === "dashboard" && !selectedSlug && !editorMode ? "pb-[72px]" : "pb-[50px]"}`}>
         {isMinimized ? (
-          <Win98Desktop onOpenWindow={() => setIsMinimized(false)} />
+          <Win98Desktop onOpenWindow={() => { try { localStorage.setItem("ordb:showDesktopFirst","0"); } catch {} setIsMinimized(false); }} />
         ) : (
           /* Main ORO browser window */
           <Win98Window
             title="OppoDB - Opposition Research Database"
             icon={<span className="text-[14px]">🌐</span>}
             maximized
-            onMinimize={() => setIsMinimized(true)}
+            onMinimize={() => { try { localStorage.setItem("ordb:showDesktopFirst","1"); } catch {} setIsMinimized(true); }}
           >
             {/* AOL Browser chrome */}
             <AOLToolbar
