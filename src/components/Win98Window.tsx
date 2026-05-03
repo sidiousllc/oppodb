@@ -81,7 +81,7 @@ export function Win98Window({
   };
 
   const onDragStart = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.PointerEvent) => {
       if (isMaximized || maximized) return;
       if ((e.target as HTMLElement).closest("button")) return;
       isDragging.current = true;
@@ -90,13 +90,14 @@ export function Win98Window({
         y: e.clientY - position.y,
       };
       handleFocus();
+      try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch {}
       e.preventDefault();
     },
     [position, isMaximized, maximized, handleFocus]
   );
 
   const onResizeStart = useCallback(
-    (e: React.MouseEvent, direction: string) => {
+    (e: React.PointerEvent, direction: string) => {
       if (isMaximized || maximized) return;
       isResizing.current = direction;
       resizeStart.current = {
@@ -108,6 +109,7 @@ export function Win98Window({
         py: position.y,
       };
       handleFocus();
+      try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch {}
       e.preventDefault();
       e.stopPropagation();
     },
@@ -121,7 +123,10 @@ export function Win98Window({
     const snap = (val: number, target: number) =>
       Math.abs(val - target) < SNAP_THRESHOLD ? target : val;
 
-    const onMouseMove = (e: MouseEvent) => {
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDragging.current && !isResizing.current) return;
+      // Prevent page scroll while dragging/resizing on touch devices
+      if (e.cancelable) e.preventDefault();
       if (isDragging.current) {
         let x = e.clientX - dragOffset.current.x;
         let y = Math.max(0, e.clientY - dragOffset.current.y);
@@ -131,11 +136,14 @@ export function Win98Window({
         const w = el?.offsetWidth ?? size.width;
         const h = el?.offsetHeight ?? size.height;
 
-        // Snap to edges
-        x = snap(x, 0); // left
-        x = snap(x, vw - w); // right
-        y = snap(y, 0); // top
-        y = snap(y, vh - h); // bottom
+        x = snap(x, 0);
+        x = snap(x, vw - w);
+        y = snap(y, 0);
+        y = snap(y, vh - h);
+
+        // Clamp so window can never be dragged off-screen
+        x = Math.max(0, Math.min(x, Math.max(0, vw - w)));
+        y = Math.max(0, Math.min(y, Math.max(0, vh - h)));
 
         setPosition({ x, y });
       }
@@ -165,17 +173,22 @@ export function Win98Window({
           }
         }
 
+        // Clamp to viewport
+        const vw = window.innerWidth;
+        const vh = window.innerHeight - TASKBAR_HEIGHT;
+        newW = Math.min(newW, Math.max(minSize.width, vw - newX));
+        newH = Math.min(newH, Math.max(minSize.height, vh - newY));
+
         setSize({ width: newW, height: newH });
         setPosition({ x: newX, y: newY });
       }
     };
 
-    const onMouseUp = () => {
+    const onPointerUp = () => {
       const wasInteracting = isDragging.current || !!isResizing.current;
       isDragging.current = false;
       isResizing.current = null;
       if (wasInteracting && onGeometryChange) {
-        // Read the latest values via functional setState to avoid stale closures.
         setPosition((p) => {
           setSize((s) => {
             onGeometryChange({ x: p.x, y: p.y, width: s.width, height: s.height });
@@ -186,11 +199,13 @@ export function Win98Window({
       }
     };
 
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("pointermove", onPointerMove, { passive: false });
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
     return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
     };
   }, [minSize, onGeometryChange]);
 
