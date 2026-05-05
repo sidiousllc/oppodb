@@ -17,8 +17,9 @@ import {
 import { toast } from "sonner";
 import { Save, Trash2, Plus, Ban, ShieldCheck, KeyRound, Lock, Unlock } from "lucide-react";
 import { UserLocationSection } from "@/components/UserLocationSection";
+import { AdminBillingSection } from "@/components/AdminBillingSection";
 
-type UserTab = "info" | "password" | "roles" | "permissions" | "location";
+type UserTab = "info" | "password" | "roles" | "permissions" | "location" | "billing";
 
 const AVAILABLE_ROLES = ["admin", "moderator", "premium", "user"];
 const SUSPEND_DURATIONS = [
@@ -48,6 +49,7 @@ export function AdminUserWindow({ user, onClose, onUserUpdated, windowIndex = 0 
     { id: "password", label: "Password", emoji: "🔑" },
     { id: "roles", label: "Roles & Groups", emoji: "🛡️" },
     { id: "permissions", label: "Permissions", emoji: "🔒" },
+    { id: "billing", label: "Billing", emoji: "💳" },
     { id: "location", label: "Location", emoji: "📍" },
   ];
 
@@ -94,6 +96,9 @@ export function AdminUserWindow({ user, onClose, onUserUpdated, windowIndex = 0 
           )}
           {activeTab === "permissions" && (
             <UserPermissionsSection user={currentUser} />
+          )}
+          {activeTab === "billing" && (
+            <AdminBillingSection userId={currentUser.id} userEmail={currentUser.email} />
           )}
           {activeTab === "location" && (
             <UserLocationSection userId={currentUser.id} />
