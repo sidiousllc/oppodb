@@ -418,14 +418,22 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     title: "War Rooms",
     icon: "⚔️",
     singleton: true,
-    render: () => <div className="p-3"><WarRoomHub /></div>,
+    render: () => (
+      <TierGate requires="enterprise" feature="War Rooms">
+        <div className="p-3"><WarRoomHub /></div>
+      </TierGate>
+    ),
   },
   crm: {
     id: "crm",
     title: "Stakeholders",
     icon: "🤝",
     singleton: true,
-    render: () => <div className="p-3"><CRMHub /></div>,
+    render: () => (
+      <TierGate requires="pro" feature="Stakeholder CRM">
+        <div className="p-3"><CRMHub /></div>
+      </TierGate>
+    ),
   },
   forecast: {
     id: "forecast",
@@ -439,14 +447,22 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     title: "Investigations",
     icon: "🔍",
     singleton: true,
-    render: () => <div className="p-3"><InvestigationsPanel /></div>,
+    render: () => (
+      <TierGate requires="pro" feature="Investigations">
+        <div className="p-3"><InvestigationsPanel /></div>
+      </TierGate>
+    ),
   },
   graph: {
     id: "graph",
     title: "Entity Graph",
     icon: "🕸️",
     singleton: true,
-    render: () => <div className="p-3"><GraphHub /></div>,
+    render: () => (
+      <TierGate requires="pro" feature="Entity Graph">
+        <div className="p-3"><GraphHub /></div>
+      </TierGate>
+    ),
   },
 
   // ─── Research Tools sub-panels (each its own window) ───────────────────────
