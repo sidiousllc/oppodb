@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
     const userId = keyData[0].user_id;
 
     // Parse endpoint from URL path
-    const url = new URL(req.url);
+    // url already declared above
     const pathParts = url.pathname.split("/").filter(Boolean);
     // Path: /public-api/{endpoint}
     const endpoint = pathParts[pathParts.length - 1] || "";
