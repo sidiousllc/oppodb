@@ -934,10 +934,17 @@ mcp.tool("master_search", {
     ];
 
     const requestedCategories = args.categories as string[] | undefined;
-    const activeCategories = requestedCategories?.length
+    let activeCategories = requestedCategories?.length
       ? requestedCategories.filter(c => ALL_CATEGORIES.includes(c))
       : ALL_CATEGORIES;
-
+    // Strip Research Book categories for callers without Pro/Enterprise.
+    const gatedOut: string[] = [];
+    if (!caller.hasResearchBook) {
+      activeCategories = activeCategories.filter(c => {
+        if (RESEARCH_BOOK_CATEGORIES.has(c)) { gatedOut.push(c); return false; }
+        return true;
+      });
+    }
     const queries: Record<string, PromiseLike<{ label: string; data: unknown[] }>> = {};
 
     if (activeCategories.includes("candidates")) {
