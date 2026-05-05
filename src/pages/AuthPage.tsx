@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Win98Window } from "@/components/Win98Window";
 import { AOLDialUpAnimation } from "@/components/AOLDialUpAnimation";
+import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 
 const PRODUCTION_ORIGIN = "https://oppodb.com";
 const getRedirectOrigin = () => {
