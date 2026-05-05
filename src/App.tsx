@@ -24,6 +24,7 @@ import LocalFeedsStateSources from "./pages/LocalFeedsStateSources.tsx";
 import LocalFeedsAudit from "./pages/LocalFeedsAudit.tsx";
 import StatusPage from "./pages/StatusPage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
+import LegalPage from "./pages/LegalPage.tsx";
 import { initOfflineSync } from "./lib/offlineSync";
 import { LocationTrackerInit } from "./hooks/useLocationTracker";
 
