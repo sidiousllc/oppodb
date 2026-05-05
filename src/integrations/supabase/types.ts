@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_billing_actions: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          subscription_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          subscription_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          subscription_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_generation_history: {
         Row: {
           created_at: string
