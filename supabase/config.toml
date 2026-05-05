@@ -64,6 +64,14 @@ project_id = "yysbtxpupmwkxovgkama"
     verify_jwt = false
   [functions.handle-email-suppression]
     verify_jwt = false
+  [functions.payments-webhook]
+    verify_jwt = false
+  [functions.get-paddle-price]
+    verify_jwt = false
+  [functions.customer-portal]
+    verify_jwt = true
+  [functions.change-subscription]
+    verify_jwt = true
 
 [functions.health]
   verify_jwt = false
