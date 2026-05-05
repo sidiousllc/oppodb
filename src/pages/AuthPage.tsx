@@ -432,6 +432,17 @@ export default function AuthPage() {
               </button>
             )}
           </div>
+
+          {/* Legal footer — required by Paddle */}
+          <div className="mt-3 pt-2 border-t border-[hsl(var(--win98-shadow))] text-center text-[10px] text-[hsl(var(--muted-foreground))] space-x-2">
+            <a href="/legal/terms" className="underline">Terms</a>
+            <span>·</span>
+            <a href="/legal/privacy" className="underline">Privacy</a>
+            <span>·</span>
+            <a href="/legal/refund" className="underline">Refunds</a>
+            <span>·</span>
+            <a href="/legal/acceptable-use" className="underline">Acceptable Use</a>
+          </div>
         </div>
       </Win98Window>
     </div>

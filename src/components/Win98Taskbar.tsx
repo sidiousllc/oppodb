@@ -102,6 +102,13 @@ export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarP
                   </button>
                   <div className="mx-2 my-1 border-t border-[hsl(var(--win98-shadow))]" />
                   <button
+                    onClick={() => { openWindow({ appId: "legal-terms", title: "Terms of Service", icon: "📜", singleton: true, size: { width: 720, height: 600 } }); setStartOpen(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-[11px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
+                  >
+                    <span>📜</span> Legal & Policies
+                  </button>
+                  <div className="mx-2 my-1 border-t border-[hsl(var(--win98-shadow))]" />
+                  <button
                     onClick={() => { signOut(); setStartOpen(false); }}
                     className="flex w-full items-center gap-2 px-3 py-1.5 text-[11px] hover:bg-[hsl(var(--win98-titlebar))] hover:text-white"
                   >
