@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAccess } from "@/hooks/useAccess";
 
 type MenuItem = {
   label: string;

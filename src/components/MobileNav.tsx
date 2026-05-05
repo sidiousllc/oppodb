@@ -2,6 +2,7 @@ import { forwardRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppSidebar, type FilterCategory, type Section } from "./AppSidebar";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAccess } from "@/hooks/useAccess";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 

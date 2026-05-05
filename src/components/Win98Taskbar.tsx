@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAccess } from "@/hooks/useAccess";
 import { OfflineStatusIndicator } from "@/components/OfflineStatusIndicator";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 
