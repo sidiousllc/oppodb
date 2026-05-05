@@ -13,7 +13,8 @@ interface Win98TaskbarProps {
 export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarProps) {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
-  const { canManageContent, canAccessApi } = useUserRole();
+  const { canManageContent } = useUserRole();
+  const { hasApi: canAccessApi } = useAccess();
   const { windows, focusWindow, minimizeWindow, openWindow } = useWindowManager();
   const [time, setTime] = useState("");
   const [startOpen, setStartOpen] = useState(false);

@@ -47,7 +47,8 @@ function MenuDropdown({ items, onClose }: { items: MenuItem[]; onClose: () => vo
 export function Win98MenuBar() {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
-  const { canManageContent, canAccessApi } = useUserRole();
+  const { canManageContent } = useUserRole();
+  const { hasApi: canAccessApi } = useAccess();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
 

@@ -18,7 +18,8 @@ interface MobileNavProps {
 export const MobileNav = forwardRef<HTMLDivElement, MobileNavProps>(
   ({ activeFilter, onFilterChange, counts, activeSection, onSectionChange, sectionCounts, onSyncComplete }, ref) => {
     const navigate = useNavigate();
-    const { canManageContent, canAccessApi } = useUserRole();
+    const { canManageContent } = useUserRole();
+    const { hasApi: canAccessApi } = useAccess();
     const { signOut } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [accountOpen, setAccountOpen] = useState(false);
