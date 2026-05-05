@@ -401,6 +401,38 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     size: { width: 560, height: 520 },
     render: () => <MySubscriptionWindow />,
   },
+  "legal-terms": {
+    id: "legal-terms",
+    title: "Terms of Service",
+    icon: "📜",
+    singleton: true,
+    size: { width: 720, height: 600 },
+    render: (p) => <LegalDocWindow docId={(p?.docId as LegalDocId) ?? "terms"} />,
+  },
+  "legal-privacy": {
+    id: "legal-privacy",
+    title: "Privacy Notice",
+    icon: "🔒",
+    singleton: true,
+    size: { width: 720, height: 600 },
+    render: () => <LegalDocWindow docId="privacy" />,
+  },
+  "legal-refund": {
+    id: "legal-refund",
+    title: "Refund Policy",
+    icon: "💸",
+    singleton: true,
+    size: { width: 640, height: 520 },
+    render: () => <LegalDocWindow docId="refund" />,
+  },
+  "legal-aup": {
+    id: "legal-aup",
+    title: "Acceptable Use Policy",
+    icon: "🛡️",
+    singleton: true,
+    size: { width: 720, height: 600 },
+    render: () => <LegalDocWindow docId="aup" />,
+  },
   // Notepad is rendered directly via Win98Notepad in Win98Desktop (it wraps its own window)
   "recycle-bin": {
     id: "recycle-bin",
