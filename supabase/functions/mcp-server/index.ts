@@ -33,9 +33,11 @@ app.use("/*", async (c, next) => {
     const { data: keyData } = await supabase.rpc("validate_api_key", { p_key_hash: bridgeHash });
     if (keyData && keyData.length > 0) {
       const userId = keyData[0].user_id;
-      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-      const ok = roles?.some((r: { role: string }) => r.role === "premium" || r.role === "admin");
-      if (ok) {
+      const { data: ok } = await supabase.rpc("has_api_entitlement", {
+        user_uuid: userId,
+        check_env: "live",
+      });
+      if (ok === true) {
         supabase.rpc("log_api_request", {
           p_key_id: keyData[0].key_id,
           p_user_id: userId,
@@ -63,18 +65,14 @@ app.use("/*", async (c, next) => {
     return c.json({ error: "Invalid or revoked API key" }, 403);
   }
 
-  // Verify user has premium or admin role
+  // Verify user has an active API entitlement (admin or paid Pro/Enterprise/API plan)
   const userId = keyData[0].user_id;
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-
-  const hasPremiumAccess = roles?.some(
-    (r: { role: string }) => r.role === "premium" || r.role === "admin"
-  );
-  if (!hasPremiumAccess) {
-    return c.json({ error: "Premium or admin role required for MCP access" }, 403);
+  const { data: entitled } = await supabase.rpc("has_api_entitlement", {
+    user_uuid: userId,
+    check_env: "live",
+  });
+  if (entitled !== true) {
+    return c.json({ error: "Active Pro, Enterprise, or API & MCP plan required for MCP access" }, 403);
   }
 
   // Log the request
