@@ -1320,6 +1320,7 @@ mcp.tool("master_search", {
           categories_searched: settled.length,
           categories_with_results: Object.keys(categories).length,
           categories,
+          ...(gatedOut.length ? { gated_categories: gatedOut, gated_message: "Research Book content (MAGA Files, Narrative Reports, Local Impacts) requires Pro or Enterprise tier." } : {}),
         }, null, 2),
       }],
     };
