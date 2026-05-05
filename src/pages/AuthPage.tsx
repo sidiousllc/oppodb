@@ -356,6 +356,30 @@ export default function AuthPage() {
             </div>
           )}
 
+          {/* Subscribe directly from login */}
+          {mode === "login" && (
+            <div className="mt-3 win98-sunken bg-white p-2">
+              <div className="text-[11px] font-bold mb-1">💳 Subscribe now</div>
+              <p className="text-[10px] text-[hsl(var(--muted-foreground))] mb-2">
+                Purchase a plan before signing in. We'll link it to your email.
+              </p>
+              <div className="grid grid-cols-2 gap-1">
+                {PLANS.map(p => (
+                  <button
+                    key={p.priceId}
+                    type="button"
+                    onClick={() => handleBuy(p.priceId)}
+                    disabled={checkoutLoading}
+                    className="win98-button text-[10px] px-1 py-1 disabled:opacity-50 text-left"
+                  >
+                    <div className="font-bold">{p.label}</div>
+                    <div className="text-[9px]">{p.price}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Footer links */}
           <div className="text-center text-[10px] text-[hsl(var(--muted-foreground))] space-y-1">
             {mode === "login" && (
