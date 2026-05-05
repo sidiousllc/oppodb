@@ -377,6 +377,14 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     size: { width: 820, height: 580 },
     render: () => <McpToolsWindow />,
   },
+  pricing: {
+    id: "pricing",
+    title: "Upgrade / Billing",
+    icon: "💳",
+    singleton: true,
+    size: { width: 720, height: 560 },
+    render: () => <PricingWindow />,
+  },
   // Notepad is rendered directly via Win98Notepad in Win98Desktop (it wraps its own window)
   "recycle-bin": {
     id: "recycle-bin",
