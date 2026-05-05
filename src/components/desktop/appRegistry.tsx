@@ -32,6 +32,7 @@ import { BillDetailWindow } from "@/components/BillDetailWindow";
 import { SystemStatusWindow } from "@/components/SystemStatusWindow";
 import { DeployChecklistWindow } from "@/components/DeployChecklistWindow";
 import { McpToolsWindow } from "@/components/McpToolsWindow";
+import { PricingWindow } from "@/components/PricingWindow";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
@@ -375,6 +376,14 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     singleton: true,
     size: { width: 820, height: 580 },
     render: () => <McpToolsWindow />,
+  },
+  pricing: {
+    id: "pricing",
+    title: "Upgrade / Billing",
+    icon: "💳",
+    singleton: true,
+    size: { width: 720, height: 560 },
+    render: () => <PricingWindow />,
   },
   // Notepad is rendered directly via Win98Notepad in Win98Desktop (it wraps its own window)
   "recycle-bin": {

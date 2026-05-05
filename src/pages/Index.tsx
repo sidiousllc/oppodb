@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Win98Window } from "@/components/Win98Window";
 import { Win98Taskbar } from "@/components/Win98Taskbar";
 import { NewsTicker } from "@/components/NewsTicker";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { AOLToolbar } from "@/components/AOLToolbar";
 import { Win98Desktop } from "@/components/Win98Desktop";
 import { DesktopWindowHost } from "@/components/desktop/DesktopWindowHost";
@@ -610,6 +611,7 @@ export default function Index() {
             onMinimize={() => { try { localStorage.setItem("ordb:showDesktopFirst","1"); } catch {} setIsMinimized(true); }}
           >
             {/* AOL Browser chrome */}
+            <PaymentTestModeBanner />
             <AOLToolbar
               onBack={selectedSlug ? () => setSelectedSlug(null) : undefined}
               onRefresh={() => window.location.reload()}
