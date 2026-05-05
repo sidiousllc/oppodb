@@ -34,6 +34,7 @@ import { DeployChecklistWindow } from "@/components/DeployChecklistWindow";
 import { McpToolsWindow } from "@/components/McpToolsWindow";
 import { PricingWindow } from "@/components/PricingWindow";
 import { MySubscriptionWindow } from "@/components/MySubscriptionWindow";
+import { TierGate } from "@/components/TierGate";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
