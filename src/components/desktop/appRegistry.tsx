@@ -34,6 +34,8 @@ import { DeployChecklistWindow } from "@/components/DeployChecklistWindow";
 import { McpToolsWindow } from "@/components/McpToolsWindow";
 import { PricingWindow } from "@/components/PricingWindow";
 import { MySubscriptionWindow } from "@/components/MySubscriptionWindow";
+import { LegalDocWindow } from "@/components/LegalDocWindow";
+import type { LegalDocId } from "@/data/legal";
 import { TierGate } from "@/components/TierGate";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
