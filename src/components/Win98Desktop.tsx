@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useAccess } from "@/hooks/useAccess";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSectionAccess } from "@/hooks/useSectionAccess";
 import { Win98Notepad } from "./Win98Notepad";
@@ -27,7 +27,7 @@ interface ContextMenuState {
 export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
   const { signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const { isPremium } = useUserRole();
+  const { hasPro, hasEnterprise, hasMcpTools, hasApi, hasWarRoom } = useAccess();
   const { canAccess } = useSectionAccess();
   const openApp = useOpenApp();
   const [notepadOpen, setNotepadOpen] = useState(false);
@@ -40,7 +40,7 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
     { label: "My Profile", icon: "👤", action: () => openApp("profile") },
     { label: "Recycle Bin", icon: "🗑️", action: () => openApp("recycle-bin") },
     { label: "Admin Panel", icon: "🛡️", action: () => openApp("admin") },
-    { label: "API Access", icon: "🔑", action: () => openApp("api") },
+    { label: "API Access", icon: "🔑", action: () => openApp("api"), condition: hasApi },
     { label: "Network\nNeighborhood", icon: "🌍", action: () => openApp("network-neighborhood") },
     { label: "Notepad", icon: "📝", action: () => setNotepadOpen(true) },
     // Sidebar sections as desktop shortcuts
@@ -53,18 +53,18 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
     { label: "International\nHub", icon: "🌐", action: () => openApp("internationalhub") },
     { label: "Live\nElections", icon: "🏛️", action: () => openApp("live-elections") },
     { label: "ReportHub", icon: "📝", action: () => openApp("reports") },
-    { label: "War Room", icon: "🎖️", action: () => openApp("warroom") },
-    { label: "CRM", icon: "👥", action: () => openApp("crm") },
+    { label: "War Room", icon: "🎖️", action: () => openApp("warroom"), condition: hasWarRoom },
+    { label: "CRM", icon: "👥", action: () => openApp("crm"), condition: hasPro },
     { label: "Alerts", icon: "🚨", action: () => openApp("alerts") },
     { label: "Forecast", icon: "📈", action: () => openApp("forecast") },
-    { label: "Investigations", icon: "🔍", action: () => openApp("investigations") },
-    { label: "Graph", icon: "🕸️", action: () => openApp("graph") },
+    { label: "Investigations", icon: "🔍", action: () => openApp("investigations"), condition: hasPro },
+    { label: "Graph", icon: "🕸️", action: () => openApp("graph"), condition: hasPro },
     { label: "Documentation", icon: "📖", action: () => openApp("documentation") },
-    { label: "AI History", icon: "🧠", action: () => openApp("ai-history") },
+    { label: "AI History", icon: "🧠", action: () => openApp("ai-history"), condition: hasPro },
     { label: "Task\nManager", icon: "📋", action: () => openApp("task-manager") },
     { label: "Log Off", icon: "🔌", action: () => signOut() },
     { label: "Deploy Checklist", icon: "✅", action: () => openApp("deploy-checklist"), condition: isAdmin },
-    { label: "MCP Tools", icon: "🧰", action: () => openApp("mcp-tools"), condition: isAdmin || isPremium },
+    { label: "MCP Tools", icon: "🧰", action: () => openApp("mcp-tools"), condition: hasMcpTools },
     { label: "Upgrade /\nBilling", icon: "💳", action: () => openApp("pricing") },
     { label: "My\nSubscription", icon: "🧾", action: () => openApp("my-subscription") },
   ];
