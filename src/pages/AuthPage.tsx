@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Win98Window } from "@/components/Win98Window";
 import { AOLDialUpAnimation } from "@/components/AOLDialUpAnimation";
+import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 
 const PRODUCTION_ORIGIN = "https://oppodb.com";
 const getRedirectOrigin = () => {
@@ -25,6 +26,22 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [inviteInfo, setInviteInfo] = useState<{ email: string; role: string } | null>(null);
+  const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
+
+  const PLANS = [
+    { priceId: "pro_monthly",        label: "Pro",            price: "$49/mo" },
+    { priceId: "pro_yearly",         label: "Pro Yearly",     price: "$490/yr" },
+    { priceId: "enterprise_monthly", label: "Enterprise",     price: "$199/mo" },
+    { priceId: "api_access_monthly", label: "API & MCP",      price: "$99/mo" },
+  ];
+
+  const handleBuy = (priceId: string) => {
+    openCheckout({
+      priceId,
+      customerEmail: email || undefined,
+      successUrl: `${window.location.origin}/?checkout=success`,
+    });
+  };
 
   // Check URL for invite token
   useEffect(() => {
@@ -336,6 +353,30 @@ export default function AuthPage() {
                 </svg>
                 Continue with Google
               </button>
+            </div>
+          )}
+
+          {/* Subscribe directly from login */}
+          {mode === "login" && (
+            <div className="mt-3 win98-sunken bg-white p-2">
+              <div className="text-[11px] font-bold mb-1">💳 Subscribe now</div>
+              <p className="text-[10px] text-[hsl(var(--muted-foreground))] mb-2">
+                Purchase a plan before signing in. We'll link it to your email.
+              </p>
+              <div className="grid grid-cols-2 gap-1">
+                {PLANS.map(p => (
+                  <button
+                    key={p.priceId}
+                    type="button"
+                    onClick={() => handleBuy(p.priceId)}
+                    disabled={checkoutLoading}
+                    className="win98-button text-[10px] px-1 py-1 disabled:opacity-50 text-left"
+                  >
+                    <div className="font-bold">{p.label}</div>
+                    <div className="text-[9px]">{p.price}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
