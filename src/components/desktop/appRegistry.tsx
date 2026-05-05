@@ -492,14 +492,22 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     title: "War Rooms",
     icon: "⚔️",
     singleton: true,
-    render: () => <div className="p-3"><WarRoomHub /></div>,
+    render: () => (
+      <TierGate requires="enterprise" feature="War Rooms">
+        <div className="p-3"><WarRoomHub /></div>
+      </TierGate>
+    ),
   },
   stakeholders: {
     id: "stakeholders",
     title: "Stakeholders (CRM)",
     icon: "🤝",
     singleton: true,
-    render: () => <div className="p-3"><CRMHub /></div>,
+    render: () => (
+      <TierGate requires="pro" feature="Stakeholder CRM">
+        <div className="p-3"><CRMHub /></div>
+      </TierGate>
+    ),
   },
   "forecast-lab": {
     id: "forecast-lab",
