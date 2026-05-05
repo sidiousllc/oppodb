@@ -16,6 +16,7 @@ function tierFromPriceId(priceId: string | undefined): string | null {
   if (!priceId) return null;
   if (priceId.startsWith('enterprise_')) return 'enterprise';
   if (priceId.startsWith('pro_')) return 'pro';
+  if (priceId.startsWith('api_')) return 'api';
   return null;
 }
 
