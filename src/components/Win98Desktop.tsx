@@ -66,6 +66,7 @@ export function Win98Desktop({ onOpenWindow }: Win98DesktopProps) {
     { label: "Deploy Checklist", icon: "✅", action: () => openApp("deploy-checklist"), condition: isAdmin },
     { label: "MCP Tools", icon: "🧰", action: () => openApp("mcp-tools"), condition: isAdmin || isPremium },
     { label: "Upgrade /\nBilling", icon: "💳", action: () => openApp("pricing") },
+    { label: "My\nSubscription", icon: "🧾", action: () => openApp("my-subscription") },
   ];
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
