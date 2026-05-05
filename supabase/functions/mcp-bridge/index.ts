@@ -87,14 +87,18 @@ Deno.serve(async (req) => {
   }
   const userId = userRes.user.id;
 
-  // 2. Authorize: premium OR admin role.
+  // 2. Authorize: must have active API entitlement (admin or paid Pro/Enterprise/API plan).
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-  const { data: roleRows } = await admin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-  const roles = (roleRows ?? []).map((r: { role: string }) => r.role);
-  if (!roles.some((r) => r === "admin" || r === "premium")) {
+  const { data: entitled } = await admin.rpc("has_api_entitlement", {
+    user_uuid: userId,
+    check_env: "live",
+  });
+  if (entitled !== true) {
+    return new Response(
+      JSON.stringify({ error: "Active Pro, Enterprise, or API & MCP plan required" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
     return new Response(
       JSON.stringify({ error: "Premium or admin role required" }),
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
