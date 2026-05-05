@@ -32,6 +32,7 @@ import { BillDetailWindow } from "@/components/BillDetailWindow";
 import { SystemStatusWindow } from "@/components/SystemStatusWindow";
 import { DeployChecklistWindow } from "@/components/DeployChecklistWindow";
 import { McpToolsWindow } from "@/components/McpToolsWindow";
+import { PricingWindow } from "@/components/PricingWindow";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
