@@ -89,6 +89,13 @@ const App = () => {
                 <Route path="/r/:id" element={<PublicReport />} />
                 <Route path="/status" element={<StatusPage />} />
                 <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/legal" element={<LegalPage />} />
+                <Route path="/legal/:slug" element={<LegalPage />} />
+                <Route path="/terms" element={<Navigate to="/legal/terms" replace />} />
+                <Route path="/privacy" element={<Navigate to="/legal/privacy" replace />} />
+                <Route path="/refund" element={<Navigate to="/legal/refund" replace />} />
+                <Route path="/refunds" element={<Navigate to="/legal/refund" replace />} />
+                <Route path="/acceptable-use" element={<Navigate to="/legal/acceptable-use" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </WindowManagerProvider>
