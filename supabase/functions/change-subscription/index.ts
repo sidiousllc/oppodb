@@ -47,7 +47,6 @@ Deno.serve(async (req) => {
     const paddlePriceId = lookupData.data?.[0]?.id;
     if (!paddlePriceId) throw new Error(`Price not found: ${newPriceId}`);
 
-    const paddle = getPaddleClient(env);
     const updated = await paddle.subscriptions.update(sub.paddle_subscription_id as string, {
       items: [{ priceId: paddlePriceId, quantity: 1 }],
       prorationBillingMode: 'prorated_immediately',
