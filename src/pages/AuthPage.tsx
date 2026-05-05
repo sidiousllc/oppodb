@@ -26,6 +26,22 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [inviteInfo, setInviteInfo] = useState<{ email: string; role: string } | null>(null);
+  const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
+
+  const PLANS = [
+    { priceId: "pro_monthly",        label: "Pro",            price: "$49/mo" },
+    { priceId: "pro_yearly",         label: "Pro Yearly",     price: "$490/yr" },
+    { priceId: "enterprise_monthly", label: "Enterprise",     price: "$199/mo" },
+    { priceId: "api_access_monthly", label: "API & MCP",      price: "$99/mo" },
+  ];
+
+  const handleBuy = (priceId: string) => {
+    openCheckout({
+      priceId,
+      customerEmail: email || undefined,
+      successUrl: `${window.location.origin}/?checkout=success`,
+    });
+  };
 
   // Check URL for invite token
   useEffect(() => {
