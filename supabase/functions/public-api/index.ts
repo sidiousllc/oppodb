@@ -187,6 +187,21 @@ Deno.serve(async (req) => {
     const keyId = keyData[0].key_id;
     const userId = keyData[0].user_id;
 
+    // Enforce active API entitlement (admin/mod or paid Pro/Enterprise/API plan).
+    // Uses subscription period end so access expires immediately on lapse.
+    const { data: entitled } = await supabase.rpc("has_api_entitlement", {
+      user_uuid: userId,
+      check_env: "live",
+    });
+    if (entitled !== true) {
+      return new Response(
+        JSON.stringify({
+          error: "API access expired or not active. An active Pro, Enterprise, or API & MCP subscription is required.",
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // Parse endpoint from URL path
     // url already declared above
     const pathParts = url.pathname.split("/").filter(Boolean);
