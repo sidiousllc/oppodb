@@ -377,7 +377,11 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     icon: "🧰",
     singleton: true,
     size: { width: 820, height: 580 },
-    render: () => <McpToolsWindow />,
+    render: () => (
+      <TierGate requires="api" feature="MCP Tools">
+        <McpToolsWindow />
+      </TierGate>
+    ),
   },
   pricing: {
     id: "pricing",
