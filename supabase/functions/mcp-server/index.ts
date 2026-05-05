@@ -65,18 +65,14 @@ app.use("/*", async (c, next) => {
     return c.json({ error: "Invalid or revoked API key" }, 403);
   }
 
-  // Verify user has premium or admin role
+  // Verify user has an active API entitlement (admin or paid Pro/Enterprise/API plan)
   const userId = keyData[0].user_id;
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-
-  const hasPremiumAccess = roles?.some(
-    (r: { role: string }) => r.role === "premium" || r.role === "admin"
-  );
-  if (!hasPremiumAccess) {
-    return c.json({ error: "Premium or admin role required for MCP access" }, 403);
+  const { data: entitled } = await supabase.rpc("has_api_entitlement", {
+    user_uuid: userId,
+    check_env: "live",
+  });
+  if (entitled !== true) {
+    return c.json({ error: "Active Pro, Enterprise, or API & MCP plan required for MCP access" }, 403);
   }
 
   // Log the request
