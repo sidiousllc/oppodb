@@ -107,6 +107,22 @@ export default function Index() {
     trackPageView(section);
   }, [section, trackPageView]);
 
+  // Post-checkout return toast
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      import("@/hooks/use-toast").then(({ toast }) => {
+        toast({
+          title: "Payment received",
+          description: "Your subscription is being activated. This may take a few seconds.",
+        });
+      });
+      params.delete("checkout");
+      const qs = params.toString();
+      window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+    }
+  }, []);
+
   useEffect(() => {
     if (section === "leghub") trackMapView("state_legislative");
   }, [section, trackMapView]);
