@@ -356,7 +356,9 @@ mcp.tool("get_narrative_reports", {
       limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
     },
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerTier(ctx?.request || ctx);
+    if (!caller.hasResearchBook) return tierGateError("Narrative Reports");
     const search = args.search as string | undefined;
     const slug = args.slug as string | undefined;
     const limit = Math.min((args.limit as number) || 20, 100);
