@@ -384,7 +384,9 @@ mcp.tool("get_local_impacts", {
       limit: { type: "number" as const, description: "Max results (default 20, max 50)" },
     },
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerTier(ctx?.request || ctx);
+    if (!caller.hasResearchBook) return tierGateError("Local Impacts");
     const state = args.state as string | undefined;
     const limit = Math.min((args.limit as number) || 20, 50);
     let q = supabase.from("local_impacts").select("id,state,slug,summary,updated_at", { count: "exact" }).range(0, limit - 1).order("state");
