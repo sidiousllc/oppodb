@@ -86,6 +86,53 @@ app.use("/*", async (c, next) => {
   await next();
 });
 
+// ─── Tier gating for Research Book content ────────────────────────────────────
+// Pro/Enterprise (and admins) can read MAGA Files / Narrative Reports / Local
+// Impacts. Standalone "api" tier users get API/MCP access but NOT this premium
+// research content.
+const RESEARCH_BOOK_CATEGORIES = new Set(["maga_files", "narrative_reports", "local_impacts"]);
+
+async function resolveCallerTier(c: any): Promise<{ userId: string | null; tier: string; isAdmin: boolean; hasResearchBook: boolean }> {
+  // Bridge path
+  const bridgeUser = c?.req?.header?.("X-MCP-Bridge-User");
+  let userId: string | null = bridgeUser ?? null;
+  if (!userId) {
+    const apiKey = c?.req?.header?.("X-API-Key") || c?.req?.header?.("Authorization")?.replace("Bearer ", "");
+    if (apiKey) {
+      const keyHash = await hashKey(apiKey);
+      const { data: keyData } = await supabase.rpc("validate_api_key", { p_key_hash: keyHash });
+      if (keyData?.length) userId = keyData[0].user_id;
+    }
+  }
+  if (!userId) return { userId: null, tier: "free", isAdmin: false, hasResearchBook: false };
+
+  const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const roleNames = (roles || []).map((r: { role: string }) => r.role);
+  const isAdmin = roleNames.includes("admin") || roleNames.includes("moderator");
+
+  const { data: tierData } = await supabase.rpc("current_subscription_tier", { user_uuid: userId, check_env: "live" });
+  const tier = (tierData as string | null) ?? "free";
+
+  // Research book = pro, enterprise, or admin/moderator. NOT api-only or free.
+  const hasResearchBook = isAdmin || tier === "pro" || tier === "enterprise";
+  return { userId, tier, isAdmin, hasResearchBook };
+}
+
+function tierGateError(toolLabel: string) {
+  return {
+    content: [{
+      type: "text" as const,
+      text: JSON.stringify({
+        error: "tier_required",
+        message: `${toolLabel} requires an active Pro or Enterprise plan. The standalone API & MCP plan does not include premium Research Book content. Upgrade in your subscription settings.`,
+      }),
+    }],
+  };
+}
+
+// Re-open the original middleware list — placeholder noop so subsequent code is unchanged.
+app.use("/_unused_tier_anchor", async (_c, next) => { await next(); 
+
 const mcpServer = new McpServer({
   name: "ordb-mcp-server",
   version: "1.0.0",
