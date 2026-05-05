@@ -66,6 +66,20 @@ const REPORT_TIER: Tier = {
   highlights: ["Unlock one candidate report", "No subscription required"],
 };
 
+const API_TIER: Tier = {
+  priceId: "api_access_monthly",
+  name: "API & MCP Access",
+  price: "$99",
+  cadence: "/month",
+  productKey: "enterprise",
+  highlights: [
+    "Programmatic REST API access",
+    "MCP server for AI agents",
+    "Use ORO data in your own tools",
+    "Cancel anytime",
+  ],
+};
+
 export function PricingWindow() {
   const { user } = useAuth();
   const { subscription, isActive, tier: currentTier, cancelAtPeriodEnd } = useSubscription();
