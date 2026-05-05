@@ -99,11 +99,6 @@ Deno.serve(async (req) => {
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
-    return new Response(
-      JSON.stringify({ error: "Premium or admin role required" }),
-      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  }
 
   // 3. Parse body.
   let body: { mode?: "builtin" | "custom"; rpc?: JsonRpcRequest };
