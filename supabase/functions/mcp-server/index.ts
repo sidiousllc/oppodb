@@ -902,7 +902,8 @@ mcp.tool("master_search", {
     },
     required: ["search"],
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerTier(ctx?.request || ctx);
     const q = args.search as string;
     if (!q || q.length < 2) {
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: "search query must be at least 2 characters" }) }] };
