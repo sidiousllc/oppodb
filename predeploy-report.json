@@ -1,13 +1,21 @@
 {
-  "generated_at": "2026-05-05T02:52:38.783Z",
+  "generated_at": "2026-05-05T02:57:01.396Z",
   "totals": {
-    "total": 95,
+    "total": 96,
     "passed": 0,
     "parse_failures": 0,
-    "type_failures": 95,
+    "type_failures": 96,
     "skipped": 0
   },
   "checks": [
+    {
+      "name": "admin-billing",
+      "entry": "supabase/functions/admin-billing/index.ts",
+      "parse": "ok",
+      "types": "fail",
+      "types_location": null,
+      "types_error": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: unexpected argument '-I' found\n\n  tip: to pass '-I' as a value, use '-- -I'\n\nUsage: deno check [OPTIONS] [file]..."
+    },
     {
       "name": "admin-data-export",
       "entry": "supabase/functions/admin-data-export/index.ts",
