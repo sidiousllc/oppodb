@@ -231,6 +231,11 @@ export function PricingWindow() {
         ))}
       </div>
 
+      <div className="font-bold text-[11px] mt-2">Developer access</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <TierCard t={API_TIER} />
+      </div>
+
       <div className="font-bold text-[11px] mt-2">One-time purchase</div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         <TierCard t={REPORT_TIER} />
