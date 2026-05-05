@@ -327,12 +327,9 @@ mcp.tool("get_maga_files", {
       limit: { type: "number" as const, description: "Max results (default 20, max 100)" },
     },
   },
-  handler: async (args: Record<string, unknown>) => {
-    const search = args.search as string | undefined;
-    const slug = args.slug as string | undefined;
-    const limit = Math.min((args.limit as number) || 20, 100);
-    if (slug) {
-      const { data, error } = await supabase.from("maga_files").select("*").eq("slug", slug);
+  handler: async (args: Record<string, unknown>, ctx?: any) => {
+    const caller = await resolveCallerTier(ctx?.request || ctx);
+    if (!caller.hasResearchBook) return tierGateError("MAGA Files");
       if (error) return { content: [{ type: "text" as const, text: `Error: ${error.message}` }] };
       return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
