@@ -33,6 +33,7 @@ import { SystemStatusWindow } from "@/components/SystemStatusWindow";
 import { DeployChecklistWindow } from "@/components/DeployChecklistWindow";
 import { McpToolsWindow } from "@/components/McpToolsWindow";
 import { PricingWindow } from "@/components/PricingWindow";
+import { MySubscriptionWindow } from "@/components/MySubscriptionWindow";
 
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { getOSINTToolById } from "@/data/osintTools";
@@ -384,6 +385,14 @@ export const APP_REGISTRY: Record<string, AppDescriptor> = {
     singleton: true,
     size: { width: 720, height: 560 },
     render: () => <PricingWindow />,
+  },
+  "my-subscription": {
+    id: "my-subscription",
+    title: "My Subscription",
+    icon: "🧾",
+    singleton: true,
+    size: { width: 560, height: 520 },
+    render: () => <MySubscriptionWindow />,
   },
   // Notepad is rendered directly via Win98Notepad in Win98Desktop (it wraps its own window)
   "recycle-bin": {
