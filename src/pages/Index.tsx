@@ -611,6 +611,7 @@ export default function Index() {
             onMinimize={() => { try { localStorage.setItem("ordb:showDesktopFirst","1"); } catch {} setIsMinimized(true); }}
           >
             {/* AOL Browser chrome */}
+            <PaymentTestModeBanner />
             <AOLToolbar
               onBack={selectedSlug ? () => setSelectedSlug(null) : undefined}
               onRefresh={() => window.location.reload()}
