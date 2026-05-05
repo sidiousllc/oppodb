@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useAccess } from "@/hooks/useAccess";
 import { createApiKey, listApiKeys, revokeApiKey, deleteApiKey, getApiBaseUrl, type ApiKey } from "@/lib/apiKeys";
 import { ApiAnalytics } from "@/components/ApiAnalytics";
 import { Key, Plus, Copy, Check, Trash2, Ban, Loader2, BookOpen, ExternalLink } from "lucide-react";
@@ -11,7 +11,8 @@ import { Win98PageLayout } from "@/components/Win98PageLayout";
 export default function ApiPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { canAccessApi, loading: roleLoading } = useUserRole();
+  const { hasApi, loading: roleLoading } = useAccess();
+  const canAccessApi = hasApi;
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);

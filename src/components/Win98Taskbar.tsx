@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAccess } from "@/hooks/useAccess";
 import { OfflineStatusIndicator } from "@/components/OfflineStatusIndicator";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 
@@ -13,7 +14,8 @@ interface Win98TaskbarProps {
 export function Win98Taskbar({ minimizedWindow, onRestoreWindow }: Win98TaskbarProps) {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
-  const { canManageContent, canAccessApi } = useUserRole();
+  const { canManageContent } = useUserRole();
+  const { hasApi: canAccessApi } = useAccess();
   const { windows, focusWindow, minimizeWindow, openWindow } = useWindowManager();
   const [time, setTime] = useState("");
   const [startOpen, setStartOpen] = useState(false);

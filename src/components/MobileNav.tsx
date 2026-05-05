@@ -2,6 +2,7 @@ import { forwardRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppSidebar, type FilterCategory, type Section } from "./AppSidebar";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAccess } from "@/hooks/useAccess";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
@@ -18,7 +19,8 @@ interface MobileNavProps {
 export const MobileNav = forwardRef<HTMLDivElement, MobileNavProps>(
   ({ activeFilter, onFilterChange, counts, activeSection, onSectionChange, sectionCounts, onSyncComplete }, ref) => {
     const navigate = useNavigate();
-    const { canManageContent, canAccessApi } = useUserRole();
+    const { canManageContent } = useUserRole();
+    const { hasApi: canAccessApi } = useAccess();
     const { signOut } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [accountOpen, setAccountOpen] = useState(false);
