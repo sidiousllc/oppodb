@@ -130,8 +130,7 @@ function tierGateError(toolLabel: string) {
   };
 }
 
-// Re-open the original middleware list — placeholder noop so subsequent code is unchanged.
-app.use("/_unused_tier_anchor", async (_c, next) => { await next(); 
+
 
 const mcpServer = new McpServer({
   name: "ordb-mcp-server",
